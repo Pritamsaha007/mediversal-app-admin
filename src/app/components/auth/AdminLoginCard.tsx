@@ -45,7 +45,6 @@ const AdminLoginCard: React.FC<AdminLoginCardProps> = ({ className = "" }) => {
           </div>
         </div>
       </div>
-
       <EmailLogin onLogin={handleAdminLogin} />
     </div>
   );
