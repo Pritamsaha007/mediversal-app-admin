@@ -26,12 +26,13 @@ const AdminLoginCard: React.FC<AdminLoginCardProps> = ({ className = "" }) => {
 
   const handleAdminLogin = async (email: string, password: string) => {
     try {
+      toast.loading("Logging in...", { id: "admin-login" });
       const response = await adminLogin({ email, password });
-      setAdminData(response); // store token and admin info in Zustand
-      toast.success("Login successful");
-      router.push("/admin/dashboard"); // 🔁 redirect to dashboard
+      setAdminData(response);
+      toast.success("Login successful", { id: "admin-login" });
+      router.push("/admin/dashboard");
     } catch (error: any) {
-      toast.error(error?.message || "Login failed");
+      toast.error(error?.message || "Login failed", { id: "admin-login" });
     }
   };
 
