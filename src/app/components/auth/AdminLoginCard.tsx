@@ -1,4 +1,3 @@
-// components/AdminLoginCard.tsx
 "use client";
 import React, { useState, useEffect } from "react";
 import EmailLogin from "./EmailLogin";
@@ -38,7 +37,6 @@ const AdminLoginCard: React.FC<AdminLoginCardProps> = ({ className = "" }) => {
 
   return (
     <div className={`w-150  bg-white rounded-2xl shadow-lg p-8 ${className}`}>
-      {/* Header */}
       <div className="flex justify-between items-start mb-14">
         <h2 className="text-3xl font-bold text-[#0088B1]">Admin Login</h2>
         <div className="text-right text-sm text-gray-600">
@@ -48,7 +46,6 @@ const AdminLoginCard: React.FC<AdminLoginCardProps> = ({ className = "" }) => {
         </div>
       </div>
 
-      {/* Email Login only */}
       <EmailLogin onLogin={handleAdminLogin} />
     </div>
   );

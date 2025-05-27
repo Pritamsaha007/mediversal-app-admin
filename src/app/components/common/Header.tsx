@@ -25,7 +25,7 @@ const Header: React.FC<HeaderProps> = () => {
   });
   const router = useRouter();
   const pathname = usePathname();
-  const logout = useAdminStore((state) => state.logout); // your logout action
+  const logout = useAdminStore((state) => state.logout);
   const admin = useAdminStore((state) => state.admin);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -44,10 +44,9 @@ const Header: React.FC<HeaderProps> = () => {
     });
   };
 
-  // Logout handler
   const handleLogout = () => {
-    logout(); // clear auth state
-    router.push("/login"); // redirect to login
+    logout();
+    router.push("/login");
   };
 
   const generateBreadcrumbs = () => {
