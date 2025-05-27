@@ -11,8 +11,6 @@ import {
 import { format } from "date-fns";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-
-// Import your admin/auth store logout action (adjust path & store name)
 import { useAdminStore } from "@/app/store/adminStore";
 
 interface HeaderProps {
