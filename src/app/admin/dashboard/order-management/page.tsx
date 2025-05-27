@@ -1,6 +1,6 @@
 "use client";
 
-import FilterComponent from "../../components/common/FilterComponent";
+import FilterComponent from "../../../components/common/FilterComponent";
 
 interface FilterData {
   sku: string;

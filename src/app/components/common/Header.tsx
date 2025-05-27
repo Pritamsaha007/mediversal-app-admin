@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Fragment } from "react";
 import {
   ArrowLeft,
   ChevronDown,
@@ -10,13 +10,14 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
-import { Fragment } from "react";
-// import { useAuthStore } from "../store/user_details";
+import { usePathname, useRouter } from "next/navigation";
+
+// Import your admin/auth store logout action (adjust path & store name)
+import { useAdminStore } from "@/app/store/adminStore";
 
 interface HeaderProps {
   userName?: string;
+  userEmail?: string;
 }
 
 const Header: React.FC<HeaderProps> = () => {
@@ -24,22 +25,42 @@ const Header: React.FC<HeaderProps> = () => {
     date: "",
     time: "",
   });
-  const router = useRouter(); // <-- inside your component
+  const router = useRouter();
   const pathname = usePathname();
-  //   const user = useAuthStore((state) => state.user);
-  //   const logout = useAuthStore((state) => state.logout);
-  //   const userName = user?.name.toUpperCase() || "User"; // Default to "User" if name is not available
+  const logout = useAdminStore((state) => state.logout); // your logout action
+  const admin = useAdminStore((state) => state.admin);
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    updateDateTime();
+    const interval = setInterval(updateDateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const updateDateTime = () => {
+    const now = new Date();
+    setCurrentDateTime({
+      date: format(now, "dd/MM/yy"),
+      time: format(now, "HH:mm:ss").substring(0, 11),
+    });
+  };
+
+  // Logout handler
+  const handleLogout = () => {
+    logout(); // clear auth state
+    router.push("/login"); // redirect to login
+  };
+
   const generateBreadcrumbs = () => {
     const pathWithoutQuery = pathname.split("?")[0];
-    const pathArray = pathWithoutQuery.split("/").filter((p) => p);
+    const pathArray = pathWithoutQuery.split("/").filter(Boolean);
 
     return pathArray.map((path, index) => {
       const href = "/" + pathArray.slice(0, index + 1).join("/");
-
       const label = path
         .replace(/-/g, " ")
         .replace(/\b\w/g, (l) => l.toUpperCase());
-
       return (
         <Fragment key={href}>
           {index !== 0 && (
@@ -55,48 +76,14 @@ const Header: React.FC<HeaderProps> = () => {
     });
   };
 
-  useEffect(() => {
-    // Initialize date/time
-    updateDateTime();
-
-    // Update time every second
-    const interval = setInterval(() => {
-      updateDateTime();
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const updateDateTime = () => {
-    const now = new Date();
-
-    // Format date as DD/MM/YY
-    const dateStr = format(now, "dd/MM/yy");
-
-    // Format time as HH:MM:SS:SS
-    const timeStr = format(now, "HH:mm:ss").substring(0, 11);
-
-    setCurrentDateTime({
-      date: dateStr,
-      time: timeStr,
-    });
-  };
-  //   const handlelogout = () => {
-  //     logout();
-  //     router.push("/login");
-  //   };
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
   return (
-    <div className="bg-gray-50  p-4">
-      {/* Main header */}
+    <div className="bg-gray-50 p-4">
       <header className="bg-white px-2 py-2 flex items-center justify-between border rounded-xl my-1">
-        {/* Left section with back button and title */}
         <div className="flex items-center">
           <button onClick={() => router.back()}>
             <ArrowLeft
               size={18}
-              className="mr-4 ml-2 hove hover:cursor-pointer"
+              className="mr-4 ml-2 hover:cursor-pointer"
               color="#161D1F"
             />
           </button>
@@ -105,16 +92,13 @@ const Header: React.FC<HeaderProps> = () => {
           </h1>
         </div>
 
-        {/* Center section with date and time */}
         <div className="flex items-center text-[#161D1F] text-[12px] ">
           <span>
             {currentDateTime.date} | {currentDateTime.time}
           </span>
         </div>
 
-        {/* Right section with notification and user profile */}
         <div className="flex items-center space-x-6">
-          {/* Notification icon */}
           <button className="relative">
             <Bell size={18} className="mr-2" color="#161D1F" />
             <span className="absolute top-0 right-0 flex h-2 w-2">
@@ -123,7 +107,6 @@ const Header: React.FC<HeaderProps> = () => {
             </span>
           </button>
 
-          {/* User dropdown */}
           <div className="relative">
             <button
               className="flex justify-between items-center space-x-2 bg-[#0088B1] text-white px-2 py-2 rounded gap-3"
@@ -131,21 +114,21 @@ const Header: React.FC<HeaderProps> = () => {
             >
               <div className="flex items-center space-x-2 mr-2 flex-row">
                 <User size={16} />
-                {/* <span className="text-xs">{userName}</span> */}
-                <span className="text-xs">Vivek</span>
+                <span className="text-xs">
+                  {admin?.name?.trim() || admin?.email || "User"}
+                </span>
               </div>
 
               <ChevronDown size={16} className="ml-1" />
             </button>
 
-            {/* Dropdown menu */}
             {isDropdownOpen && (
               <div className="absolute right-0 mt-2 w-40 bg-[#E8F4F7] rounded-md shadow-lg z-10">
                 <ul className="py-1 text-[#161D1F]">
                   <li>
                     <a
                       href="#"
-                      className="px-4 py-2 text-sm hover:bg-gray-100  flex items-center gap-2"
+                      className="px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
                     >
                       <User size={16} />
                       Profile
@@ -154,21 +137,20 @@ const Header: React.FC<HeaderProps> = () => {
                   <li>
                     <a
                       href="#"
-                      className="px-4 py-2 text-sm hover:bg-gray-100  flex items-center gap-2"
+                      className="px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
                     >
                       <Settings size={16} />
                       Settings
                     </a>
                   </li>
                   <li>
-                    <a
-                      href="#"
-                      className="px-4 py-2 text-sm hover:bg-gray-100 text-red-500 flex items-center gap-2"
-                      //   onClick={() => handlelogout()}
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-red-500 flex items-center gap-2"
                     >
                       <LogOut size={16} />
                       Logout
-                    </a>
+                    </button>
                   </li>
                 </ul>
               </div>
@@ -177,7 +159,6 @@ const Header: React.FC<HeaderProps> = () => {
         </div>
       </header>
 
-      {/* Breadcrumb */}
       <div className="bg-gray-50 px-2 py-1">{generateBreadcrumbs()}</div>
     </div>
   );

@@ -7,8 +7,15 @@ export interface TabSwitchProps {
   onTabChange: (tab: "email" | "mobile") => void;
 }
 
+export interface AdminLoginCardProps {
+  className?: string;
+}
+
 export interface EmailLoginProps {
   onLogin: (email: string, password: string) => void;
+}
+export interface LoginCardProps {
+  className?: string;
 }
 
 export interface MobileLoginProps {

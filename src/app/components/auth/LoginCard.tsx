@@ -50,15 +50,13 @@ const LoginCard: React.FC<LoginCardProps> = ({ className = "" }) => {
   };
 
   return (
-    <div
-      className={`w-150 h-125 bg-white rounded-2xl shadow-lg p-8 ${className}`}
-    >
+    <div className={`w-150 bg-white rounded-2xl shadow-lg p-8 ${className}`}>
       {/* Header */}
       <div className="flex justify-between items-start mb-14">
         <h2 className="text-3xl font-bold text-[#0088B1]">Login</h2>
         <div className="text-right text-sm text-gray-600">
           <div className="text-right text-sm text-gray-600">
-            <div className="text-sm text-gray-600 font-medium">
+            <div className="font-medium">
               {currentDateTime.date} | {currentDateTime.time}
             </div>
           </div>
