@@ -20,7 +20,16 @@ interface ProductCardProps {
   onSelect: (id: string, selected: boolean) => void;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({
+export const ProductCard: React.FC<{
+  product: Product;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onUnfeature: (id: string) => void;
+  onDeactivate: (id: string) => void;
+  onDelete: (id: string) => void;
+  isSelected: boolean;
+  onSelect: (id: string, selected: boolean) => void;
+}> = ({
   product,
   onView,
   onEdit,

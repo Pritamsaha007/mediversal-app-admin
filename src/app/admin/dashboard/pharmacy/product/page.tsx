@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Search,
   ChevronDown,
@@ -10,16 +10,22 @@ import {
   ShoppingBag,
   ProjectorIcon,
   ListOrdered,
+  Projector,
 } from "lucide-react";
 import { ProductCard } from "@/app/components/common/ProductCard";
 import { StatsCard } from "@/app/components/common/StatsCard";
 import { Product } from "@/app/types/product";
 
-const ProductCatalog: React.FC = () => {
+export const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [sortBy, setSortBy] = useState("Sort");
   const [activeTab, setActiveTab] = useState("All Products");
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
 
   const products: Product[] = [
     {
@@ -84,34 +90,52 @@ const ProductCatalog: React.FC = () => {
     },
     {
       id: "5",
-      name: "Naproxen 250mg",
-      code: "MED-004",
-      category: "Medicines",
-      subcategory: "Healthcare Pharma",
+      name: "Digital Thermometer",
+      code: "DEV-001",
+      category: "Medical Devices",
+      subcategory: "Diagnostic Equipment",
       mrp: 200.0,
       sellingPrice: 160.0,
       discount: 20,
       stock: 890,
-      status: "Inactive",
+      status: "Active",
       featured: false,
       substitutes: 3,
       similar: 2,
     },
     {
       id: "6",
-      name: "Naproxen 250mg",
-      code: "MED-004",
-      category: "Medicines",
-      subcategory: "Healthcare Pharma",
+      name: "Vitamin D3 Tablets",
+      code: "SUP-001",
+      category: "Supplements",
+      subcategory: "Vitamins",
       mrp: 200.0,
       sellingPrice: 160.0,
       discount: 20,
       stock: 100,
-      status: "Inactive",
-      featured: false,
+      status: "Active",
+      featured: true,
       substitutes: 3,
       similar: 2,
     },
+  ];
+
+  const categories = [
+    "All Categories",
+    "Medicines",
+    "Medical Devices",
+    "Supplements",
+    "Personal Care",
+  ];
+  const sortOptions = [
+    "Sort",
+    "Relevance (default)",
+    "Selling Price - Low to High",
+    "Selling Price - High to Low",
+    "Product Status",
+    "By Name",
+    "By Stock",
+    "Discount",
   ];
 
   const tabs = [
@@ -122,24 +146,96 @@ const ProductCatalog: React.FC = () => {
     "Inactive",
   ];
 
+  // Handle click outside for dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(event.target as Node)
+      ) {
+        setCategoryDropdownOpen(false);
+      }
+      if (
+        sortDropdownRef.current &&
+        !sortDropdownRef.current.contains(event.target as Node)
+      ) {
+        setSortDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleProductAction = (action: string, id: string) => {
     console.log(`${action} product with id: ${id}`);
   };
 
-  const filteredProducts = products.filter((product) => {
-    switch (activeTab) {
-      case "Active":
-        return product.status === "Active";
-      case "Inactive":
-        return product.status === "Inactive";
-      case "Featured":
-        return product.featured;
-      case "Out of Stock":
-        return product.stock === 0;
-      default:
-        return true;
+  // Apply filters and sorting
+  const getFilteredAndSortedProducts = () => {
+    let filtered = products.filter((product) => {
+      // Apply tab filter
+      let tabMatch = true;
+      switch (activeTab) {
+        case "Active":
+          tabMatch = product.status === "Active";
+          break;
+        case "Inactive":
+          tabMatch = product.status === "Inactive";
+          break;
+        case "Featured":
+          tabMatch = product.featured;
+          break;
+        case "Out of Stock":
+          tabMatch = product.stock === 0;
+          break;
+        default:
+          tabMatch = true;
+      }
+
+      // Apply search filter
+      const searchMatch =
+        searchTerm === "" ||
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.subcategory.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Apply category filter
+      const categoryMatch =
+        selectedCategory === "All Categories" ||
+        product.category === selectedCategory;
+
+      return tabMatch && searchMatch && categoryMatch;
+    });
+
+    // Apply sorting
+    if (sortBy !== "Sort") {
+      filtered = [...filtered].sort((a, b) => {
+        switch (sortBy) {
+          case "Selling Price - Low to High":
+            return a.sellingPrice - b.sellingPrice;
+          case "Selling Price - High to Low":
+            return b.sellingPrice - a.sellingPrice;
+          case "Product Status":
+            return a.status.localeCompare(b.status);
+          case "By Name":
+            return a.name.localeCompare(b.name);
+          case "By Stock":
+            return b.stock - a.stock;
+          case "Discount":
+            return b.discount - a.discount;
+          case "Relevance (default)":
+          default:
+            return 0;
+        }
+      });
     }
-  });
+
+    return filtered;
+  };
+
+  const filteredProducts = getFilteredAndSortedProducts();
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
@@ -178,7 +274,7 @@ const ProductCatalog: React.FC = () => {
               { label: "Active", value: 6 },
               { label: "Deactivated", value: 2 },
             ]}
-            icon={<ProjectorIcon className="h-5 w-5" />}
+            icon={<Projector className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
           <StatsCard
@@ -214,18 +310,60 @@ const ProductCatalog: React.FC = () => {
             />
           </div>
           <div className="flex gap-3">
-            <div className="relative">
-              <button className="flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50">
+            {/* Category Dropdown */}
+            <div className="relative" ref={categoryDropdownRef}>
+              <button
+                onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+                className="flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
+              >
                 {selectedCategory}
                 <ChevronDown className="w-4 h-4" />
               </button>
+              {categoryDropdownOpen && (
+                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => {
+                        setSelectedCategory(category);
+                        setCategoryDropdownOpen(false);
+                      }}
+                      className="block w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="relative">
-              <button className="flex items- text-[12px]  gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50">
+
+            {/* Sort Dropdown */}
+            <div className="relative" ref={sortDropdownRef}>
+              <button
+                onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
+                className="flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
+              >
                 {sortBy}
                 <ChevronDown className="w-4 h-4" />
               </button>
+              {sortDropdownOpen && (
+                <div className="absolute right-0 top-full mt-1 z-20 w-56 bg-white border border-gray-200 rounded-lg shadow-lg">
+                  {sortOptions.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => {
+                        setSortBy(option);
+                        setSortDropdownOpen(false);
+                      }}
+                      className="block w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+
             <div className="relative">
               <button className="flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50">
                 <Download className="w-4 h-4" />
