@@ -76,7 +76,7 @@ const Header: React.FC<HeaderProps> = () => {
   return (
     <div className="bg-gray-50 p-4">
       <header className="bg-white px-2 py-2 flex items-center justify-between border rounded-xl my-1">
-        <div className="flex items-center">
+        {/* <div className="flex items-center">
           <button onClick={() => router.back()}>
             <ArrowLeft
               size={18}
@@ -87,7 +87,7 @@ const Header: React.FC<HeaderProps> = () => {
           <h1 className="text-lg font-medium text-[#161D1F] text-[16px]">
             Admin Dashboard
           </h1>
-        </div>
+        </div> */}
 
         <div className="flex items-center text-[#161D1F] text-[12px] ">
           <span>
@@ -99,8 +99,8 @@ const Header: React.FC<HeaderProps> = () => {
           <button className="relative">
             <Bell size={18} className="mr-2" color="#161D1F" />
             <span className="absolute top-0 right-0 flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-600"></span>
             </span>
           </button>
 
@@ -156,7 +156,7 @@ const Header: React.FC<HeaderProps> = () => {
         </div>
       </header>
 
-      <div className="bg-gray-50 px-2 py-1">{generateBreadcrumbs()}</div>
+      {/* <div className="bg-gray-50 px-2 py-1">{generateBreadcrumbs()}</div> */}
     </div>
   );
 };
