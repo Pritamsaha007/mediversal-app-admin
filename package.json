@@ -9,9 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@tanstack/react-table": "^8.21.3",
-    "ag-grid-community": "^33.3.1",
-    "ag-grid-react": "^33.3.1",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.511.0",
     "next": "15.3.2",
