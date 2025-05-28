@@ -43,12 +43,12 @@ const Sidebar = () => {
       subItems: [
         {
           name: "Products",
-          link: "/admin/dashboard/pharmacy/inventory",
+          link: "/admin/dashboard/pharmacy/product",
         },
         { name: "Order", link: "/admin/dashboard/pharmacy/order" },
         {
           name: "Inventory",
-          link: "/admin/dashboard/pharmacy/product",
+          link: "/admin/dashboard/pharmacy/inventory",
         },
       ],
     },

@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@tanstack/react-table": "^8.21.3",
+    "ag-grid-community": "^33.3.1",
+    "ag-grid-react": "^33.3.1",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.511.0",
     "next": "15.3.2",
@@ -19,10 +22,17 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^30.0.0-beta.3",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }
