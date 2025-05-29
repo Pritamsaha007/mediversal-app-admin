@@ -20,7 +20,7 @@ import {
 } from "@/app/data/productCatalogData";
 import { AddProductModal } from "@/app/components/common/AddProductModal";
 
-export const ProductCatalog: React.FC = () => {
+const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [sortBy, setSortBy] = useState("Sort");
