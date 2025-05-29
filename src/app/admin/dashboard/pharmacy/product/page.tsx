@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useRef, useState } from "react";
 import {
   Search,
@@ -8,13 +7,18 @@ import {
   Plus,
   FileText,
   ShoppingBag,
-  ProjectorIcon,
   ListOrdered,
   Projector,
 } from "lucide-react";
 import { ProductCard } from "@/app/components/common/ProductCard";
 import { StatsCard } from "@/app/components/common/StatsCard";
-import { Product } from "@/app/types/product";
+import {
+  products,
+  categories,
+  sortOptions,
+  tabs,
+} from "@/app/data/productCatalogData";
+import { AddProductModal } from "@/app/components/common/AddProductModal";
 
 export const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,128 +27,16 @@ export const ProductCatalog: React.FC = () => {
   const [activeTab, setActiveTab] = useState("All Products");
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleAddProduct = (productData: any) => {
+    console.log("New product added:", productData);
+    // Add your logic to handle the new product here
+    setIsModalOpen(false); // Close modal after adding
+  };
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
-
-  const products: Product[] = [
-    {
-      id: "1",
-      name: "Paracetamol 500mg",
-      code: "MED-001",
-      category: "Medicines",
-      subcategory: "Healthcare Pharma",
-      mrp: 120.0,
-      sellingPrice: 99.0,
-      discount: 17.5,
-      stock: 1200,
-      status: "Active",
-      featured: true,
-      substitutes: 2,
-      similar: 1,
-    },
-    {
-      id: "2",
-      name: "Ibuprofen 400mg",
-      code: "MED-002",
-      category: "Medicines",
-      subcategory: "Healthcare Pharma",
-      mrp: 150.0,
-      sellingPrice: 120.0,
-      discount: 20,
-      stock: 1500,
-      status: "Active",
-      featured: true,
-      substitutes: 3,
-      similar: 2,
-    },
-    {
-      id: "3",
-      name: "Aspirin 325mg",
-      code: "MED-003",
-      category: "Medicines",
-      subcategory: "Healthcare Pharma",
-      mrp: 80.0,
-      sellingPrice: 60.0,
-      discount: 25,
-      stock: 45,
-      status: "Active",
-      featured: false,
-      substitutes: 1,
-      similar: 1,
-    },
-    {
-      id: "4",
-      name: "Naproxen 250mg",
-      code: "MED-004",
-      category: "Medicines",
-      subcategory: "Healthcare Pharma",
-      mrp: 200.0,
-      sellingPrice: 160.0,
-      discount: 20,
-      stock: 0,
-      status: "Inactive",
-      featured: false,
-      substitutes: 3,
-      similar: 2,
-    },
-    {
-      id: "5",
-      name: "Digital Thermometer",
-      code: "DEV-001",
-      category: "Medical Devices",
-      subcategory: "Diagnostic Equipment",
-      mrp: 200.0,
-      sellingPrice: 160.0,
-      discount: 20,
-      stock: 890,
-      status: "Active",
-      featured: false,
-      substitutes: 3,
-      similar: 2,
-    },
-    {
-      id: "6",
-      name: "Vitamin D3 Tablets",
-      code: "SUP-001",
-      category: "Supplements",
-      subcategory: "Vitamins",
-      mrp: 200.0,
-      sellingPrice: 160.0,
-      discount: 20,
-      stock: 100,
-      status: "Active",
-      featured: true,
-      substitutes: 3,
-      similar: 2,
-    },
-  ];
-
-  const categories = [
-    "All Categories",
-    "Medicines",
-    "Medical Devices",
-    "Supplements",
-    "Personal Care",
-  ];
-  const sortOptions = [
-    "Sort",
-    "Relevance (default)",
-    "Selling Price - Low to High",
-    "Selling Price - High to Low",
-    "Product Status",
-    "By Name",
-    "By Stock",
-    "Discount",
-  ];
-
-  const tabs = [
-    "All Products",
-    "Active",
-    "Featured",
-    "Out of Stock",
-    "Inactive",
-  ];
 
   // Handle click outside for dropdowns
   useEffect(() => {
@@ -246,7 +138,10 @@ export const ProductCatalog: React.FC = () => {
             Product Catalog
           </h1>
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 text-[12px] px-4 py-2 bg-[#0088B1] text-[#F8F8F8] rounded-lg hover:bg-[#00729A]">
+            <button
+              className="flex items-center gap-2 text-[12px] px-4 py-2 bg-[#0088B1] text-[#F8F8F8] rounded-lg hover:bg-[#00729A]"
+              onClick={() => setIsModalOpen(true)}
+            >
               <Plus className="w-3 h-3" />
               Product Catalog
             </button>
@@ -452,6 +347,11 @@ export const ProductCatalog: React.FC = () => {
             </table>
           </div>
         </div>
+        <AddProductModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onAddProduct={handleAddProduct}
+        />
       </div>
     </div>
   );
