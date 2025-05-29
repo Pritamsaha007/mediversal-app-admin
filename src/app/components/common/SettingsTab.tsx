@@ -26,13 +26,13 @@ export const SettingsTab = ({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             Schedule
           </label>
           <div className="relative">
             <button
               onClick={() => setScheduleDropdownOpen(!scheduleDropdownOpen)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
+              className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
             >
               <span
                 className={formData.schedule ? "text-black" : "text-gray-500"}
@@ -50,7 +50,7 @@ export const SettingsTab = ({
                       onInputChange("schedule", schedule);
                       setScheduleDropdownOpen(false);
                     }}
-                    className="block w-full px-3 py-2 text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
+                    className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
                   >
                     {schedule}
                   </button>
@@ -60,7 +60,7 @@ export const SettingsTab = ({
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             Tax Rate (%)
           </label>
           <input
@@ -70,14 +70,14 @@ export const SettingsTab = ({
             onChange={(e) =>
               onInputChange("taxRate", parseFloat(e.target.value) || 0)
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             HSN Code
           </label>
           <input
@@ -85,17 +85,17 @@ export const SettingsTab = ({
             placeholder="Enter HSN code"
             value={formData.hsnCode}
             onChange={(e) => onInputChange("hsnCode", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             Storage Conditions
           </label>
           <div className="relative">
             <button
               onClick={() => setStorageDropdownOpen(!storageDropdownOpen)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
+              className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
             >
               <span
                 className={
@@ -115,7 +115,7 @@ export const SettingsTab = ({
                       onInputChange("storageConditions", condition);
                       setStorageDropdownOpen(false);
                     }}
-                    className="block w-full px-3 py-2 text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
+                    className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
                   >
                     {condition}
                   </button>
@@ -127,7 +127,7 @@ export const SettingsTab = ({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
           Shelf Life (months)
         </label>
         <input
@@ -137,13 +137,13 @@ export const SettingsTab = ({
           onChange={(e) =>
             onInputChange("shelfLife", parseInt(e.target.value) || 0)
           }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+          className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
         />
       </div>
 
       <div className="space-y-3">
         <div className="p-4 border border-gray-200 rounded-lg">
-          <div className="flex items-start space-x-3">
+          <div className="flex items-start space-x-3 ">
             <input
               type="checkbox"
               checked={formData.prescriptionRequired}
@@ -153,10 +153,10 @@ export const SettingsTab = ({
               className="mt-0.5"
             />
             <div>
-              <div className="font-medium text-gray-900">
+              <div className="font-medium text-[10px] text-[#161D1F]">
                 Prescription Required
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-[8px] text-[#899193]">
                 Check this if the product requires a prescription for purchase
               </div>
             </div>
@@ -174,8 +174,10 @@ export const SettingsTab = ({
               className="mt-0.5"
             />
             <div>
-              <div className="font-medium text-gray-900">Featured Product</div>
-              <div className="text-sm text-gray-500">
+              <div className="font-medium text-[10px] text-[#161D1F]">
+                Featured Product
+              </div>
+              <div className="text-[8px] text-[#899193]">
                 Featured products are displayed prominently on the website
               </div>
             </div>
@@ -191,8 +193,10 @@ export const SettingsTab = ({
               className="mt-0.5 accent-[#0088B1]"
             />
             <div>
-              <div className="font-medium text-gray-900">Active Product</div>
-              <div className="text-sm text-gray-500">
+              <div className="font-medium text-[10px] text-[#161D1F]">
+                Active Product
+              </div>
+              <div className="text-[8px] text-[#899193]">
                 Inactive products are not displayed on the website
               </div>
             </div>

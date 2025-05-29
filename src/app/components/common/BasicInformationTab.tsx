@@ -18,7 +18,7 @@ export const BasicInformationTab = ({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             <span className="text-red-500">*</span> Product Name
           </label>
           <input
@@ -26,11 +26,11 @@ export const BasicInformationTab = ({
             placeholder="Enter Product Name"
             value={formData.productName}
             onChange={(e) => onInputChange("productName", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-[10px]"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             <span className="text-red-500">*</span> SKU
           </label>
           <input
@@ -38,20 +38,20 @@ export const BasicInformationTab = ({
             placeholder="Enter SKU"
             value={formData.sku}
             onChange={(e) => onInputChange("sku", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             <span className="text-red-500">*</span> Category
           </label>
           <div className="relative">
             <button
               onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
+              className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
             >
               <span
                 className={formData.category ? "text-black" : "text-gray-500"}
@@ -69,7 +69,7 @@ export const BasicInformationTab = ({
                       onInputChange("category", category);
                       setCategoryDropdownOpen(false);
                     }}
-                    className="block w-full px-3 py-2 text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
+                    className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
                   >
                     {category}
                   </button>
@@ -79,7 +79,7 @@ export const BasicInformationTab = ({
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             Sub Category
           </label>
           <input
@@ -87,14 +87,14 @@ export const BasicInformationTab = ({
             placeholder="Enter subcategory"
             value={formData.subCategory}
             onChange={(e) => onInputChange("subCategory", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             <span className="text-red-500">*</span> Brand
           </label>
           <input
@@ -102,11 +102,11 @@ export const BasicInformationTab = ({
             placeholder="Enter brand name"
             value={formData.brand}
             onChange={(e) => onInputChange("brand", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             <span className="text-red-500">*</span> Manufacturer
           </label>
           <input
@@ -114,14 +114,14 @@ export const BasicInformationTab = ({
             placeholder="Enter manufacturer name"
             value={formData.manufacturer}
             onChange={(e) => onInputChange("manufacturer", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             <span className="text-red-500">*</span> MRP (₹)
           </label>
           <input
@@ -131,11 +131,11 @@ export const BasicInformationTab = ({
             onChange={(e) =>
               onInputChange("mrp", parseFloat(e.target.value) || 0)
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             <span className="text-red-500">*</span> Selling Price (₹)
           </label>
           <input
@@ -145,11 +145,11 @@ export const BasicInformationTab = ({
             onChange={(e) =>
               onInputChange("sellingPrice", parseFloat(e.target.value) || 0)
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             <span className="text-red-500">*</span> Stock Quantity
           </label>
           <input
@@ -159,7 +159,7 @@ export const BasicInformationTab = ({
             onChange={(e) =>
               onInputChange("stockQuantity", parseInt(e.target.value) || 0)
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
       </div>

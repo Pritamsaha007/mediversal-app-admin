@@ -1,4 +1,7 @@
 export interface ProductFormData {
+  id?: string; // <-- Add this for identifying products in edit mode
+  createdAt?: string; // <-- Optional, for keeping original creation date
+
   // Basic Information
   productName: string;
   sku: string;
@@ -12,6 +15,8 @@ export interface ProductFormData {
 
   // Product Details
   description: string;
+  saftyDescription: string;
+  storageDescription: string;
   composition: string;
   dosageForm: string;
   strength: string;
@@ -31,7 +36,10 @@ export interface ProductFormData {
 export interface AddProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddProduct: (productData: ProductFormData) => void;
+  onAddProduct: (product: ProductFormData) => void;
+  onUpdateProduct?: (product: ProductFormData) => void;
+  productToEdit?: ProductFormData | null; // 👈 allow null
+  isEditMode?: boolean;
 }
 
 export const categories = [

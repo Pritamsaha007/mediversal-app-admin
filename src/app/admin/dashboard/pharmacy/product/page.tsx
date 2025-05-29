@@ -31,8 +31,7 @@ const ProductCatalog: React.FC = () => {
 
   const handleAddProduct = (productData: any) => {
     console.log("New product added:", productData);
-    // Add your logic to handle the new product here
-    setIsModalOpen(false); // Close modal after adding
+    setIsModalOpen(false);
   };
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);

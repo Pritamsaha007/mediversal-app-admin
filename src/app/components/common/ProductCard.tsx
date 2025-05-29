@@ -1,24 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  Eye,
-  Edit,
-  Link,
-  MoreVertical,
-  TableCellsSplit,
-  Pill,
-} from "lucide-react";
+import { Eye, Edit, Link, MoreVertical, Pill } from "lucide-react";
 import { Product } from "../../types/product";
-
-interface ProductCardProps {
-  product: Product;
-  onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onUnfeature: (id: string) => void;
-  onDeactivate: (id: string) => void;
-  onDelete: (id: string) => void;
-  isSelected: boolean;
-  onSelect: (id: string, selected: boolean) => void;
-}
+import { ProductFormData } from "@/app/types/productForm.type";
+import { AddProductModal } from "./AddProductModal";
+import { ProductDetailModal } from "./ProductDetailModal";
 
 export const ProductCard: React.FC<{
   product: Product;
@@ -41,6 +26,12 @@ export const ProductCard: React.FC<{
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen2, setModalOpen] = useState(false);
+
+  const [productToEdit, setProductToEdit] = useState<ProductFormData | null>(
+    null
+  );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -70,6 +61,53 @@ export const ProductCard: React.FC<{
   };
 
   const stockStatus = getStockStatus(product.stock);
+  const handleEdit = (product: Product) => {
+    const productFormData: ProductFormData = {
+      id: product.id,
+      productName: product.name,
+      sku: product.code,
+      category: product.category,
+      subCategory: product.subcategory,
+      brand: product.brand || "",
+      manufacturer: product.manufacturer || "",
+      mrp: product.mrp,
+      sellingPrice: product.sellingPrice,
+      stockQuantity: product.stock,
+      description: product.description || "",
+      composition: product.composition || "",
+      dosageForm: product.dosageForm || "",
+      strength: product.strength || "",
+      packSize: product.packSize || "",
+      schedule: product.schedule || "",
+      taxRate: product.taxRate || 0,
+      hsnCode: product.hsnCode || "",
+      storageConditions: product.storageConditions || "",
+      shelfLife: product.shelfLife || 0,
+      prescriptionRequired: product.prescriptionRequired || false,
+      featuredProduct: product.featured || false,
+      activeProduct: product.status === "Active",
+      saftyDescription: product.saftyDescription || "",
+      storageDescription: product.storageDescription || "",
+      createdAt: product.createdAt || new Date().toISOString(),
+    };
+
+    setProductToEdit(productFormData);
+    setModalOpen(true);
+  };
+
+  function handleAdd(product: ProductFormData): void {
+    throw new Error("Function not implemented.");
+  }
+
+  function handleUpdate(product: ProductFormData): void {
+    if (product.id) {
+      onEdit(product.id); // or call a parent function to handle the update
+      // You might want to pass the updated product data to parent component
+    } else {
+      // Optionally handle the case where id is undefined
+      console.error("Product id is undefined");
+    }
+  }
 
   return (
     <tr className="border-y-1 hover:bg-gray-50 border-[#D3D7D8]">
@@ -91,12 +129,12 @@ export const ProductCard: React.FC<{
           </div>
           <div className="flex gap-2 mt-2">
             {product.substitutes && (
-              <span className="px-2 py-1 text-xs  text-[#0088B1] rounded border border-[#0088B1]">
+              <span className="px-2 py-1 text-[8px]  text-[#0088B1] rounded border border-[#0088B1]">
                 {product.substitutes} substitute(s)
               </span>
             )}
             {product.similar && (
-              <span className="px-2 py-1 text-xs  text-[#9B51E0] rounded border border-[#9B51E0]">
+              <span className="px-2 py-1 text-[8px]  text-[#9B51E0] rounded border border-[#9B51E0]">
                 {product.similar} similar
               </span>
             )}
@@ -151,13 +189,14 @@ export const ProductCard: React.FC<{
       <td className="px-4 py-4">
         <div className="flex items-center gap-2 relative" ref={dropdownRef}>
           <button
-            onClick={() => onView(product.id)}
+            onClick={() => setIsModalOpen(true)}
             className="p-1 text-[#161D1F] hover:text-gray-700"
           >
             <Eye className="w-4 h-4" strokeWidth={1} />
           </button>
+
           <button
-            onClick={() => onEdit(product.id)}
+            onClick={() => handleEdit(product)}
             className="p-1 text-[#161D1F] hover:text-gray-700"
           >
             <Edit className="w-4 h-4" strokeWidth={1} />
@@ -203,6 +242,24 @@ export const ProductCard: React.FC<{
               </button>
             </div>
           )}
+
+          <ProductDetailModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            product={product}
+          />
+
+          <AddProductModal
+            isOpen={isModalOpen2}
+            onClose={() => {
+              setModalOpen(false);
+              setProductToEdit(null);
+            }}
+            onAddProduct={handleAdd}
+            onUpdateProduct={handleUpdate}
+            productToEdit={productToEdit}
+            isEditMode={!!productToEdit}
+          />
         </div>
       </td>
     </tr>
