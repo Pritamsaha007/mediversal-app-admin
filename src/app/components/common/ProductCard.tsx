@@ -4,6 +4,15 @@ import { Product } from "../../types/product";
 import { ProductFormData } from "@/app/types/productForm.type";
 import { AddProductModal } from "./AddProductModal";
 import { ProductDetailModal } from "./ProductDetailModal";
+import { ProductRelationshipsModal } from "./ManageProductRelationshipsModal";
+
+// Define RelatedProduct interface for the relationships
+interface RelatedProduct {
+  id: string;
+  name: string;
+  code: string;
+  manufacturer: string;
+}
 
 export const ProductCard: React.FC<{
   product: Product;
@@ -14,6 +23,15 @@ export const ProductCard: React.FC<{
   onDelete: (id: string) => void;
   isSelected: boolean;
   onSelect: (id: string, selected: boolean) => void;
+  // New props for relationships
+  availableProducts?: RelatedProduct[];
+  onUpdateRelationships?: (
+    productId: string,
+    data: {
+      substitutes: RelatedProduct[];
+      similarProducts: RelatedProduct[];
+    }
+  ) => void;
 }> = ({
   product,
   onView,
@@ -23,11 +41,15 @@ export const ProductCard: React.FC<{
   onDelete,
   isSelected,
   onSelect,
+  availableProducts = [],
+  onUpdateRelationships,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpen2, setModalOpen] = useState(false);
+  const [isRelationshipsModalOpen, setIsRelationshipsModalOpen] =
+    useState(false);
 
   const [productToEdit, setProductToEdit] = useState<ProductFormData | null>(
     null
@@ -61,6 +83,7 @@ export const ProductCard: React.FC<{
   };
 
   const stockStatus = getStockStatus(product.stock);
+
   const handleEdit = (product: Product) => {
     const productFormData: ProductFormData = {
       id: product.id,
@@ -95,19 +118,79 @@ export const ProductCard: React.FC<{
     setModalOpen(true);
   };
 
+  const handleManageRelationships = () => {
+    setIsRelationshipsModalOpen(true);
+  };
+
   function handleAdd(product: ProductFormData): void {
     throw new Error("Function not implemented.");
   }
 
   function handleUpdate(product: ProductFormData): void {
     if (product.id) {
-      onEdit(product.id); // or call a parent function to handle the update
-      // You might want to pass the updated product data to parent component
+      onEdit(product.id);
     } else {
-      // Optionally handle the case where id is undefined
       console.error("Product id is undefined");
     }
   }
+
+  const handleRelationshipsUpdate = (data: {
+    substitutes: RelatedProduct[];
+    similarProducts: RelatedProduct[];
+  }) => {
+    if (onUpdateRelationships) {
+      onUpdateRelationships(product.id, data);
+    }
+  };
+
+  // Mock current relationships data - you'll need to get this from your actual data source
+  const currentSubstitutes: RelatedProduct[] = [
+    {
+      id: "MED-002",
+      name: "Amoxicillin 250mg",
+      code: "MED-002",
+      manufacturer: "Healthcare Pharma",
+    },
+    {
+      id: "MED-003",
+      name: "Amoxicillin 500mg",
+      code: "MED-003",
+      manufacturer: "Healthcare Pharma",
+    },
+    {
+      id: "MED-004",
+      name: "Ciprofloxacin 500mg",
+      code: "MED-004",
+      manufacturer: "Pharma Solutions",
+    },
+  ];
+
+  const currentSimilarProducts: RelatedProduct[] = [
+    {
+      id: "MED-002",
+      name: "Vitamin D3 1000IU",
+      code: "MED-002",
+      manufacturer: "Healthcare Pharma",
+    },
+    {
+      id: "MED-004",
+      name: "Vitamin D3 1000IU",
+      code: "MED-002",
+      manufacturer: "Healthcare Pharma",
+    },
+    {
+      id: "MED-003",
+      name: "Vitamin D3 1000IU",
+      code: "MED-002",
+      manufacturer: "Healthcare Pharma",
+    },
+    {
+      id: "MED-009",
+      name: "Vitamin D3 1000IU",
+      code: "MED-002",
+      manufacturer: "Healthcare Pharma",
+    },
+  ];
 
   return (
     <tr className="border-y-1 hover:bg-gray-50 border-[#D3D7D8]">
@@ -201,9 +284,15 @@ export const ProductCard: React.FC<{
           >
             <Edit className="w-4 h-4" strokeWidth={1} />
           </button>
-          <button className="p-1 text-[#161D1F] hover:text-gray-700 ">
+
+          <button
+            onClick={handleManageRelationships}
+            className="p-1 text-[#161D1F] hover:text-gray-700"
+            title="Manage Product Relationships"
+          >
             <Link className="w-4 h-4" strokeWidth={1} />
           </button>
+
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="p-1 text-gray-500 hover:text-gray-700"
@@ -259,6 +348,16 @@ export const ProductCard: React.FC<{
             onUpdateProduct={handleUpdate}
             productToEdit={productToEdit}
             isEditMode={!!productToEdit}
+          />
+
+          <ProductRelationshipsModal
+            isOpen={isRelationshipsModalOpen}
+            onClose={() => setIsRelationshipsModalOpen(false)}
+            productName={product.name}
+            currentSubstitutes={currentSubstitutes}
+            currentSimilarProducts={currentSimilarProducts}
+            availableProducts={availableProducts}
+            onSaveChanges={handleRelationshipsUpdate}
           />
         </div>
       </td>

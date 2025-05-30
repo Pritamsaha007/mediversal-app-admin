@@ -63,9 +63,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <p>
             <span className=" text-[#161D1F] font-semibold text-[10px]">
               Description:
-            </span>{" "}
+            </span>
             <span className="text-[#161D1F] text-[10px]">
-              {product.description || "No description available."}
+              {product.description || "No1234 description available."}
             </span>
           </p>
           <p>

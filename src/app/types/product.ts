@@ -1,4 +1,22 @@
 export interface Product {
+  brand: string;
+  composition: string;
+  dosageForm: string;
+  strength: string;
+  packSize: string;
+  schedule: string;
+  taxRate: number;
+  hsnCode: string;
+  storageConditions: string;
+  shelfLife: number;
+  prescriptionRequired: boolean;
+  saftyDescription: string;
+  storageDescription: string;
+  createdAt: string;
+  similarCount: number;
+  description: string;
+  substitutesCount: number;
+  manufacturer: string;
   id: string;
   name: string;
   code: string;

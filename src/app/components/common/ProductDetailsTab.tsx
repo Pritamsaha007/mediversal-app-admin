@@ -34,7 +34,7 @@ export const ProductDetailsTab = ({
         </label>
         <textarea
           placeholder="Enter Safety Advice"
-          value={formData.description}
+          value={formData.saftyDescription}
           onChange={(e) => onInputChange("saftyDescription", e.target.value)}
           rows={4}
           className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none resize-none"
@@ -46,7 +46,7 @@ export const ProductDetailsTab = ({
         </label>
         <textarea
           placeholder="Enter Storage & Special Instructions"
-          value={formData.description}
+          value={formData.storageDescription}
           onChange={(e) => onInputChange("storageDescription", e.target.value)}
           rows={4}
           className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none resize-none"

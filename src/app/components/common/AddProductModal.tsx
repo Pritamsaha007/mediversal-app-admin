@@ -140,13 +140,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           </h2>
 
           <button
-            onClick={handleSubmit}
-            className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[10px] rounded-lg hover:bg-[#00729A]"
-          >
-            {isEditMode ? "Update Product" : "Add Product"}
-          </button>
-
-          <button
             onClick={onClose}
             className="text-[#161D1F] hover:text-gray-600"
           >
@@ -218,7 +211,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             onClick={handleSubmit}
             className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[10px] rounded-lg hover:bg-[#00729A]"
           >
-            Add Product
+            {isEditMode ? "Update Product" : "Add Product"}
           </button>
         </div>
       </div>
