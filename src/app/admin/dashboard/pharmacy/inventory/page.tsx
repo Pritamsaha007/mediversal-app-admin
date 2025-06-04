@@ -1,5 +1,5 @@
 "use client";
-import { InventoryCard } from "@/app/components/common/InventoryCard";
+import { InventoryCard } from "@/app/admin/dashboard/pharmacy/inventory/components/InventoryCard";
 import { inventoryItem, Product } from "@/app/types/product";
 import {
   ChevronDown,
@@ -11,6 +11,10 @@ import {
   Search,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import {
+  AddInventoryModal,
+  useAddInventoryModal,
+} from "./components/AddInventoryModal";
 
 export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,6 +26,7 @@ export default function InventoryPage() {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
+  const { isOpen, openModal, closeModal } = useAddInventoryModal();
 
   const [products, setProducts] = useState<inventoryItem[]>([
     {
@@ -271,6 +276,10 @@ export default function InventoryPage() {
       setSelectedItems([]);
     }
   };
+  const handleAddItem = (item: InventoryItem) => {
+    // Handle the new item - send to API, update state, etc.
+    console.log("New item:", item);
+  };
 
   const filteredProducts = getFilteredAndSortedProducts();
 
@@ -290,10 +299,18 @@ export default function InventoryPage() {
             <Printer className="w-4 h-4" />
             Print
           </button>
-          <button className="flex items-center gap-2 text-sm px-4 py-2 text-[12px] bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors">
+          <button
+            className="flex items-center gap-2 text-sm px-4 py-2 text-[12px] bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors"
+            onClick={openModal}
+          >
             <Plus className="w-4 h-4" />
             Add Inventory Item
           </button>
+          <AddInventoryModal
+            isOpen={isOpen}
+            onClose={closeModal}
+            onSubmit={handleAddItem}
+          />
         </div>
       </div>
 

@@ -7,7 +7,7 @@ import {
   TableCellsSplit,
   Pill,
 } from "lucide-react";
-import { inventoryItem } from "../../types/product";
+import { inventoryItem } from "../../../../../types/product";
 
 interface InventoryCardProps {
   inventoryItem: inventoryItem;
