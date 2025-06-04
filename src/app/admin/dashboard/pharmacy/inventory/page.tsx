@@ -2,6 +2,11 @@
 import { InventoryCard } from "@/app/admin/dashboard/pharmacy/inventory/components/InventoryCard";
 import { inventoryItem, Product } from "@/app/types/product";
 import {
+  AddInventoryModal,
+  useAddInventoryModal,
+  InventoryItem,
+} from "./components/AddInventoryModal";
+import {
   ChevronDown,
   Download,
   FileText,
@@ -11,10 +16,8 @@ import {
   Search,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import {
-  AddInventoryModal,
-  useAddInventoryModal,
-} from "./components/AddInventoryModal";
+import { ProductHistoryModal } from "./components/ProductHistoryModal";
+import { generateInventoryPDF } from "./components/PDFExportUtils";
 
 export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,7 +29,62 @@ export default function InventoryPage() {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
-  const { isOpen, openModal, closeModal } = useAddInventoryModal();
+  const { isOpen, mode, editItem, openAddModal, openEditModal, closeModal } =
+    useAddInventoryModal();
+
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [selectedProductHistory, setSelectedProductHistory] = useState<{
+    productName: string;
+    productId: string;
+    history: any[];
+  }>({
+    productName: "",
+    productId: "",
+    history: [],
+  });
+
+  const sampleHistory = [
+    {
+      id: "1",
+      timestamp: "2024-06-03T10:30:00Z",
+      action: "stock_increase",
+      field: "stock",
+      oldValue: 1000,
+      newValue: 1200,
+      user: "John Doe",
+      notes: "Stock replenishment from supplier",
+    },
+    {
+      id: "2",
+      timestamp: "2024-06-02T14:15:00Z",
+      action: "expiry_update",
+      field: "expiry_date",
+      oldValue: "12/02/2025",
+      newValue: "13/02/2025",
+      user: "Jane Smith",
+      notes: "Corrected expiry date after verification",
+    },
+    {
+      id: "3",
+      timestamp: "2024-06-01T09:45:00Z",
+      action: "stock_decrease",
+      field: "stock",
+      oldValue: 1050,
+      newValue: 1000,
+      user: "Mike Johnson",
+      notes: "Stock adjustment after inventory audit",
+    },
+    {
+      id: "4",
+      timestamp: "2024-05-31T16:20:00Z",
+      action: "status_change",
+      field: "status",
+      oldValue: "Inactive",
+      newValue: "Active",
+      user: "Sarah Wilson",
+      notes: "Reactivated after quality check completion",
+    },
+  ];
 
   const [products, setProducts] = useState<inventoryItem[]>([
     {
@@ -239,8 +297,21 @@ export default function InventoryPage() {
       case "view":
         alert(`Viewing details for: ${product?.name}`);
         break;
+      case "history":
+        if (product) {
+          setSelectedProductHistory({
+            productName: product.name,
+            productId: product.id,
+            history: sampleHistory, // In real app, fetch actual history for this product
+          });
+          setHistoryModalOpen(true);
+        }
+        break;
       case "edit":
-        alert(`Editing: ${product?.name}`);
+        if (product) {
+          const modalItem = convertToModalFormat(product);
+          openEditModal(modalItem);
+        }
         break;
       case "unfeature":
         setProducts((prev) =>
@@ -276,9 +347,61 @@ export default function InventoryPage() {
       setSelectedItems([]);
     }
   };
+  const convertToModalFormat = (item: inventoryItem): InventoryItem => ({
+    id: item.id,
+    productName: item.name,
+    batchNumber: item.batch_no,
+    expiryDate: item.expiry_date,
+    quantity: item.stock,
+    reorderLevel: 100, // Default value or get from your data if available
+    location: "Shelf A1", // Default value or get from your data if available
+    manufacturer: "GSK", // Default value or get from your data if available
+    category: item.category,
+  });
+
+  const convertFromModalFormat = (item: InventoryItem): inventoryItem => ({
+    id: item.id || Date.now().toString(),
+    name: item.productName,
+    batch_no: item.batchNumber,
+    code: generateCode(), // Generate a unique code
+    subcategory: "Pharma", // Default or map from category
+    category: item.category,
+    expiry_date: item.expiryDate,
+    stock: item.quantity,
+    status: "Active",
+  });
+
+  const generateCode = (): string => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let result = "";
+    for (let i = 0; i < 4; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+  console.log();
+
   const handleAddItem = (item: InventoryItem) => {
-    // Handle the new item - send to API, update state, etc.
-    console.log("New item:", item);
+    const newProduct = convertFromModalFormat(item);
+    setProducts((prev) => [...prev, newProduct]);
+    console.log("Added new item:", newProduct);
+  };
+  const handleEditItem = (item: InventoryItem) => {
+    const updatedProduct = convertFromModalFormat(item);
+    setProducts((prev) =>
+      prev.map((p) => (p.id === item.id ? updatedProduct : p))
+    );
+    console.log("Updated item:", updatedProduct);
+  };
+
+  const handleExportPDF = () => {
+    const currentFilters = {
+      searchTerm,
+      selectedCategory,
+      activeTab,
+    };
+
+    generateInventoryPDF(filteredProducts, currentFilters);
   };
 
   const filteredProducts = getFilteredAndSortedProducts();
@@ -301,7 +424,7 @@ export default function InventoryPage() {
           </button>
           <button
             className="flex items-center gap-2 text-sm px-4 py-2 text-[12px] bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors"
-            onClick={openModal}
+            onClick={openAddModal}
           >
             <Plus className="w-4 h-4" />
             Add Inventory Item
@@ -309,7 +432,9 @@ export default function InventoryPage() {
           <AddInventoryModal
             isOpen={isOpen}
             onClose={closeModal}
-            onSubmit={handleAddItem}
+            onSubmit={mode === "edit" ? handleEditItem : handleAddItem}
+            editItem={editItem}
+            mode={mode}
           />
         </div>
       </div>
@@ -382,7 +507,10 @@ export default function InventoryPage() {
           </div>
 
           <div className="relative">
-            <button className="flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50">
+            <button
+              onClick={handleExportPDF}
+              className="flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
+            >
               <Download className="w-4 h-4" />
               Export
             </button>
@@ -462,7 +590,7 @@ export default function InventoryPage() {
                   inventoryItem={product}
                   isSelected={selectedItems.includes(product.id)}
                   onSelect={(id, selected) => handleSelectItem(id, selected)}
-                  onView={(id) => handleProductAction("view", id)}
+                  onHistory={(id) => handleProductAction("history", id)}
                   onEdit={(id) => handleProductAction("edit", id)}
                   onUnfeature={(id) => handleProductAction("unfeature", id)}
                   onDeactivate={(id) => handleProductAction("deactivate", id)}
@@ -490,6 +618,13 @@ export default function InventoryPage() {
           </tbody>
         </table>
       </div>
+      <ProductHistoryModal
+        isOpen={historyModalOpen}
+        onClose={() => setHistoryModalOpen(false)}
+        productName={selectedProductHistory.productName}
+        productId={selectedProductHistory.productId}
+        history={selectedProductHistory.history}
+      />
     </div>
   );
 }
