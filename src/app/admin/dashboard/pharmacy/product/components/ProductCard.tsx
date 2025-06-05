@@ -4,14 +4,7 @@ import { ProductFormData } from "@/app/types/productForm.type";
 import { AddProductModal } from "./AddProductModal";
 import { ProductDetailModal } from "@/app/components/common/ProductDetailModal";
 import { ProductRelationshipsModal } from "@/app/components/common/ManageProductRelationshipsModal";
-import {
-  Eye,
-  Edit,
-  Link,
-  MoreVertical,
-  TableCellsSplit,
-  Pill,
-} from "lucide-react";
+import { Eye, Edit, Link, MoreVertical, Pill } from "lucide-react";
 // Define RelatedProduct interface for the relationships
 interface RelatedProduct {
   id: string;
