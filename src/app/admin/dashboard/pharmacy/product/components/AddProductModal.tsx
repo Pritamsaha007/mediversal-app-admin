@@ -4,10 +4,10 @@ import { X } from "lucide-react";
 import {
   AddProductModalProps,
   ProductFormData,
-} from "@/app/types/productForm.type";
-import { BasicInformationTab } from "@/app/components/common/BasicInformationTab";
-import { ProductDetailsTab } from "@/app/components/common/ProductDetailsTab";
-import { SettingsTab } from "@/app/components/common/SettingsTab";
+} from "../types/productForm.type";
+import { BasicInformationTab } from "./BasicInformationTab";
+import { ProductDetailsTab } from "./ProductDetailsTab";
+import { SettingsTab } from "./SettingsTab";
 
 export const AddProductModal: React.FC<AddProductModalProps> = ({
   isOpen,

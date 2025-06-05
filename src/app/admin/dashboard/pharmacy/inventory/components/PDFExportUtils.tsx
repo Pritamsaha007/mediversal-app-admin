@@ -1,4 +1,4 @@
-import { inventoryItem } from "@/app/types/product";
+import { inventoryItem } from "@/app/admin/dashboard/pharmacy/product/types/product";
 
 // PDF Export utility functions
 export const generateInventoryPDF = (
