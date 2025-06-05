@@ -54,50 +54,67 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
   return {
     id: apiProduct.productId.toString(),
     name: apiProduct.ProductName,
-    code: `MED-${apiProduct.productId}`, // Generate code since not provided
+    code: `MED-${apiProduct.productId}`,
     category: apiProduct.Type,
-    subcategory: apiProduct.Type, // Using Type as subcategory since specific subcategory not provided
-    brand: "", // Not provided in API
+    subcategory: apiProduct.Type,
+    brand: "",
     manufacturer: apiProduct.ManufacturerName,
     mrp: costPrice,
     sellingPrice: sellingPrice,
     discount: Math.round(calculatedDiscount),
     stock: apiProduct.AvailableInInventory,
     status: apiProduct.archivedProduct === 0 ? "Active" : "Inactive",
-    featured: false, // Not provided in API, defaulting to false
+    featured: false,
     description: apiProduct.ProductInformation,
     composition: apiProduct.Composition,
-    dosageForm: "", // Not provided in API
-    strength: "", // Not provided in API
-    packSize: "", // Not provided in API
-    schedule: "", // Not provided in API
+    dosageForm: "",
+    strength: "",
+    packSize: "",
+    schedule: "",
     taxRate: parseFloat(apiProduct.GST),
-    hsnCode: "", // Not provided in API
+    hsnCode: "",
     storageConditions: apiProduct.StorageInstructions,
-    shelfLife: 0, // Not provided in API
+    shelfLife: 0,
     prescriptionRequired: apiProduct.PrescriptionRequired === "Yes",
     saftyDescription: apiProduct.SafetyAdvices,
     storageDescription: apiProduct.StorageInstructions,
     createdAt: apiProduct.InventoryUpdated,
-    productImage: apiProduct.images.length > 0 ? apiProduct.images[0] : null,
-    // Parse substitutes and similar products count from strings
+    productImage:
+      apiProduct.images.length > 0 ? apiProduct.images[0] : undefined,
     substitutes: apiProduct.Substitutes.includes("Available") ? 1 : 0,
     similar: apiProduct.SimilarProducts.includes("Available") ? 1 : 0,
+    substitutesCount: 0, // <-- Add placeholder or actual value if available
+    similarCount: 0, // <-- Add placeholder or actual value if available
   };
 };
 
 export const productService = {
-  // Get all products
-  async getAllProducts(): Promise<Product[]> {
+  // Add to productService.ts
+  async deleteProduct(id: string): Promise<void> {
+    try {
+      await apiClient.delete(`/app/api/Product/deleteProduct/${id}`);
+    } catch (error) {
+      console.error(`Error deleting product ${id}:`, error);
+      throw new Error(`Failed to delete product ${id}`);
+    }
+  },
+
+  async getAllProducts(
+    page: number = 1,
+    pageSize: number = 5
+  ): Promise<{ products: Product[]; totalCount: number }> {
     try {
       const response = await apiClient.get("/app/api/Product/getProducts");
 
-      if (Array.isArray(response.data)) {
-        return response.data.map(mapApiResponseToProduct);
-      } else {
-        console.error("API response is not an array:", response.data);
-        return [];
-      }
+      // Handle both response formats:
+      const productsArray = Array.isArray(response.data)
+        ? response.data
+        : response.data.products || [];
+
+      return {
+        products: productsArray.map(mapApiResponseToProduct),
+        totalCount: response.data.totalCount || productsArray.length,
+      };
     } catch (error) {
       console.error("Error fetching products:", error);
       throw new Error("Failed to fetch products");

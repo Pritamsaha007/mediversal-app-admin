@@ -16,6 +16,7 @@ import { ProductCard } from "./components/ProductCard";
 import { StatsCard } from "./components/StatsCard";
 import { productService } from "./services/getProductService";
 import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
+import { ProductFormData } from "./types/productForm.type";
 
 const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,8 +33,12 @@ const ProductCatalog: React.FC = () => {
 
   const refreshProducts = async () => {
     try {
-      const fetchedProducts = await productService.getAllProducts();
-      setProducts(fetchedProducts);
+      const { products, totalCount } = await productService.getAllProducts(
+        pagination.currentPage,
+        pagination.pageSize
+      );
+      setProducts(products);
+      setPagination((prev) => ({ ...prev, totalItems: totalCount }));
       setError(null);
     } catch (err) {
       setError("Failed to refresh products");
@@ -41,12 +46,17 @@ const ProductCatalog: React.FC = () => {
     }
   };
 
-  const handleAddProduct = async (productData: any) => {
+  // Change in ProductCatalog.tsx
+  const handleAddProduct = async (productData: ProductFormData) => {
     console.log("New product added:", productData);
     setIsModalOpen(false);
-    // Refresh products after adding
     await refreshProducts();
   };
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    pageSize: 10,
+    totalItems: 0,
+  });
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
@@ -56,8 +66,12 @@ const ProductCatalog: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const fetchedProducts = await productService.getAllProducts();
-        setProducts(fetchedProducts);
+        const { products, totalCount } = await productService.getAllProducts(
+          pagination.currentPage,
+          pagination.pageSize
+        );
+        setProducts(products);
+        setPagination((prev) => ({ ...prev, totalItems: totalCount }));
       } catch (err) {
         setError("Failed to load products. Please try again.");
         console.error("Error fetching products:", err);
@@ -93,12 +107,10 @@ const ProductCatalog: React.FC = () => {
   const handleProductAction = async (action: string, id: string) => {
     console.log(`${action} product with id: ${id}`);
 
-    // Add actual API calls here based on action
     try {
       switch (action) {
         case "delete":
-          // Add your delete API call here
-          // await productService.deleteProduct(id);
+          await productService.deleteProduct(id);
           break;
         case "deactivate":
           // Add your deactivate API call here
@@ -114,6 +126,7 @@ const ProductCatalog: React.FC = () => {
       await refreshProducts();
     } catch (error) {
       console.error(`Error ${action} product:`, error);
+      setError(`Failed to ${action} product. Please try again.`);
     }
   };
 
@@ -500,6 +513,47 @@ const ProductCatalog: React.FC = () => {
           onAddProduct={handleAddProduct}
         />
       </div>
+      {!loading && !error && filteredProducts.length > 0 && (
+        <div className="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200">
+          <div className="text-sm text-gray-600">
+            Showing {(pagination.currentPage - 1) * pagination.pageSize + 1} to{" "}
+            {Math.min(
+              pagination.currentPage * pagination.pageSize,
+              pagination.totalItems
+            )}{" "}
+            of {pagination.totalItems} products
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() =>
+                setPagination((prev) => ({
+                  ...prev,
+                  currentPage: Math.max(prev.currentPage - 1, 1),
+                }))
+              }
+              disabled={pagination.currentPage === 1}
+              className="px-3 py-1 border text-black border-red-500 rounded-md text-sm disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() =>
+                setPagination((prev) => ({
+                  ...prev,
+                  currentPage: prev.currentPage + 1,
+                }))
+              }
+              disabled={
+                pagination.currentPage * pagination.pageSize >=
+                pagination.totalItems
+              }
+              className="px-3 py-1 border border-red-500 text-black rounded-md text-sm disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
