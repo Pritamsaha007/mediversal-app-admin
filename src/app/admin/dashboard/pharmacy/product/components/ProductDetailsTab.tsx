@@ -1,5 +1,5 @@
 import { ChevronDown } from "lucide-react";
-import { dosageForms, ProductFormData } from "@/app/types/productForm.type";
+import { dosageForms, ProductFormData } from "../types/productForm.type";
 
 interface ProductDetailsTabProps {
   formData: ProductFormData;

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Edit, History, LucideTrash2 } from "lucide-react";
-import { inventoryItem } from "../../../../../types/product";
+import { inventoryItem } from "../../product/types/product";
 
 interface InventoryCardProps {
   inventoryItem: inventoryItem;

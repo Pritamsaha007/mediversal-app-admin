@@ -2,7 +2,7 @@ import {
   ProductFormData,
   schedules,
   storageConditions,
-} from "@/app/types/productForm.type";
+} from "@/app/admin/dashboard/pharmacy/product/types/productForm.type";
 import { ChevronDown } from "lucide-react";
 
 interface SettingsTabProps {

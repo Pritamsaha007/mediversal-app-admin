@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Product } from "@/app/types/product";
-import { ProductFormData } from "@/app/types/productForm.type";
+import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
+import { ProductFormData } from "../types/productForm.type";
 import { AddProductModal } from "./AddProductModal";
-import { ProductDetailModal } from "@/app/components/common/ProductDetailModal";
-import { ProductRelationshipsModal } from "@/app/components/common/ManageProductRelationshipsModal";
+import { ProductDetailModal } from "./ProductDetailModal";
+import { ProductRelationshipsModal } from "./ManageProductRelationshipsModal";
 import { Eye, Edit, Link, MoreVertical, Pill } from "lucide-react";
 // Define RelatedProduct interface for the relationships
 interface RelatedProduct {
