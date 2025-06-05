@@ -21,7 +21,7 @@ export async function adminLogin(
 ): Promise<AdminLoginResponse> {
   console.log("API_BASE_URL:", API_BASE_URL);
 
-  const response = await fetch(`${API_BASE_URL}/api/admin/auth/login`, {
+  const response = await fetch(`${API_BASE_URL}/app/admin/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
