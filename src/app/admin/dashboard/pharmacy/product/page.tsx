@@ -10,7 +10,7 @@ import {
   ListOrdered,
   Projector,
 } from "lucide-react";
-import { ProductCard } from "@/app/components/common/ProductCard";
+import { ProductCard } from "@/app/admin/dashboard/pharmacy/product/components/ProductCard";
 import { StatsCard } from "@/app/components/common/StatsCard";
 import {
   products,
@@ -18,7 +18,7 @@ import {
   sortOptions,
   tabs,
 } from "@/app/data/productCatalogData";
-import { AddProductModal } from "@/app/components/common/AddProductModal";
+import { AddProductModal } from "@/app/admin/dashboard/pharmacy/product/components/AddProductModal";
 
 const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");

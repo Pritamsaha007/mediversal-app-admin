@@ -8,16 +8,16 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ProtectedRoute>
-      <div className="flex h-screen">
-        <Sidebar />
-        <div className="flex flex-col flex-1 overflow-hidden">
-          <Header />
-          <main className="flex-1 overflow-y-auto p-4 bg-[#F7F7F7]">
-            {children}
-          </main>
-        </div>
+    // <ProtectedRoute>
+    <div className="flex h-screen">
+      <Sidebar />
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-4 bg-[#F7F7F7]">
+          {children}
+        </main>
       </div>
-    </ProtectedRoute>
+    </div>
+    // </ProtectedRoute>
   );
 }

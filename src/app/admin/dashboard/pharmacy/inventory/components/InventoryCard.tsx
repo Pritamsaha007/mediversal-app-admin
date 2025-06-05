@@ -1,17 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  Eye,
-  Edit,
-  Link,
-  MoreVertical,
-  TableCellsSplit,
-  Pill,
-} from "lucide-react";
-import { inventoryItem } from "../../types/product";
+import { Edit, History, LucideTrash2 } from "lucide-react";
+import { inventoryItem } from "../../../../../types/product";
 
 interface InventoryCardProps {
   inventoryItem: inventoryItem;
-  onView: (id: string) => void;
+  onHistory: (id: string) => void;
   onEdit: (id: string) => void;
   onUnfeature: (id: string) => void;
   onDeactivate: (id: string) => void;
@@ -22,10 +15,8 @@ interface InventoryCardProps {
 
 export const InventoryCard: React.FC<InventoryCardProps> = ({
   inventoryItem,
-  onView,
+  onHistory,
   onEdit,
-  onUnfeature,
-  onDeactivate,
   onDelete,
   isSelected,
   onSelect,
@@ -54,8 +45,7 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
     if (stock <= 5)
       return {
         label: `Low Stock (${stock})`,
-        color:
-          "bg-orange-[#FFF2E5] text-[#FF8000] border border-[#FF8000] text-[8px]",
+        color: "bg-orange-[#FFF2E5] text-[#FF8000] text-[8px]",
       };
     return { label: stock.toString(), color: "" };
   };
@@ -73,7 +63,7 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
           type="checkbox"
           checked={isSelected}
           onChange={(e) => onSelect(inventoryItem.id, e.target.checked)}
-          className="w-4 h-4 border-gray-300 rounded"
+          className="h-4 w-4 text-[#0088B1] border-gray-300 rounded focus:ring-[#0088B1]"
         />
       </td>
       <td className="px-4 py-4">
@@ -142,10 +132,10 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
       <td className="px-4 py-4">
         <div className="flex items-center gap-2 relative" ref={dropdownRef}>
           <button
-            onClick={() => onView(inventoryItem.id)}
+            onClick={() => onHistory(inventoryItem.id)}
             className="p-1 text-[#161D1F] hover:text-gray-700"
           >
-            <Eye className="w-4 h-4" strokeWidth={1} />
+            <History className="w-4 h-4" strokeWidth={1} />
           </button>
           <button
             onClick={() => onEdit(inventoryItem.id)}
@@ -153,17 +143,20 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
           >
             <Edit className="w-4 h-4" strokeWidth={1} />
           </button>
-          <button className="p-1 text-[#161D1F] hover:text-gray-700 ">
+          {/* <button className="p-1 text-[#161D1F] hover:text-gray-700 ">
             <Link className="w-4 h-4" strokeWidth={1} />
-          </button>
+          </button> */}
           <button
-            onClick={() => setDropdownOpen(!dropdownOpen)}
+            onClick={() => {
+              setDropdownOpen(false);
+              onDelete(inventoryItem.id);
+            }}
             className="p-1 text-gray-500 hover:text-gray-700"
           >
-            <MoreVertical className="w-4 h-4 text-[#161D1F]" strokeWidth={1} />
+            <LucideTrash2 className="w-4 h-4 text-red-500" strokeWidth={2} />
           </button>
 
-          {dropdownOpen && (
+          {/* {dropdownOpen && (
             <div className="absolute right-0 top-8 z-20 w-36 bg-white border border-gray-200 rounded-2xl shadow-2xl">
               <button
                 onClick={() => {
@@ -193,7 +186,7 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
                 Delete
               </button>
             </div>
-          )}
+          )} */}
         </div>
       </td>
     </tr>
