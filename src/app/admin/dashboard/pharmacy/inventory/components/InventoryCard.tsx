@@ -63,7 +63,7 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
           type="checkbox"
           checked={isSelected}
           onChange={(e) => onSelect(inventoryItem.id, e.target.checked)}
-          className="w-4 h-4 border-gray-300 rounded"
+          className="h-4 w-4 text-[#0088B1] border-gray-300 rounded focus:ring-[#0088B1]"
         />
       </td>
       <td className="px-4 py-4">

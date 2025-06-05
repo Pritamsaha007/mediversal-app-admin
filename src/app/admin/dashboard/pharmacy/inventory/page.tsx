@@ -1,6 +1,4 @@
 "use client";
-import { InventoryCard } from "@/app/admin/dashboard/pharmacy/inventory/components/InventoryCard";
-import { inventoryItem, Product } from "@/app/types/product";
 import {
   AddInventoryModal,
   useAddInventoryModal,
@@ -18,6 +16,10 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { ProductHistoryModal } from "./components/ProductHistoryModal";
 import { generateInventoryPDF } from "./components/PDFExportUtils";
+import { inventoryItem } from "./types/inventory";
+import { categories, sortOptions, tabs } from "./types/inventory";
+import { initialInventoryData, sampleHistory } from "./data/InventoryData";
+import { InventoryCard } from "./components/InventoryCard";
 
 export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -31,8 +33,11 @@ export default function InventoryPage() {
   const sortDropdownRef = useRef<HTMLDivElement>(null);
   const { isOpen, mode, editItem, openAddModal, openEditModal, closeModal } =
     useAddInventoryModal();
-
+  const [products, setProducts] =
+    useState<inventoryItem[]>(initialInventoryData);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [bulkActionsOpen, setBulkActionsOpen] = useState(false);
+  const bulkActionsRef = useRef<HTMLDivElement>(null);
   const [selectedProductHistory, setSelectedProductHistory] = useState<{
     productName: string;
     productId: string;
@@ -43,149 +48,38 @@ export default function InventoryPage() {
     history: [],
   });
 
-  const sampleHistory = [
-    {
-      id: "1",
-      timestamp: "2024-06-03T10:30:00Z",
-      action: "stock_increase",
-      field: "stock",
-      oldValue: 1000,
-      newValue: 1200,
-      user: "John Doe",
-      notes: "Stock replenishment from supplier",
-    },
-    {
-      id: "2",
-      timestamp: "2024-06-02T14:15:00Z",
-      action: "expiry_update",
-      field: "expiry_date",
-      oldValue: "12/02/2025",
-      newValue: "13/02/2025",
-      user: "Jane Smith",
-      notes: "Corrected expiry date after verification",
-    },
-    {
-      id: "3",
-      timestamp: "2024-06-01T09:45:00Z",
-      action: "stock_decrease",
-      field: "stock",
-      oldValue: 1050,
-      newValue: 1000,
-      user: "Mike Johnson",
-      notes: "Stock adjustment after inventory audit",
-    },
-    {
-      id: "4",
-      timestamp: "2024-05-31T16:20:00Z",
-      action: "status_change",
-      field: "status",
-      oldValue: "Inactive",
-      newValue: "Active",
-      user: "Sarah Wilson",
-      notes: "Reactivated after quality check completion",
-    },
+  const bulkActions = [
+    { label: "Delete Selected", value: "delete", icon: "🗑️" },
+    { label: "Export Selected", value: "export", icon: "📤" },
+    { label: "Print Labels", value: "print_labels", icon: "🏷️" },
   ];
 
-  const [products, setProducts] = useState<inventoryItem[]>([
-    {
-      id: "1",
-      name: "Amoxicillin 250mg",
-      batch_no: "BATCH-2002",
-      code: "ABCD",
-      subcategory: "Pharma",
-      category: "Antibiotic",
-      expiry_date: "13/02/2025",
-      stock: 1200,
-      status: "Active",
-    },
-    {
-      id: "2",
-      name: "Ibuprofen 200mg",
-      batch_no: "BATCH-2003",
-      code: "EFGH",
-      subcategory: "Pharma",
-      category: "Analgesic",
-      expiry_date: "15/03/2025",
-      stock: 800,
-      status: "Active",
-    },
-    {
-      id: "3",
-      name: "Vitamin D3 1000IU",
-      batch_no: "BATCH-2004",
-      code: "IJKL",
-      subcategory: "Antihypertensive",
-      category: "Antihypertensive",
-      expiry_date: "20/04/2025",
-      stock: 8,
-      status: "Active",
-    },
-    {
-      id: "4",
-      name: "Digital Thermometer",
-      batch_no: "BATCH-2005",
-      code: "MNOP",
-      subcategory: "Diagnostic",
-      category: "Proton Pump Inhibitor",
-      expiry_date: "10/12/2026",
-      stock: 0,
-      status: "Inactive",
-    },
-    {
-      id: "5",
-      name: "Hand Sanitizer 250ml",
-      batch_no: "BATCH-2006",
-      code: "QRST",
-      subcategory: "Hygiene",
-      category: "Antidepressant",
-      expiry_date: "01/01/2024",
-      stock: 300,
-      status: "Active",
-    },
-    {
-      id: "6",
-      name: "Paracetamol 500mg",
-      batch_no: "BATCH-2007",
-      code: "UVWX",
-      subcategory: "Pharma",
-      category: "Diuretic",
-      expiry_date: "30/06/2025",
-      stock: 5,
-      status: "Active",
-    },
-  ]);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(event.target as Node)
+      ) {
+        setCategoryDropdownOpen(false);
+      }
+      if (
+        sortDropdownRef.current &&
+        !sortDropdownRef.current.contains(event.target as Node)
+      ) {
+        setSortDropdownOpen(false);
+      }
+      // Add this for bulk actions dropdown
+      if (
+        bulkActionsRef.current &&
+        !bulkActionsRef.current.contains(event.target as Node)
+      ) {
+        setBulkActionsOpen(false);
+      }
+    };
 
-  const categories = [
-    "All Categories",
-    "Antibiotic",
-    "Analgesic",
-    "Antihypertensive",
-    "Statin",
-    "Hormone",
-    "Proton Pump Inhibitor",
-    "Diuretic",
-    "Antidepressant",
-    "Calcium Channel Blocker",
-  ];
-
-  const sortOptions = [
-    "Product Name (A-Z)",
-    "Product Name (Z-A)",
-    "Selling Price - Low to High",
-    "Selling Price - High to Low",
-    "Expiry Date (Earliest)",
-    "Expiry Date (Latest)",
-    "By Stock",
-    "Discount",
-  ];
-
-  const tabs = [
-    "All Products",
-    "In Stock",
-    "Low Stock",
-    "Out of Stock",
-    "Expired",
-  ];
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -379,8 +273,6 @@ export default function InventoryPage() {
     }
     return result;
   };
-  console.log();
-
   const handleAddItem = (item: InventoryItem) => {
     const newProduct = convertFromModalFormat(item);
     setProducts((prev) => [...prev, newProduct]);
@@ -402,6 +294,37 @@ export default function InventoryPage() {
     };
 
     generateInventoryPDF(filteredProducts, currentFilters);
+  };
+  // Add this function after your existing handlers
+  const handleBulkAction = (action: string) => {
+    switch (action) {
+      case "delete":
+        if (
+          confirm(
+            `Are you sure you want to delete ${selectedItems.length} selected items?`
+          )
+        ) {
+          setProducts((prev) =>
+            prev.filter((p) => !selectedItems.includes(p.id))
+          );
+          setSelectedItems([]);
+        }
+        break;
+      case "export":
+        const selectedProducts = products.filter((p) =>
+          selectedItems.includes(p.id)
+        );
+        generateInventoryPDF(selectedProducts, {
+          searchTerm: "Selected Items",
+          selectedCategory: "All Categories",
+          activeTab: "Selected",
+        });
+        break;
+      case "print_labels":
+        alert(`Printing labels for ${selectedItems.length} selected items`);
+        break;
+    }
+    setBulkActionsOpen(false);
   };
 
   const filteredProducts = getFilteredAndSortedProducts();
@@ -429,16 +352,8 @@ export default function InventoryPage() {
             <Plus className="w-4 h-4" />
             Add Inventory Item
           </button>
-          <AddInventoryModal
-            isOpen={isOpen}
-            onClose={closeModal}
-            onSubmit={mode === "edit" ? handleEditItem : handleAddItem}
-            editItem={editItem}
-            mode={mode}
-          />
         </div>
       </div>
-
       {/* Search and Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-4">
         <div className="flex-1 relative">
@@ -517,21 +432,49 @@ export default function InventoryPage() {
           </div>
         </div>
       </div>
+      <div className="flex justify-between items-center gap-1 mb-4">
+        <div className="flex gap-1 bg-[#F8F8F8] rounded-lg">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 rounded-lg text-[10px] font-medium transition-colors ${
+                activeTab === tab
+                  ? "bg-[#0088B1] text-[#F8F8F8]"
+                  : "text-[#161D1F] hover:bg-[#E8F4F7] hover:text-[#0088B1]"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
-      <div className="flex gap-1 mb-4 bg-[#F8F8F8] rounded-lg">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-[10px] font-medium transition-colors ${
-              activeTab === tab
-                ? "bg-[#0088B1] text-[#F8F8F8]"
-                : "text-[#161D1F] hover:bg-[#E8F4F7] hover:text-[#0088B1]"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+        {/* Bulk Actions Dropdown - only show when items are selected */}
+        {selectedItems.length > 0 && (
+          <div className="relative" ref={bulkActionsRef}>
+            <button
+              onClick={() => setBulkActionsOpen(!bulkActionsOpen)}
+              className="flex items-center gap-2 px-4 py-2 border border-[#899193] text-[#899193] rounded-lg hover:bg-[#F9F9F9] text-[10px] font-medium transition-colors"
+            >
+              Actions ({selectedItems.length})
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            {bulkActionsOpen && (
+              <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
+                {bulkActions.map((action) => (
+                  <button
+                    key={action.value}
+                    onClick={() => handleBulkAction(action.value)}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
+                  >
+                    <span>{action.icon}</span>
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <div className="bg-white rounded-tl rounded-tr border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
@@ -549,16 +492,19 @@ export default function InventoryPage() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <input
-                  type="checkbox"
-                  checked={
-                    filteredProducts.length > 0 &&
-                    selectedItems.length === filteredProducts.length
-                  }
-                  onChange={(e) => handleSelectAll(e.target.checked)}
-                  className="rounded border-gray-300 text-[#0088B1] focus:ring-[#0088B1]"
-                />
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={
+                      filteredProducts.length > 0 &&
+                      selectedItems.length === filteredProducts.length
+                    }
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="h-4 w-4 text-[#0088B1] border-gray-300 rounded focus:ring-[#0088B1]"
+                  />
+                </div>
               </th>
+
               <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 tracking-wider">
                 Product Name
               </th>
@@ -624,6 +570,13 @@ export default function InventoryPage() {
         productName={selectedProductHistory.productName}
         productId={selectedProductHistory.productId}
         history={selectedProductHistory.history}
+      />
+      <AddInventoryModal
+        isOpen={isOpen}
+        onClose={closeModal}
+        onSubmit={mode === "edit" ? handleEditItem : handleAddItem}
+        editItem={editItem}
+        mode={mode}
       />
     </div>
   );
