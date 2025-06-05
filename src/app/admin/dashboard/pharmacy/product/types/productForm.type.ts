@@ -21,6 +21,7 @@ export interface ProductFormData {
   dosageForm: string;
   strength: string;
   packSize: string;
+  productImage: File | null;
 
   // Settings
   schedule: string;

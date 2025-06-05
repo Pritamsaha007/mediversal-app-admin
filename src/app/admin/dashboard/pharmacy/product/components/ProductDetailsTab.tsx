@@ -1,11 +1,14 @@
 import { ChevronDown } from "lucide-react";
 import { dosageForms, ProductFormData } from "../types/productForm.type";
+import { useState } from "react";
 
 interface ProductDetailsTabProps {
   formData: ProductFormData;
   onInputChange: (field: keyof ProductFormData, value: any) => void;
   dosageDropdownOpen: boolean;
   setDosageDropdownOpen: (open: boolean) => void;
+  selectedImage: File | null;
+  onImageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export const ProductDetailsTab = ({
@@ -13,9 +16,27 @@ export const ProductDetailsTab = ({
   onInputChange,
   dosageDropdownOpen,
   setDosageDropdownOpen,
+  selectedImage,
+  onImageChange,
 }: ProductDetailsTabProps) => {
   return (
     <div className="space-y-4">
+      {/* Upload Photo Section */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2">Product Image</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={onImageChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        {selectedImage && (
+          <p className="text-sm text-gray-600 mt-1">
+            Selected: {selectedImage.name}
+          </p>
+        )}
+      </div>
+
       <div>
         <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
           Description

@@ -5,6 +5,8 @@ import { AddProductModal } from "./AddProductModal";
 import { ProductDetailModal } from "./ProductDetailModal";
 import { ProductRelationshipsModal } from "./ManageProductRelationshipsModal";
 import { Eye, Edit, Link, MoreVertical, Pill } from "lucide-react";
+import { productService } from "../services/getProductService";
+
 // Define RelatedProduct interface for the relationships
 interface RelatedProduct {
   id: string;
@@ -53,6 +55,9 @@ export const ProductCard: React.FC<{
   const [productToEdit, setProductToEdit] = useState<ProductFormData | null>(
     null
   );
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -80,6 +85,24 @@ export const ProductCard: React.FC<{
       };
     return { label: stock.toString(), color: "" };
   };
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const fetchedProducts = await productService.getAllProducts();
+        setProducts(fetchedProducts);
+        setError(null);
+      } catch (err) {
+        setError("Failed to load products");
+        console.error("Error fetching products:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const stockStatus = getStockStatus(product.stock);
 
@@ -111,6 +134,7 @@ export const ProductCard: React.FC<{
       saftyDescription: product.saftyDescription || "",
       storageDescription: product.storageDescription || "",
       createdAt: product.createdAt || new Date().toISOString(),
+      productImage: product.productImage || null,
     };
 
     setProductToEdit(productFormData);
@@ -125,13 +149,15 @@ export const ProductCard: React.FC<{
     throw new Error("Function not implemented.");
   }
 
-  function handleUpdate(product: ProductFormData): void {
+  const handleUpdate = async (product: ProductFormData): Promise<void> => {
     if (product.id) {
-      onEdit(product.id);
+      await onEdit(product.id);
+      // Refresh data after update
+      await refreshProducts();
     } else {
       console.error("Product id is undefined");
     }
-  }
+  };
 
   const handleRelationshipsUpdate = (data: {
     substitutes: RelatedProduct[];
@@ -142,54 +168,120 @@ export const ProductCard: React.FC<{
     }
   };
 
-  // Mock current relationships data - you'll need to get this from your actual data source
-  const currentSubstitutes: RelatedProduct[] = [
-    {
-      id: "MED-002",
-      name: "Amoxicillin 250mg",
-      code: "MED-002",
-      manufacturer: "Healthcare Pharma",
-    },
-    {
-      id: "MED-003",
-      name: "Amoxicillin 500mg",
-      code: "MED-003",
-      manufacturer: "Healthcare Pharma",
-    },
-    {
-      id: "MED-004",
-      name: "Ciprofloxacin 500mg",
-      code: "MED-004",
-      manufacturer: "Pharma Solutions",
-    },
-  ];
+  //   const currentSubstitutes: RelatedProduct[] = product.substitutes > 0 ?
+  //   availableProducts.filter(p =>
+  //     p.id !== product.id &&
+  //     // Add your logic here to determine substitutes
+  //     p.manufacturer === product.manufacturer
+  //   ).slice(0, product.substitutes) : [];
 
-  const currentSimilarProducts: RelatedProduct[] = [
-    {
-      id: "MED-002",
-      name: "Vitamin D3 1000IU",
-      code: "MED-002",
-      manufacturer: "Healthcare Pharma",
-    },
-    {
-      id: "MED-004",
-      name: "Vitamin D3 1000IU",
-      code: "MED-002",
-      manufacturer: "Healthcare Pharma",
-    },
-    {
-      id: "MED-003",
-      name: "Vitamin D3 1000IU",
-      code: "MED-002",
-      manufacturer: "Healthcare Pharma",
-    },
-    {
-      id: "MED-009",
-      name: "Vitamin D3 1000IU",
-      code: "MED-002",
-      manufacturer: "Healthcare Pharma",
-    },
-  ];
+  // const currentSimilarProducts: RelatedProduct[] = product.similar > 0 ?
+  //   availableProducts.filter(p =>
+  //     p.id !== product.id &&
+  //     // Add your logic here to determine similar products
+  //     p.name.toLowerCase().includes(product.category.toLowerCase())
+  //   ).slice(0, product.similar) : [];
+
+  // Mock current relationships data - you'll need to get this from your actual data source
+  // const currentSubstitutes: RelatedProduct[] = [
+  //   {
+  //     id: "MED-002",
+  //     name: "Amoxicillin 250mg",
+  //     code: "MED-002",
+  //     manufacturer: "Healthcare Pharma",
+  //   },
+  //   {
+  //     id: "MED-003",
+  //     name: "Amoxicillin 500mg",
+  //     code: "MED-003",
+  //     manufacturer: "Healthcare Pharma",
+  //   },
+  //   {
+  //     id: "MED-004",
+  //     name: "Ciprofloxacin 500mg",
+  //     code: "MED-004",
+  //     manufacturer: "Pharma Solutions",
+  //   },
+  // ];
+
+  // const currentSimilarProducts: RelatedProduct[] = [
+  //   {
+  //     id: "MED-002",
+  //     name: "Vitamin D3 1000IU",
+  //     code: "MED-002",
+  //     manufacturer: "Healthcare Pharma",
+  //   },
+  //   {
+  //     id: "MED-004",
+  //     name: "Vitamin D3 1000IU",
+  //     code: "MED-002",
+  //     manufacturer: "Healthcare Pharma",
+  //   },
+  //   {
+  //     id: "MED-003",
+  //     name: "Vitamin D3 1000IU",
+  //     code: "MED-002",
+  //     manufacturer: "Healthcare Pharma",
+  //   },
+  //   {
+  //     id: "MED-009",
+  //     name: "Vitamin D3 1000IU",
+  //     code: "MED-002",
+  //     manufacturer: "Healthcare Pharma",
+  //   },
+  // ];
+
+  if (loading) {
+    return (
+      <tr className="border-y-1 border-[#D3D7D8]">
+        <td colSpan={9} className="px-4 py-8 text-center">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="ml-2 text-gray-600">Loading products...</span>
+          </div>
+        </td>
+      </tr>
+    );
+  }
+
+  if (error) {
+    return (
+      <tr className="border-y-1 border-[#D3D7D8]">
+        <td colSpan={9} className="px-4 py-8 text-center text-red-600">
+          {error}
+          <button
+            onClick={() => window.location.reload()}
+            className="ml-2 text-blue-600 underline"
+          >
+            Retry
+          </button>
+        </td>
+      </tr>
+    );
+  }
+
+  {
+    product.productImage && (
+      <img
+        src={product.productImage}
+        alt={product.name}
+        className="w-12 h-12 object-cover rounded"
+        onError={(e) => {
+          // Handle image load error
+          e.currentTarget.style.display = "none";
+        }}
+      />
+    );
+  }
+
+  const refreshProducts = async () => {
+    try {
+      const fetchedProducts = await productService.getAllProducts();
+      setProducts(fetchedProducts);
+    } catch (err) {
+      console.error("Error refreshing products:", err);
+    }
+  };
 
   return (
     <tr className="border-y-1 hover:bg-gray-50 border-[#D3D7D8]">
@@ -349,7 +441,7 @@ export const ProductCard: React.FC<{
             isEditMode={!!productToEdit}
           />
 
-          <ProductRelationshipsModal
+          {/* <ProductRelationshipsModal
             isOpen={isRelationshipsModalOpen}
             onClose={() => setIsRelationshipsModalOpen(false)}
             productName={product.name}
@@ -357,7 +449,7 @@ export const ProductCard: React.FC<{
             currentSimilarProducts={currentSimilarProducts}
             availableProducts={availableProducts}
             onSaveChanges={handleRelationshipsUpdate}
-          />
+          /> */}
         </div>
       </td>
     </tr>

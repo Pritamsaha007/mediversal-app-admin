@@ -8,6 +8,7 @@ import {
 import { BasicInformationTab } from "./BasicInformationTab";
 import { ProductDetailsTab } from "./ProductDetailsTab";
 import { SettingsTab } from "./SettingsTab";
+import { addProductAPI } from "../services/productService";
 
 export const AddProductModal: React.FC<AddProductModalProps> = ({
   isOpen,
@@ -23,6 +24,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   const [scheduleDropdownOpen, setScheduleDropdownOpen] = useState(false);
   const [storageDropdownOpen, setStorageDropdownOpen] = useState(false);
   const [tabAnimationKey, setTabAnimationKey] = useState(0);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
 
   useEffect(() => {
     if (isEditMode && productToEdit) {
@@ -55,6 +57,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     activeProduct: true,
     saftyDescription: "",
     storageDescription: "",
+    productImage: null,
   });
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
@@ -62,6 +65,13 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       ...prev,
       [field]: value,
     }));
+  };
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      handleInputChange("productImage", file);
+    }
   };
 
   const handleReset = () => {
@@ -90,39 +100,50 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       activeProduct: true,
       saftyDescription: "",
       storageDescription: "",
+      productImage: null,
     });
+    setSelectedImage(null);
   };
 
-  const handleSubmit = () => {
-    const productJSON = {
-      ...formData,
-      id:
-        isEditMode && productToEdit?.id
-          ? productToEdit.id
-          : Date.now().toString(),
-      createdAt:
-        isEditMode && productToEdit?.createdAt
-          ? productToEdit.createdAt
-          : new Date().toISOString(),
-      discount:
-        formData.mrp > 0
-          ? Math.round(
-              ((formData.mrp - formData.sellingPrice) / formData.mrp) * 100
-            )
-          : 0,
-      status: formData.activeProduct ? "Active" : "Inactive",
-    };
+  const handleSubmit = async () => {
+    try {
+      if (isEditMode && onUpdateProduct) {
+        // Handle edit mode as before
+        const productJSON = {
+          ...formData,
+          id: productToEdit?.id,
+          createdAt: productToEdit?.createdAt,
+          discount:
+            formData.mrp > 0
+              ? Math.round(
+                  ((formData.mrp - formData.sellingPrice) / formData.mrp) * 100
+                )
+              : 0,
+          status: formData.activeProduct ? "Active" : "Inactive",
+        };
+        onUpdateProduct(productJSON);
+      } else {
+        // Call API for adding new product with image
+        const result = await addProductAPI(
+          formData,
+          selectedImage || undefined
+        );
+        console.log("Product added successfully:", result);
 
-    console.log("Product JSON:", JSON.stringify(productJSON, null, 2));
+        // Show success message (you can customize this)
+        alert("Product added successfully!");
 
-    if (isEditMode && onUpdateProduct) {
-      onUpdateProduct(productJSON);
-    } else {
-      onAddProduct(productJSON);
+        // Call the parent callback if needed
+        onAddProduct(result);
+      }
+
+      handleReset();
+      setSelectedImage(null); // Reset image selection
+      onClose();
+    } catch (error: any) {
+      console.error("Error submitting product:", error);
+      alert(`Failed to add product: ${error.message || "Please try again."}`);
     }
-
-    handleReset();
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -184,6 +205,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 onInputChange={handleInputChange}
                 dosageDropdownOpen={dosageDropdownOpen}
                 setDosageDropdownOpen={setDosageDropdownOpen}
+                selectedImage={selectedImage}
+                onImageChange={handleImageChange}
               />
             )}
             {activeTab === "Settings" && (

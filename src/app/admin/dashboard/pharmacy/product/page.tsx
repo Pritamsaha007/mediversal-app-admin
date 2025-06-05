@@ -10,15 +10,12 @@ import {
   ListOrdered,
   Projector,
 } from "lucide-react";
+import { categories, sortOptions, tabs } from "./data/productCatalogData";
+import { AddProductModal } from "./components/AddProductModal";
 import { ProductCard } from "./components/ProductCard";
 import { StatsCard } from "./components/StatsCard";
-import {
-  products,
-  categories,
-  sortOptions,
-  tabs,
-} from "./data/productCatalogData";
-import { AddProductModal } from "./components/AddProductModal";
+import { productService } from "./services/getProductService";
+import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
 
 const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,14 +25,49 @@ const ProductCatalog: React.FC = () => {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 
-  const handleAddProduct = (productData: any) => {
+  const refreshProducts = async () => {
+    try {
+      const fetchedProducts = await productService.getAllProducts();
+      setProducts(fetchedProducts);
+      setError(null);
+    } catch (err) {
+      setError("Failed to refresh products");
+      console.error("Error refreshing products:", err);
+    }
+  };
+
+  const handleAddProduct = async (productData: any) => {
     console.log("New product added:", productData);
     setIsModalOpen(false);
+    // Refresh products after adding
+    await refreshProducts();
   };
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const fetchedProducts = await productService.getAllProducts();
+        setProducts(fetchedProducts);
+      } catch (err) {
+        setError("Failed to load products. Please try again.");
+        console.error("Error fetching products:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   // Handle click outside for dropdowns
   useEffect(() => {
@@ -58,8 +90,31 @@ const ProductCatalog: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleProductAction = (action: string, id: string) => {
+  const handleProductAction = async (action: string, id: string) => {
     console.log(`${action} product with id: ${id}`);
+
+    // Add actual API calls here based on action
+    try {
+      switch (action) {
+        case "delete":
+          // Add your delete API call here
+          // await productService.deleteProduct(id);
+          break;
+        case "deactivate":
+          // Add your deactivate API call here
+          // await productService.updateProductStatus(id, 'Inactive');
+          break;
+        case "unfeature":
+          // Add your unfeature API call here
+          // await productService.updateProductFeature(id, false);
+          break;
+      }
+
+      // Refresh products after any action
+      await refreshProducts();
+    } catch (error) {
+      console.error(`Error ${action} product:`, error);
+    }
   };
 
   // Apply filters and sorting
@@ -126,6 +181,39 @@ const ProductCatalog: React.FC = () => {
     return filtered;
   };
 
+  const handleProductSelect = (id: string, selected: boolean) => {
+    setSelectedProducts((prev) =>
+      selected ? [...prev, id] : prev.filter((productId) => productId !== id)
+    );
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    setSelectedProducts(selected ? filteredProducts.map((p) => p.id) : []);
+  };
+  const getStatsData = () => {
+    const activeProducts = products.filter((p) => p.status === "Active").length;
+    const inactiveProducts = products.filter(
+      (p) => p.status === "Inactive"
+    ).length;
+    const featuredProducts = products.filter((p) => p.featured).length;
+    const outOfStockProducts = products.filter((p) => p.stock === 0).length;
+
+    // Get unique categories
+    const uniqueCategories = new Set(products.map((p) => p.category));
+    const totalCategories = uniqueCategories.size;
+
+    return {
+      totalProducts: products.length,
+      activeProducts,
+      inactiveProducts,
+      featuredProducts,
+      outOfStockProducts,
+      totalCategories,
+    };
+  };
+
+  const statsData = getStatsData();
+
   const filteredProducts = getFilteredAndSortedProducts();
 
   return (
@@ -156,17 +244,20 @@ const ProductCatalog: React.FC = () => {
           <StatsCard
             title="Total Products"
             stats={[
-              { label: "Active", value: 5 },
-              { label: "Deactivated", value: 8 },
+              { label: "Active", value: statsData.activeProducts },
+              { label: "Deactivated", value: statsData.inactiveProducts },
             ]}
             icon={<ShoppingBag className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
           <StatsCard
-            title="Products"
+            title="Featured Products"
             stats={[
-              { label: "Active", value: 6 },
-              { label: "Deactivated", value: 2 },
+              { label: "Featured", value: statsData.featuredProducts },
+              {
+                label: "Regular",
+                value: statsData.totalProducts - statsData.featuredProducts,
+              },
             ]}
             icon={<Projector className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
@@ -174,22 +265,45 @@ const ProductCatalog: React.FC = () => {
           <StatsCard
             title="Categories"
             stats={[
-              { label: "Active", value: 3 },
-              { label: "Deactivated", value: 1 },
+              { label: "Total", value: statsData.totalCategories },
+              { label: "Out of Stock", value: statsData.outOfStockProducts },
             ]}
             icon={<FileText className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
           <StatsCard
-            title="Orders"
+            title="Inventory"
             stats={[
-              { label: "Active", value: 10 },
-              { label: "Deactivated", value: 20 },
+              {
+                label: "In Stock",
+                value: statsData.totalProducts - statsData.outOfStockProducts,
+              },
+              { label: "Out of Stock", value: statsData.outOfStockProducts },
             ]}
             icon={<ListOrdered className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
         </div>
+
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0088B1]"></div>
+            <span className="ml-3 text-gray-600">Loading products...</span>
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center justify-between">
+              <span className="text-red-800">{error}</span>
+              <button
+                onClick={refreshProducts}
+                className="text-red-600 hover:text-red-800 underline text-sm"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-4">
@@ -329,19 +443,53 @@ const ProductCatalog: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    isSelected={false}
-                    onSelect={() => {}}
-                    onView={(id) => handleProductAction("view", id)}
-                    onEdit={(id) => handleProductAction("edit", id)}
-                    onUnfeature={(id) => handleProductAction("unfeature", id)}
-                    onDeactivate={(id) => handleProductAction("deactivate", id)}
-                    onDelete={(id) => handleProductAction("delete", id)}
-                  />
-                ))}
+                {!loading &&
+                  !error &&
+                  filteredProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      isSelected={selectedProducts.includes(product.id)}
+                      onSelect={handleProductSelect}
+                      onView={(id) => handleProductAction("view", id)}
+                      onEdit={(id) => handleProductAction("edit", id)}
+                      onUnfeature={(id) => handleProductAction("unfeature", id)}
+                      onDeactivate={(id) =>
+                        handleProductAction("deactivate", id)
+                      }
+                      onDelete={(id) => handleProductAction("delete", id)}
+                      availableProducts={products}
+                      onUpdateRelationships={async (productId, data) => {
+                        console.log(
+                          "Updating relationships for product:",
+                          productId,
+                          data
+                        );
+                        // Add your relationship update API call here
+                        // await productService.updateProductRelationships(productId, data);
+                        await refreshProducts();
+                      }}
+                    />
+                  ))}
+                {!loading && !error && filteredProducts.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-6 py-12 text-center">
+                      <div className="text-gray-500">
+                        <ShoppingBag className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No products found
+                        </h3>
+                        <p className="text-gray-500">
+                          {searchTerm ||
+                          selectedCategory !== "All Categories" ||
+                          activeTab !== "All Products"
+                            ? "Try adjusting your search or filter criteria."
+                            : "Get started by adding your first product."}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

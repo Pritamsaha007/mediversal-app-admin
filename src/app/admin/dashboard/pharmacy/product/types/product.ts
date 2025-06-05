@@ -30,6 +30,7 @@ export interface Product {
   featured: boolean;
   substitutes?: number;
   similar?: number;
+  productImage?: File;
 }
 
 export interface inventoryItem {
