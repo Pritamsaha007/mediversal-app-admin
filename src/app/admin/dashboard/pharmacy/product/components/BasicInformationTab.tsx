@@ -36,8 +36,8 @@ export const BasicInformationTab = ({
           <input
             type="text"
             placeholder="Enter SKU"
-            value={formData.sku}
-            onChange={(e) => onInputChange("sku", e.target.value)}
+            value={formData.SKU}
+            onChange={(e) => onInputChange("SKU", e.target.value)}
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
@@ -155,10 +155,19 @@ export const BasicInformationTab = ({
           <input
             type="number"
             placeholder="0"
-            value={formData.stockQuantity || ""}
-            onChange={(e) =>
-              onInputChange("stockQuantity", parseInt(e.target.value) || 0)
-            }
+            min="0" // Add minimum value
+            max="999999" // Add reasonable maximum
+            value={formData.stockQuantity ?? ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Handle empty string case
+              if (value === "") {
+                onInputChange("stockQuantity", 0);
+              } else {
+                const numValue = Math.min(999999, Math.max(0, Number(value)));
+                onInputChange("stockQuantity", numValue);
+              }
+            }}
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>

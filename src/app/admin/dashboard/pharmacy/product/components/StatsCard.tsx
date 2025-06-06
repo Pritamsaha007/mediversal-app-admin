@@ -25,7 +25,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
       return `${base} bg-[#E6F4EA] text-[#28A745] text-[8px]`;
     if (label.toLowerCase() === "deactivated")
       return `${base} bg-[#FFEAEA] text-[#FF1F1F] text-[8px]`;
-    return `${base} bg-gray-100 text-gray-700`;
+    return `${base} bg-gray-100 text-gray-700 text-[8px] text-[#FF1F1F]`;
   };
 
   return (

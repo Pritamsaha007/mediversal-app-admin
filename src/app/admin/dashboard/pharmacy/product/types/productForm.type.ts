@@ -4,7 +4,7 @@ export interface ProductFormData {
 
   // Basic Information
   productName: string;
-  sku: string;
+  SKU: string;
   category: string;
   subCategory: string;
   brand: string;
@@ -26,7 +26,7 @@ export interface ProductFormData {
   // Settings
   schedule: string;
   taxRate: number;
-  hsnCode: string;
+  HSN_Code: string;
   storageConditions: string;
   shelfLife: number;
   prescriptionRequired: boolean;

@@ -17,7 +17,7 @@ interface RelatedProduct {
 export const ProductCard: React.FC<{
   product: Product;
   onView: (id: string) => void;
-  onEdit: (id: string) => void;
+  onEdit: (id: string, productData: ProductFormData) => Promise<void>;
   onUnfeature: (id: string) => void;
   onDeactivate: (id: string) => void;
   onDelete: (id: string) => void;
@@ -87,7 +87,7 @@ export const ProductCard: React.FC<{
     const productFormData: ProductFormData = {
       id: product.id,
       productName: product.name,
-      sku: product.code,
+      SKU: product.sku,
       category: product.category,
       subCategory: product.subcategory,
       brand: product.brand || "",
@@ -102,7 +102,7 @@ export const ProductCard: React.FC<{
       packSize: product.packSize || "",
       schedule: product.schedule || "",
       taxRate: product.taxRate || 0,
-      hsnCode: product.hsnCode || "",
+      HSN_Code: product.hsnCode || "",
       storageConditions: product.storageConditions || "",
       shelfLife: product.shelfLife || 0,
       prescriptionRequired: product.prescriptionRequired || false,
@@ -112,7 +112,10 @@ export const ProductCard: React.FC<{
       storageDescription: product.storageDescription || "",
       createdAt: product.createdAt || new Date().toISOString(),
       productImage:
-        product.productImage instanceof File ? product.productImage : null,
+        typeof product.productImage === "object" &&
+        product.productImage instanceof File
+          ? product.productImage
+          : null,
     };
 
     setProductToEdit(productFormData);
@@ -127,11 +130,15 @@ export const ProductCard: React.FC<{
     throw new Error("Function not implemented.");
   }
 
-  const handleUpdate = async (product: ProductFormData): Promise<void> => {
-    if (product.id) {
-      await onEdit(product.id);
-    } else {
-      console.error("Product id is undefined");
+  const handleUpdate = async (productData: ProductFormData): Promise<void> => {
+    try {
+      if (product.id) {
+        await onEdit(product.id, productData); // Now matches the prop signature
+        setModalOpen(false);
+        setProductToEdit(null);
+      }
+    } catch (error) {
+      console.error("Error updating product:", error);
     }
   };
   const handleRelationshipsUpdate = (data: {

@@ -3,11 +3,14 @@ import axios from "axios";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-export const addProductAPI = async (productData: any, imageFile?: File) => {
+export const addProductAPI = async (
+  productData: any,
+  imageFiles: File[] = []
+) => {
   try {
     const formData = new FormData();
 
-    // Map your form fields to API fields
+    // Required fields
     formData.append("admin_id", "1");
     formData.append("ProductName", productData.productName || "");
     formData.append("CostPrice", productData.mrp?.toString() || "0");
@@ -25,6 +28,8 @@ export const addProductAPI = async (productData: any, imageFile?: File) => {
       productData.prescriptionRequired ? "Yes" : "No"
     );
     formData.append("ColdChain", "No");
+
+    // Manufacturer & composition
     formData.append(
       "ManufacturerName",
       productData.manufacturer || "Generic Manufacturer"
@@ -33,6 +38,8 @@ export const addProductAPI = async (productData: any, imageFile?: File) => {
       "Composition",
       productData.composition || "Standard Composition"
     );
+
+    // Description fields
     formData.append(
       "ProductInformation",
       productData.description || "Product Information"
@@ -45,21 +52,26 @@ export const addProductAPI = async (productData: any, imageFile?: File) => {
       "StorageInstructions",
       productData.storageDescription || "Store in cool, dry place"
     );
+
+    // Substitutes & similar
     formData.append("Substitutes", "Generic Substitutes Available");
     formData.append("SimilarProducts", "Similar Products Available");
+
+    // Tax & inventory
     formData.append("GST", productData.taxRate?.toString() || "18");
     formData.append("Coupons", "5");
     formData.append(
       "AvailableInInventory",
       productData.stockQuantity?.toString() || "0"
     );
-    formData.append(
-      "InventoryUpdated",
-      productData.stockQuantity?.toString() || "0"
-    );
+    formData.append("HSN_Code", productData.HSN_Code || "");
+    formData.append("SKU", productData.SKU || "");
 
-    if (imageFile) {
-      formData.append("images", imageFile);
+    // Optional image
+    if (imageFiles && imageFiles.length > 0) {
+      imageFiles.forEach((file, index) => {
+        formData.append(`images`, file); // Note: same name for multiple files
+      });
     }
 
     const response = await axios.post(

@@ -31,6 +31,7 @@ export interface Product {
   substitutes?: number;
   similar?: number;
   productImage?: File | string;
+  sku: string;
 }
 
 export interface inventoryItem {

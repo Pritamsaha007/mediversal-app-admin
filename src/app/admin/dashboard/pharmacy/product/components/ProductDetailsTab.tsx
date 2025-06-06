@@ -1,14 +1,16 @@
 import { ChevronDown } from "lucide-react";
 import { dosageForms, ProductFormData } from "../types/productForm.type";
-import { useState } from "react";
 
 interface ProductDetailsTabProps {
   formData: ProductFormData;
   onInputChange: (field: keyof ProductFormData, value: any) => void;
   dosageDropdownOpen: boolean;
   setDosageDropdownOpen: (open: boolean) => void;
-  selectedImage: File | null;
+  selectedImages: File[];
+  imagePreviews: string[];
   onImageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemoveImage: (index: number) => void;
+  onDrop: (files: FileList) => void;
 }
 
 export const ProductDetailsTab = ({
@@ -16,24 +18,70 @@ export const ProductDetailsTab = ({
   onInputChange,
   dosageDropdownOpen,
   setDosageDropdownOpen,
-  selectedImage,
+  selectedImages,
+  imagePreviews,
   onImageChange,
+  onRemoveImage,
+  onDrop,
 }: ProductDetailsTabProps) => {
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    onDrop(event.dataTransfer.files);
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
   return (
     <div className="space-y-4">
       {/* Upload Photo Section */}
       <div className="mb-4">
-        <label className="block text-sm font-medium mb-2">Product Image</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={onImageChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        {selectedImage && (
-          <p className="text-sm text-gray-600 mt-1">
-            Selected: {selectedImage.name}
-          </p>
+        <label className="block text-sm font-medium mb-2 text-[#161D1F]">
+          Product Images
+        </label>
+
+        {/* Drag-and-Drop Upload Box */}
+        <div
+          className="border-2 border-dashed border-gray-300 p-4 rounded-md text-center cursor-pointer hover:border-[#0088B1]"
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+        >
+          <p className="text-sm text-gray-600">Drag and drop images here</p>
+          <p className="text-xs text-gray-500">or click to upload</p>
+          <label className="mt-2 inline-block cursor-pointer text-white bg-[#0088B1] px-4 py-2 text-sm rounded hover:bg-[#00779d]">
+            Upload Images
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={onImageChange}
+              className="hidden"
+            />
+          </label>
+        </div>
+
+        {/* Image Preview */}
+        {imagePreviews.length > 0 && (
+          <div className="mt-4 grid grid-cols-6 gap-3 ">
+            {imagePreviews.map((src, idx) => (
+              <div
+                key={idx}
+                className="relative border-2 rounded-md overflow-hidden border-[#0088B1]"
+              >
+                <img
+                  src={src}
+                  alt={`preview-${idx}`}
+                  className="object-fill w-full h-24"
+                />
+                <button
+                  onClick={() => onRemoveImage(idx)}
+                  className="absolute top-0 right-0 bg-[#0088B1] bg-opacity-50 text-white text-xs px-1 hover:bg-opacity-70"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 

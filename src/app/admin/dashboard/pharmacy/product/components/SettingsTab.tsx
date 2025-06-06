@@ -83,8 +83,8 @@ export const SettingsTab = ({
           <input
             type="text"
             placeholder="Enter HSN code"
-            value={formData.hsnCode}
-            onChange={(e) => onInputChange("hsnCode", e.target.value)}
+            value={formData.HSN_Code}
+            onChange={(e) => onInputChange("HSN_Code", e.target.value)}
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>

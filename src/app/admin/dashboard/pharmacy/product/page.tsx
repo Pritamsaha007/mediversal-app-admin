@@ -17,6 +17,7 @@ import { StatsCard } from "./components/StatsCard";
 import { productService } from "./services/getProductService";
 import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
 import { ProductFormData } from "./types/productForm.type";
+import toast from "react-hot-toast";
 
 const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -81,7 +82,7 @@ const ProductCatalog: React.FC = () => {
     };
 
     fetchProducts();
-  }, []);
+  }, [pagination.currentPage]);
 
   // Handle click outside for dropdowns
   useEffect(() => {
@@ -224,6 +225,21 @@ const ProductCatalog: React.FC = () => {
       totalCategories,
     };
   };
+  const handleUpdateProduct = async (
+    id: string,
+    productData: ProductFormData
+  ) => {
+    try {
+      await productService.updateProduct(id, productData);
+      await refreshProducts();
+      toast.success("Product updated successfully");
+    } catch (error) {
+      setError("Failed to update product. Please try again.");
+      console.error("Error updating product:", error);
+
+      toast.error("Failed to update product");
+    }
+  };
 
   const statsData = getStatsData();
 
@@ -243,7 +259,7 @@ const ProductCatalog: React.FC = () => {
               onClick={() => setIsModalOpen(true)}
             >
               <Plus className="w-3 h-3" />
-              Product Catalog
+              Add New Products
             </button>
             <button className="flex items-center gap-2 text-[12px] px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50">
               <FileText className="w-3 h-3" />
@@ -462,10 +478,10 @@ const ProductCatalog: React.FC = () => {
                     <ProductCard
                       key={product.id}
                       product={product}
+                      onEdit={handleUpdateProduct}
                       isSelected={selectedProducts.includes(product.id)}
                       onSelect={handleProductSelect}
                       onView={(id) => handleProductAction("view", id)}
-                      onEdit={(id) => handleProductAction("edit", id)}
                       onUnfeature={(id) => handleProductAction("unfeature", id)}
                       onDeactivate={(id) =>
                         handleProductAction("deactivate", id)
@@ -532,10 +548,17 @@ const ProductCatalog: React.FC = () => {
                 }))
               }
               disabled={pagination.currentPage === 1}
-              className="px-3 py-1 border text-black border-red-500 rounded-md text-sm disabled:opacity-50"
+              className={`px-4 py-2 border rounded-md text-sm ${
+                pagination.currentPage === 1
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-[#0088B1] border-[#0088B1] hover:bg-[#E8F4F7]"
+              }`}
             >
               Previous
             </button>
+            <span className="px-4 py-2 text-sm text-gray-600">
+              Page {pagination.currentPage}
+            </span>
             <button
               onClick={() =>
                 setPagination((prev) => ({
@@ -547,7 +570,12 @@ const ProductCatalog: React.FC = () => {
                 pagination.currentPage * pagination.pageSize >=
                 pagination.totalItems
               }
-              className="px-3 py-1 border border-red-500 text-black rounded-md text-sm disabled:opacity-50"
+              className={`px-4 py-2 border rounded-md text-sm ${
+                pagination.currentPage * pagination.pageSize >=
+                pagination.totalItems
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-[#0088B1] border-[#0088B1] hover:bg-[#E8F4F7]"
+              }`}
             >
               Next
             </button>

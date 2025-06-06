@@ -1,5 +1,3 @@
-import { Product } from "../types/product";
-
 export const categories = [
   "All Categories",
   "Medicines",
