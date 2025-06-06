@@ -8,6 +8,7 @@ import {
 import { BasicInformationTab } from "./BasicInformationTab";
 import { ProductDetailsTab } from "./ProductDetailsTab";
 import { SettingsTab } from "./SettingsTab";
+import { addProductAPI } from "../services/productService";
 
 export const AddProductModal: React.FC<AddProductModalProps> = ({
   isOpen,
@@ -23,6 +24,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   const [scheduleDropdownOpen, setScheduleDropdownOpen] = useState(false);
   const [storageDropdownOpen, setStorageDropdownOpen] = useState(false);
   const [tabAnimationKey, setTabAnimationKey] = useState(0);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   useEffect(() => {
     if (isEditMode && productToEdit) {
@@ -32,7 +35,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
   const [formData, setFormData] = useState<ProductFormData>({
     productName: "",
-    sku: "",
+    SKU: "",
     category: "",
     subCategory: "",
     brand: "",
@@ -47,7 +50,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     packSize: "",
     schedule: "",
     taxRate: 0,
-    hsnCode: "",
+    HSN_Code: "",
     storageConditions: "",
     shelfLife: 0,
     prescriptionRequired: false,
@@ -55,6 +58,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     activeProduct: true,
     saftyDescription: "",
     storageDescription: "",
+    productImage: null,
   });
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
@@ -63,11 +67,26 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       [field]: value,
     }));
   };
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const newFiles = Array.from(files);
+    setSelectedImages((prev) => [...prev, ...newFiles]);
+
+    const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleReset = () => {
     setFormData({
       productName: "",
-      sku: "",
+      SKU: "",
       category: "",
       subCategory: "",
       brand: "",
@@ -82,7 +101,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       packSize: "",
       schedule: "",
       taxRate: 0,
-      hsnCode: "",
+      HSN_Code: "",
       storageConditions: "",
       shelfLife: 0,
       prescriptionRequired: false,
@@ -90,39 +109,43 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       activeProduct: true,
       saftyDescription: "",
       storageDescription: "",
+      productImage: null,
     });
+    setSelectedImages([]);
   };
 
-  const handleSubmit = () => {
-    const productJSON = {
-      ...formData,
-      id:
-        isEditMode && productToEdit?.id
-          ? productToEdit.id
-          : Date.now().toString(),
-      createdAt:
-        isEditMode && productToEdit?.createdAt
-          ? productToEdit.createdAt
-          : new Date().toISOString(),
-      discount:
-        formData.mrp > 0
-          ? Math.round(
-              ((formData.mrp - formData.sellingPrice) / formData.mrp) * 100
-            )
-          : 0,
-      status: formData.activeProduct ? "Active" : "Inactive",
-    };
+  const handleSubmit = async () => {
+    try {
+      if (isEditMode && onUpdateProduct) {
+        // Handle edit mode as before
+        const productJSON = {
+          ...formData,
+          id: productToEdit?.id,
+          createdAt: productToEdit?.createdAt,
+          discount:
+            formData.mrp > 0
+              ? Math.round(
+                  ((formData.mrp - formData.sellingPrice) / formData.mrp) * 100
+                )
+              : 0,
+          status: formData.activeProduct ? "Active" : "Inactive",
+        };
+        onUpdateProduct(productJSON);
+      } else {
+        const result = await addProductAPI(formData, selectedImages);
+        console.log("Product added successfully:", result);
+        alert("Product added successfully!");
+        onAddProduct(result);
+      }
 
-    console.log("Product JSON:", JSON.stringify(productJSON, null, 2));
-
-    if (isEditMode && onUpdateProduct) {
-      onUpdateProduct(productJSON);
-    } else {
-      onAddProduct(productJSON);
+      handleReset();
+      setSelectedImages([]);
+      setImagePreviews([]); // Also reset previews
+      onClose();
+    } catch (error: any) {
+      console.error("Error submitting product:", error);
+      alert(`Failed to add product: ${error.message || "Please try again."}`);
     }
-
-    handleReset();
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -184,6 +207,18 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 onInputChange={handleInputChange}
                 dosageDropdownOpen={dosageDropdownOpen}
                 setDosageDropdownOpen={setDosageDropdownOpen}
+                selectedImages={selectedImages}
+                imagePreviews={imagePreviews}
+                onImageChange={handleImageChange}
+                onRemoveImage={removeImage}
+                onDrop={(files) => {
+                  const newFiles = Array.from(files);
+                  setSelectedImages((prev) => [...prev, ...newFiles]);
+                  const newPreviews = newFiles.map((file) =>
+                    URL.createObjectURL(file)
+                  );
+                  setImagePreviews((prev) => [...prev, ...newPreviews]);
+                }}
               />
             )}
             {activeTab === "Settings" && (
@@ -200,6 +235,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
         </div>
 
         {/* Footer */}
+        {/* Footer */}
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
           <button
             onClick={handleReset}
@@ -207,12 +243,28 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           >
             Reset
           </button>
-          <button
-            onClick={handleSubmit}
-            className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[10px] rounded-lg hover:bg-[#00729A]"
-          >
-            {isEditMode ? "Update Product" : "Add Product"}
-          </button>
+
+          {activeTab !== "Settings" ? (
+            <button
+              onClick={() => {
+                if (activeTab === "Basic Information")
+                  setActiveTab("Product Details");
+                else if (activeTab === "Product Details")
+                  setActiveTab("Settings");
+                setTabAnimationKey((prev) => prev + 1);
+              }}
+              className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[10px] rounded-lg hover:bg-[#00729A]"
+            >
+              Next
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[10px] rounded-lg hover:bg-[#00729A]"
+            >
+              {isEditMode ? "Update Product" : "Add Product"}
+            </button>
+          )}
         </div>
       </div>
     </div>

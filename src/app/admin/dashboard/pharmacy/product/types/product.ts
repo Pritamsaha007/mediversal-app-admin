@@ -30,6 +30,8 @@ export interface Product {
   featured: boolean;
   substitutes?: number;
   similar?: number;
+  productImage?: File | string;
+  sku: string;
 }
 
 export interface inventoryItem {

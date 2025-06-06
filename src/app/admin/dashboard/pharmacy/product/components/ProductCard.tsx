@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
-import { ProductFormData } from "../types/productForm.type";
 import { AddProductModal } from "./AddProductModal";
 import { ProductDetailModal } from "./ProductDetailModal";
 import { ProductRelationshipsModal } from "./ManageProductRelationshipsModal";
 import { Eye, Edit, Link, MoreVertical, Pill } from "lucide-react";
+import { ProductFormData } from "../types/productForm.type";
+
 // Define RelatedProduct interface for the relationships
 interface RelatedProduct {
   id: string;
@@ -16,7 +17,7 @@ interface RelatedProduct {
 export const ProductCard: React.FC<{
   product: Product;
   onView: (id: string) => void;
-  onEdit: (id: string) => void;
+  onEdit: (id: string, productData: ProductFormData) => Promise<void>;
   onUnfeature: (id: string) => void;
   onDeactivate: (id: string) => void;
   onDelete: (id: string) => void;
@@ -75,8 +76,7 @@ export const ProductCard: React.FC<{
     if (stock <= 5)
       return {
         label: `Low Stock (${stock})`,
-        color:
-          "bg-orange-[#FFF2E5] text-[#FF8000] border border-[#FF8000] text-[8px]",
+        color: "bg-orange-[#FFF2E5] text-[#FF8000]  text-[8px]",
       };
     return { label: stock.toString(), color: "" };
   };
@@ -87,7 +87,7 @@ export const ProductCard: React.FC<{
     const productFormData: ProductFormData = {
       id: product.id,
       productName: product.name,
-      sku: product.code,
+      SKU: product.sku,
       category: product.category,
       subCategory: product.subcategory,
       brand: product.brand || "",
@@ -102,7 +102,7 @@ export const ProductCard: React.FC<{
       packSize: product.packSize || "",
       schedule: product.schedule || "",
       taxRate: product.taxRate || 0,
-      hsnCode: product.hsnCode || "",
+      HSN_Code: product.hsnCode || "",
       storageConditions: product.storageConditions || "",
       shelfLife: product.shelfLife || 0,
       prescriptionRequired: product.prescriptionRequired || false,
@@ -111,6 +111,11 @@ export const ProductCard: React.FC<{
       saftyDescription: product.saftyDescription || "",
       storageDescription: product.storageDescription || "",
       createdAt: product.createdAt || new Date().toISOString(),
+      productImage:
+        typeof product.productImage === "object" &&
+        product.productImage instanceof File
+          ? product.productImage
+          : null,
     };
 
     setProductToEdit(productFormData);
@@ -125,14 +130,17 @@ export const ProductCard: React.FC<{
     throw new Error("Function not implemented.");
   }
 
-  function handleUpdate(product: ProductFormData): void {
-    if (product.id) {
-      onEdit(product.id);
-    } else {
-      console.error("Product id is undefined");
+  const handleUpdate = async (productData: ProductFormData): Promise<void> => {
+    try {
+      if (product.id) {
+        await onEdit(product.id, productData); // Now matches the prop signature
+        setModalOpen(false);
+        setProductToEdit(null);
+      }
+    } catch (error) {
+      console.error("Error updating product:", error);
     }
-  }
-
+  };
   const handleRelationshipsUpdate = (data: {
     substitutes: RelatedProduct[];
     similarProducts: RelatedProduct[];
@@ -142,7 +150,6 @@ export const ProductCard: React.FC<{
     }
   };
 
-  // Mock current relationships data - you'll need to get this from your actual data source
   const currentSubstitutes: RelatedProduct[] = [
     {
       id: "MED-002",

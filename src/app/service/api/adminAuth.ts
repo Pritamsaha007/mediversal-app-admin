@@ -1,4 +1,3 @@
-// src/lib/api/adminAuth.ts
 export interface AdminLoginPayload {
   email: string;
   password: string;

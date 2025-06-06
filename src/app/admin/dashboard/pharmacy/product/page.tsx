@@ -10,15 +10,14 @@ import {
   ListOrdered,
   Projector,
 } from "lucide-react";
+import { categories, sortOptions, tabs } from "./data/productCatalogData";
+import { AddProductModal } from "./components/AddProductModal";
 import { ProductCard } from "./components/ProductCard";
 import { StatsCard } from "./components/StatsCard";
-import {
-  products,
-  categories,
-  sortOptions,
-  tabs,
-} from "./data/productCatalogData";
-import { AddProductModal } from "./components/AddProductModal";
+import { productService } from "./services/getProductService";
+import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
+import { ProductFormData } from "./types/productForm.type";
+import toast from "react-hot-toast";
 
 const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,14 +27,62 @@ const ProductCatalog: React.FC = () => {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 
-  const handleAddProduct = (productData: any) => {
+  const refreshProducts = async () => {
+    try {
+      const { products, totalCount } = await productService.getAllProducts(
+        pagination.currentPage,
+        pagination.pageSize
+      );
+      setProducts(products);
+      setPagination((prev) => ({ ...prev, totalItems: totalCount }));
+      setError(null);
+    } catch (err) {
+      setError("Failed to refresh products");
+      console.error("Error refreshing products:", err);
+    }
+  };
+
+  // Change in ProductCatalog.tsx
+  const handleAddProduct = async (productData: ProductFormData) => {
     console.log("New product added:", productData);
     setIsModalOpen(false);
+    await refreshProducts();
   };
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    pageSize: 10,
+    totalItems: 0,
+  });
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const { products, totalCount } = await productService.getAllProducts(
+          pagination.currentPage,
+          pagination.pageSize
+        );
+        setProducts(products);
+        setPagination((prev) => ({ ...prev, totalItems: totalCount }));
+      } catch (err) {
+        setError("Failed to load products. Please try again.");
+        console.error("Error fetching products:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [pagination.currentPage]);
 
   // Handle click outside for dropdowns
   useEffect(() => {
@@ -58,8 +105,30 @@ const ProductCatalog: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleProductAction = (action: string, id: string) => {
+  const handleProductAction = async (action: string, id: string) => {
     console.log(`${action} product with id: ${id}`);
+
+    try {
+      switch (action) {
+        case "delete":
+          await productService.deleteProduct(id);
+          break;
+        case "deactivate":
+          // Add your deactivate API call here
+          // await productService.updateProductStatus(id, 'Inactive');
+          break;
+        case "unfeature":
+          // Add your unfeature API call here
+          // await productService.updateProductFeature(id, false);
+          break;
+      }
+
+      // Refresh products after any action
+      await refreshProducts();
+    } catch (error) {
+      console.error(`Error ${action} product:`, error);
+      setError(`Failed to ${action} product. Please try again.`);
+    }
   };
 
   // Apply filters and sorting
@@ -126,6 +195,54 @@ const ProductCatalog: React.FC = () => {
     return filtered;
   };
 
+  const handleProductSelect = (id: string, selected: boolean) => {
+    setSelectedProducts((prev) =>
+      selected ? [...prev, id] : prev.filter((productId) => productId !== id)
+    );
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    setSelectedProducts(selected ? filteredProducts.map((p) => p.id) : []);
+  };
+  const getStatsData = () => {
+    const activeProducts = products.filter((p) => p.status === "Active").length;
+    const inactiveProducts = products.filter(
+      (p) => p.status === "Inactive"
+    ).length;
+    const featuredProducts = products.filter((p) => p.featured).length;
+    const outOfStockProducts = products.filter((p) => p.stock === 0).length;
+
+    // Get unique categories
+    const uniqueCategories = new Set(products.map((p) => p.category));
+    const totalCategories = uniqueCategories.size;
+
+    return {
+      totalProducts: products.length,
+      activeProducts,
+      inactiveProducts,
+      featuredProducts,
+      outOfStockProducts,
+      totalCategories,
+    };
+  };
+  const handleUpdateProduct = async (
+    id: string,
+    productData: ProductFormData
+  ) => {
+    try {
+      await productService.updateProduct(id, productData);
+      await refreshProducts();
+      toast.success("Product updated successfully");
+    } catch (error) {
+      setError("Failed to update product. Please try again.");
+      console.error("Error updating product:", error);
+
+      toast.error("Failed to update product");
+    }
+  };
+
+  const statsData = getStatsData();
+
   const filteredProducts = getFilteredAndSortedProducts();
 
   return (
@@ -142,7 +259,7 @@ const ProductCatalog: React.FC = () => {
               onClick={() => setIsModalOpen(true)}
             >
               <Plus className="w-3 h-3" />
-              Product Catalog
+              Add New Products
             </button>
             <button className="flex items-center gap-2 text-[12px] px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50">
               <FileText className="w-3 h-3" />
@@ -156,17 +273,20 @@ const ProductCatalog: React.FC = () => {
           <StatsCard
             title="Total Products"
             stats={[
-              { label: "Active", value: 5 },
-              { label: "Deactivated", value: 8 },
+              { label: "Active", value: statsData.activeProducts },
+              { label: "Deactivated", value: statsData.inactiveProducts },
             ]}
             icon={<ShoppingBag className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
           <StatsCard
-            title="Products"
+            title="Featured Products"
             stats={[
-              { label: "Active", value: 6 },
-              { label: "Deactivated", value: 2 },
+              { label: "Featured", value: statsData.featuredProducts },
+              {
+                label: "Regular",
+                value: statsData.totalProducts - statsData.featuredProducts,
+              },
             ]}
             icon={<Projector className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
@@ -174,22 +294,45 @@ const ProductCatalog: React.FC = () => {
           <StatsCard
             title="Categories"
             stats={[
-              { label: "Active", value: 3 },
-              { label: "Deactivated", value: 1 },
+              { label: "Total", value: statsData.totalCategories },
+              { label: "Out of Stock", value: statsData.outOfStockProducts },
             ]}
             icon={<FileText className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
           <StatsCard
-            title="Orders"
+            title="Inventory"
             stats={[
-              { label: "Active", value: 10 },
-              { label: "Deactivated", value: 20 },
+              {
+                label: "In Stock",
+                value: statsData.totalProducts - statsData.outOfStockProducts,
+              },
+              { label: "Out of Stock", value: statsData.outOfStockProducts },
             ]}
             icon={<ListOrdered className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
         </div>
+
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0088B1]"></div>
+            <span className="ml-3 text-gray-600">Loading products...</span>
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center justify-between">
+              <span className="text-red-800">{error}</span>
+              <button
+                onClick={refreshProducts}
+                className="text-red-600 hover:text-red-800 underline text-sm"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-4">
@@ -329,19 +472,53 @@ const ProductCatalog: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    isSelected={false}
-                    onSelect={() => {}}
-                    onView={(id) => handleProductAction("view", id)}
-                    onEdit={(id) => handleProductAction("edit", id)}
-                    onUnfeature={(id) => handleProductAction("unfeature", id)}
-                    onDeactivate={(id) => handleProductAction("deactivate", id)}
-                    onDelete={(id) => handleProductAction("delete", id)}
-                  />
-                ))}
+                {!loading &&
+                  !error &&
+                  filteredProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onEdit={handleUpdateProduct}
+                      isSelected={selectedProducts.includes(product.id)}
+                      onSelect={handleProductSelect}
+                      onView={(id) => handleProductAction("view", id)}
+                      onUnfeature={(id) => handleProductAction("unfeature", id)}
+                      onDeactivate={(id) =>
+                        handleProductAction("deactivate", id)
+                      }
+                      onDelete={(id) => handleProductAction("delete", id)}
+                      availableProducts={products}
+                      onUpdateRelationships={async (productId, data) => {
+                        console.log(
+                          "Updating relationships for product:",
+                          productId,
+                          data
+                        );
+                        // Add your relationship update API call here
+                        // await productService.updateProductRelationships(productId, data);
+                        await refreshProducts();
+                      }}
+                    />
+                  ))}
+                {!loading && !error && filteredProducts.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-6 py-12 text-center">
+                      <div className="text-gray-500">
+                        <ShoppingBag className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No products found
+                        </h3>
+                        <p className="text-gray-500">
+                          {searchTerm ||
+                          selectedCategory !== "All Categories" ||
+                          activeTab !== "All Products"
+                            ? "Try adjusting your search or filter criteria."
+                            : "Get started by adding your first product."}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -352,6 +529,59 @@ const ProductCatalog: React.FC = () => {
           onAddProduct={handleAddProduct}
         />
       </div>
+      {!loading && !error && filteredProducts.length > 0 && (
+        <div className="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200">
+          <div className="text-sm text-gray-600">
+            Showing {(pagination.currentPage - 1) * pagination.pageSize + 1} to{" "}
+            {Math.min(
+              pagination.currentPage * pagination.pageSize,
+              pagination.totalItems
+            )}{" "}
+            of {pagination.totalItems} products
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() =>
+                setPagination((prev) => ({
+                  ...prev,
+                  currentPage: Math.max(prev.currentPage - 1, 1),
+                }))
+              }
+              disabled={pagination.currentPage === 1}
+              className={`px-4 py-2 border rounded-md text-sm ${
+                pagination.currentPage === 1
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-[#0088B1] border-[#0088B1] hover:bg-[#E8F4F7]"
+              }`}
+            >
+              Previous
+            </button>
+            <span className="px-4 py-2 text-sm text-gray-600">
+              Page {pagination.currentPage}
+            </span>
+            <button
+              onClick={() =>
+                setPagination((prev) => ({
+                  ...prev,
+                  currentPage: prev.currentPage + 1,
+                }))
+              }
+              disabled={
+                pagination.currentPage * pagination.pageSize >=
+                pagination.totalItems
+              }
+              className={`px-4 py-2 border rounded-md text-sm ${
+                pagination.currentPage * pagination.pageSize >=
+                pagination.totalItems
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-[#0088B1] border-[#0088B1] hover:bg-[#E8F4F7]"
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
