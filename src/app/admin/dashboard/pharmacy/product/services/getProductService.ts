@@ -48,7 +48,6 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
   const costPrice = parseFloat(apiProduct.CostPrice);
   const discountPercentage = parseFloat(apiProduct.DiscountedPercentage);
 
-  // Calculate discount if not provided or is 0
   const calculatedDiscount =
     discountPercentage > 0
       ? discountPercentage

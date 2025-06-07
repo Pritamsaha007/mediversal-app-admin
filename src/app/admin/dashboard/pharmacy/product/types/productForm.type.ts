@@ -39,7 +39,7 @@ export interface AddProductModalProps {
   onClose: () => void;
   onAddProduct: (product: ProductFormData) => void;
   onUpdateProduct?: (product: ProductFormData) => void;
-  productToEdit?: ProductFormData | null; // 👈 allow null
+  productToEdit?: ProductFormData | null;
   isEditMode?: boolean;
 }
 
