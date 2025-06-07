@@ -70,7 +70,7 @@ export const addProductAPI = async (
     // Optional image
     if (imageFiles && imageFiles.length > 0) {
       imageFiles.forEach((file, index) => {
-        formData.append(`images`, file); // Note: same name for multiple files
+        formData.append(`images`, file);
       });
     }
 

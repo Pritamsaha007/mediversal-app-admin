@@ -18,7 +18,9 @@ import { productService } from "./services/getProductService";
 import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
 import { ProductFormData } from "./types/productForm.type";
 import toast from "react-hot-toast";
-
+import { useConfirmationDialog } from "./components/ConfirmationDialog";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
@@ -31,6 +33,9 @@ const ProductCatalog: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [actionDropdownOpen, setActionDropdownOpen] = useState(false);
+  const { showConfirmation } = useConfirmationDialog();
+  const actionDropdownRef = useRef<HTMLDivElement>(null);
 
   const refreshProducts = async () => {
     try {
@@ -45,6 +50,66 @@ const ProductCatalog: React.FC = () => {
       setError("Failed to refresh products");
       console.error("Error refreshing products:", err);
     }
+  };
+
+  const handleExportPDF = () => {
+    const productsToExport =
+      selectedProducts.length > 0
+        ? products.filter((p) => selectedProducts.includes(p.id))
+        : filteredProducts;
+
+    if (productsToExport.length === 0) {
+      toast.error("No products to export");
+      return;
+    }
+
+    const doc = new jsPDF();
+
+    // Add title
+    doc.text("Product Catalog Report", 14, 15);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
+
+    // Prepare data for the table
+    const tableData = productsToExport.map((product) => [
+      product.name,
+      product.code || "N/A",
+      product.category,
+      `₹${product.mrp.toFixed(2)}`,
+      `₹${product.sellingPrice.toFixed(2)}`,
+      `${product.discount}%`,
+      product.stock.toString(),
+      product.status,
+    ]);
+
+    // Add table using the autoTable function directly
+    autoTable(doc, {
+      head: [
+        [
+          "Name",
+          "Code",
+          "Category",
+          "MRP",
+          "Price",
+          "Discount",
+          "Stock",
+          "Status",
+        ],
+      ],
+      body: tableData,
+      startY: 30,
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: [0, 112, 154], // #00709A
+        textColor: 255,
+        fontSize: 9,
+      },
+    });
+
+    doc.save(`products_${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast.success(`Exported ${productsToExport.length} products to PDF`);
   };
 
   // Change in ProductCatalog.tsx
@@ -99,6 +164,24 @@ const ProductCatalog: React.FC = () => {
       ) {
         setSortDropdownOpen(false);
       }
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(event.target as Node)
+      ) {
+        setCategoryDropdownOpen(false);
+      }
+      if (
+        sortDropdownRef.current &&
+        !sortDropdownRef.current.contains(event.target as Node)
+      ) {
+        setSortDropdownOpen(false);
+      }
+      if (
+        actionDropdownRef.current &&
+        !actionDropdownRef.current.contains(event.target as Node)
+      ) {
+        setActionDropdownOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -106,28 +189,35 @@ const ProductCatalog: React.FC = () => {
   }, []);
 
   const handleProductAction = async (action: string, id: string) => {
-    console.log(`${action} product with id: ${id}`);
+    if (action === "delete") {
+      if (window.confirm("Are you sure you want to delete this product?")) {
+        try {
+          await productService.deleteProduct(id);
+          await refreshProducts();
+          toast.success("Product deleted successfully");
+        } catch (error) {
+          console.error("Error deleting product:", error);
+          toast.error("Failed to delete product");
+        }
+      }
+      return;
+    }
 
     try {
       switch (action) {
-        case "delete":
-          await productService.deleteProduct(id);
-          break;
         case "deactivate":
-          // Add your deactivate API call here
           // await productService.updateProductStatus(id, 'Inactive');
+          toast.success("Product deactivated");
           break;
         case "unfeature":
-          // Add your unfeature API call here
           // await productService.updateProductFeature(id, false);
+          toast.success("Product unfeatured");
           break;
       }
-
-      // Refresh products after any action
       await refreshProducts();
     } catch (error) {
       console.error(`Error ${action} product:`, error);
-      setError(`Failed to ${action} product. Please try again.`);
+      toast.error(`Failed to ${action} product`);
     }
   };
 
@@ -201,6 +291,12 @@ const ProductCatalog: React.FC = () => {
     );
   };
 
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
   const handleSelectAll = (selected: boolean) => {
     setSelectedProducts(selected ? filteredProducts.map((p) => p.id) : []);
   };
@@ -244,6 +340,37 @@ const ProductCatalog: React.FC = () => {
   const statsData = getStatsData();
 
   const filteredProducts = getFilteredAndSortedProducts();
+
+  const handleDeleteAll = async () => {
+    if (selectedProducts.length === 0) {
+      toast.error("No products selected");
+      return;
+    }
+
+    const confirmed = await showConfirmation({
+      title: "Delete Products",
+      message: `Are you sure you want to delete ${selectedProducts.length} products? This action cannot be undone.`,
+      confirmText: `Delete ${selectedProducts.length} products`,
+      cancelText: "Cancel",
+      variant: "danger",
+      onConfirm: async () => {
+        // Show loading state
+        const deletePromise = Promise.all(
+          selectedProducts.map((id) => productService.deleteProduct(id))
+        ).then(async () => {
+          await refreshProducts();
+          setSelectedProducts([]);
+        });
+
+        // Use toast.promise for loading/success/error states
+        await toast.promise(deletePromise, {
+          loading: "Deleting products...",
+          success: `${selectedProducts.length} products deleted successfully`,
+          error: "Failed to delete some products",
+        });
+      },
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
@@ -373,7 +500,6 @@ const ProductCatalog: React.FC = () => {
                 </div>
               )}
             </div>
-
             {/* Sort Dropdown */}
             <div className="relative" ref={sortDropdownRef}>
               <button
@@ -400,9 +526,11 @@ const ProductCatalog: React.FC = () => {
                 </div>
               )}
             </div>
-
             <div className="relative">
-              <button className="flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50">
+              <button
+                onClick={handleExportPDF}
+                className="flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
+              >
                 <Download className="w-4 h-4" />
                 Export
               </button>
@@ -411,20 +539,56 @@ const ProductCatalog: React.FC = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 bg-[#F8F8F8] rounded-lg">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-lg text-[10px] font-medium transition-colors ${
-                activeTab === tab
-                  ? "bg-[#0088B1] text-[#F8F8F8]"
-                  : "text-[#161D1F] hover:bg-[#E8F4F7] hover:text-[#0088B1]"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+        <div className="flex justify-between mb-4 bg-[#F8F8F8] rounded-lg">
+          <div className="">
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 rounded-lg text-[10px] font-medium transition-colors ${
+                  activeTab === tab
+                    ? "bg-[#0088B1] text-[#F8F8F8]"
+                    : "text-[#161D1F] hover:bg-[#E8F4F7] hover:text-[#0088B1]"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+          <div>
+            {selectedProducts.length > 0 && (
+              <div className="flex items-center justify-between px-6  bg-gray-50">
+                <div className="text-[10px] text-gray-600 mr-3 ">
+                  {selectedProducts.length} selected
+                </div>
+                <div className="relative" ref={actionDropdownRef}>
+                  <button
+                    onClick={() => setActionDropdownOpen(!actionDropdownOpen)}
+                    className="flex items-center gap-2 px-4 py-2 text- text-[#161D1F] bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Actions
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                  {actionDropdownOpen && (
+                    <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                      <button
+                        onClick={handleDeleteAll}
+                        className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
+                      >
+                        Delete All
+                      </button>
+                      <button
+                        onClick={handleExportPDF}
+                        className="block w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100"
+                      >
+                        Export PDF
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Products Table */}
@@ -442,8 +606,16 @@ const ProductCatalog: React.FC = () => {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F]  tracking-wider">
-                    Select
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedProducts.length > 0 &&
+                        selectedProducts.length === filteredProducts.length
+                      }
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+                    />
                   </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F]  tracking-wider">
                     Product Name
@@ -494,8 +666,7 @@ const ProductCatalog: React.FC = () => {
                           productId,
                           data
                         );
-                        // Add your relationship update API call here
-                        // await productService.updateProductRelationships(productId, data);
+
                         await refreshProducts();
                       }}
                     />
@@ -529,59 +700,6 @@ const ProductCatalog: React.FC = () => {
           onAddProduct={handleAddProduct}
         />
       </div>
-      {!loading && !error && filteredProducts.length > 0 && (
-        <div className="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200">
-          <div className="text-sm text-gray-600">
-            Showing {(pagination.currentPage - 1) * pagination.pageSize + 1} to{" "}
-            {Math.min(
-              pagination.currentPage * pagination.pageSize,
-              pagination.totalItems
-            )}{" "}
-            of {pagination.totalItems} products
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() =>
-                setPagination((prev) => ({
-                  ...prev,
-                  currentPage: Math.max(prev.currentPage - 1, 1),
-                }))
-              }
-              disabled={pagination.currentPage === 1}
-              className={`px-4 py-2 border rounded-md text-sm ${
-                pagination.currentPage === 1
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-white text-[#0088B1] border-[#0088B1] hover:bg-[#E8F4F7]"
-              }`}
-            >
-              Previous
-            </button>
-            <span className="px-4 py-2 text-sm text-gray-600">
-              Page {pagination.currentPage}
-            </span>
-            <button
-              onClick={() =>
-                setPagination((prev) => ({
-                  ...prev,
-                  currentPage: prev.currentPage + 1,
-                }))
-              }
-              disabled={
-                pagination.currentPage * pagination.pageSize >=
-                pagination.totalItems
-              }
-              className={`px-4 py-2 border rounded-md text-sm ${
-                pagination.currentPage * pagination.pageSize >=
-                pagination.totalItems
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-white text-[#0088B1] border-[#0088B1] hover:bg-[#E8F4F7]"
-              }`}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

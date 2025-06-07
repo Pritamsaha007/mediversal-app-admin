@@ -9,6 +9,7 @@ import { BasicInformationTab } from "./BasicInformationTab";
 import { ProductDetailsTab } from "./ProductDetailsTab";
 import { SettingsTab } from "./SettingsTab";
 import { addProductAPI } from "../services/productService";
+import toast from "react-hot-toast";
 
 export const AddProductModal: React.FC<AddProductModalProps> = ({
   isOpen,
@@ -117,7 +118,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   const handleSubmit = async () => {
     try {
       if (isEditMode && onUpdateProduct) {
-        // Handle edit mode as before
         const productJSON = {
           ...formData,
           id: productToEdit?.id,
@@ -131,20 +131,24 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           status: formData.activeProduct ? "Active" : "Inactive",
         };
         onUpdateProduct(productJSON);
+        toast.success("Product updated successfully");
       } else {
         const result = await addProductAPI(formData, selectedImages);
-        console.log("Product added successfully:", result);
-        alert("Product added successfully!");
         onAddProduct(result);
+        toast.success("Product added successfully!");
       }
 
       handleReset();
       setSelectedImages([]);
-      setImagePreviews([]); // Also reset previews
+      setImagePreviews([]);
       onClose();
     } catch (error: any) {
       console.error("Error submitting product:", error);
-      alert(`Failed to add product: ${error.message || "Please try again."}`);
+      toast.error(
+        `Failed to ${isEditMode ? "update" : "add"} product: ${
+          error.message || "Please try again."
+        }`
+      );
     }
   };
 
@@ -233,8 +237,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             )}
           </div>
         </div>
-
-        {/* Footer */}
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
           <button
