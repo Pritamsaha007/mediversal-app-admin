@@ -19,7 +19,8 @@ import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
 import { ProductFormData } from "./types/productForm.type";
 import toast from "react-hot-toast";
 import { useConfirmationDialog } from "./components/ConfirmationDialog";
-
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
@@ -52,11 +53,63 @@ const ProductCatalog: React.FC = () => {
   };
 
   const handleExportPDF = () => {
-    if (selectedProducts.length === 0) {
-      toast.error("No products selected");
+    const productsToExport =
+      selectedProducts.length > 0
+        ? products.filter((p) => selectedProducts.includes(p.id))
+        : filteredProducts;
+
+    if (productsToExport.length === 0) {
+      toast.error("No products to export");
       return;
     }
-    toast.success(`Exporting ${selectedProducts.length} products to PDF`);
+
+    const doc = new jsPDF();
+
+    // Add title
+    doc.text("Product Catalog Report", 14, 15);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
+
+    // Prepare data for the table
+    const tableData = productsToExport.map((product) => [
+      product.name,
+      product.code || "N/A",
+      product.category,
+      `₹${product.mrp.toFixed(2)}`,
+      `₹${product.sellingPrice.toFixed(2)}`,
+      `${product.discount}%`,
+      product.stock.toString(),
+      product.status,
+    ]);
+
+    // Add table using the autoTable function directly
+    autoTable(doc, {
+      head: [
+        [
+          "Name",
+          "Code",
+          "Category",
+          "MRP",
+          "Price",
+          "Discount",
+          "Stock",
+          "Status",
+        ],
+      ],
+      body: tableData,
+      startY: 30,
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: [0, 112, 154], // #00709A
+        textColor: 255,
+        fontSize: 9,
+      },
+    });
+
+    doc.save(`products_${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast.success(`Exported ${productsToExport.length} products to PDF`);
   };
 
   // Change in ProductCatalog.tsx
@@ -447,7 +500,6 @@ const ProductCatalog: React.FC = () => {
                 </div>
               )}
             </div>
-
             {/* Sort Dropdown */}
             <div className="relative" ref={sortDropdownRef}>
               <button
@@ -474,9 +526,11 @@ const ProductCatalog: React.FC = () => {
                 </div>
               )}
             </div>
-
             <div className="relative">
-              <button className="flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50">
+              <button
+                onClick={handleExportPDF}
+                className="flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
+              >
                 <Download className="w-4 h-4" />
                 Export
               </button>
