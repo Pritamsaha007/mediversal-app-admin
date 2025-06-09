@@ -75,7 +75,7 @@ export const ProductCard: React.FC<{
   const getStockStatus = (stock: number) => {
     if (stock <= 5)
       return {
-        label: `Low Stock (${stock})`,
+        label: `Low (${stock})`,
         color: "bg-orange-[#FFF2E5] text-[#FF8000]  text-[8px]",
       };
     return { label: stock.toString(), color: "" };
@@ -265,7 +265,11 @@ export const ProductCard: React.FC<{
       </td>
       <td className="px-4 py-4">
         <div className="flex flex-col gap-2">
-          <span className="px-3 py-1 text-[8px] bg-[#34C759] text-white rounded-lg text-center">
+          <span
+            className={`px-3 py-1 text-[8px] ${
+              product.status === "Active" ? "bg-[#34C759]" : "bg-[#FF3B30]"
+            } text-white rounded-lg text-center`}
+          >
             {product.status}
           </span>
           {product.featured && (

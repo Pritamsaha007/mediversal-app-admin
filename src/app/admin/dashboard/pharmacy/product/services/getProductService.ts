@@ -144,21 +144,21 @@ export const productService = {
         ProductName: productData.productName,
         CostPrice: productData.mrp.toFixed(2),
         SellingPrice: productData.sellingPrice.toFixed(2),
-        DiscountedPrice: productData.sellingPrice.toFixed(2), // assuming discounted = selling
+        DiscountedPrice: productData.sellingPrice.toFixed(2),
         Type: productData.category,
         PrescriptionRequired: productData.prescriptionRequired ? "Yes" : "No",
-        ColdChain: "No", // or from form
+        ColdChain: "No",
         ManufacturerName: productData.manufacturer,
         Composition: productData.composition,
         ProductInformation: productData.description,
         SafetyAdvices: productData.saftyDescription,
         StorageInstructions: productData.storageDescription,
         GST: productData.taxRate.toFixed(2),
-        Coupons: "5", // or dynamic if needed
+        Coupons: "5",
         AvailableInInventory: productData.stockQuantity,
-        InventoryUpdated: new Date().toISOString(), // or from form if needed
-        InventoryUpdatedBy: 1, // or from user context
-        DiscountedPercentage: "0.00", // can be calculated
+        InventoryUpdated: new Date().toISOString(),
+        InventoryUpdatedBy: 1,
+        DiscountedPercentage: "0.00",
         updated_by: 1,
         archivedProduct: productData.activeProduct ? 0 : 1,
         HSN_Code: productData.HSN_Code || null,

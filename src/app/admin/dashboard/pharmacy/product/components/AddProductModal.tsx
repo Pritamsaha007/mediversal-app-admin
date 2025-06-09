@@ -133,8 +133,13 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
         onUpdateProduct(productJSON);
         toast.success("Product updated successfully");
       } else {
+        console.log("Final Data Sent to Backend:", {
+          formData,
+          selectedImages,
+        });
         const result = await addProductAPI(formData, selectedImages);
         onAddProduct(result);
+        console.log("This is my Uploaded data", result);
         toast.success("Product added successfully!");
       }
 
