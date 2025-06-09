@@ -60,7 +60,10 @@ export const addProductAPI = async (
     // Tax & inventory
     formData.append("GST", productData.taxRate?.toString() || "18");
     formData.append("Coupons", "5");
-    formData.append("AvailableInInventory", productData.stockQuantity || 0);
+    formData.append(
+      "StockAvailableInInventory",
+      productData.stockQuantity || 0
+    );
     formData.append("HSN_Code", productData.HSN_Code || "");
     formData.append("SKU", productData.SKU || "");
 

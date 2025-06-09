@@ -31,7 +31,7 @@ interface ProductApiResponse {
   SimilarProducts: string;
   GST: string;
   Coupons: string;
-  AvailableInInventory: number;
+  StockAvailableInInventory: number;
   InventoryUpdated: string;
   InventoryUpdatedBy: number;
   DiscountedPercentage: string;
@@ -64,7 +64,7 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
     mrp: costPrice,
     sellingPrice: sellingPrice,
     discount: Math.round(calculatedDiscount),
-    stock: apiProduct.AvailableInInventory,
+    stock: apiProduct.StockAvailableInInventory,
     status: apiProduct.archivedProduct === 0 ? "Active" : "Inactive",
     featured: false,
     description: apiProduct.ProductInformation,
@@ -155,7 +155,7 @@ export const productService = {
         StorageInstructions: productData.storageDescription,
         GST: productData.taxRate.toFixed(2),
         Coupons: "5",
-        AvailableInInventory: productData.stockQuantity,
+        StockAvailableInInventory: productData.stockQuantity,
         InventoryUpdated: new Date().toISOString(),
         InventoryUpdatedBy: 1,
         DiscountedPercentage: "0.00",

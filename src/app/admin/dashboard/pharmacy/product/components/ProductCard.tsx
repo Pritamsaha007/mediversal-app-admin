@@ -78,7 +78,7 @@ export const ProductCard: React.FC<{
         label: `Low (${stock})`,
         color: "bg-orange-[#FFF2E5] text-[#FF8000]  text-[8px]",
       };
-    return { label: stock.toString(), color: "" };
+    return { label: stock, color: "" };
   };
 
   const stockStatus = getStockStatus(product.stock);
