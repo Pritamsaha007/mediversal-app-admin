@@ -58,7 +58,7 @@ export const addProductAPI = async (
     formData.append("SimilarProducts", "Similar Products Available");
 
     // Tax & inventory
-    formData.append("GST", productData.taxRate?.toString() || "18");
+    formData.append("GST", productData.taxRate?.toString());
     formData.append("Coupons", "5");
     formData.append(
       "AvailableInInventory",
