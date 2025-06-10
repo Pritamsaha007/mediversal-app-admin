@@ -44,7 +44,7 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
   const getStockStatus = (stock: number) => {
     if (stock <= 5)
       return {
-        label: `Low Stock (${stock})`,
+        label: `Low Stock(${stock})`,
         color: "bg-orange-[#FFF2E5] text-[#FF8000] text-[8px]",
       };
     return { label: stock.toString(), color: "" };

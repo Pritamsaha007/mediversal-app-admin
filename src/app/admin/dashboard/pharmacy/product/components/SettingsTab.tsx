@@ -142,7 +142,14 @@ export const SettingsTab = ({
       </div>
 
       <div className="space-y-3">
-        <div className="p-4 border border-gray-200 rounded-lg">
+        <div
+          className={`p-4 border ${
+            formData.prescriptionRequired
+              ? "border-2 border-[#0088B1] bg-[#E8F4F7]"
+              : "border-gray-200"
+          } rounded-lg`}
+        >
+          {" "}
           <div className="flex items-start space-x-3 ">
             <input
               type="checkbox"
@@ -162,8 +169,13 @@ export const SettingsTab = ({
             </div>
           </div>
         </div>
-
-        <div className="p-4 border border-gray-200 rounded-lg">
+        <div
+          className={`p-4 border ${
+            formData.featuredProduct
+              ? "border-2 border-[#0088B1] bg-[#E8F4F7]"
+              : "border-gray-200"
+          } rounded-lg`}
+        >
           <div className="flex items-start space-x-3">
             <input
               type="checkbox"
@@ -183,8 +195,13 @@ export const SettingsTab = ({
             </div>
           </div>
         </div>
-
-        <div className="p-4 border-2 border-[#0088B1] bg-[#E8F4F7] rounded-lg">
+        <div
+          className={`p-4 border ${
+            formData.activeProduct
+              ? "border-2 border-[#0088B1] bg-[#E8F4F7]"
+              : "border-gray-200"
+          } rounded-lg`}
+        >
           <div className="flex items-start space-x-3">
             <input
               type="checkbox"
