@@ -48,35 +48,13 @@ export const BasicInformationTab = ({
           <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             <span className="text-red-500">*</span> Category
           </label>
-          <div className="relative">
-            <button
-              onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
-              className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
-            >
-              <span
-                className={formData.category ? "text-black" : "text-gray-500"}
-              >
-                {formData.category || "Select a category"}
-              </span>
-              <ChevronDown className="w-4 h-4" />
-            </button>
-            {categoryDropdownOpen && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
-                {categories.slice(1).map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => {
-                      onInputChange("category", category);
-                      setCategoryDropdownOpen(false);
-                    }}
-                    className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <input
+            type="text"
+            placeholder="Enter category"
+            value={formData.category ?? ""}
+            onChange={(e) => onInputChange("category", e.target.value)}
+            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+          />
         </div>
         <div>
           <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
