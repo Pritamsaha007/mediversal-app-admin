@@ -40,3 +40,46 @@ interface Status {
   label: string;
   value: number | string;
 }
+
+export interface PrescriptionData {
+  patientInfo: {
+    patientId: string;
+    patientName: string;
+  };
+  doctorInfo: {
+    doctorRegistrationNumber: string;
+    doctorName: string;
+    doctorSpecialty: string;
+  };
+  prescriptionDetails: {
+    expiryDate: string;
+    status: string;
+    source: string;
+    isRefillable: boolean;
+    refillsAllowed: number;
+    diagnosis: string;
+    notes: string;
+  };
+  medications: Array<{
+    id: string;
+    productName: string;
+    price: number;
+    medCode: string;
+    provider: string;
+    category: string;
+    quantity: number;
+    dosage: number;
+    frequency: number;
+    duration: number;
+  }>;
+}
+
+export interface MedicationTab {
+  id: string;
+  productName: string;
+  price: number;
+  medCode: string;
+  provider: string;
+  category: string;
+  generic: string;
+}

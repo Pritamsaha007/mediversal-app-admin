@@ -8,7 +8,6 @@ import {
   FileText,
   Projector,
   ListOrdered,
-  MoreVertical,
   ShoppingBag,
 } from "lucide-react";
 import { StatsCard } from "./components/StatsCard";
@@ -21,8 +20,10 @@ import {
   sortOptions,
 } from "./data/prescriptionData";
 import toast from "react-hot-toast";
+import AddPrescriptionModal from "./components/AddPrescriptionModal";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { PrescriptionData } from "./types/prescription";
 
 const PrescriptionManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,6 +35,8 @@ const PrescriptionManagement: React.FC = () => {
   const [selectedPrescriptions, setSelectedPrescriptions] = useState<string[]>(
     []
   );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [sourceDropdownOpen, setSourceDropdownOpen] = useState(false);
   const [verificationDropdownOpen, setVerificationDropdownOpen] =
@@ -55,7 +58,6 @@ const PrescriptionManagement: React.FC = () => {
   ];
   const [activeTab, setActiveTab] = useState("All Prescription");
 
-  // Filter and sort prescriptions
   const filteredPrescriptions = dummyPrescriptions
     .filter((prescription) => {
       // Tab filter
@@ -201,10 +203,16 @@ const PrescriptionManagement: React.FC = () => {
     ).length,
   };
 
+  // 2. Handler for prescription creation
+  const handleSubmitPrescription = (data: PrescriptionData) => {
+    // Handle the submitted prescription data
+    console.log("New prescription:", data);
+    // You would typically send this to your API here
+  };
+
   // Add this useEffect for dropdown handling
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Close all dropdowns when clicking outside
       if (
         statusDropdownRef.current &&
         !statusDropdownRef.current.contains(event.target as Node) &&
@@ -256,9 +264,7 @@ const PrescriptionManagement: React.FC = () => {
           <div className="flex gap-3">
             <button
               className="flex items-center gap-2 text-[12px] px-4 py-2 bg-[#0088B1] text-[#F8F8F8] rounded-lg hover:bg-[#00729A]"
-              onClick={() => {
-                /* Add modal open logic here */
-              }}
+              onClick={() => setIsModalOpen(true)}
             >
               <Plus className="w-3 h-3" />
               New Prescription
@@ -653,6 +659,11 @@ const PrescriptionManagement: React.FC = () => {
           </div>
         </div>
       </div>
+      <AddPrescriptionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleSubmitPrescription}
+      />
     </div>
   );
 };

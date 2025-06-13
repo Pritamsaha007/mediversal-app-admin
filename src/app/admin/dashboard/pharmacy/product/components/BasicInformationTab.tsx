@@ -1,4 +1,3 @@
-import { ChevronDown } from "lucide-react";
 import { categories, ProductFormData } from "../types/productForm.type";
 
 interface BasicInformationTabProps {
