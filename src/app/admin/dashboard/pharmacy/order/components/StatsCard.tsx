@@ -1,3 +1,5 @@
+// Replace the existing StatsCard interface and component with this:
+
 import React from "react";
 
 interface Status {
@@ -7,7 +9,7 @@ interface Status {
 
 interface StatsCardProps {
   title: string;
-  stats: Status[];
+  stats: Status[] | string | number;
   icon: React.ReactNode;
   color?: string;
 }
@@ -64,24 +66,31 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   };
 
   const getTotalValue = (): string => {
-    // For revenue cards, don't sum up the values, just show the main total
-    if (title.toLowerCase() === "revenue") {
-      const todayValue = stats.find(
-        (stat) => stat.label.toLowerCase() === "today"
-      )?.value;
-      return todayValue?.toString() || "0";
+    if (typeof stats === "string" || typeof stats === "number") {
+      return stats.toString();
     }
 
-    // For other cards, sum up numerical values
-    const total = stats.reduce((acc, curr) => {
-      const numValue =
-        typeof curr.value === "string"
-          ? parseInt(curr.value.replace(/[^\d]/g, "")) || 0
-          : Number(curr.value) || 0;
-      return acc + numValue;
-    }, 0);
+    if (Array.isArray(stats)) {
+      // For revenue cards, don't sum up the values, just show the main total
+      if (title.toLowerCase() === "revenue") {
+        const todayValue = stats.find(
+          (stat) => stat.label.toLowerCase() === "today"
+        )?.value;
+        return todayValue?.toString() || "0";
+      }
 
-    return total.toString();
+      const total = stats.reduce((acc, curr) => {
+        const numValue =
+          typeof curr.value === "string"
+            ? parseInt(curr.value.replace(/[^\d]/g, "")) || 0
+            : Number(curr.value) || 0;
+        return acc + numValue;
+      }, 0);
+
+      return total.toString();
+    }
+
+    return "0";
   };
 
   return (
@@ -92,13 +101,16 @@ export const StatsCard: React.FC<StatsCardProps> = ({
         <div className="text-[14px] font-semibold text-[#161D1F] mb-2">
           {getTotalValue()}
         </div>
-        <div className="flex flex-wrap">
-          {stats.map((stat, index) => (
-            <span key={index} className={getChipClasses(stat.label)}>
-              {stat.value} {stat.label}
-            </span>
-          ))}
-        </div>
+        {/* Only show chips if stats is an array */}
+        {Array.isArray(stats) && (
+          <div className="flex flex-wrap">
+            {stats.map((stat, index) => (
+              <span key={index} className={getChipClasses(stat.label)}>
+                {stat.value} {stat.label}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

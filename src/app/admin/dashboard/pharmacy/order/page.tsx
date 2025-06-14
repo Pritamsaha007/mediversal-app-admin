@@ -19,7 +19,6 @@ import {
 import { Order, FilterOptions, SortOption } from "./types/types";
 import { OrderService } from "./services/orderServices";
 import { StatsCard } from "./components/StatsCard";
-import { ordersStatsData } from "./data/orderData";
 
 const Orders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -90,11 +89,18 @@ const Orders: React.FC = () => {
       status: selectedStatus,
       payment: selectedPayment,
       sortBy,
-      searchTerm,
+      searchTerm: searchTerm.trim(), // Trim whitespace
     };
 
+    console.log("Applying filters:", filters); // Debug log
     let filtered = OrderService.filterOrders(orders, filters);
-    filtered = OrderService.sortOrders(filtered, sortBy);
+
+    // Only sort if it's not the default "Sort" option
+    if (sortBy !== "Sort") {
+      filtered = OrderService.sortOrders(filtered, sortBy);
+    }
+
+    console.log("Filtered orders:", filtered.length); // Debug log
     setFilteredOrders(filtered);
   }, [orders, selectedStatus, selectedPayment, sortBy, searchTerm]);
 
@@ -105,6 +111,47 @@ const Orders: React.FC = () => {
 
   const handleExportPDF = () => {
     console.log("Exporting orders to PDF...");
+  };
+
+  const handleStatusChange = (status: string) => {
+    console.log("Status changed to:", status); // Debug log
+    setSelectedStatus(status);
+    setOpenDropdown(null);
+  };
+
+  const handlePaymentChange = (payment: string) => {
+    console.log("Payment changed to:", payment); // Debug log
+    setSelectedPayment(payment);
+    setOpenDropdown(null);
+  };
+
+  const handleSortChange = (sort: SortOption) => {
+    console.log("Sort changed to:", sort); // Debug log
+    setSortBy(sort);
+    setOpenDropdown(null);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedOrders.length === 0) return;
+
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${selectedOrders.length} selected orders?`
+      )
+    ) {
+      try {
+        setLoading(true);
+        const orderIds = selectedOrders.map((id) => parseInt(id));
+        await OrderService.bulkDeleteOrders(orderIds);
+        setSelectedOrders([]); // Clear selection
+        await fetchOrders(); // Refresh data
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Bulk delete failed");
+      } finally {
+        setLoading(false);
+      }
+    }
+    setActionDropdownOpen(false);
   };
 
   const handleOrderAction = async (action: string, order: Order) => {
@@ -119,12 +166,6 @@ const Orders: React.FC = () => {
         case "delete":
           if (window.confirm("Are you sure you want to delete this order?")) {
             await OrderService.deleteOrder(order.orderId);
-            await fetchOrders(); // Refresh data
-          }
-          break;
-        case "cancel":
-          if (window.confirm("Are you sure you want to cancel this order?")) {
-            await OrderService.cancelOrder(order.orderId);
             await fetchOrders(); // Refresh data
           }
           break;
@@ -235,25 +276,25 @@ const Orders: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
           <StatsCard
             title="Total Orders"
-            stats={ordersStatsData[0].stats}
+            stats={stats.totalOrders}
             icon={<ShoppingCart className="w-5 h-5" />}
             color="text-blue-500"
           />
           <StatsCard
             title="Prescriptions Verification"
-            stats={ordersStatsData[1].stats}
+            stats={stats.prescriptionVerification}
             icon={<FileCheck className="w-5 h-5" />}
             color="text-green-500"
           />
           <StatsCard
             title="Revenue"
-            stats={ordersStatsData[2].stats}
+            stats={OrderService.formatCurrency(stats.totalRevenue)}
             icon={<DollarSign className="w-5 h-5" />}
             color="text-emerald-500"
           />
           <StatsCard
             title="Pending Delivery"
-            stats={ordersStatsData[3].stats}
+            stats={stats.pendingDelivery}
             icon={<Truck className="w-5 h-5" />}
             color="text-orange-500"
           />
@@ -305,11 +346,12 @@ const Orders: React.FC = () => {
                   {statusOptions.map((status) => (
                     <button
                       key={status}
-                      onClick={() => {
-                        setSelectedStatus(status);
-                        setOpenDropdown(null);
-                      }}
-                      className="block w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100"
+                      onClick={() => handleStatusChange(status)}
+                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
+                        selectedStatus === status
+                          ? "bg-blue-50 text-blue-600"
+                          : "text-[#161D1F]"
+                      }`}
                     >
                       {status}
                     </button>
@@ -317,8 +359,6 @@ const Orders: React.FC = () => {
                 </div>
               )}
             </div>
-
-            {/* Payment Dropdown */}
             <div className="relative">
               <button
                 onClick={() =>
@@ -334,11 +374,12 @@ const Orders: React.FC = () => {
                   {paymentOptions.map((payment) => (
                     <button
                       key={payment}
-                      onClick={() => {
-                        setSelectedPayment(payment);
-                        setOpenDropdown(null);
-                      }}
-                      className="block w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100"
+                      onClick={() => handlePaymentChange(payment)}
+                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
+                        selectedPayment === payment
+                          ? "bg-blue-50 text-blue-600"
+                          : "text-[#161D1F]"
+                      }`}
                     >
                       {payment}
                     </button>
@@ -346,8 +387,6 @@ const Orders: React.FC = () => {
                 </div>
               )}
             </div>
-
-            {/* Sort Dropdown */}
             <div className="relative">
               <button
                 onClick={() =>
@@ -363,11 +402,12 @@ const Orders: React.FC = () => {
                   {sortOptions.map((sort) => (
                     <button
                       key={sort}
-                      onClick={() => {
-                        setSortBy(sort);
-                        setOpenDropdown(null);
-                      }}
-                      className="block w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100"
+                      onClick={() => handleSortChange(sort)}
+                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
+                        sortBy === sort
+                          ? "bg-blue-50 text-blue-600"
+                          : "text-[#161D1F]"
+                      }`}
                     >
                       {sort}
                     </button>
@@ -375,7 +415,6 @@ const Orders: React.FC = () => {
                 </div>
               )}
             </div>
-
             <div className="relative">
               <button
                 onClick={handleExportPDF}
@@ -407,8 +446,12 @@ const Orders: React.FC = () => {
                   </button>
                   {actionDropdownOpen && (
                     <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                      <button className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50">
-                        Cancel Orders
+                      <button
+                        onClick={handleBulkDelete}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Selected
                       </button>
                       <button
                         onClick={handleExportPDF}
@@ -561,15 +604,6 @@ const Orders: React.FC = () => {
                               >
                                 <Printer className="w-4 h-4" />
                                 Print Invoice
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleOrderAction("cancel", order)
-                                }
-                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-orange-600 hover:bg-orange-50"
-                              >
-                                <X className="w-4 h-4" />
-                                Cancel
                               </button>
                               <button
                                 onClick={() =>

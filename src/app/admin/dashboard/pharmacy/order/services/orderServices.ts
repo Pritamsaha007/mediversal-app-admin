@@ -1,3 +1,4 @@
+import axios from "axios";
 import { Order, ApiResponse, FilterOptions, SortOption } from "../types/types";
 
 const API_BASE_URL =
@@ -6,25 +7,24 @@ const API_BASE_URL =
 export class OrderService {
   static async fetchOrders(): Promise<Order[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/order`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log("Fetched ordershhhhhhhh:", data);
+      const response = await axios.get(`${API_BASE_URL}/order`);
+      console.log("Fetched orders:", response.data);
 
       // Handle different response formats
-      if (Array.isArray(data)) {
-        return data;
-      } else if (data.data && Array.isArray(data.data)) {
-        return data.data;
+      if (Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        return response.data.data;
       } else {
         throw new Error("Invalid response format");
       }
     } catch (error) {
       console.error("Error fetching orders:", error);
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `Failed to fetch orders: ${error.response?.status} ${error.response?.statusText}`
+        );
+      }
       throw new Error("Failed to fetch orders");
     }
   }
@@ -58,7 +58,7 @@ export class OrderService {
   }
 
   static getOrderStatus(order: Order): string {
-    return order.deliverystatus || "Pending";
+    return order.deliverystatus || "Not Provided";
   }
 
   static filterOrders(orders: Order[], filters: FilterOptions): Order[] {
@@ -75,14 +75,15 @@ export class OrderService {
         if (!matchesSearch) return false;
       }
 
-      // Status filter
-      if (filters.status !== "All Statuses") {
+      // Status filter - fixed logic
+      if (filters.status && filters.status !== "All Statuses") {
         const orderStatus = this.getOrderStatus(order);
         if (orderStatus !== filters.status) return false;
       }
 
-      // Payment filter
-      if (filters.payment !== "All Payments") {
+      // Payment filter - fixed logic
+      if (filters.payment && filters.payment !== "All Payments") {
+        // Make sure we're comparing the correct payment status
         if (order.paymentStatus !== filters.payment) return false;
       }
 
@@ -133,35 +134,34 @@ export class OrderService {
 
   static async deleteOrder(orderId: number): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/order/${orderId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const response = await axios.delete(`${API_BASE_URL}/order/${orderId}`);
+      console.log("Delete response:", response.data);
     } catch (error) {
       console.error("Error deleting order:", error);
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `Failed to delete order: ${error.response?.status} ${error.response?.statusText}`
+        );
+      }
       throw new Error("Failed to delete order");
     }
   }
 
-  static async cancelOrder(orderId: number): Promise<void> {
+  static async bulkDeleteOrders(orderIds: number[]): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/order/${orderId}/cancel`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: "Cancelled" }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const deletePromises = orderIds.map((id) =>
+        axios.delete(`${API_BASE_URL}/order/${id}`)
+      );
+      await Promise.all(deletePromises);
+      console.log("Bulk delete completed for orders:", orderIds);
     } catch (error) {
-      console.error("Error cancelling order:", error);
-      throw new Error("Failed to cancel order");
+      console.error("Error bulk deleting orders:", error);
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `Failed to bulk delete orders: ${error.response?.status} ${error.response?.statusText}`
+        );
+      }
+      throw new Error("Failed to bulk delete orders");
     }
   }
 
@@ -171,13 +171,16 @@ export class OrderService {
       (sum, order) => sum + this.calculateTotalAmount(order),
       0
     );
-    const pendingDelivery = orders.filter(
-      (order) =>
-        this.getOrderStatus(order) !== "Delivered" &&
-        this.getOrderStatus(order) !== "Cancelled"
-    ).length;
+
+    // Count orders that are not delivered or cancelled
+    const pendingDelivery = orders.filter((order) => {
+      const status = this.getOrderStatus(order);
+      return status !== "Delivered" && status !== "Cancelled";
+    }).length;
+
+    // Count orders that might need prescription verification (assuming based on items)
     const prescriptionVerification = orders.filter(
-      (order) => order.items.some((item) => item.productId) // Assuming prescription verification logic
+      (order) => order.items && order.items.length > 0
     ).length;
 
     return {
