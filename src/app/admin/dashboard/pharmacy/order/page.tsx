@@ -10,15 +10,14 @@ import {
   FileCheck,
   DollarSign,
   Truck,
-  MoreVertical,
-  Eye,
-  Printer,
   Trash2,
-  X,
 } from "lucide-react";
 import { Order, FilterOptions, SortOption } from "./types/types";
 import { OrderService } from "./services/orderServices";
 import { StatsCard } from "./components/StatsCard";
+import StatusBadge from "./components/StatusBadge";
+import OrderActionDropdown from "./components/OrderActionDropdown";
+import { Pagination } from "./components/Pagination";
 
 const Orders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,12 +33,22 @@ const Orders: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [actionDropdownOpen, setActionDropdownOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [orderActionDropdown, setOrderActionDropdown] = useState<number | null>(
     null
   );
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const actionDropdownRef = useRef<HTMLDivElement>(null);
+  const getPaginatedOrders = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredOrders.slice(startIndex, endIndex);
+  };
+
+  // Add this function to calculate total pages:
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
   const statusOptions = [
     "All Statuses",
@@ -47,6 +56,7 @@ const Orders: React.FC = () => {
     "Processing",
     "Packed",
     "Shipped",
+    "On Going",
     "Out for Delivery",
     "Delivered",
     "Cancelled",
@@ -56,8 +66,10 @@ const Orders: React.FC = () => {
     "All Payments",
     "Pending",
     "Failed",
+    "On Going",
     "Paid",
     "Refund",
+    "PAID",
   ];
 
   const sortOptions: SortOption[] = [
@@ -155,6 +167,8 @@ const Orders: React.FC = () => {
   };
 
   const handleOrderAction = async (action: string, order: Order) => {
+    console.log(`Action: ${action}, Order ID: ${order.orderId}`); // Debug log
+
     try {
       switch (action) {
         case "view":
@@ -164,16 +178,25 @@ const Orders: React.FC = () => {
           console.log("Print order:", order);
           break;
         case "delete":
+          console.log("Delete confirmation for order:", order.orderId);
           if (window.confirm("Are you sure you want to delete this order?")) {
+            console.log("User confirmed delete");
+            setLoading(true);
             await OrderService.deleteOrder(order.orderId);
-            await fetchOrders(); // Refresh data
+            console.log("Delete successful, refreshing orders");
+            await fetchOrders();
+            console.log("Orders refreshed");
           }
           break;
         default:
+          console.log("Unknown action:", action);
           break;
       }
     } catch (err) {
+      console.error("Order action error:", err);
       setError(err instanceof Error ? err.message : "Operation failed");
+    } finally {
+      setLoading(false);
     }
     setOrderActionDropdown(null);
   };
@@ -211,31 +234,23 @@ const Orders: React.FC = () => {
     };
   }, []);
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Add this function to handle items per page change:
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page
+  };
+
+  // Reset to first page when filters change - add this useEffect:
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStatus, selectedPayment, sortBy, searchTerm]);
+
   // Generate stats from orders
   const stats = OrderService.generateOrderStats(orders);
-
-  const getStatusBadge = (status: string) => {
-    const statusColors = {
-      Pending: "bg-yellow-100 text-yellow-800",
-      Processing: "bg-blue-100 text-blue-800",
-      Packed: "bg-purple-100 text-purple-800",
-      Shipped: "bg-indigo-100 text-indigo-800",
-      "Out for Delivery": "bg-orange-100 text-orange-800",
-      Delivered: "bg-green-100 text-green-800",
-      Cancelled: "bg-red-100 text-red-800",
-    };
-
-    return (
-      <span
-        className={`px-2 py-1 text-xs font-medium rounded-full ${
-          statusColors[status as keyof typeof statusColors] ||
-          "bg-gray-100 text-gray-800"
-        }`}
-      >
-        {status}
-      </span>
-    );
-  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -474,6 +489,8 @@ const Orders: React.FC = () => {
               {activeTab}
               <span className="text-[8px] text-[#899193] font-normal ml-2">
                 {filteredOrders.length} Orders
+                {filteredOrders.length > itemsPerPage &&
+                  `(${getPaginatedOrders().length} shown)`}
               </span>
             </h3>
           </div>
@@ -524,7 +541,7 @@ const Orders: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredOrders.map((order) => (
+                  getPaginatedOrders().map((order) => (
                     <tr key={order.orderId} className="hover:bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
@@ -551,16 +568,21 @@ const Orders: React.FC = () => {
                           <div className="font-medium">
                             {order.customerName}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          {/* <div className="text-xs text-gray-500">
                             {order.customerEmail}
-                          </div>
+                          </div> */}
                           <div className="text-xs text-gray-500">
                             {order.customerPhone}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">
-                        {OrderService.formatDate(order.createdAt)}
+                        <div className="flex flex-col items-start">
+                          {OrderService.formatDate(order.createdAt)}
+                          <span className="text-[10px] text-[#899193] mt-1">
+                            {order.deliverystatus}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#161D1F]">
                         {OrderService.formatCurrency(
@@ -568,54 +590,33 @@ const Orders: React.FC = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(order.paymentStatus)}
+                        <div className="flex flex-col items-start">
+                          <StatusBadge status={order.paymentStatus} />
+                          <span className="text-[10px] text-[#899193] mt-1">
+                            Method: {order.paymentMethod}
+                          </span>
+                        </div>
                       </td>
+
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(OrderService.getOrderStatus(order))}
+                        <StatusBadge
+                          status={OrderService.getOrderStatus(order)}
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">
                         <div className="relative">
-                          <button
-                            onClick={() =>
+                          <OrderActionDropdown
+                            order={order}
+                            isOpen={orderActionDropdown === order.orderId}
+                            onToggle={() =>
                               setOrderActionDropdown(
                                 orderActionDropdown === order.orderId
                                   ? null
                                   : order.orderId
                               )
                             }
-                            className="dropdown-toggle p-1 rounded-full hover:bg-gray-100"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-                          {orderActionDropdown === order.orderId && (
-                            <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                              <button
-                                onClick={() => handleOrderAction("view", order)}
-                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100"
-                              >
-                                <Eye className="w-4 h-4" />
-                                View Details
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleOrderAction("print", order)
-                                }
-                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100"
-                              >
-                                <Printer className="w-4 h-4" />
-                                Print Invoice
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleOrderAction("delete", order)
-                                }
-                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                Delete
-                              </button>
-                            </div>
-                          )}
+                            onAction={handleOrderAction}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -623,6 +624,14 @@ const Orders: React.FC = () => {
                 )}
               </tbody>
             </table>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredOrders.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
           </div>
         </div>
       </div>

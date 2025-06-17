@@ -1,8 +1,7 @@
 import axios from "axios";
 import { Order, ApiResponse, FilterOptions, SortOption } from "../types/types";
 
-const API_BASE_URL =
-  "https://3st0jw58p8.execute-api.ap-south-1.amazonaws.com/app/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL + "/app/api";
 
 export class OrderService {
   static async fetchOrders(): Promise<Order[]> {
@@ -10,7 +9,6 @@ export class OrderService {
       const response = await axios.get(`${API_BASE_URL}/order`);
       console.log("Fetched orders:", response.data);
 
-      // Handle different response formats
       if (Array.isArray(response.data)) {
         return response.data;
       } else if (response.data.data && Array.isArray(response.data.data)) {
@@ -30,14 +28,23 @@ export class OrderService {
   }
 
   static calculateTotalAmount(order: Order): number {
-    if (order.TotalOrderAmount !== null) {
+    if (
+      order.TotalOrderAmount !== null &&
+      order.TotalOrderAmount !== undefined &&
+      !isNaN(order.TotalOrderAmount)
+    ) {
       return order.TotalOrderAmount;
     }
 
-    // Calculate from items if TotalOrderAmount is null
-    return order.items.reduce((total, item) => {
-      return total + parseFloat(item.sellingPrice) * item.quantity;
-    }, 0);
+    if (order.items && Array.isArray(order.items)) {
+      return order.items.reduce((total, item) => {
+        const price = parseFloat(item.sellingPrice) || 0;
+        const quantity = item.quantity || 0;
+        return total + price * quantity;
+      }, 0);
+    }
+
+    return 0;
   }
 
   static formatDate(dateString: string): string {
@@ -134,14 +141,24 @@ export class OrderService {
 
   static async deleteOrder(orderId: number): Promise<void> {
     try {
+      console.log(`Attempting to delete order: ${orderId}`);
       const response = await axios.delete(`${API_BASE_URL}/order/${orderId}`);
-      console.log("Delete response:", response.data);
+      console.log("Delete response:", response.status, response.data);
+
+      if (response.status === 200 || response.status === 204) {
+        console.log(`Order ${orderId} deleted successfully`);
+      } else {
+        throw new Error(`Unexpected response status: ${response.status}`);
+      }
     } catch (error) {
       console.error("Error deleting order:", error);
       if (axios.isAxiosError(error)) {
-        throw new Error(
-          `Failed to delete order: ${error.response?.status} ${error.response?.statusText}`
+        const status = error.response?.status;
+        const statusText = error.response?.statusText;
+        console.error(
+          `Delete failed - Status: ${status}, StatusText: ${statusText}`
         );
+        throw new Error(`Failed to delete order: ${status} ${statusText}`);
       }
       throw new Error("Failed to delete order");
     }
@@ -167,10 +184,12 @@ export class OrderService {
 
   static generateOrderStats(orders: Order[]) {
     const totalOrders = orders.length;
-    const totalRevenue = orders.reduce(
-      (sum, order) => sum + this.calculateTotalAmount(order),
-      0
-    );
+
+    // Calculate total revenue with better error handling
+    const totalRevenue = orders.reduce((sum, order) => {
+      const orderAmount = Number(order.TotalOrderAmount);
+      return sum + (isNaN(orderAmount) ? 0 : orderAmount);
+    }, 0);
 
     // Count orders that are not delivered or cancelled
     const pendingDelivery = orders.filter((order) => {
@@ -178,14 +197,14 @@ export class OrderService {
       return status !== "Delivered" && status !== "Cancelled";
     }).length;
 
-    // Count orders that might need prescription verification (assuming based on items)
     const prescriptionVerification = orders.filter(
-      (order) => order.items && order.items.length > 0
+      (order) =>
+        order.items && Array.isArray(order.items) && order.items.length > 0
     ).length;
 
     return {
       totalOrders,
-      totalRevenue,
+      totalRevenue: isNaN(totalRevenue) ? 0 : totalRevenue,
       pendingDelivery,
       prescriptionVerification,
     };
