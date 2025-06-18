@@ -41,7 +41,6 @@ export const dummyPrescriptions: Prescription[] = [
       },
     ],
   },
-  // Add more dummy data as needed
 ];
 
 export const statusOptions = [
