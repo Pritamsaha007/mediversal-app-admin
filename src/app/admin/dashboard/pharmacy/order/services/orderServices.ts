@@ -1,12 +1,15 @@
 import axios from "axios";
 import { Order, ApiResponse, FilterOptions, SortOption } from "../types/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL + "/app/api";
+const API_BASE_URL = "https://3st0jw58p8.execute-api.ap-south-1.amazonaws.com";
 
 export class OrderService {
+  static checkAllowedMethods(orderId: number) {
+    throw new Error("Method not implemented.");
+  }
   static async fetchOrders(): Promise<Order[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/order`);
+      const response = await axios.get(`${API_BASE_URL}/app/api/order`);
       console.log("Fetched orders:", response.data);
 
       if (Array.isArray(response.data)) {
@@ -142,7 +145,15 @@ export class OrderService {
   static async deleteOrder(orderId: number): Promise<void> {
     try {
       console.log(`Attempting to delete order: ${orderId}`);
-      const response = await axios.delete(`${API_BASE_URL}/order/${orderId}`);
+      const response = await axios.delete(
+        `${API_BASE_URL}/app/api/order/${orderId}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 10000, // 10 second timeout
+        }
+      );
       console.log("Delete response:", response.status, response.data);
 
       if (response.status === 200 || response.status === 204) {
@@ -155,10 +166,24 @@ export class OrderService {
       if (axios.isAxiosError(error)) {
         const status = error.response?.status;
         const statusText = error.response?.statusText;
+        const errorMessage = error.response?.data?.message || error.message;
         console.error(
-          `Delete failed - Status: ${status}, StatusText: ${statusText}`
+          `Delete failed - Status: ${status}, StatusText: ${statusText}, Message: ${errorMessage}`
         );
-        throw new Error(`Failed to delete order: ${status} ${statusText}`);
+
+        if (error.code === "ERR_NETWORK") {
+          throw new Error(
+            "Network error: Unable to connect to the server. Please check your internet connection."
+          );
+        } else if (status === 404) {
+          throw new Error(`Order ${orderId} not found`);
+        } else if (status === 405) {
+          throw new Error("Delete method not allowed on this endpoint");
+        } else {
+          throw new Error(
+            `Failed to delete order: ${status} ${statusText} - ${errorMessage}`
+          );
+        }
       }
       throw new Error("Failed to delete order");
     }
@@ -166,19 +191,37 @@ export class OrderService {
 
   static async bulkDeleteOrders(orderIds: number[]): Promise<void> {
     try {
-      const deletePromises = orderIds.map((id) =>
-        axios.delete(`${API_BASE_URL}/order/${id}`)
+      console.log("Starting bulk delete for orders:", orderIds);
+
+      // Process deletions one by one to better handle errors
+      const results = [];
+      for (const orderId of orderIds) {
+        try {
+          await this.deleteOrder(orderId);
+          results.push({ orderId, success: true });
+        } catch (error) {
+          console.error(`Failed to delete order ${orderId}:`, error);
+          results.push({ orderId, success: false, error });
+        }
+      }
+
+      const successful = results.filter((r) => r.success).length;
+      const failed = results.filter((r) => !r.success).length;
+
+      console.log(
+        `Bulk delete completed: ${successful} successful, ${failed} failed`
       );
-      await Promise.all(deletePromises);
-      console.log("Bulk delete completed for orders:", orderIds);
-    } catch (error) {
-      console.error("Error bulk deleting orders:", error);
-      if (axios.isAxiosError(error)) {
+
+      if (failed > 0) {
         throw new Error(
-          `Failed to bulk delete orders: ${error.response?.status} ${error.response?.statusText}`
+          `Bulk delete partially failed: ${failed} orders could not be deleted`
         );
       }
-      throw new Error("Failed to bulk delete orders");
+    } catch (error) {
+      console.error("Error bulk deleting orders:", error);
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to bulk delete orders");
     }
   }
 

@@ -167,9 +167,10 @@ const Orders: React.FC = () => {
   };
 
   const handleOrderAction = async (action: string, order: Order) => {
-    console.log(`Action: ${action}, Order ID: ${order.orderId}`); // Debug log
+    console.log(`Action: ${action}, Order ID: ${order.orderId}`);
 
     try {
+      setLoading(true); // Add loading state
       switch (action) {
         case "view":
           console.log("View order details:", order);
@@ -181,7 +182,6 @@ const Orders: React.FC = () => {
           console.log("Delete confirmation for order:", order.orderId);
           if (window.confirm("Are you sure you want to delete this order?")) {
             console.log("User confirmed delete");
-            setLoading(true);
             await OrderService.deleteOrder(order.orderId);
             console.log("Delete successful, refreshing orders");
             await fetchOrders();
@@ -197,8 +197,8 @@ const Orders: React.FC = () => {
       setError(err instanceof Error ? err.message : "Operation failed");
     } finally {
       setLoading(false);
+      setOrderActionDropdown(null);
     }
-    setOrderActionDropdown(null);
   };
 
   const handleSelectOrder = (orderId: string, checked: boolean) => {
