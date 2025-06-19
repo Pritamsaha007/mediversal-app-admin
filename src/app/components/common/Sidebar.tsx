@@ -56,21 +56,37 @@ const Sidebar = () => {
         },
       ],
     },
+    // {
+    //   name: "Patient",
+    //   icon: <LucideComputer size={18} />,
+    //   // subItems: [
+    //   //   {
+    //   //     name: "Create Permission",
+    //   //     link: "/dashboard/user-management/create-permission",
+    //   //   },
+    //   //   { name: "Create Role", link: "/dashboard/user-management/create-role" },
+    //   //   { name: "Role List", link: "/dashboard/user-management/role-list" },
+    //   //   {
+    //   //     name: "List Access Permission",
+    //   //     link: "/dashboard/user-management/list-access-role",
+    //   //   },
+    //   // ],
+    // },
     {
-      name: "Patient",
+      name: "Coupons",
       icon: <LucideComputer size={18} />,
-      // subItems: [
-      //   {
-      //     name: "Create Permission",
-      //     link: "/dashboard/user-management/create-permission",
-      //   },
-      //   { name: "Create Role", link: "/dashboard/user-management/create-role" },
-      //   { name: "Role List", link: "/dashboard/user-management/role-list" },
-      //   {
-      //     name: "List Access Permission",
-      //     link: "/dashboard/user-management/list-access-role",
-      //   },
-      // ],
+      subItems: [
+        {
+          name: "Coupons",
+          link: "/admin/dashboard/coupons/coupons",
+        },
+        // { name: "Create Role", link: "/dashboard/user-management/create-role" },
+        // { name: "Role List", link: "/dashboard/user-management/role-list" },
+        // {
+        //   name: "List Access Permission",
+        //   link: "/dashboard/user-management/list-access-role",
+        // },
+      ],
     },
   ];
 
