@@ -145,6 +145,24 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                   Generate
                 </button> */}
               </div>
+              <label className="block text-xs font-medium text-[#161D1F]">
+                Coupon Name
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={formData.coupon_name}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "coupon_name",
+                      e.target.value.toUpperCase()
+                    )
+                  }
+                  className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-500"
+                  placeholder="e.g., Get ₹100 off when you buy 5 or more items."
+                  required
+                />
+              </div>
               {/* Discount Type */}
               <div className="space-y-1">
                 <label className="block text-xs font-medium text-[#161D1F]">
