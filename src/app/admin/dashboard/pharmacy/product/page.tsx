@@ -39,10 +39,8 @@ const ProductCatalog: React.FC = () => {
 
   const refreshProducts = async () => {
     try {
-      const { products, totalCount } = await productService.getAllProducts(
-        pagination.currentPage,
-        pagination.pageSize
-      );
+      const { products, totalCount } = await productService.getAllProducts();
+
       setProducts(products);
       setPagination((prev) => ({ ...prev, totalItems: totalCount }));
       setError(null);
@@ -132,10 +130,7 @@ const ProductCatalog: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const { products, totalCount } = await productService.getAllProducts(
-          pagination.currentPage,
-          pagination.pageSize
-        );
+        const { products, totalCount } = await productService.getAllProducts();
         setProducts(products);
         setPagination((prev) => ({ ...prev, totalItems: totalCount }));
       } catch (err) {
