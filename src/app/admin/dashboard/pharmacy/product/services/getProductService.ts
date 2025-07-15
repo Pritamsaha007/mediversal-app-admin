@@ -12,7 +12,8 @@ const apiClient = axios.create({
   },
 });
 
-// API Response interface
+/* ---------- API RESPONSE TYPES ---------- */
+
 interface ProductApiResponse {
   productId: number;
   ProductName: string;
@@ -42,7 +43,8 @@ interface ProductApiResponse {
   SKU: string;
 }
 
-// Map API response to Product interface
+/* ---------- MAPPER ---------- */
+
 const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
   const sellingPrice = parseFloat(apiProduct.SellingPrice);
   const costPrice = parseFloat(apiProduct.CostPrice);
@@ -86,7 +88,6 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
       Array.isArray(apiProduct.images) && apiProduct.images.length > 0
         ? apiProduct.images[0]
         : undefined,
-
     substitutes: apiProduct.Substitutes?.includes("Available") ? 1 : 0,
     similar: apiProduct.SimilarProducts?.includes("Available") ? 1 : 0,
     substitutesCount: 1,
@@ -94,8 +95,10 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
   };
 };
 
+/* ---------- SERVICE ---------- */
+
 export const productService = {
-  // Add to productService.ts
+  /* ----- DELETE PRODUCT ----- */
   async deleteProduct(id: string): Promise<void> {
     try {
       await apiClient.delete(`/app/api/Product/deleteProduct/${id}`);
@@ -105,11 +108,11 @@ export const productService = {
     }
   },
 
-  // Update getAllProducts to properly handle pagination
-  async getAllProducts(
-    page: number = 1,
-    pageSize: number = 10
-  ): Promise<{ products: Product[]; totalCount: number }> {
+  /* ----- GET ALL PRODUCTS (NO PAGINATION) ----- */
+  async getAllProducts(): Promise<{
+    products: Product[];
+    totalCount: number;
+  }> {
     try {
       const response = await apiClient.get("/app/api/Product/getProducts");
 
@@ -117,16 +120,9 @@ export const productService = {
         ? response.data
         : response.data.products || [];
 
-      // Implement client-side pagination if API doesn't support it
-      const startIndex = (page - 1) * pageSize;
-      const paginatedProducts = productsArray.slice(
-        startIndex,
-        startIndex + pageSize
-      );
-
       return {
-        products: paginatedProducts.map(mapApiResponseToProduct),
-        totalCount: productsArray.length, // Total available products
+        products: productsArray.map(mapApiResponseToProduct),
+        totalCount: productsArray.length,
       };
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -134,7 +130,7 @@ export const productService = {
     }
   },
 
-  // Add to productService.ts
+  /* ----- UPDATE PRODUCT ----- */
   async updateProduct(
     id: string,
     productData: ProductFormData
@@ -168,11 +164,7 @@ export const productService = {
       const response = await apiClient.put(
         `/app/api/Product/updateProduct/${id}`,
         payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        { headers: { "Content-Type": "application/json" } }
       );
 
       return mapApiResponseToProduct(response.data);

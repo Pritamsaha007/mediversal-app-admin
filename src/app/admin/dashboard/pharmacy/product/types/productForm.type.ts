@@ -44,12 +44,18 @@ export interface AddProductModalProps {
 }
 
 export const categories = [
-  "All Categories",
-  "Medicines",
-  "Healthcare",
-  "Beauty & Personal Care",
-  "Baby Care",
-  "Wellness",
+  "All",
+  "OTC",
+  "Prescription",
+  "Supplements",
+  "Devices",
+  "Surgical Care",
+  "Vaccines",
+  "Personal Care",
+  "Sexual Wellness",
+  "Mom & Baby",
+  "Senior Care",
+  "Seasonal Needs",
 ];
 
 export const dosageForms = [
