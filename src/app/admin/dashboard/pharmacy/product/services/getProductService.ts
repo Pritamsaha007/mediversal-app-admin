@@ -144,7 +144,7 @@ export const productService = {
         CostPrice: productData.mrp.toFixed(2),
         SellingPrice: productData.sellingPrice.toFixed(2),
         DiscountedPrice: productData.sellingPrice.toFixed(2),
-        Type: productData.category,
+        Type: productData.Category,
         PrescriptionRequired: productData.prescriptionRequired ? "Yes" : "No",
         ColdChain: "No",
         ManufacturerName: productData.manufacturer,

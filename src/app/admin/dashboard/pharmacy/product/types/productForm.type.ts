@@ -4,7 +4,8 @@ export interface ProductFormData {
   // Basic Information
   productName: string;
   SKU: string;
-  category: string;
+  Category: string;
+  Type: string;
   subCategory: string;
   brand: string;
   manufacturer: string;

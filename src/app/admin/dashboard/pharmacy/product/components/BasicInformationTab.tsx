@@ -54,9 +54,9 @@ export const BasicInformationTab = ({
               className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
             >
               <span
-                className={formData.category ? "text-black" : "text-gray-500"}
+                className={formData.Category ? "text-black" : "text-gray-500"}
               >
-                {formData.category || "Select category"}
+                {formData.Category || "Select category"}
               </span>
               <ChevronDown className="w-4 h-4" />
             </button>
@@ -66,7 +66,7 @@ export const BasicInformationTab = ({
                   <button
                     key={cat}
                     onClick={() => {
-                      onInputChange("category", cat);
+                      onInputChange("Category", cat);
                       setCategoryDropdownOpen(false);
                     }}
                     className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"

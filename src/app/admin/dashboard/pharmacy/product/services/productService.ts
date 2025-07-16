@@ -21,7 +21,8 @@ export const addProductAPI = async (
       "DiscountedPrice",
       productData.sellingPrice?.toString() || "0"
     );
-    formData.append("Type", productData.category || "Medicine");
+    formData.append("Category", productData.Category || "Medicine");
+    formData.append("Type", productData.Type || "Type Default");
     formData.append("subCategory", productData.subCategory || "Sub Default");
     formData.append(
       "PrescriptionRequired",
