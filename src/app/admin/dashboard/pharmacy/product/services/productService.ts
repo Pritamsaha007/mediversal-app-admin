@@ -66,12 +66,18 @@ export const addProductAPI = async (
     );
     formData.append("HSN_Code", productData.HSN_Code || "");
     formData.append("SKU", productData.SKU || "");
+    formData.append("PackageSize", productData.PackageSize || "");
+    formData.append("ProductStrength", productData.ProductStrength || "");
 
     // Optional image
     if (imageFiles && imageFiles.length > 0) {
       imageFiles.forEach((file, index) => {
         formData.append(`images`, file);
       });
+    }
+
+    for (const [k, v] of formData.entries()) {
+      console.log(k, v);
     }
 
     const response = await axios.post(

@@ -2,8 +2,8 @@ export interface Product {
   brand: string;
   composition: string;
   dosageForm: string;
-  strength: string;
-  packSize: string;
+  ProductStrength: string;
+  PackageSize: string;
   schedule: string;
   taxRate: number;
   hsnCode: string;
