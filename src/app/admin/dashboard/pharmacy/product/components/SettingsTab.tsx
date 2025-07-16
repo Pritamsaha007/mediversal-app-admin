@@ -126,19 +126,36 @@ export const SettingsTab = ({
         </div>
       </div>
 
-      <div>
-        <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
-          Shelf Life (months)
-        </label>
-        <input
-          type="number"
-          placeholder="0"
-          value={formData.shelfLife || ""}
-          onChange={(e) =>
-            onInputChange("shelfLife", parseInt(e.target.value) || 0)
-          }
-          className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
-        />
+      <div className="grid grid-cols-2 gap-4">
+        {/* ‑‑‑‑ NEW ‑‑‑‑ */}
+        <div>
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+            Symptoms
+          </label>
+          <input
+            type="text"
+            placeholder="e.g., headache, cough"
+            value={formData.Type || ""}
+            onChange={(e) => onInputChange("Type", e.target.value)}
+            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+          />
+        </div>
+
+        {/* existing Shelf Life input, unchanged */}
+        <div>
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+            Shelf Life (months)
+          </label>
+          <input
+            type="number"
+            placeholder="0"
+            value={formData.shelfLife || ""}
+            onChange={(e) =>
+              onInputChange("shelfLife", parseInt(e.target.value) || 0)
+            }
+            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+          />
+        </div>
       </div>
 
       <div className="space-y-3">

@@ -37,7 +37,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   const [formData, setFormData] = useState<ProductFormData>({
     productName: "",
     SKU: "",
-    category: "",
+    Category: "",
     subCategory: "",
     brand: "",
     manufacturer: "",
@@ -50,6 +50,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     ProductStrength: "",
     PackageSize: "",
     schedule: "",
+    Type: "",
     taxRate: 0,
     HSN_Code: "",
     storageConditions: "",
@@ -88,7 +89,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     setFormData({
       productName: "",
       SKU: "",
-      category: "",
+      Category: "",
       subCategory: "",
       brand: "",
       manufacturer: "",
@@ -102,6 +103,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       PackageSize: "",
       schedule: "",
       taxRate: 0,
+      Type: "",
       HSN_Code: "",
       storageConditions: "",
       shelfLife: 0,
