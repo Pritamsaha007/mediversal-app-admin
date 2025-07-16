@@ -1,7 +1,6 @@
 export interface ProductFormData {
-  id?: string; // <-- Add this for identifying products in edit mode
-  createdAt?: string; // <-- Optional, for keeping original creation date
-
+  id?: string;
+  createdAt?: string;
   // Basic Information
   productName: string;
   SKU: string;
@@ -19,8 +18,8 @@ export interface ProductFormData {
   storageDescription: string;
   composition: string;
   dosageForm: string;
-  strength: string;
-  packSize: string;
+  ProductStrength: string;
+  PackageSize: string;
   productImage: File | null;
 
   // Settings

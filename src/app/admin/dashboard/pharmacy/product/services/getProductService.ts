@@ -30,6 +30,8 @@ interface ProductApiResponse {
   StorageInstructions: string;
   Substitutes: string;
   SimilarProducts: string;
+  ProductStrength: string;
+  PackageSize: string;
   GST: string;
   Coupons: string;
   StockAvailableInInventory: number;
@@ -61,7 +63,7 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
     code: `MED-${apiProduct.productId}`,
     category: apiProduct.Type,
     subcategory: apiProduct.Type,
-    brand: "",
+    brand: apiProduct.ManufacturerName,
     manufacturer: apiProduct.ManufacturerName,
     mrp: costPrice,
     sellingPrice: sellingPrice,
@@ -72,12 +74,12 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
     description: apiProduct.ProductInformation,
     composition: apiProduct.Composition,
     dosageForm: "",
-    sku: apiProduct.SKU,
-    strength: "",
-    packSize: "",
-    schedule: "",
+    sku: apiProduct.SKU || "",
+    ProductStrength: apiProduct.ProductStrength || "",
+    PackageSize: apiProduct.PackageSize || "",
+    schedule: apiProduct.ColdChain === "Yes" ? "Cold Chain" : "Non-Cold Chain",
     taxRate: parseFloat(apiProduct.GST),
-    hsnCode: "",
+    hsnCode: apiProduct.HSN_Code || "",
     storageConditions: apiProduct.StorageInstructions,
     shelfLife: 0,
     prescriptionRequired: apiProduct.PrescriptionRequired === "Yes",
@@ -119,6 +121,7 @@ export const productService = {
       const productsArray = Array.isArray(response.data)
         ? response.data
         : response.data.products || [];
+      console.log("Fetched Products:", productsArray);
 
       return {
         products: productsArray.map(mapApiResponseToProduct),

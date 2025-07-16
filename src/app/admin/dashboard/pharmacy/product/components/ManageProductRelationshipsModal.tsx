@@ -176,7 +176,7 @@ export const ProductRelationshipsModal: React.FC<
           {/* Add New Items Section */}
           <div>
             <h3 className="text-[10px] font-medium text-[#161D1F] mb-4">
-              Add{" "}
+              Add
               {activeTab === "substitutes" ? "Substitutes" : "Similar Products"}
             </h3>
 

@@ -179,8 +179,8 @@ export const ProductDetailsTab = ({
           <input
             type="text"
             placeholder="e.g., 500mg, 10ml"
-            value={formData.strength}
-            onChange={(e) => onInputChange("strength", e.target.value)}
+            value={formData.ProductStrength}
+            onChange={(e) => onInputChange("ProductStrength", e.target.value)}
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
@@ -191,8 +191,8 @@ export const ProductDetailsTab = ({
           <input
             type="text"
             placeholder="e.g., 10 tablets, 100ml"
-            value={formData.packSize}
-            onChange={(e) => onInputChange("packSize", e.target.value)}
+            value={formData.PackageSize}
+            onChange={(e) => onInputChange("PackageSize", e.target.value)}
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
