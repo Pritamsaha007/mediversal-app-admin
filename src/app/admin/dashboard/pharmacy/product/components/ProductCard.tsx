@@ -89,7 +89,7 @@ export const ProductCard: React.FC<{
       productName: product.name,
       SKU: product.sku,
       Category: product.category,
-      subCategory: product.subcategory,
+      Subcategory: product.subcategory,
       brand: product.brand || "",
       manufacturer: product.manufacturer || "",
       mrp: product.mrp,
@@ -109,9 +109,8 @@ export const ProductCard: React.FC<{
       prescriptionRequired: product.prescriptionRequired || false,
       featuredProduct: product.featured || false,
       activeProduct: product.status === "Active",
-      saftyDescription: product.saftyDescription || "",
+      safetyDescription: product.saftyDescription || "",
       storageDescription: product.storageDescription || "",
-      createdAt: product.createdAt || new Date().toISOString(),
       productImage:
         typeof product.productImage === "object" &&
         product.productImage instanceof File
@@ -143,61 +142,43 @@ export const ProductCard: React.FC<{
     }
   };
   const handleRelationshipsUpdate = (data: {
-    substitutes: RelatedProduct[];
-    similarProducts: RelatedProduct[];
+    substitutes: string[];
+    similarProducts: string[];
   }) => {
     if (onUpdateRelationships) {
-      onUpdateRelationships(product.id, data);
+      // Convert back to RelatedProduct format if needed by parent component
+      onUpdateRelationships(product.id, {
+        substitutes: data.substitutes.map((name) => ({
+          id: name, // or generate some ID
+          name,
+          code: "", // Add appropriate values
+          manufacturer: "", // Add appropriate values
+        })),
+        similarProducts: data.similarProducts.map((name) => ({
+          id: name, // or generate some ID
+          name,
+          code: "", // Add appropriate values
+          manufacturer: "", // Add appropriate values
+        })),
+      });
     }
   };
 
-  const currentSubstitutes: RelatedProduct[] = [
-    {
-      id: "MED-002",
-      name: "Amoxicillin 250mg",
-      code: "MED-002",
-      manufacturer: "Healthcare Pharma",
-    },
-    {
-      id: "MED-003",
-      name: "Amoxicillin 500mg",
-      code: "MED-003",
-      manufacturer: "Healthcare Pharma",
-    },
-    {
-      id: "MED-004",
-      name: "Ciprofloxacin 500mg",
-      code: "MED-004",
-      manufacturer: "Pharma Solutions",
-    },
-  ];
+  const currentSubstitutes: RelatedProduct[] =
+    product.Substitutes?.map((name) => ({
+      id: name, // or generate some ID
+      name,
+      code: "", // Add appropriate values
+      manufacturer: product.manufacturer || "Unknown",
+    })) || [];
 
-  const currentSimilarProducts: RelatedProduct[] = [
-    {
-      id: "MED-002",
-      name: "Vitamin D3 1000IU",
-      code: "MED-002",
-      manufacturer: "Healthcare Pharma",
-    },
-    {
-      id: "MED-004",
-      name: "Vitamin D3 1000IU",
-      code: "MED-002",
-      manufacturer: "Healthcare Pharma",
-    },
-    {
-      id: "MED-003",
-      name: "Vitamin D3 1000IU",
-      code: "MED-002",
-      manufacturer: "Healthcare Pharma",
-    },
-    {
-      id: "MED-009",
-      name: "Vitamin D3 1000IU",
-      code: "MED-002",
-      manufacturer: "Healthcare Pharma",
-    },
-  ];
+  const currentSimilarProducts: RelatedProduct[] =
+    product.SimilarProducts?.map((name) => ({
+      id: name, // or generate some ID
+      name,
+      code: "", // Add appropriate values
+      manufacturer: product.manufacturer || "Unknown",
+    })) || [];
 
   return (
     <tr className="border-y-1 hover:bg-gray-50 border-[#D3D7D8]">
@@ -215,17 +196,23 @@ export const ProductCard: React.FC<{
             {product.name}
           </div>
           <div className="text-[10px] text-gray-500">
-            {product.code} | {product.subcategory}
+            {product.code} | {product.prescriptionRequired ? "Rx" : "No Rx "}
           </div>
           <div className="flex gap-2 mt-2">
-            {product.substitutes && (
-              <span className="px-2 py-1 text-[8px]  text-[#0088B1] rounded border border-[#0088B1]">
-                {product.substitutes} substitute(s)
+            {product.substitutesCount > 0 && (
+              <span
+                className="px-2 py-1 text-[8px] text-[#0088B1] rounded border border-[#0088B1]"
+                title={product.Substitutes.join(", ")}
+              >
+                {product.substitutesCount} substitute(s)
               </span>
             )}
-            {product.similar && (
-              <span className="px-2 py-1 text-[8px]  text-[#9B51E0] rounded border border-[#9B51E0]">
-                {product.similar} similar
+            {product.similarCount > 0 && (
+              <span
+                className="px-2 py-1 text-[8px] text-[#9B51E0] rounded border border-[#9B51E0]"
+                title={product.SimilarProducts.join(", ")}
+              >
+                {product.similarCount} similar
               </span>
             )}
           </div>

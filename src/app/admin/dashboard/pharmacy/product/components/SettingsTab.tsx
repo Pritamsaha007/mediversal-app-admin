@@ -2,6 +2,7 @@ import {
   ProductFormData,
   schedules,
   storageConditions,
+  symptoms,
 } from "@/app/admin/dashboard/pharmacy/product/types/productForm.type";
 import { ChevronDown } from "lucide-react";
 
@@ -12,6 +13,8 @@ interface SettingsTabProps {
   setScheduleDropdownOpen: (open: boolean) => void;
   storageDropdownOpen: boolean;
   setStorageDropdownOpen: (open: boolean) => void;
+  symptomsDropdownOpen: boolean;
+  setSymptomsDropdownOpen: (open: boolean) => void;
 }
 
 export const SettingsTab = ({
@@ -21,6 +24,8 @@ export const SettingsTab = ({
   setScheduleDropdownOpen,
   storageDropdownOpen,
   setStorageDropdownOpen,
+  symptomsDropdownOpen,
+  setSymptomsDropdownOpen,
 }: SettingsTabProps) => {
   return (
     <div className="space-y-4">
@@ -132,13 +137,33 @@ export const SettingsTab = ({
           <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             Symptoms
           </label>
-          <input
-            type="text"
-            placeholder="e.g., headache, cough"
-            value={formData.Type || ""}
-            onChange={(e) => onInputChange("Type", e.target.value)}
-            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
-          />
+          <div className="relative">
+            <button
+              onClick={() => setSymptomsDropdownOpen(!symptomsDropdownOpen)}
+              className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
+            >
+              <span className={formData.Type ? "text-black" : "text-gray-500"}>
+                {formData.Type || "Select symptoms"}
+              </span>
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            {symptomsDropdownOpen && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {symptoms.map((symptom) => (
+                  <button
+                    key={symptom}
+                    onClick={() => {
+                      onInputChange("Type", symptom);
+                      setSymptomsDropdownOpen(false);
+                    }}
+                    className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
+                  >
+                    {symptom}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* existing Shelf Life input, unchanged */}

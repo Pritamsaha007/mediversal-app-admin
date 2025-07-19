@@ -1,29 +1,25 @@
 export interface ProductFormData {
   id?: string;
-  createdAt?: string;
-  // Basic Information
   productName: string;
   SKU: string;
   Category: string;
+  Subcategory: string;
   Type: string;
-  subCategory: string;
   brand: string;
   manufacturer: string;
-  mrp: number;
-  sellingPrice: number;
-  stockQuantity: number;
+  mrp: number | null;
+  sellingPrice: number | null;
+  stockQuantity: number | null;
 
-  // Product Details
   description: string;
-  saftyDescription: string;
+  safetyDescription: string;
   storageDescription: string;
   composition: string;
   dosageForm: string;
-  ProductStrength: string;
+  ProductStrength: string | null;
   PackageSize: string;
-  productImage: File | null;
+  productImage: File | string | null;
 
-  // Settings
   schedule: string;
   taxRate: number;
   HSN_Code: string;
@@ -32,6 +28,14 @@ export interface ProductFormData {
   prescriptionRequired: boolean;
   featuredProduct: boolean;
   activeProduct: boolean;
+
+  productLength?: string;
+  productBreadth?: string;
+  productHeight?: string;
+  productWeight?: string;
+
+  Substitutes?: string[];
+  SimilarProducts?: string[];
 }
 
 export interface AddProductModalProps {
@@ -82,4 +86,39 @@ export const storageConditions = [
   "Store below 30°C",
   "Store in refrigerator (2-8°C)",
   "Store away from light",
+];
+export const subcategories = [
+  "Cold and Cough",
+  "Acidity",
+  "Headache",
+  "Muscle Cramps",
+  "Dehydration",
+  "Burn Care",
+  "Blocked Nose",
+  "Joint Pain",
+];
+
+export const symptoms = [
+  "Cough Syrups",
+  "Lozenges",
+  "Vaporubs",
+  "Nasal Sprays",
+  "Inhalers",
+  "Immunity Boosters",
+  "Steam Inhalers",
+  "Antacids",
+  "PPIs",
+  "H2 Blockers",
+  "Pain Relievers",
+  "Migraine Relief",
+  "Muscle Relaxants",
+  "Pain Relief Creams",
+  "ORS Solutions",
+  "Electrolyte Powders",
+  "Burn Creams",
+  "Antiseptic Creams",
+  "Nasal Decongestants",
+  "Nasal Sprays",
+  "Pain Relief Gels",
+  "Oral Pain Relievers",
 ];

@@ -33,10 +33,12 @@ export class OrderService {
   static calculateTotalAmount(order: Order): number {
     if (
       order.TotalOrderAmount !== null &&
-      order.TotalOrderAmount !== undefined &&
-      !isNaN(order.TotalOrderAmount)
+      order.TotalOrderAmount !== undefined
     ) {
-      return order.TotalOrderAmount;
+      const amount = parseFloat(order.TotalOrderAmount);
+      if (!isNaN(amount)) {
+        return amount;
+      }
     }
 
     if (order.items && Array.isArray(order.items)) {

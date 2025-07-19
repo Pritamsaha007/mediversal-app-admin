@@ -27,6 +27,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   const [tabAnimationKey, setTabAnimationKey] = useState(0);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [subcategoryDropdownOpen, setSubcategoryDropdownOpen] = useState(false);
+  const [symptomsDropdownOpen, setSymptomsDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (isEditMode && productToEdit) {
@@ -38,12 +40,12 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     productName: "",
     SKU: "",
     Category: "",
-    subCategory: "",
+    Subcategory: "",
     brand: "",
     manufacturer: "",
-    mrp: 0,
-    sellingPrice: 0,
-    stockQuantity: 0,
+    mrp: null,
+    sellingPrice: null,
+    stockQuantity: null,
     description: "",
     composition: "",
     dosageForm: "",
@@ -58,7 +60,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     prescriptionRequired: false,
     featuredProduct: false,
     activeProduct: true,
-    saftyDescription: "",
+    safetyDescription: "",
     storageDescription: "",
     productImage: null,
   });
@@ -90,12 +92,12 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       productName: "",
       SKU: "",
       Category: "",
-      subCategory: "",
+      Subcategory: "",
       brand: "",
       manufacturer: "",
-      mrp: 0,
-      sellingPrice: 0,
-      stockQuantity: 0,
+      mrp: null,
+      sellingPrice: null,
+      stockQuantity: null,
       description: "",
       composition: "",
       dosageForm: "",
@@ -110,7 +112,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       prescriptionRequired: false,
       featuredProduct: false,
       activeProduct: true,
-      saftyDescription: "",
+      safetyDescription: "",
       storageDescription: "",
       productImage: null,
     });
@@ -123,11 +125,12 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
         const productJSON = {
           ...formData,
           id: productToEdit?.id,
-          createdAt: productToEdit?.createdAt,
           discount:
-            formData.mrp > 0
+            formData.mrp !== null && formData.mrp > 0
               ? Math.round(
-                  ((formData.mrp - formData.sellingPrice) / formData.mrp) * 100
+                  ((formData.mrp - (formData.sellingPrice ?? 0)) /
+                    formData.mrp) *
+                    100
                 )
               : 0,
           status: formData.activeProduct ? "Active" : "Inactive",
@@ -210,6 +213,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 onInputChange={handleInputChange}
                 categoryDropdownOpen={categoryDropdownOpen}
                 setCategoryDropdownOpen={setCategoryDropdownOpen}
+                subcategoryDropdownOpen={subcategoryDropdownOpen}
+                setSubcategoryDropdownOpen={setSubcategoryDropdownOpen}
               />
             )}
             {activeTab === "Product Details" && (
@@ -240,6 +245,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 setScheduleDropdownOpen={setScheduleDropdownOpen}
                 storageDropdownOpen={storageDropdownOpen}
                 setStorageDropdownOpen={setStorageDropdownOpen}
+                symptomsDropdownOpen={symptomsDropdownOpen}
+                setSymptomsDropdownOpen={setSymptomsDropdownOpen}
               />
             )}
           </div>

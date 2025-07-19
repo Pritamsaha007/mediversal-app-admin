@@ -103,8 +103,8 @@ export const ProductDetailsTab = ({
         </label>
         <textarea
           placeholder="Enter Safety Advice"
-          value={formData.saftyDescription}
-          onChange={(e) => onInputChange("saftyDescription", e.target.value)}
+          value={formData.safetyDescription}
+          onChange={(e) => onInputChange("safetyDescription", e.target.value)}
           rows={4}
           className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none resize-none"
         />
@@ -179,7 +179,7 @@ export const ProductDetailsTab = ({
           <input
             type="text"
             placeholder="e.g., 500mg, 10ml"
-            value={formData.ProductStrength}
+            value={formData.ProductStrength ?? ""}
             onChange={(e) => onInputChange("ProductStrength", e.target.value)}
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
