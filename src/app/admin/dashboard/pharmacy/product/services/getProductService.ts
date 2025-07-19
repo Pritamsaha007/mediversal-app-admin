@@ -148,9 +148,9 @@ export const productService = {
     try {
       const payload = {
         ProductName: data.productName,
-        CostPrice: data.mrp.toFixed(2),
-        SellingPrice: data.sellingPrice.toFixed(2),
-        DiscountedPrice: data.sellingPrice.toFixed(2),
+        CostPrice: (data.mrp ?? 0).toFixed(2),
+        SellingPrice: (data.sellingPrice ?? 0).toFixed(2),
+        DiscountedPrice: (data.sellingPrice ?? 0).toFixed(2),
         Type: data.Type,
         PrescriptionRequired: data.prescriptionRequired ? "Yes" : "No",
         ColdChain: data.schedule === "Cold Chain" ? "Yes" : "No", // adjust based on UI
