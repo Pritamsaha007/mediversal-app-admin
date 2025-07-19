@@ -1,37 +1,41 @@
 export interface ProductFormData {
   id?: string;
-  createdAt?: string;
-  // Basic Information
   productName: string;
   SKU: string;
   Category: string;
+  Subcategory: string;
   Type: string;
-  subCategory: string;
   brand: string;
   manufacturer: string;
   mrp: number;
   sellingPrice: number;
   stockQuantity: number;
 
-  // Product Details
   description: string;
-  saftyDescription: string;
+  safetyDescription: string;
   storageDescription: string;
   composition: string;
   dosageForm: string;
-  ProductStrength: string;
+  ProductStrength: string | null;
   PackageSize: string;
-  productImage: File | null;
+  productImage: File | string | null;
 
-  // Settings
-  schedule: string;
-  taxRate: number;
+  schedule: string; // optional mapping for ColdChain
+  taxRate: number; // maps to GST
   HSN_Code: string;
   storageConditions: string;
   shelfLife: number;
   prescriptionRequired: boolean;
   featuredProduct: boolean;
   activeProduct: boolean;
+
+  productLength?: string;
+  productBreadth?: string;
+  productHeight?: string;
+  productWeight?: string;
+
+  Substitutes?: string[];
+  SimilarProducts?: string[];
 }
 
 export interface AddProductModalProps {

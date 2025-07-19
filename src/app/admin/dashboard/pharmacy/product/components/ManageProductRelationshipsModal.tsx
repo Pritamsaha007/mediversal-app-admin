@@ -12,12 +12,12 @@ interface ProductRelationshipsModalProps {
   isOpen: boolean;
   onClose: () => void;
   productName: string;
-  currentSubstitutes?: RelatedProduct[];
-  currentSimilarProducts?: RelatedProduct[];
+  currentSubstitutes: RelatedProduct[]; // Keep as RelatedProduct[]
+  currentSimilarProducts: RelatedProduct[]; // Keep as RelatedProduct[]
   availableProducts?: RelatedProduct[];
   onSaveChanges: (data: {
-    substitutes: RelatedProduct[];
-    similarProducts: RelatedProduct[];
+    substitutes: string[]; // Change to string[] for API
+    similarProducts: string[]; // Change to string[] for API
   }) => void;
 }
 
@@ -42,7 +42,6 @@ export const ProductRelationshipsModal: React.FC<
   );
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filter available products based on search and exclude already added ones
   const getFilteredAvailableProducts = () => {
     const currentList =
       activeTab === "substitutes" ? substitutes : similarProducts;
@@ -74,8 +73,8 @@ export const ProductRelationshipsModal: React.FC<
 
   const handleSaveChanges = () => {
     onSaveChanges({
-      substitutes,
-      similarProducts,
+      substitutes: substitutes.map((product) => product.name), // Convert to names
+      similarProducts: similarProducts.map((product) => product.name), // Convert to names
     });
     onClose();
   };
@@ -91,7 +90,7 @@ export const ProductRelationshipsModal: React.FC<
       className="fixed inset-0 flex items-center justify-center z-50 p-4"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >
-      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[70vh] overflow-hidden">
+      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6  border-gray-200">
           <h2 className="text-[16px] font-medium text-[#161D1F]">

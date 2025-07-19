@@ -85,8 +85,8 @@ export const BasicInformationTab = ({
           <input
             type="text"
             placeholder="Enter subcategory"
-            value={formData.subCategory ?? ""}
-            onChange={(e) => onInputChange("subCategory", e.target.value)}
+            value={formData.Subcategory ?? ""}
+            onChange={(e) => onInputChange("Subcategory", e.target.value)}
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>

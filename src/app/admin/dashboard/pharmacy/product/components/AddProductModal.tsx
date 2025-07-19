@@ -38,7 +38,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     productName: "",
     SKU: "",
     Category: "",
-    subCategory: "",
+    Subcategory: "",
     brand: "",
     manufacturer: "",
     mrp: 0,
@@ -58,7 +58,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     prescriptionRequired: false,
     featuredProduct: false,
     activeProduct: true,
-    saftyDescription: "",
+    safetyDescription: "",
     storageDescription: "",
     productImage: null,
   });
@@ -90,7 +90,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       productName: "",
       SKU: "",
       Category: "",
-      subCategory: "",
+      Subcategory: "",
       brand: "",
       manufacturer: "",
       mrp: 0,
@@ -110,7 +110,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       prescriptionRequired: false,
       featuredProduct: false,
       activeProduct: true,
-      saftyDescription: "",
+      safetyDescription: "",
       storageDescription: "",
       productImage: null,
     });
@@ -123,7 +123,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
         const productJSON = {
           ...formData,
           id: productToEdit?.id,
-          createdAt: productToEdit?.createdAt,
           discount:
             formData.mrp > 0
               ? Math.round(

@@ -28,8 +28,8 @@ interface ProductApiResponse {
   ProductInformation: string;
   SafetyAdvices: string;
   StorageInstructions: string;
-  Substitutes: string;
-  SimilarProducts: string;
+  Substitutes: string[];
+  SimilarProducts: string[];
   ProductStrength: string;
   PackageSize: string;
   GST: string;
@@ -43,6 +43,8 @@ interface ProductApiResponse {
   images: string[];
   HSN_Code: string;
   SKU: string;
+  Subcategory: string;
+  Category: string;
 }
 
 /* ---------- MAPPER ---------- */
@@ -61,8 +63,8 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
     id: apiProduct.productId?.toString() || "",
     name: apiProduct.ProductName,
     code: `MED-${apiProduct.productId}`,
-    category: apiProduct.Type,
-    subcategory: apiProduct.Type,
+    category: apiProduct.Category,
+    subcategory: apiProduct.Subcategory,
     brand: apiProduct.ManufacturerName,
     manufacturer: apiProduct.ManufacturerName,
     mrp: costPrice,
@@ -90,10 +92,18 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
       Array.isArray(apiProduct.images) && apiProduct.images.length > 0
         ? apiProduct.images[0]
         : undefined,
-    substitutes: apiProduct.Substitutes?.includes("Available") ? 1 : 0,
-    similar: apiProduct.SimilarProducts?.includes("Available") ? 1 : 0,
-    substitutesCount: 1,
-    similarCount: 1,
+    Substitutes: Array.isArray(apiProduct.Substitutes)
+      ? apiProduct.Substitutes
+      : [],
+    SimilarProducts: Array.isArray(apiProduct.SimilarProducts)
+      ? apiProduct.SimilarProducts
+      : [],
+    substitutesCount: Array.isArray(apiProduct.Substitutes)
+      ? apiProduct.Substitutes.length
+      : 0,
+    similarCount: Array.isArray(apiProduct.SimilarProducts)
+      ? apiProduct.SimilarProducts.length
+      : 0,
   };
 };
 
@@ -134,35 +144,45 @@ export const productService = {
   },
 
   /* ----- UPDATE PRODUCT ----- */
-  async updateProduct(
-    id: string,
-    productData: ProductFormData
-  ): Promise<Product> {
+  async updateProduct(id: string, data: ProductFormData): Promise<Product> {
     try {
       const payload = {
-        ProductName: productData.productName,
-        CostPrice: productData.mrp.toFixed(2),
-        SellingPrice: productData.sellingPrice.toFixed(2),
-        DiscountedPrice: productData.sellingPrice.toFixed(2),
-        Type: productData.Category,
-        PrescriptionRequired: productData.prescriptionRequired ? "Yes" : "No",
-        ColdChain: "No",
-        ManufacturerName: productData.manufacturer,
-        Composition: productData.composition,
-        ProductInformation: productData.description,
-        SafetyAdvices: productData.saftyDescription,
-        StorageInstructions: productData.storageDescription,
-        GST: productData.taxRate.toFixed(2),
-        Coupons: "5",
-        StockAvailableInInventory: productData.stockQuantity,
+        ProductName: data.productName,
+        CostPrice: data.mrp.toFixed(2),
+        SellingPrice: data.sellingPrice.toFixed(2),
+        DiscountedPrice: data.sellingPrice.toFixed(2),
+        Type: data.Type,
+        PrescriptionRequired: data.prescriptionRequired ? "Yes" : "No",
+        ColdChain: data.schedule === "Cold Chain" ? "Yes" : "No", // adjust based on UI
+        ManufacturerName: data.manufacturer,
+        Composition: data.composition,
+        ProductInformation: data.description,
+        SafetyAdvices: data.safetyDescription,
+        StorageInstructions: data.storageDescription,
+        Substitutes: data.Substitutes || [],
+        SimilarProducts: data.SimilarProducts || [],
+        GST: data.taxRate.toFixed(2),
+        Coupons: "10",
         InventoryUpdated: new Date().toISOString(),
         InventoryUpdatedBy: 1,
-        DiscountedPercentage: "0.00",
+        DiscountedPercentage: "5.00",
         updated_by: 1,
-        archivedProduct: productData.activeProduct ? 0 : 1,
-        HSN_Code: productData.HSN_Code || null,
-        SKU: productData.SKU || null,
+        archivedProduct: data.activeProduct ? 0 : 1,
+        HSN_Code: data.HSN_Code,
+        SKU: data.SKU,
+        StockAvailableInInventory: data.stockQuantity,
+        Category: data.Category,
+        Subcategory: data.Subcategory,
+        PackageSize: data.PackageSize,
+        ProductStrength: data.ProductStrength,
+        productLength: data.productLength ?? "0.00",
+        productBreadth: data.productBreadth ?? "0.00",
+        productHeight: data.productHeight ?? "0.00",
+        productWeight: data.productWeight ?? "0.00",
+        tax: "6.00", // optional if backend uses this
       };
+
+      console.log("Updating Product with Payload:", payload);
 
       const response = await apiClient.put(
         `/app/api/Product/updateProduct/${id}`,

@@ -23,7 +23,10 @@ export const addProductAPI = async (
     );
     formData.append("Category", productData.Category || "Medicine");
     formData.append("Type", productData.Type || "Type Default");
-    formData.append("subCategory", productData.subCategory || "Sub Default");
+    formData.append(
+      "Subcategory",
+      productData.Subcategory || "Sub Default hai "
+    );
     formData.append(
       "PrescriptionRequired",
       productData.prescriptionRequired ? "Yes" : "No"
