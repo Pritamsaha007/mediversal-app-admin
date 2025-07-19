@@ -7,9 +7,9 @@ export interface ProductFormData {
   Type: string;
   brand: string;
   manufacturer: string;
-  mrp: number;
-  sellingPrice: number;
-  stockQuantity: number;
+  mrp: number | null;
+  sellingPrice: number | null;
+  stockQuantity: number | null;
 
   description: string;
   safetyDescription: string;
@@ -20,8 +20,8 @@ export interface ProductFormData {
   PackageSize: string;
   productImage: File | string | null;
 
-  schedule: string; // optional mapping for ColdChain
-  taxRate: number; // maps to GST
+  schedule: string;
+  taxRate: number;
   HSN_Code: string;
   storageConditions: string;
   shelfLife: number;

@@ -41,9 +41,9 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     Subcategory: "",
     brand: "",
     manufacturer: "",
-    mrp: 0,
-    sellingPrice: 0,
-    stockQuantity: 0,
+    mrp: null,
+    sellingPrice: null,
+    stockQuantity: null,
     description: "",
     composition: "",
     dosageForm: "",
@@ -93,9 +93,9 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       Subcategory: "",
       brand: "",
       manufacturer: "",
-      mrp: 0,
-      sellingPrice: 0,
-      stockQuantity: 0,
+      mrp: null,
+      sellingPrice: null,
+      stockQuantity: null,
       description: "",
       composition: "",
       dosageForm: "",
@@ -124,9 +124,11 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           ...formData,
           id: productToEdit?.id,
           discount:
-            formData.mrp > 0
+            formData.mrp !== null && formData.mrp > 0
               ? Math.round(
-                  ((formData.mrp - formData.sellingPrice) / formData.mrp) * 100
+                  ((formData.mrp - (formData.sellingPrice ?? 0)) /
+                    formData.mrp) *
+                    100
                 )
               : 0,
           status: formData.activeProduct ? "Active" : "Inactive",

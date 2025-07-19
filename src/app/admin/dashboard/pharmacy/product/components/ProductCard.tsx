@@ -196,7 +196,7 @@ export const ProductCard: React.FC<{
             {product.name}
           </div>
           <div className="text-[10px] text-gray-500">
-            {product.code} | {product.subcategory}
+            {product.code} | {product.prescriptionRequired ? "Rx" : "No Rx "}
           </div>
           <div className="flex gap-2 mt-2">
             {product.substitutesCount > 0 && (

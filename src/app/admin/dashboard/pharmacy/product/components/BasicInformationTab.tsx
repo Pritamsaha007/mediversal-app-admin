@@ -126,11 +126,12 @@ export const BasicInformationTab = ({
           </label>
           <input
             type="number"
-            placeholder="0"
             value={formData.mrp ?? ""}
-            onChange={(e) =>
-              onInputChange("mrp", parseFloat(e.target.value) || 0)
-            }
+            placeholder="0"
+            onChange={(e) => {
+              const value = e.target.value;
+              onInputChange("mrp", value === "" ? "" : parseFloat(value));
+            }}
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
