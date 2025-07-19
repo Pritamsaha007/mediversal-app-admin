@@ -87,3 +87,38 @@ export const storageConditions = [
   "Store in refrigerator (2-8°C)",
   "Store away from light",
 ];
+export const subcategories = [
+  "Cold and Cough",
+  "Acidity",
+  "Headache",
+  "Muscle Cramps",
+  "Dehydration",
+  "Burn Care",
+  "Blocked Nose",
+  "Joint Pain",
+];
+
+export const symptoms = [
+  "Cough Syrups",
+  "Lozenges",
+  "Vaporubs",
+  "Nasal Sprays",
+  "Inhalers",
+  "Immunity Boosters",
+  "Steam Inhalers",
+  "Antacids",
+  "PPIs",
+  "H2 Blockers",
+  "Pain Relievers",
+  "Migraine Relief",
+  "Muscle Relaxants",
+  "Pain Relief Creams",
+  "ORS Solutions",
+  "Electrolyte Powders",
+  "Burn Creams",
+  "Antiseptic Creams",
+  "Nasal Decongestants",
+  "Nasal Sprays",
+  "Pain Relief Gels",
+  "Oral Pain Relievers",
+];

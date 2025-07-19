@@ -1,11 +1,17 @@
 import { ChevronDown } from "lucide-react";
-import { categories, ProductFormData } from "../types/productForm.type";
+import {
+  categories,
+  ProductFormData,
+  subcategories,
+} from "../types/productForm.type";
 
 interface BasicInformationTabProps {
   formData: ProductFormData;
   onInputChange: (field: keyof ProductFormData, value: any) => void;
   categoryDropdownOpen: boolean;
   setCategoryDropdownOpen: (open: boolean) => void;
+  subcategoryDropdownOpen: boolean; // Add this
+  setSubcategoryDropdownOpen: (open: boolean) => void; // Add this
 }
 
 export const BasicInformationTab = ({
@@ -13,6 +19,8 @@ export const BasicInformationTab = ({
   onInputChange,
   categoryDropdownOpen,
   setCategoryDropdownOpen,
+  subcategoryDropdownOpen,
+  setSubcategoryDropdownOpen,
 }: BasicInformationTabProps) => {
   return (
     <div className="space-y-4">
@@ -82,13 +90,39 @@ export const BasicInformationTab = ({
           <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             Sub Category
           </label>
-          <input
-            type="text"
-            placeholder="Enter subcategory"
-            value={formData.Subcategory ?? ""}
-            onChange={(e) => onInputChange("Subcategory", e.target.value)}
-            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
-          />
+          <div className="relative">
+            <button
+              onClick={() =>
+                setSubcategoryDropdownOpen(!subcategoryDropdownOpen)
+              }
+              className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
+            >
+              <span
+                className={
+                  formData.Subcategory ? "text-black" : "text-gray-500"
+                }
+              >
+                {formData.Subcategory || "Select subcategory"}
+              </span>
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            {subcategoryDropdownOpen && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {subcategories.map((subcat) => (
+                  <button
+                    key={subcat}
+                    onClick={() => {
+                      onInputChange("Subcategory", subcat);
+                      setSubcategoryDropdownOpen(false);
+                    }}
+                    className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
+                  >
+                    {subcat}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -27,6 +27,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   const [tabAnimationKey, setTabAnimationKey] = useState(0);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [subcategoryDropdownOpen, setSubcategoryDropdownOpen] = useState(false);
+  const [symptomsDropdownOpen, setSymptomsDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (isEditMode && productToEdit) {
@@ -211,6 +213,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 onInputChange={handleInputChange}
                 categoryDropdownOpen={categoryDropdownOpen}
                 setCategoryDropdownOpen={setCategoryDropdownOpen}
+                subcategoryDropdownOpen={subcategoryDropdownOpen}
+                setSubcategoryDropdownOpen={setSubcategoryDropdownOpen}
               />
             )}
             {activeTab === "Product Details" && (
@@ -241,6 +245,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 setScheduleDropdownOpen={setScheduleDropdownOpen}
                 storageDropdownOpen={storageDropdownOpen}
                 setStorageDropdownOpen={setStorageDropdownOpen}
+                symptomsDropdownOpen={symptomsDropdownOpen}
+                setSymptomsDropdownOpen={setSymptomsDropdownOpen}
               />
             )}
           </div>
