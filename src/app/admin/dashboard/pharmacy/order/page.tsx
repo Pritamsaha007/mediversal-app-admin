@@ -11,6 +11,7 @@ import {
   DollarSign,
   Truck,
   Trash2,
+  Eye,
 } from "lucide-react";
 import { Order, FilterOptions, SortOption } from "./types/types";
 import { OrderService } from "./services/orderServices";
@@ -18,6 +19,7 @@ import { StatsCard } from "./components/StatsCard";
 import StatusBadge from "./components/StatusBadge";
 import OrderActionDropdown from "./components/OrderActionDropdown";
 import { Pagination } from "./components/Pagination";
+import PrescriptionModal from "./components/PrescriptionModal";
 
 const Orders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,6 +48,9 @@ const Orders: React.FC = () => {
     const endIndex = startIndex + itemsPerPage;
     return filteredOrders.slice(startIndex, endIndex);
   };
+  const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
+  const [selectedOrderForPrescription, setSelectedOrderForPrescription] =
+    useState<Order | null>(null);
 
   // Add this function to calculate total pages:
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
@@ -170,10 +175,12 @@ const Orders: React.FC = () => {
     console.log(`Action: ${action}, Order ID: ${order.orderId}`);
 
     try {
-      setLoading(true); // Add loading state
+      setLoading(true);
       switch (action) {
         case "view":
           console.log("View order details:", order);
+          setSelectedOrderForPrescription(order);
+          setPrescriptionModalOpen(true);
           break;
         case "print":
           console.log("Print order:", order);
@@ -604,8 +611,18 @@ const Orders: React.FC = () => {
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">
-                        <div className="relative">
-                          <OrderActionDropdown
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedOrderForPrescription(order);
+                              setPrescriptionModalOpen(true);
+                            }}
+                            className="p-1 text-gray-500 hover:text-blue-500"
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          {/* <OrderActionDropdown
                             order={order}
                             isOpen={orderActionDropdown === order.orderId}
                             onToggle={() =>
@@ -616,7 +633,7 @@ const Orders: React.FC = () => {
                               )
                             }
                             onAction={handleOrderAction}
-                          />
+                          /> */}
                         </div>
                       </td>
                     </tr>
@@ -624,6 +641,14 @@ const Orders: React.FC = () => {
                 )}
               </tbody>
             </table>
+            <PrescriptionModal
+              isOpen={prescriptionModalOpen}
+              onClose={() => {
+                setPrescriptionModalOpen(false);
+                setSelectedOrderForPrescription(null);
+              }}
+              order={selectedOrderForPrescription!}
+            />
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}

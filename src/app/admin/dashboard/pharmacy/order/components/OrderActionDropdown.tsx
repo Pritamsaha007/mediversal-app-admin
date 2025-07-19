@@ -15,6 +15,12 @@ const OrderActionDropdown: React.FC<OrderActionDropdownProps> = ({
   onToggle,
   onAction,
 }) => {
+  const handleViewClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
+    console.log("DEBUG - View button clicked", order.orderId);
+    onAction("view", order);
+  };
+
   return (
     <div className="relative">
       <button
@@ -26,7 +32,7 @@ const OrderActionDropdown: React.FC<OrderActionDropdownProps> = ({
       {isOpen && (
         <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
           <button
-            onClick={() => onAction("view", order)}
+            onClick={handleViewClick}
             className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100"
           >
             <Eye className="w-4 h-4" />

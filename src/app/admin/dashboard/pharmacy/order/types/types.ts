@@ -21,11 +21,19 @@ export interface Order {
   paymentStatus: PaymentStatus;
   paymentMethod: string;
   paymentTime: string;
-  transactionId: string;
+  transactionId: string | null;
   createdAt: string;
-  TotalOrderAmount: number | null;
+  TotalOrderAmount: string | null; // Changed from number to string as per API
   deliverystatus: OrderStatus | null;
+  rapidshypShipmentId: string | null;
+  rapidshypAwb: string | null;
+  labelUrl: string | null;
+  manifestUrl: string | null;
+  coupon_id: string | null;
+  applied_discount_value: string | null;
+  cancellationReason: string | null;
   items: OrderItem[];
+  prescriptions: Prescription[]; // Add prescriptions array
 }
 
 // Updated OrderItem interface to match API response
@@ -35,6 +43,13 @@ export interface OrderItem {
   productId: number;
   quantity: number;
   sellingPrice: string;
+  sku: string;
+  tax: string;
+  productLength: string;
+  productBreadth: string;
+  productHeight: string;
+  productWeight: string;
+  productName: string;
 }
 
 export interface Address {
@@ -86,4 +101,9 @@ export interface OrderAction {
   icon?: React.ReactNode;
   color?: string;
   onClick: (order: Order) => void;
+}
+
+export interface Prescription {
+  prescription_id: string;
+  prescriptionURL: string;
 }
