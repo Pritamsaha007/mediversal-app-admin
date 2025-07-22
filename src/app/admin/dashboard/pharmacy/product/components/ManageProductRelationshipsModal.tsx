@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 import { X, Search, Trash2, CloudFog } from "lucide-react";
 import {
   getProductsById,
@@ -130,8 +131,10 @@ export const ProductRelationshipsModal: React.FC<
   const handleAddProduct = (product: RelatedProduct) => {
     if (activeTab === "substitutes") {
       setSubstitutes((prev) => [...prev, product]);
+      toast.success(`Substitute "${product.name}" added`);
     } else {
       setSimilarProducts((prev) => [...prev, product]);
+      toast.success(`Similar product "${product.name}" added`);
     }
   };
 
@@ -151,10 +154,12 @@ export const ProductRelationshipsModal: React.FC<
 
       if (activeTab === "substitutes") {
         setSubstitutes((prev) => prev.filter((p) => p.id !== itemIdToRemove));
+        toast.success("Substitute removed");
       } else {
         setSimilarProducts((prev) =>
           prev.filter((p) => p.id !== itemIdToRemove)
         );
+        toast.success("Similar product removed");
       }
     } catch (err) {
       console.error("Error removing relationship:", err);
@@ -304,7 +309,7 @@ export const ProductRelationshipsModal: React.FC<
               </div>
             ) : (
               <div className="text-[12px] text-[#899193] py-8 text-center">
-                No{" "}
+                No
                 {activeTab === "substitutes"
                   ? "substitutes"
                   : "similar products"}{" "}
