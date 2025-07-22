@@ -56,6 +56,12 @@ export const ProductRelationshipsModal: React.FC<
   const [similarProducts, setSimilarProducts] = useState<RelatedProduct[]>(
     currentSimilarProducts
   );
+  const [newlyAddedSubstitutes, setNewlyAddedSubstitutes] = useState<string[]>(
+    []
+  );
+  const [newlyAddedSimilarProducts, setNewlyAddedSimilarProducts] = useState<
+    string[]
+  >([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +75,7 @@ export const ProductRelationshipsModal: React.FC<
       manufacturer: product.ManufacturerName || "",
     };
   };
+
   const fetchProductData = async () => {
     if (!productId) return;
 
@@ -130,30 +137,46 @@ export const ProductRelationshipsModal: React.FC<
   const handleAddProduct = (product: RelatedProduct) => {
     if (activeTab === "substitutes") {
       setSubstitutes((prev) => [...prev, product]);
+      setNewlyAddedSubstitutes((prev) => [...prev, product.id]);
     } else {
       setSimilarProducts((prev) => [...prev, product]);
+      setNewlyAddedSimilarProducts((prev) => [...prev, product.id]);
     }
   };
-
   const handleRemoveProduct = async (itemIdToRemove: string) => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const relationshipType =
-        activeTab === "substitutes" ? "substitutes" : "similar-products";
+      const isNewlyAdded =
+        activeTab === "substitutes"
+          ? newlyAddedSubstitutes.includes(itemIdToRemove)
+          : newlyAddedSimilarProducts.includes(itemIdToRemove);
 
-      await removeProductRelationship(
-        Number(productId),
-        relationshipType,
-        Number(itemIdToRemove)
-      );
+      if (!isNewlyAdded) {
+        // Only call API for existing relationships
+        const relationshipType =
+          activeTab === "substitutes" ? "substitutes" : "similar-products";
 
+        await removeProductRelationship(
+          Number(productId),
+          relationshipType,
+          Number(itemIdToRemove)
+        );
+      }
+
+      // Update local state
       if (activeTab === "substitutes") {
         setSubstitutes((prev) => prev.filter((p) => p.id !== itemIdToRemove));
+        setNewlyAddedSubstitutes((prev) =>
+          prev.filter((id) => id !== itemIdToRemove)
+        );
       } else {
         setSimilarProducts((prev) =>
           prev.filter((p) => p.id !== itemIdToRemove)
+        );
+        setNewlyAddedSimilarProducts((prev) =>
+          prev.filter((id) => id !== itemIdToRemove)
         );
       }
     } catch (err) {
@@ -176,17 +199,12 @@ export const ProductRelationshipsModal: React.FC<
         similarProducts: similarProducts.map((p) => Number(p.id)),
       };
 
-      console.log("Sending relationships data:", relationshipsData);
-      console.log("Product ID:", productId);
+      await updateProductRelationships(Number(productId), relationshipsData);
 
-      const result = await updateProductRelationships(
-        Number(productId),
-        relationshipsData
-      );
+      // Clear the newly added tracking after successful save
+      setNewlyAddedSubstitutes([]);
+      setNewlyAddedSimilarProducts([]);
 
-      console.log("API response:", result);
-
-      // Call the parent callback with the updated data
       onSaveChanges({
         substitutes: substitutes.map((p) => p.id),
         similarProducts: similarProducts.map((p) => p.id),
