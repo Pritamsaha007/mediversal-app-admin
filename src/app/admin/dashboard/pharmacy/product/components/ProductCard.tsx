@@ -351,6 +351,7 @@ export const ProductCard: React.FC<{
           <ProductRelationshipsModal
             isOpen={isRelationshipsModalOpen}
             onClose={() => setIsRelationshipsModalOpen(false)}
+            productId={product.id}
             productName={product.name}
             currentSubstitutes={currentSubstitutes}
             currentSimilarProducts={currentSimilarProducts}

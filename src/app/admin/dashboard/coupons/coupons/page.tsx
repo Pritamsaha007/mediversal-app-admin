@@ -11,7 +11,7 @@ import {
   createCoupon,
   updateCoupon,
   deleteCoupon,
-} from "../../../../service/api/coupon";
+} from "./services/coupon";
 import toast from "react-hot-toast";
 
 export default function CouponsManagement() {

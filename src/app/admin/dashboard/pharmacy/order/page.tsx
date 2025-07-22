@@ -46,7 +46,14 @@ const Orders: React.FC = () => {
   const getPaginatedOrders = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return filteredOrders.slice(startIndex, endIndex);
+
+    // Sort by date in descending order (newest first)
+    const sortedOrders = [...filteredOrders].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    return sortedOrders.slice(startIndex, endIndex);
   };
   const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
   const [selectedOrderForPrescription, setSelectedOrderForPrescription] =

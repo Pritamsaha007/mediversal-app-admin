@@ -1,5 +1,10 @@
-import React, { useState } from "react";
-import { X, Search, Trash2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { X, Search, Trash2, CloudFog } from "lucide-react";
+import {
+  getProductsById,
+  removeProductRelationship,
+  updateProductRelationships,
+} from "@/app/admin/dashboard/pharmacy/product/services/productRelationship";
 
 interface RelatedProduct {
   id: string;
@@ -12,13 +17,23 @@ interface ProductRelationshipsModalProps {
   isOpen: boolean;
   onClose: () => void;
   productName: string;
-  currentSubstitutes: RelatedProduct[]; // Keep as RelatedProduct[]
-  currentSimilarProducts: RelatedProduct[]; // Keep as RelatedProduct[]
+  productId: string;
+  currentSubstitutes: RelatedProduct[];
+  currentSimilarProducts: RelatedProduct[];
   availableProducts?: RelatedProduct[];
   onSaveChanges: (data: {
-    substitutes: string[]; // Change to string[] for API
-    similarProducts: string[]; // Change to string[] for API
+    substitutes: string[];
+    similarProducts: string[];
   }) => void;
+}
+
+interface ProductData {
+  productId: number;
+  ProductName: string;
+  Type: string;
+  ManufacturerName: string;
+  similarProducts: RelatedProduct[];
+  substitutes: RelatedProduct[];
 }
 
 export const ProductRelationshipsModal: React.FC<
@@ -27,6 +42,7 @@ export const ProductRelationshipsModal: React.FC<
   isOpen,
   onClose,
   productName,
+  productId,
   currentSubstitutes = [],
   currentSimilarProducts = [],
   availableProducts = [],
@@ -41,6 +57,61 @@ export const ProductRelationshipsModal: React.FC<
     currentSimilarProducts
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [productData, setProductData] = useState<ProductData | null>(null);
+
+  const convertToRelatedProduct = (product: any): RelatedProduct => {
+    return {
+      id: product.productId?.toString() || "",
+      name: product.ProductName || "",
+      code: product.Type || product.SKU || "",
+      manufacturer: product.ManufacturerName || "",
+    };
+  };
+  const fetchProductData = async () => {
+    if (!productId) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      console.log("Fetching product data for ID:", productId);
+      const response = await getProductsById(Number(productId));
+      console.log("Product data received:", response);
+
+      setProductData(response);
+
+      if (response.substitutes && Array.isArray(response.substitutes)) {
+        const convertedSubstitutes = response.substitutes.map(
+          convertToRelatedProduct
+        );
+        setSubstitutes(convertedSubstitutes);
+        console.log("Converted substitutes:", convertedSubstitutes);
+      }
+
+      if (response.similarProducts && Array.isArray(response.similarProducts)) {
+        const convertedSimilarProducts = response.similarProducts.map(
+          convertToRelatedProduct
+        );
+        setSimilarProducts(convertedSimilarProducts);
+        console.log("Converted similar products:", convertedSimilarProducts);
+      }
+    } catch (err) {
+      console.error("Error fetching product data:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch product data"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchProductData();
+    }
+  }, [isOpen, productId]);
 
   const getFilteredAvailableProducts = () => {
     const currentList =
@@ -50,6 +121,7 @@ export const ProductRelationshipsModal: React.FC<
     return availableProducts.filter(
       (product) =>
         !currentIds.includes(product.id) &&
+        product.id !== productId &&
         (product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           product.code.toLowerCase().includes(searchQuery.toLowerCase()))
     );
@@ -63,20 +135,72 @@ export const ProductRelationshipsModal: React.FC<
     }
   };
 
-  const handleRemoveProduct = (productId: string) => {
-    if (activeTab === "substitutes") {
-      setSubstitutes((prev) => prev.filter((p) => p.id !== productId));
-    } else {
-      setSimilarProducts((prev) => prev.filter((p) => p.id !== productId));
+  const handleRemoveProduct = async (itemIdToRemove: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const relationshipType =
+        activeTab === "substitutes" ? "substitutes" : "similar-products";
+
+      await removeProductRelationship(
+        Number(productId),
+        relationshipType,
+        Number(itemIdToRemove)
+      );
+
+      if (activeTab === "substitutes") {
+        setSubstitutes((prev) => prev.filter((p) => p.id !== itemIdToRemove));
+      } else {
+        setSimilarProducts((prev) =>
+          prev.filter((p) => p.id !== itemIdToRemove)
+        );
+      }
+    } catch (err) {
+      console.error("Error removing relationship:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to remove relationship"
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSaveChanges = () => {
-    onSaveChanges({
-      substitutes: substitutes.map((product) => product.name), // Convert to names
-      similarProducts: similarProducts.map((product) => product.name), // Convert to names
-    });
-    onClose();
+  const handleSaveChanges = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const relationshipsData = {
+        substitutes: substitutes.map((p) => Number(p.id)),
+        similarProducts: similarProducts.map((p) => Number(p.id)),
+      };
+
+      console.log("Sending relationships data:", relationshipsData);
+      console.log("Product ID:", productId);
+
+      const result = await updateProductRelationships(
+        Number(productId),
+        relationshipsData
+      );
+
+      console.log("API response:", result);
+
+      // Call the parent callback with the updated data
+      onSaveChanges({
+        substitutes: substitutes.map((p) => p.id),
+        similarProducts: similarProducts.map((p) => p.id),
+      });
+
+      onClose();
+    } catch (err) {
+      console.error("Error saving relationships:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to save relationships"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -92,7 +216,7 @@ export const ProductRelationshipsModal: React.FC<
     >
       <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6  border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-[16px] font-medium text-[#161D1F]">
             Manage Product Relationships:
             <span className="text-[#0088B1]"> {productName}</span>
@@ -100,40 +224,56 @@ export const ProductRelationshipsModal: React.FC<
           <button
             onClick={onClose}
             className="p-1 hover:bg-gray-100 rounded-full"
+            disabled={isLoading}
           >
             <X className="w-5 h-5 text-[#899193]" />
           </button>
         </div>
 
+        {/* Error Display */}
+        {error && (
+          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="mt-2 text-xs text-red-500 hover:text-red-700"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* Tabs */}
-        <div className="flex bg-gray-200 rounded mx-2">
+        <div className="flex bg-gray-200 rounded mx-6 mt-4">
           <button
             onClick={() => setActiveTab("substitutes")}
+            disabled={isLoading}
             className={`flex-1 px-6 py-2 text-[10px] font-medium rounded ${
               activeTab === "substitutes"
                 ? "text-[#F8F8F8] bg-[#0891B2] border-[#0891B2]"
                 : "text-[#899193] hover:text-gray-700"
             }`}
           >
-            Substitutes
+            Substitutes ({substitutes.length})
           </button>
           <button
             onClick={() => setActiveTab("similar")}
+            disabled={isLoading}
             className={`flex-1 px-6 py-3 text-[10px] font-medium rounded ${
               activeTab === "similar"
                 ? "text-white bg-[#0891B2] border-b-2 border-[#0891B2]"
                 : "text-[#899193] hover:text-gray-700"
             }`}
           >
-            Similar Products
+            Similar Products ({similarProducts.length})
           </button>
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
           {/* Current Items Section */}
           <div className="mb-6">
-            <h3 className="text-[10px] font-medium text-[#161D1F] mb-4">
-              Current
+            <h3 className="text-[12px] font-medium text-[#161D1F] mb-4">
+              Current{" "}
               {activeTab === "substitutes" ? "Substitutes" : "Similar Products"}
             </h3>
 
@@ -145,16 +285,17 @@ export const ProductRelationshipsModal: React.FC<
                     className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
                   >
                     <div>
-                      <div className="font-medium text-[12px] text-[#161D1F]">
+                      <div className="font-medium text-[14px] text-[#161D1F]">
                         {product.name}
                       </div>
-                      <div className="text-xs text-[#899193]">
+                      <div className="text-sm text-[#899193]">
                         {product.code} | {product.manufacturer}
                       </div>
                     </div>
                     <button
                       onClick={() => handleRemoveProduct(product.id)}
-                      className="p-2 text-[#EB5757] hover:bg-red-50 rounded-full"
+                      disabled={isLoading}
+                      className="p-2 text-[#EB5757] hover:bg-red-50 rounded-full disabled:opacity-50"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -162,7 +303,7 @@ export const ProductRelationshipsModal: React.FC<
                 ))}
               </div>
             ) : (
-              <div className="text-[10px] text-[#899193] py-8 text-center">
+              <div className="text-[12px] text-[#899193] py-8 text-center">
                 No{" "}
                 {activeTab === "substitutes"
                   ? "substitutes"
@@ -174,8 +315,8 @@ export const ProductRelationshipsModal: React.FC<
 
           {/* Add New Items Section */}
           <div>
-            <h3 className="text-[10px] font-medium text-[#161D1F] mb-4">
-              Add
+            <h3 className="text-[12px] font-medium text-[#161D1F] mb-4">
+              Add{" "}
               {activeTab === "substitutes" ? "Substitutes" : "Similar Products"}
             </h3>
 
@@ -187,7 +328,8 @@ export const ProductRelationshipsModal: React.FC<
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 text-[#B0B6B8] rounded-lg focus:ring-2 focus:ring-[#0891B2]"
+                disabled={isLoading}
+                className="w-full pl-10 pr-4 py-3 text-[#333] placeholder-[#B0B6B8] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0891B2] focus:border-transparent disabled:opacity-50"
               />
             </div>
 
@@ -200,23 +342,24 @@ export const ProductRelationshipsModal: React.FC<
                     className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
                   >
                     <div>
-                      <div className="font-medium text-[10px] text-[#161D1F]">
+                      <div className="font-medium text-[14px] text-[#161D1F]">
                         {product.name}
                       </div>
-                      <div className="text-xs text-[#899193]">
+                      <div className="text-sm text-[#899193]">
                         {product.code} | {product.manufacturer}
                       </div>
                     </div>
                     <button
                       onClick={() => handleAddProduct(product)}
-                      className="px-4 py-2 text-[10px] text-[#0891B2] hover:bg-[#0891B2] hover:text-white border border-[#0891B2] rounded-lg transition-colors"
+                      disabled={isLoading}
+                      className="px-4 py-2 text-[12px] text-[#0891B2] hover:bg-[#0891B2] hover:text-white border border-[#0891B2] rounded-lg transition-colors disabled:opacity-50"
                     >
                       Add
                     </button>
                   </div>
                 ))
               ) : (
-                <div className="text-[10px] text-[#899193] py-8 text-center">
+                <div className="text-[12px] text-[#899193] py-8 text-center">
                   {searchQuery
                     ? "No products found matching your search"
                     : "No available products"}
@@ -230,15 +373,24 @@ export const ProductRelationshipsModal: React.FC<
         <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
           <button
             onClick={onClose}
-            className="px-6 py-2 text-[10px] font-medium text-gray-700 hover:bg-gray-100 border border-gray-300 rounded-lg"
+            disabled={isLoading}
+            className="px-6 py-2 text-[12px] font-medium text-gray-700 hover:bg-gray-100 border border-gray-300 rounded-lg disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleSaveChanges}
-            className="px-6 py-2 text-[10px] font-medium text-white bg-[#0891B2] hover:bg-[#0891B2]/90 rounded-lg"
+            disabled={isLoading}
+            className="px-6 py-2 text-[12px] font-medium text-white bg-[#0891B2] hover:bg-[#0891B2]/90 rounded-lg disabled:opacity-50 flex items-center gap-2"
           >
-            Save Changes
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
           </button>
         </div>
       </div>

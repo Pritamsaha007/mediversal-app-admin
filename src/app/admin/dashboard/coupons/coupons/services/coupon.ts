@@ -1,6 +1,6 @@
 import { CouponItem } from "@/app/types/auth.types";
 
-const API_BASE_URL = "https://3st0jw58p8.execute-api.ap-south-1.amazonaws.com";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export const getAllCoupons = async (): Promise<CouponItem[]> => {
   const response = await fetch(`${API_BASE_URL}/app/admin/coupons`, {

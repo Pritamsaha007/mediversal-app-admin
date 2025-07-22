@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Order, ApiResponse, FilterOptions, SortOption } from "../types/types";
 
-const API_BASE_URL = "https://3st0jw58p8.execute-api.ap-south-1.amazonaws.com";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export class OrderService {
   static checkAllowedMethods(orderId: number) {
