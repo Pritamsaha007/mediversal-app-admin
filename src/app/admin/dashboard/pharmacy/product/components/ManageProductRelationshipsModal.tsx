@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 import { X, Search, Trash2, CloudFog } from "lucide-react";
 import {
   getProductsById,
@@ -322,7 +323,7 @@ export const ProductRelationshipsModal: React.FC<
               </div>
             ) : (
               <div className="text-[12px] text-[#899193] py-8 text-center">
-                No{" "}
+                No
                 {activeTab === "substitutes"
                   ? "substitutes"
                   : "similar products"}{" "}
