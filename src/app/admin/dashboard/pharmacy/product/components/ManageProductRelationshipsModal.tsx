@@ -57,16 +57,16 @@ export const ProductRelationshipsModal: React.FC<
   const [similarProducts, setSimilarProducts] = useState<RelatedProduct[]>(
     currentSimilarProducts
   );
+  const [newlyAddedSubstitutes, setNewlyAddedSubstitutes] = useState<string[]>(
+    []
+  );
+  const [newlyAddedSimilarProducts, setNewlyAddedSimilarProducts] = useState<
+    string[]
+  >([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [productData, setProductData] = useState<ProductData | null>(null);
-  const [newlyAddedSubstitutes, setNewlyAddedSubstitutes] = useState<
-    RelatedProduct[]
-  >([]);
-  const [newlyAddedSimilarProducts, setNewlyAddedSimilarProducts] = useState<
-    RelatedProduct[]
-  >([]);
 
   const convertToRelatedProduct = (product: any): RelatedProduct => {
     return {
@@ -76,6 +76,7 @@ export const ProductRelationshipsModal: React.FC<
       manufacturer: product.ManufacturerName || "",
     };
   };
+
   const fetchProductData = async () => {
     if (!productId) return;
 
@@ -137,16 +138,62 @@ export const ProductRelationshipsModal: React.FC<
   const handleAddProduct = (product: RelatedProduct) => {
     if (activeTab === "substitutes") {
       setSubstitutes((prev) => [...prev, product]);
-      setNewlyAddedSubstitutes((prev) => [...prev, product]);
-      // Remove this line: toast.success(`Substitute "${product.name}" added`);
+
+      setNewlyAddedSubstitutes((prev) => [...prev, product.id]);
+      toast.success(`Substitute "${product.name}" added`);
     } else {
       setSimilarProducts((prev) => [...prev, product]);
-      setNewlyAddedSimilarProducts((prev) => [...prev, product]);
-      // Remove this line: toast.success(`Similar product "${product.name}" added`);
+      setNewlyAddedSimilarProducts((prev) => [...prev, product.id]);
+      toast.success(`Similiar "${product.name}" added`);
+    }
+  };
+  const handleRemoveProduct = async (itemIdToRemove: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const isNewlyAdded =
+        activeTab === "substitutes"
+          ? newlyAddedSubstitutes.includes(itemIdToRemove)
+          : newlyAddedSimilarProducts.includes(itemIdToRemove);
+
+      if (!isNewlyAdded) {
+        // Only call API for existing relationships
+        const relationshipType =
+          activeTab === "substitutes" ? "substitutes" : "similar-products";
+
+        await removeProductRelationship(
+          Number(productId),
+          relationshipType,
+          Number(itemIdToRemove)
+        );
+      }
+
+      if (activeTab === "substitutes") {
+        setSubstitutes((prev) => prev.filter((p) => p.id !== itemIdToRemove));
+        setNewlyAddedSubstitutes((prev) =>
+          prev.filter((id) => id !== itemIdToRemove)
+        );
+        toast.success("Substitute removed");
+      } else {
+        setSimilarProducts((prev) =>
+          prev.filter((p) => p.id !== itemIdToRemove)
+        );
+        setNewlyAddedSimilarProducts((prev) =>
+          prev.filter((id) => id !== itemIdToRemove)
+        );
+        toast.success("Similar product removed");
+      }
+    } catch (err) {
+      console.error("Error removing relationship:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to remove relationship"
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // 3. Update handleSaveChanges function to show success toast
   const handleSaveChanges = async () => {
     try {
       setIsLoading(true);
@@ -157,44 +204,12 @@ export const ProductRelationshipsModal: React.FC<
         similarProducts: similarProducts.map((p) => Number(p.id)),
       };
 
-      console.log("Sending relationships data:", relationshipsData);
-      console.log("Product ID:", productId);
+      await updateProductRelationships(Number(productId), relationshipsData);
 
-      const result = await updateProductRelationships(
-        Number(productId),
-        relationshipsData
-      );
-
-      console.log("API response:", result);
-
-      // Show success messages for newly added items
-      if (newlyAddedSubstitutes.length > 0) {
-        const substituteNames = newlyAddedSubstitutes
-          .map((p) => p.name)
-          .join(", ");
-        toast.success(`Substitutes added: ${substituteNames}`);
-      }
-
-      if (newlyAddedSimilarProducts.length > 0) {
-        const similarProductNames = newlyAddedSimilarProducts
-          .map((p) => p.name)
-          .join(", ");
-        toast.success(`Similar products added: ${similarProductNames}`);
-      }
-
-      // If no new items were added but save was successful
-      if (
-        newlyAddedSubstitutes.length === 0 &&
-        newlyAddedSimilarProducts.length === 0
-      ) {
-        toast.success("Product relationships updated successfully");
-      }
-
-      // Reset newly added items
+      // Clear the newly added tracking after successful save
       setNewlyAddedSubstitutes([]);
       setNewlyAddedSimilarProducts([]);
 
-      // Call the parent callback with the updated data
       onSaveChanges({
         substitutes: substitutes.map((p) => p.id),
         similarProducts: similarProducts.map((p) => p.id),
@@ -205,48 +220,6 @@ export const ProductRelationshipsModal: React.FC<
       console.error("Error saving relationships:", err);
       setError(
         err instanceof Error ? err.message : "Failed to save relationships"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 4. Update handleRemoveProduct to also remove from newly added lists
-  const handleRemoveProduct = async (itemIdToRemove: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const relationshipType =
-        activeTab === "substitutes" ? "substitutes" : "similar-products";
-
-      await removeProductRelationship(
-        Number(productId),
-        relationshipType,
-        Number(itemIdToRemove)
-      );
-
-      if (activeTab === "substitutes") {
-        setSubstitutes((prev) => prev.filter((p) => p.id !== itemIdToRemove));
-        // Remove from newly added list if it exists there
-        setNewlyAddedSubstitutes((prev) =>
-          prev.filter((p) => p.id !== itemIdToRemove)
-        );
-        toast.success("Substitute removed");
-      } else {
-        setSimilarProducts((prev) =>
-          prev.filter((p) => p.id !== itemIdToRemove)
-        );
-        // Remove from newly added list if it exists there
-        setNewlyAddedSimilarProducts((prev) =>
-          prev.filter((p) => p.id !== itemIdToRemove)
-        );
-        toast.success("Similar product removed");
-      }
-    } catch (err) {
-      console.error("Error removing relationship:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to remove relationship"
       );
     } finally {
       setIsLoading(false);
