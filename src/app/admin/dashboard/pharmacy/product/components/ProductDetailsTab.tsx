@@ -130,8 +130,8 @@ export const ProductDetailsTab = ({
           <input
             type="text"
             placeholder="Enter Composition"
-            value={formData.composition}
-            onChange={(e) => onInputChange("composition", e.target.value)}
+            value={formData.Composition}
+            onChange={(e) => onInputChange("Composition", e.target.value)}
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>

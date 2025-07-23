@@ -96,11 +96,11 @@ export const ProductCard: React.FC<{
       sellingPrice: product.sellingPrice,
       stockQuantity: product.stock,
       description: product.description || "",
-      composition: product.composition || "",
+      Composition: product.composition || "",
       dosageForm: product.dosageForm || "",
       ProductStrength: product.ProductStrength || "",
       PackageSize: product.PackageSize || "",
-      Type: product.code || "",
+      Type: product.Type || "",
       schedule: product.schedule || "",
       taxRate: product.taxRate || 0,
       HSN_Code: product.hsnCode || "",
@@ -133,7 +133,7 @@ export const ProductCard: React.FC<{
   const handleUpdate = async (productData: ProductFormData): Promise<void> => {
     try {
       if (product.id) {
-        await onEdit(product.id, productData); // Now matches the prop signature
+        await onEdit(product.id, productData);
         setModalOpen(false);
         setProductToEdit(null);
       }
@@ -166,17 +166,17 @@ export const ProductCard: React.FC<{
 
   const currentSubstitutes: RelatedProduct[] =
     product.Substitutes?.map((name) => ({
-      id: name, // or generate some ID
+      id: name,
       name,
-      code: "", // Add appropriate values
+      code: "",
       manufacturer: product.manufacturer || "Unknown",
     })) || [];
 
   const currentSimilarProducts: RelatedProduct[] =
     product.SimilarProducts?.map((name) => ({
-      id: name, // or generate some ID
+      id: name,
       name,
-      code: "", // Add appropriate values
+      code: "",
       manufacturer: product.manufacturer || "Unknown",
     })) || [];
 

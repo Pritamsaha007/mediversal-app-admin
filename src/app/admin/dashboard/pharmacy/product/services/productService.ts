@@ -40,7 +40,7 @@ export const addProductAPI = async (
     );
     formData.append(
       "Composition",
-      productData.composition || "Standard Composition"
+      productData.Composition || "Standard Composition"
     );
 
     // Description fields
@@ -50,7 +50,7 @@ export const addProductAPI = async (
     );
     formData.append(
       "SafetyAdvices",
-      productData.saftyDescription || "Follow standard safety guidelines"
+      productData.SafetyAdvices || "Follow standard safety guidelines"
     );
     formData.append(
       "StorageInstructions",
