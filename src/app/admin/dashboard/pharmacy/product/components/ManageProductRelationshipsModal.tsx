@@ -138,10 +138,13 @@ export const ProductRelationshipsModal: React.FC<
   const handleAddProduct = (product: RelatedProduct) => {
     if (activeTab === "substitutes") {
       setSubstitutes((prev) => [...prev, product]);
+
       setNewlyAddedSubstitutes((prev) => [...prev, product.id]);
+      toast.success(`Substitute "${product.name}" added`);
     } else {
       setSimilarProducts((prev) => [...prev, product]);
       setNewlyAddedSimilarProducts((prev) => [...prev, product.id]);
+      toast.success(`Similiar "${product.name}" added`);
     }
   };
   const handleRemoveProduct = async (itemIdToRemove: string) => {
@@ -166,12 +169,12 @@ export const ProductRelationshipsModal: React.FC<
         );
       }
 
-      // Update local state
       if (activeTab === "substitutes") {
         setSubstitutes((prev) => prev.filter((p) => p.id !== itemIdToRemove));
         setNewlyAddedSubstitutes((prev) =>
           prev.filter((id) => id !== itemIdToRemove)
         );
+        toast.success("Substitute removed");
       } else {
         setSimilarProducts((prev) =>
           prev.filter((p) => p.id !== itemIdToRemove)
@@ -179,6 +182,7 @@ export const ProductRelationshipsModal: React.FC<
         setNewlyAddedSimilarProducts((prev) =>
           prev.filter((id) => id !== itemIdToRemove)
         );
+        toast.success("Similar product removed");
       }
     } catch (err) {
       console.error("Error removing relationship:", err);
