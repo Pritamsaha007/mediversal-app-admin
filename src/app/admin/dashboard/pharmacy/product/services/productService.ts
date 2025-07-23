@@ -25,7 +25,7 @@ export const addProductAPI = async (
     formData.append("Type", productData.Type || "Type Default");
     formData.append(
       "Subcategory",
-      productData.Subcategory || "Sub Default hai "
+      productData.Subcategory || "Sub Category Default"
     );
     formData.append(
       "PrescriptionRequired",
@@ -72,6 +72,7 @@ export const addProductAPI = async (
     formData.append("SKU", productData.SKU || "");
     formData.append("PackageSize", productData.PackageSize || "");
     formData.append("ProductStrength", productData.ProductStrength || "");
+    formData.append("featuredProduct", productData.featuredProduct ? "1" : "0");
 
     // Optional image
     if (imageFiles && imageFiles.length > 0) {

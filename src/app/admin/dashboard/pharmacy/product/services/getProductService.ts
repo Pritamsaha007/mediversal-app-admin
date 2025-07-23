@@ -45,6 +45,7 @@ interface ProductApiResponse {
   SKU: string;
   Subcategory: string;
   Category: string;
+  featuredProduct: number;
 }
 
 /* ---------- MAPPER ---------- */
@@ -72,7 +73,7 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
     discount: Math.round(calculatedDiscount),
     stock: apiProduct.StockAvailableInInventory,
     status: apiProduct.archivedProduct === 0 ? "Active" : "Inactive",
-    featured: false,
+    featured: apiProduct.featuredProduct === 1,
     description: apiProduct.ProductInformation,
     composition: apiProduct.Composition,
     dosageForm: "",
@@ -173,13 +174,13 @@ export const productService = {
         StockAvailableInInventory: data.stockQuantity,
         Category: data.Category,
         Subcategory: data.Subcategory,
+        featuredProduct: data.featuredProduct ? 1 : 0,
         PackageSize: data.PackageSize,
         ProductStrength: data.ProductStrength,
         productLength: data.productLength ?? "0.00",
         productBreadth: data.productBreadth ?? "0.00",
         productHeight: data.productHeight ?? "0.00",
         productWeight: data.productWeight ?? "0.00",
-        tax: "6.00", // optional if backend uses this
       };
 
       console.log("Updating Product with Payload:", payload);

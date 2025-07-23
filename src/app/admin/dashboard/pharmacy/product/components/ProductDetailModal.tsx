@@ -71,7 +71,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <p>
             <span className="text-[#161D1F] font-semibold text-[10px]">
               Category:
-            </span>{" "}
+            </span>
             <span className="text-[#161D1F] text-[10px]">
               {product.category}
             </span>
@@ -82,7 +82,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <p>
             <span className="text-[#161D1F] font-semibold text-[10px]">
               Discount:
-            </span>{" "}
+            </span>
             <span className="text-[#161D1F] text-[10px]">
               {product.discount ? `${product.discount}% OFF` : "No Discount"}
             </span>
@@ -90,7 +90,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <p>
             <span className="text-[#161D1F] font-semibold text-[10px]">
               Stock:
-            </span>{" "}
+            </span>
             <span className="text-[#161D1F] text-[10px]">{product.stock}</span>
           </p>
         </div>
