@@ -45,19 +45,17 @@ interface ProductApiResponse {
   SKU: string;
   Subcategory: string;
   Category: string;
+  featuredProduct: number;
 }
 
 /* ---------- MAPPER ---------- */
 
 const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
-  const sellingPrice = parseFloat(apiProduct.SellingPrice);
   const costPrice = parseFloat(apiProduct.CostPrice);
-  const discountPercentage = parseFloat(apiProduct.DiscountedPercentage);
+  const sellingPrice = parseFloat(apiProduct.SellingPrice);
 
   const calculatedDiscount =
-    discountPercentage > 0
-      ? discountPercentage
-      : ((costPrice - sellingPrice) / costPrice) * 100;
+    costPrice > 0 ? ((costPrice - sellingPrice) / costPrice) * 100 : 0;
 
   return {
     id: apiProduct.productId?.toString() || "",
@@ -68,11 +66,12 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
     brand: apiProduct.ManufacturerName,
     manufacturer: apiProduct.ManufacturerName,
     mrp: costPrice,
+    SafetyAdvices: apiProduct.SafetyAdvices,
     sellingPrice: sellingPrice,
     discount: Math.round(calculatedDiscount),
     stock: apiProduct.StockAvailableInInventory,
     status: apiProduct.archivedProduct === 0 ? "Active" : "Inactive",
-    featured: false,
+    featured: apiProduct.featuredProduct === 1,
     description: apiProduct.ProductInformation,
     composition: apiProduct.Composition,
     dosageForm: "",
@@ -82,8 +81,9 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
     schedule: apiProduct.ColdChain === "Yes" ? "Cold Chain" : "Non-Cold Chain",
     taxRate: parseFloat(apiProduct.GST),
     hsnCode: apiProduct.HSN_Code || "",
-    storageConditions: apiProduct.StorageInstructions,
+    storageConditions: apiProduct.SafetyAdvices,
     shelfLife: 0,
+    Type: apiProduct.Type,
     prescriptionRequired: apiProduct.PrescriptionRequired === "Yes",
     saftyDescription: apiProduct.SafetyAdvices,
     storageDescription: apiProduct.StorageInstructions,
@@ -153,9 +153,9 @@ export const productService = {
         DiscountedPrice: (data.sellingPrice ?? 0).toFixed(2),
         Type: data.Type,
         PrescriptionRequired: data.prescriptionRequired ? "Yes" : "No",
-        ColdChain: data.schedule === "Cold Chain" ? "Yes" : "No", // adjust based on UI
+        ColdChain: data.schedule === "Cold Chain" ? "Yes" : "No",
         ManufacturerName: data.manufacturer,
-        Composition: data.composition,
+        Composition: data.Composition,
         ProductInformation: data.description,
         SafetyAdvices: data.safetyDescription,
         StorageInstructions: data.storageDescription,
@@ -173,13 +173,14 @@ export const productService = {
         StockAvailableInInventory: data.stockQuantity,
         Category: data.Category,
         Subcategory: data.Subcategory,
+        featuredProduct: data.featuredProduct ? 1 : 0,
+        active: data.activeProduct ? 1 : 0,
         PackageSize: data.PackageSize,
         ProductStrength: data.ProductStrength,
         productLength: data.productLength ?? "0.00",
         productBreadth: data.productBreadth ?? "0.00",
         productHeight: data.productHeight ?? "0.00",
         productWeight: data.productWeight ?? "0.00",
-        tax: "6.00", // optional if backend uses this
       };
 
       console.log("Updating Product with Payload:", payload);

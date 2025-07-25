@@ -18,6 +18,7 @@ export interface Product {
   substitutesCount: number;
   manufacturer: string;
   id: string;
+  Type: string;
   name: string;
   code: string;
   category: string;
@@ -32,6 +33,7 @@ export interface Product {
   SimilarProducts: string[];
   productImage?: File | string;
   sku: string;
+  SafetyAdvices: string;
 }
 
 export interface inventoryItem {

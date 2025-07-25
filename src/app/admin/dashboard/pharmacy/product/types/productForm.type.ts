@@ -14,7 +14,7 @@ export interface ProductFormData {
   description: string;
   safetyDescription: string;
   storageDescription: string;
-  composition: string;
+  Composition: string;
   dosageForm: string;
   ProductStrength: string | null;
   PackageSize: string;

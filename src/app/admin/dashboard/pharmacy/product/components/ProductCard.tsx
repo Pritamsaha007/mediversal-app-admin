@@ -96,11 +96,11 @@ export const ProductCard: React.FC<{
       sellingPrice: product.sellingPrice,
       stockQuantity: product.stock,
       description: product.description || "",
-      composition: product.composition || "",
+      Composition: product.composition || "",
       dosageForm: product.dosageForm || "",
       ProductStrength: product.ProductStrength || "",
       PackageSize: product.PackageSize || "",
-      Type: product.code || "",
+      Type: product.Type || "",
       schedule: product.schedule || "",
       taxRate: product.taxRate || 0,
       HSN_Code: product.hsnCode || "",
@@ -133,7 +133,7 @@ export const ProductCard: React.FC<{
   const handleUpdate = async (productData: ProductFormData): Promise<void> => {
     try {
       if (product.id) {
-        await onEdit(product.id, productData); // Now matches the prop signature
+        await onEdit(product.id, productData);
         setModalOpen(false);
         setProductToEdit(null);
       }
@@ -146,37 +146,37 @@ export const ProductCard: React.FC<{
     similarProducts: string[];
   }) => {
     if (onUpdateRelationships) {
-      // Convert back to RelatedProduct format if needed by parent component
       onUpdateRelationships(product.id, {
         substitutes: data.substitutes.map((name) => ({
-          id: name, // or generate some ID
+          id: name,
           name,
-          code: "", // Add appropriate values
-          manufacturer: "", // Add appropriate values
+          code: "",
+          manufacturer: "",
         })),
         similarProducts: data.similarProducts.map((name) => ({
-          id: name, // or generate some ID
+          id: name,
           name,
-          code: "", // Add appropriate values
-          manufacturer: "", // Add appropriate values
+          code: "",
+          manufacturer: "",
         })),
       });
     }
   };
+  console.log("productaayakya", product);
 
   const currentSubstitutes: RelatedProduct[] =
     product.Substitutes?.map((name) => ({
-      id: name, // or generate some ID
+      id: name,
       name,
-      code: "", // Add appropriate values
+      code: "",
       manufacturer: product.manufacturer || "Unknown",
     })) || [];
 
   const currentSimilarProducts: RelatedProduct[] =
     product.SimilarProducts?.map((name) => ({
-      id: name, // or generate some ID
+      id: name,
       name,
-      code: "", // Add appropriate values
+      code: "",
       manufacturer: product.manufacturer || "Unknown",
     })) || [];
 
@@ -199,22 +199,18 @@ export const ProductCard: React.FC<{
             {product.code} | {product.prescriptionRequired ? "Rx" : "No Rx "}
           </div>
           <div className="flex gap-2 mt-2">
-            {product.substitutesCount > 0 && (
-              <span
-                className="px-2 py-1 text-[8px] text-[#0088B1] rounded border border-[#0088B1]"
-                title={product.Substitutes.join(", ")}
-              >
-                {product.substitutesCount} substitute(s)
-              </span>
-            )}
-            {product.similarCount > 0 && (
-              <span
-                className="px-2 py-1 text-[8px] text-[#9B51E0] rounded border border-[#9B51E0]"
-                title={product.SimilarProducts.join(", ")}
-              >
-                {product.similarCount} similar
-              </span>
-            )}
+            <span
+              className="px-2 py-1 text-[8px] text-[#0088B1] rounded border border-[#0088B1]"
+              title={product.Substitutes?.join(", ") || ""}
+            >
+              {product.Substitutes?.length ?? 0} substitute(s)
+            </span>
+            <span
+              className="px-2 py-1 text-[8px] text-[#9B51E0] rounded border border-[#9B51E0]"
+              title={product.SimilarProducts?.join(", ") || ""}
+            >
+              {product.SimilarProducts?.length ?? 0} similar
+            </span>
           </div>
         </div>
       </td>

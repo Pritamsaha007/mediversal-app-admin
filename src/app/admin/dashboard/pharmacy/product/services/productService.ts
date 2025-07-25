@@ -25,7 +25,7 @@ export const addProductAPI = async (
     formData.append("Type", productData.Type || "Type Default");
     formData.append(
       "Subcategory",
-      productData.Subcategory || "Sub Default hai "
+      productData.Subcategory || "Sub Category Default"
     );
     formData.append(
       "PrescriptionRequired",
@@ -40,7 +40,7 @@ export const addProductAPI = async (
     );
     formData.append(
       "Composition",
-      productData.composition || "Standard Composition"
+      productData.Composition || "Standard Composition"
     );
 
     // Description fields
@@ -50,7 +50,7 @@ export const addProductAPI = async (
     );
     formData.append(
       "SafetyAdvices",
-      productData.saftyDescription || "Follow standard safety guidelines"
+      productData.SafetyAdvices || "Follow standard safety guidelines"
     );
     formData.append(
       "StorageInstructions",
@@ -72,6 +72,8 @@ export const addProductAPI = async (
     formData.append("SKU", productData.SKU || "");
     formData.append("PackageSize", productData.PackageSize || "");
     formData.append("ProductStrength", productData.ProductStrength || "");
+    formData.append("featuredProduct", productData.featuredProduct ? "1" : "0");
+    formData.append("active", productData.activeProduct ? "1" : "0");
 
     // Optional image
     if (imageFiles && imageFiles.length > 0) {

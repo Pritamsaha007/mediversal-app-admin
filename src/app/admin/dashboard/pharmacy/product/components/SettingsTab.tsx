@@ -149,9 +149,9 @@ export const SettingsTab = ({
             </button>
             {symptomsDropdownOpen && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {symptoms.map((symptom) => (
+                {symptoms.map((symptom, index) => (
                   <button
-                    key={symptom}
+                    key={`${symptom}-${index}`}
                     onClick={() => {
                       onInputChange("Type", symptom);
                       setSymptomsDropdownOpen(false);
