@@ -73,6 +73,7 @@ export const addProductAPI = async (
     formData.append("PackageSize", productData.PackageSize || "");
     formData.append("ProductStrength", productData.ProductStrength || "");
     formData.append("featuredProduct", productData.featuredProduct ? "1" : "0");
+    formData.append("active", productData.activeProduct ? "1" : "0");
 
     // Optional image
     if (imageFiles && imageFiles.length > 0) {

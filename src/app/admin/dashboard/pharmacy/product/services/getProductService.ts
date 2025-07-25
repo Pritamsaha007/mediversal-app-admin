@@ -51,14 +51,11 @@ interface ProductApiResponse {
 /* ---------- MAPPER ---------- */
 
 const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
-  const sellingPrice = parseFloat(apiProduct.SellingPrice);
   const costPrice = parseFloat(apiProduct.CostPrice);
-  const discountPercentage = parseFloat(apiProduct.DiscountedPercentage);
+  const sellingPrice = parseFloat(apiProduct.SellingPrice);
 
   const calculatedDiscount =
-    discountPercentage > 0
-      ? discountPercentage
-      : ((costPrice - sellingPrice) / costPrice) * 100;
+    costPrice > 0 ? ((costPrice - sellingPrice) / costPrice) * 100 : 0;
 
   return {
     id: apiProduct.productId?.toString() || "",
@@ -156,7 +153,7 @@ export const productService = {
         DiscountedPrice: (data.sellingPrice ?? 0).toFixed(2),
         Type: data.Type,
         PrescriptionRequired: data.prescriptionRequired ? "Yes" : "No",
-        ColdChain: data.schedule === "Cold Chain" ? "Yes" : "No", // adjust based on UI
+        ColdChain: data.schedule === "Cold Chain" ? "Yes" : "No",
         ManufacturerName: data.manufacturer,
         Composition: data.Composition,
         ProductInformation: data.description,
@@ -177,6 +174,7 @@ export const productService = {
         Category: data.Category,
         Subcategory: data.Subcategory,
         featuredProduct: data.featuredProduct ? 1 : 0,
+        active: data.activeProduct ? 1 : 0,
         PackageSize: data.PackageSize,
         ProductStrength: data.ProductStrength,
         productLength: data.productLength ?? "0.00",
