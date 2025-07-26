@@ -54,6 +54,8 @@ export const ProductCard: React.FC<{
   const [productToEdit, setProductToEdit] = useState<ProductFormData | null>(
     null
   );
+  const [showSubstitutes, setShowSubstitutes] = useState(false);
+  const [showSimilar, setShowSimilar] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -179,12 +181,6 @@ export const ProductCard: React.FC<{
       code: "",
       manufacturer: product.manufacturer || "Unknown",
     })) || [];
-  console.log("Product counts:", {
-    substitutesCount: product.substitutesCount,
-    similarCount: product.similarCount,
-    substitutesArray: product.Substitutes,
-    similarArray: product.SimilarProducts,
-  });
 
   return (
     <tr className="border-y-1 hover:bg-gray-50 border-[#D3D7D8]">
@@ -204,19 +200,44 @@ export const ProductCard: React.FC<{
           <div className="text-[10px] text-gray-500">
             {product.code} | {product.prescriptionRequired ? "Rx" : "No Rx "}
           </div>
-          <div className="flex gap-2 mt-2">
-            <span
-              className="px-2 py-1 text-[8px] text-[#0088B1] rounded border border-[#0088B1]"
-              title={product.Substitutes?.join(", ") || ""}
-            >
-              {product.substitutesCount || 0} substitute(s)
-            </span>
-            <span
-              className="px-2 py-1 text-[8px] text-[#9B51E0] rounded border border-[#9B51E0]"
-              title={product.SimilarProducts?.join(", ") || ""}
-            >
-              {product.similarCount || 0} similar
-            </span>
+          <div className="mt-2">
+            <div className="flex gap-2 mb-1">
+              <button
+                onClick={() => setShowSubstitutes(!showSubstitutes)}
+                className="px-2 py-1 text-[8px] text-[#0088B1] rounded border border-[#0088B1] hover:bg-[#0088B1] hover:text-white transition-colors"
+              >
+                {product.substitutesCount || 0} substitute(s){" "}
+                {showSubstitutes ? "▲" : "▼"}
+              </button>
+              <button
+                onClick={() => setShowSimilar(!showSimilar)}
+                className="px-2 py-1 text-[8px] text-[#9B51E0] rounded border border-[#9B51E0] hover:bg-[#9B51E0] hover:text-white transition-colors"
+              >
+                {product.similarCount || 0} similar {showSimilar ? "▲" : "▼"}
+              </button>
+            </div>
+
+            {showSubstitutes &&
+              product.Substitutes &&
+              product.Substitutes.length > 0 && (
+                <div className="bg-blue-50 p-2 rounded text-[8px] text-gray-700 mb-1">
+                  <strong>Substitutes:</strong>{" "}
+                  {product.Substitutes.slice(0, 3).join(", ")}
+                  {product.Substitutes.length > 3 &&
+                    ` +${product.Substitutes.length - 3} more`}
+                </div>
+              )}
+
+            {showSimilar &&
+              product.SimilarProducts &&
+              product.SimilarProducts.length > 0 && (
+                <div className="bg-purple-50 p-2 rounded text-[8px] text-gray-700">
+                  <strong>Similar:</strong>{" "}
+                  {product.SimilarProducts.slice(0, 3).join(", ")}
+                  {product.SimilarProducts.length > 3 &&
+                    ` +${product.SimilarProducts.length - 3} more`}
+                </div>
+              )}
           </div>
         </div>
       </td>
