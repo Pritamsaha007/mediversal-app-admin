@@ -28,8 +28,6 @@ interface ProductApiResponse {
   ProductInformation: string;
   SafetyAdvices: string;
   StorageInstructions: string;
-  Substitutes: string[];
-  SimilarProducts: string[];
   ProductStrength: string;
   PackageSize: string;
   GST: string;
@@ -42,6 +40,8 @@ interface ProductApiResponse {
   archivedProduct: number;
   images: string[];
   HSN_Code: string;
+  substitutes: any[];
+  similarProducts: any[];
   SKU: string;
   Subcategory: string;
   Category: string;
@@ -92,17 +92,21 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
       Array.isArray(apiProduct.images) && apiProduct.images.length > 0
         ? apiProduct.images[0]
         : undefined,
-    Substitutes: Array.isArray(apiProduct.Substitutes)
-      ? apiProduct.Substitutes
+    Substitutes: Array.isArray(apiProduct.substitutes)
+      ? apiProduct.substitutes.map((sub) =>
+          typeof sub === "string" ? sub : sub.ProductName || sub.name || ""
+        )
       : [],
-    SimilarProducts: Array.isArray(apiProduct.SimilarProducts)
-      ? apiProduct.SimilarProducts
+    SimilarProducts: Array.isArray(apiProduct.similarProducts)
+      ? apiProduct.similarProducts.map((sim) =>
+          typeof sim === "string" ? sim : sim.ProductName || sim.name || ""
+        )
       : [],
-    substitutesCount: Array.isArray(apiProduct.Substitutes)
-      ? apiProduct.Substitutes.length
+    substitutesCount: Array.isArray(apiProduct.substitutes)
+      ? apiProduct.substitutes.length
       : 0,
-    similarCount: Array.isArray(apiProduct.SimilarProducts)
-      ? apiProduct.SimilarProducts.length
+    similarCount: Array.isArray(apiProduct.similarProducts)
+      ? apiProduct.similarProducts.length
       : 0,
   };
 };

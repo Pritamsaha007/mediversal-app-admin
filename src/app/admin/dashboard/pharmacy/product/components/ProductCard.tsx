@@ -179,6 +179,12 @@ export const ProductCard: React.FC<{
       code: "",
       manufacturer: product.manufacturer || "Unknown",
     })) || [];
+  console.log("Product counts:", {
+    substitutesCount: product.substitutesCount,
+    similarCount: product.similarCount,
+    substitutesArray: product.Substitutes,
+    similarArray: product.SimilarProducts,
+  });
 
   return (
     <tr className="border-y-1 hover:bg-gray-50 border-[#D3D7D8]">
@@ -203,13 +209,13 @@ export const ProductCard: React.FC<{
               className="px-2 py-1 text-[8px] text-[#0088B1] rounded border border-[#0088B1]"
               title={product.Substitutes?.join(", ") || ""}
             >
-              {product.Substitutes?.length ?? 0} substitute(s)
+              {product.substitutesCount || 0} substitute(s)
             </span>
             <span
               className="px-2 py-1 text-[8px] text-[#9B51E0] rounded border border-[#9B51E0]"
               title={product.SimilarProducts?.join(", ") || ""}
             >
-              {product.SimilarProducts?.length ?? 0} similar
+              {product.similarCount || 0} similar
             </span>
           </div>
         </div>
