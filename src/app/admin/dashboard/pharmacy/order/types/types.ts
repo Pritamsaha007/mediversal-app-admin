@@ -10,46 +10,37 @@ export interface StatsCardData {
   color?: string;
 }
 
-// Updated Order interface to match API response
 export interface Order {
-  orderId: number;
-  customerId: number;
+  orderId: string;
   customerName: string;
-  customerAddress: string;
   customerPhone: string;
-  customerEmail: string;
-  paymentStatus: PaymentStatus;
-  paymentMethod: string;
-  paymentTime: string;
-  transactionId: string | null;
+  customerEmail?: string;
+  customerAddress: string;
+  customerId: number;
   createdAt: string;
-  TotalOrderAmount: string | null; // Changed from number to string as per API
-  deliverystatus: OrderStatus | null;
-  rapidshypShipmentId: string | null;
-  rapidshypAwb: string | null;
-  labelUrl: string | null;
-  manifestUrl: string | null;
-  coupon_id: string | null;
-  applied_discount_value: string | null;
-  cancellationReason: string | null;
+  TotalOrderAmount: string;
+  deliverystatus: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  rapidshypAwb?: string;
+  applied_discount_value: string;
   items: OrderItem[];
-  prescriptions: Prescription[]; // Add prescriptions array
+  prescriptions: Prescription[];
 }
 
-// Updated OrderItem interface to match API response
 export interface OrderItem {
-  orderItemId: number;
-  orderId: number;
-  productId: number;
-  quantity: number;
+  orderItemId: string;
+  productName?: string;
+  productId: string;
+  sku?: string;
   sellingPrice: string;
-  sku: string;
-  tax: string;
-  productLength: string;
-  productBreadth: string;
-  productHeight: string;
-  productWeight: string;
-  productName: string;
+  prescriptionRequired: string;
+  quantity: number;
+}
+
+export interface Prescription {
+  prescription_id: string;
+  prescriptionURL: string;
 }
 
 export interface Address {
@@ -101,9 +92,4 @@ export interface OrderAction {
   icon?: React.ReactNode;
   color?: string;
   onClick: (order: Order) => void;
-}
-
-export interface Prescription {
-  prescription_id: string;
-  prescriptionURL: string;
 }

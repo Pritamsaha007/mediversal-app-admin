@@ -81,7 +81,7 @@ export class OrderService {
         const matchesSearch =
           order.orderId.toString().includes(searchLower) ||
           order.customerName.toLowerCase().includes(searchLower) ||
-          order.customerEmail.toLowerCase().includes(searchLower) ||
+          order.customerEmail?.toLowerCase().includes(searchLower) ||
           order.customerPhone.includes(searchLower);
 
         if (!matchesSearch) return false;
@@ -255,3 +255,85 @@ export class OrderService {
     };
   }
 }
+
+const ACCESS_TOKEN = process.env.RAPID_SHYP_ACCESS_TOKEN || "";
+const API_URL = process.env.RAPID_SHYP_API_URL;
+
+export const trackOrders = async (seller_order_id: number, awb: string) => {
+  try {
+    const response = await fetch(`${API_URL}/track_order`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "rapidshyp-token": ACCESS_TOKEN,
+      },
+      body: JSON.stringify({
+        seller_order_id,
+        awb,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Tracking failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        data: errorData,
+      });
+      throw new Error(
+        `Tracking failed: ${response.status} ${response.statusText}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    throw error;
+  }
+};
+
+export const cancelOrder = async (orderId: string | number) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const response = await fetch(`${API_URL}/cancel_order`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "rapidshyp-token": ACCESS_TOKEN,
+      },
+      body: JSON.stringify({
+        orderId: orderId.toString(),
+        storeName: "DEFAULT",
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Order cancellation failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        data: errorData,
+      });
+      throw new Error(
+        `Cancellation failed: ${response.status} ${response.statusText}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof Error && error.name === "AbortError") {
+      console.error("Request timeout:", error);
+      throw new Error("Request timeout: The operation took too long");
+    }
+
+    console.error("Unexpected error:", error);
+    throw error;
+  }
+};
