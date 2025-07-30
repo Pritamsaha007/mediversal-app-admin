@@ -2,6 +2,8 @@ import axios from "axios";
 import { Order, ApiResponse, FilterOptions, SortOption } from "../types/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const RAPID_SHYP_API_URL = process.env.NEXT_PUBLIC_RAPID_SHYP_API_URL;
+const ACCESS_TOKEN = process.env.NEXT_PUBLIC_RAPID_SHYP_ACCESS_TOKEN;
 
 export class OrderService {
   static checkAllowedMethods(orderId: number) {
@@ -256,84 +258,64 @@ export class OrderService {
   }
 }
 
-const ACCESS_TOKEN = process.env.RAPID_SHYP_ACCESS_TOKEN || "";
-const API_URL = process.env.RAPID_SHYP_API_URL;
-
 export const trackOrders = async (seller_order_id: number, awb: string) => {
   try {
-    const response = await fetch(`${API_URL}/track_order`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "rapidshyp-token": ACCESS_TOKEN,
-      },
-      body: JSON.stringify({
+    const response = await axios.post(
+      `${RAPID_SHYP_API_URL}/track_order`,
+      {
         seller_order_id,
         awb,
-      }),
-    });
+      },
+      {
+        headers: {
+          "content-type": "application/json",
+          "rapidshyp-token": ACCESS_TOKEN,
+        },
+      }
+    );
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Tracking failed:", {
-        status: response.status,
-        statusText: response.statusText,
-        data: errorData,
-      });
-      throw new Error(
-        `Tracking failed: ${response.status} ${response.statusText}`
-      );
-    }
-
-    return await response.json();
+    return response.data;
   } catch (error) {
-    console.error("Unexpected error:", error);
+    if (axios.isAxiosError(error)) {
+      console.error("Tracking failed:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+      });
+    } else {
+      console.error("Unexpected error:", error);
+    }
     throw error;
   }
 };
-
-export const cancelOrder = async (orderId: string | number) => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-
+export const cancelOrder = async (orderId: string, reason: string) => {
   try {
-    const response = await fetch(`${API_URL}/cancel_order`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "rapidshyp-token": ACCESS_TOKEN,
-      },
-      body: JSON.stringify({
-        orderId: orderId.toString(),
+    const response = await axios.post(
+      `${API_BASE_URL}/app/api/order/cancel-order`,
+      {
+        orderId: orderId,
         storeName: "DEFAULT",
-      }),
-      signal: controller.signal,
-    });
+        reason: reason,
+      },
 
-    clearTimeout(timeoutId);
+      {
+        headers: {
+          "content-type": "application/json",
+        },
+      }
+    );
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Order cancellation failed:", {
-        status: response.status,
-        statusText: response.statusText,
-        data: errorData,
-      });
-      throw new Error(
-        `Cancellation failed: ${response.status} ${response.statusText}`
-      );
-    }
-
-    return await response.json();
+    return response.data;
   } catch (error) {
-    clearTimeout(timeoutId);
-
-    if (error instanceof Error && error.name === "AbortError") {
-      console.error("Request timeout:", error);
-      throw new Error("Request timeout: The operation took too long");
+    if (axios.isAxiosError(error)) {
+      console.error("Order cancellation failed:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+      });
+    } else {
+      console.error("Unexpected error:", error);
     }
-
-    console.error("Unexpected error:", error);
     throw error;
   }
 };

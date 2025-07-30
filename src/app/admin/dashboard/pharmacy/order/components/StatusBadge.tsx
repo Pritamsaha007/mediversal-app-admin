@@ -30,7 +30,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
 
   return (
     <span
-      className={`px-2 py-1 text-xs font-medium rounded-full ${
+      className={`px-2 py-1 text-[8px] font-medium rounded-full ${
         statusColors[status as keyof typeof statusColors] ||
         "bg-gray-100 text-gray-800"
       }`}

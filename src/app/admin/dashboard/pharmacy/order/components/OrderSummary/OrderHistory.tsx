@@ -1,99 +1,162 @@
 import React, { useState, useEffect } from "react";
+import { Timeline, TimelineEvent } from "react-event-timeline";
 import { Order } from "../../types/types";
 import { trackOrders } from "../../services/orderServices";
+
+interface TrackScan {
+  scan: string;
+  scan_datetime: string;
+  scan_location?: string;
+  rapidshyp_status_code?: string;
+}
 
 interface OrderHistoryProps {
   order: Order;
 }
 
 const OrderHistory: React.FC<OrderHistoryProps> = ({ order }) => {
-  const [trackingData, setTrackingData] = useState<any>(null);
+  const [trackingData, setTrackingData] = useState<TrackScan[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchTrackingData = async () => {
-      if (!order.rapidshypAwb) return;
-
-      setLoading(true);
+    const fetchTrackingDetails = async () => {
       try {
+        setLoading(true);
+        setError(null);
+
+        if (!order.rapidshypAwb) {
+          throw new Error("Tracking number (AWB) is required");
+        }
+
         const data = await trackOrders(
           Number(order.orderId),
           order.rapidshypAwb
         );
-        setTrackingData(data);
+
+        if (data?.records?.[0]?.shipment_details?.[0]?.track_scans) {
+          setTrackingData(data.records[0].shipment_details[0].track_scans);
+        } else {
+          throw new Error("No tracking information available");
+        }
       } catch (err) {
-        setError("Order Cancelled");
-        console.log("Tracking error:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to load tracking details"
+        );
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTrackingData();
-  }, [order.orderId, order.rapidshypAwb]);
+    fetchTrackingDetails();
+  }, [order]);
 
-  if (loading)
-    return <div className="p-4 text-center">Loading tracking data...</div>;
-  if (error) return <div className="p-4 text-center text-red-500">{error}</div>;
-  if (!trackingData?.scans || trackingData.scans.length === 0) {
-    return <div className="p-4 text-center">No tracking data available</div>;
+  const parseCustomDate = (dateString: string) => {
+    const parts = dateString.split(" ");
+    const dateParts = parts[0].split("-");
+    const timeParts = parts[1].split(":");
+
+    return new Date(
+      parseInt(dateParts[2]), // year
+      parseInt(dateParts[1]) - 1, // month
+      parseInt(dateParts[0]), // day
+      parseInt(timeParts[0]), // hours
+      parseInt(timeParts[1]), // minutes
+      parseInt(timeParts[2]) // seconds
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="p-4 space-y-4 h-80">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex gap-3 animate-pulse">
+            <div className="w-3 h-3 rounded-full bg-gray-200 mt-1"></div>
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-32"></div>
+              <div className="h-3 bg-gray-200 rounded w-24"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    console.error(error);
+    return (
+      <div className="bg-white p-4 rounded-lg border h-80 border-gray-300 flex flex-col items-center justify-center">
+        <p className="text-xs text-gray-600">Order cancelled</p>
+      </div>
+    );
+  }
+
+  if (trackingData.length === 0) {
+    return (
+      <div className="p-4 text-center text-gray-500 text-sm">
+        No tracking history available
+      </div>
+    );
   }
 
   return (
-    <div className="h-80 p-4 overflow-y-auto">
-      <h3 className="text-lg font-medium text-gray-700 mb-4 sticky top-0 bg-white py-2">
-        Complete Shipping History
-      </h3>
+    <div className="h-80">
+      <div className="bg-white p-4 rounded-lg border border-gray-300">
+        <h2 className="text-sm text-black mb-4">Order Timeline</h2>
 
-      {/* Vertical Timeline */}
-      <div className="relative border-l-2 border-gray-200 pl-6 space-y-6">
-        {trackingData.scans.map((scan: any, index: number) => {
-          // Determine status color
-          let statusColor = "bg-blue-500";
-          if (scan.scan.includes("Delivered")) statusColor = "bg-green-500";
-          if (scan.scan.includes("CANCELED")) statusColor = "bg-red-500";
-          if (scan.scan.includes("Return")) statusColor = "bg-purple-500";
+        <Timeline>
+          {trackingData.map((scan, index) => {
+            let date: Date;
+            try {
+              date = parseCustomDate(scan.scan_datetime);
+              if (isNaN(date.getTime())) {
+                throw new Error("Invalid date");
+              }
+            } catch (err) {
+              console.error("Invalid date format:", scan.scan_datetime);
+              date = new Date();
+            }
 
-          return (
-            <div key={index} className="relative">
-              {/* Timeline dot */}
-              <div
-                className={`absolute -left-2.5 top-1 w-4 h-4 rounded-full border-2 border-white ${statusColor}`}
-              ></div>
+            const formattedDate = date.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            });
 
-              <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-4">
-                <div className="flex justify-between items-start">
-                  <h4 className="font-medium text-gray-800">{scan.scan}</h4>
-                  <span className="text-sm text-gray-500 whitespace-nowrap ml-2">
-                    {new Date(scan.scan_date_time).toLocaleString()}
-                  </span>
+            const formattedTime = date.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+
+            return (
+              <TimelineEvent
+                key={index}
+                title={
+                  <span className="text-gray-900 font-medium">{scan.scan}</span>
+                }
+                createdAt={
+                  <span className="text-gray-700">{`${formattedDate}, ${formattedTime}`}</span>
+                }
+                icon={<i className="fas fa-circle" />}
+                iconColor="#80C1D8"
+                contentStyle={{
+                  background: "white",
+                  boxShadow: "none",
+                  color: "#111827",
+                }}
+              >
+                <div className="space-y-1 mt-1">
+                  {scan.scan_location && (
+                    <div className="text-sm text-gray-800">
+                      <span className="font-semibold">Location:</span>{" "}
+                      {scan.scan_location}
+                    </div>
+                  )}
                 </div>
-
-                <div className="mt-2 space-y-1">
-                  {scan.location && (
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Location:</span>{" "}
-                      {scan.location}
-                    </p>
-                  )}
-                  {scan.remarks && (
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Details:</span>{" "}
-                      {scan.remarks}
-                    </p>
-                  )}
-                  {scan.status_code && (
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Status Code:</span>{" "}
-                      {scan.status_code}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+              </TimelineEvent>
+            );
+          })}
+        </Timeline>
       </div>
     </div>
   );

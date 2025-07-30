@@ -36,6 +36,7 @@ export interface OrderItem {
   sellingPrice: string;
   prescriptionRequired: string;
   quantity: number;
+  Category: string;
 }
 
 export interface Prescription {

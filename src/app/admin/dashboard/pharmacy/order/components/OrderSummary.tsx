@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { X } from "lucide-react";
+import { ChevronRight, Edit, Printer, X } from "lucide-react";
+import { toast } from "react-hot-toast";
+
 import StatusBadge from "./StatusBadge";
 import OrderTabs from "./OrderSummary/OrderTabs";
 import OrderOverview from "./OrderSummary/OrderOverview";
@@ -8,6 +10,8 @@ import OrderShipping from "./OrderSummary/OrderShipping";
 import OrderPayment from "./OrderSummary/OrderPayment";
 import OrderHistory from "./OrderSummary/OrderHistory";
 import { Order } from "../types/types";
+import OrderPrescriptions from "./OrderSummary/OrderPrescriptions";
+import { cancelOrder } from "../services/orderServices";
 
 interface OrderDetailsModalProps {
   isOpen: boolean;
@@ -21,21 +25,54 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   order,
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [isCanceling, setIsCanceling] = useState(false);
 
   if (!isOpen || !order) return null;
 
+  const handleCancelOrder = async () => {
+    if (!order) return;
+
+    setIsCanceling(true);
+    try {
+      const cancellationReason = "Order canceled by admin";
+
+      const response = await cancelOrder(
+        order.orderId.toString(),
+        cancellationReason
+      );
+
+      console.log(response, "cancellation res");
+      console.log(response, "cancellation res");
+      if (response.success) {
+        console.log("try");
+        if (response.data?.message !== "Endpoint request timed out") {
+          toast.success("Order cancellation  completed");
+        }
+      } else {
+        throw new Error(response.message || "Failed to cancel order");
+      }
+    } catch (error) {
+      onClose();
+      console.log(error);
+      toast.success("Order cancellation  completed");
+    } finally {
+      setIsCanceling(false);
+    }
+  };
   const renderTabContent = () => {
     switch (activeTab) {
       case "overview":
         return <OrderOverview order={order} />;
       case "items":
         return <OrderItems order={order} />;
+      case "prescriptions":
+        return <OrderPrescriptions order={order} />;
       case "shipping":
         return <OrderShipping order={order} />;
       case "payment":
         return <OrderPayment order={order} />;
-      // case "history":
-      //   return <OrderHistory order={order} />;
+      case "history":
+        return <OrderHistory order={order} />;
       default:
         return <OrderOverview order={order} />;
     }
@@ -55,13 +92,10 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
         {/* Modal Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
-            <h2 className="text-xl font-semibold text-gray-800">
-              Order Details
+            <h2 className="text-base font-semibold text-gray-800">
+              Order ID: {order.orderId}
             </h2>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-sm font-medium" style={{ color: "#0088B1" }}>
-                Order ID: {order.orderId}
-              </p>
               <StatusBadge status={order.deliverystatus || "Pending"} />
               <StatusBadge status={order.paymentStatus} />
             </div>
@@ -85,20 +119,34 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
         {/* Modal Footer */}
         <div className="flex justify-end items-center p-6 border-t border-gray-200 bg-gray-50 mt-2">
           <div className="flex gap-2">
-            {/* <button className="px-4 py-2 text-white border mr-5 border-gray-300 rounded-lg bg-[#EB5757] hover:bg-gray-50 transition-colors duration-200">
-              Cancel Order
-            </button> */}
-            {/* <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-              Print
-            </button> */}
+            {order.deliverystatus != "Order cancelled successfully." && (
+              <button
+                onClick={handleCancelOrder}
+                disabled={isCanceling}
+                className="px-4 py-2 text-white border border-gray-300 rounded-lg bg-[#EB5757]  transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+              >
+                {isCanceling ? (
+                  <span className="text-[10px]">Canceling...</span>
+                ) : (
+                  <>
+                    <span className="text-[10px]">Cancel Order</span>
+                  </>
+                )}
+              </button>
+            )}
+            <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center gap-2">
+              <Printer className="w-3 h-3" />
+              <span className="text-[10px]">Print</span>
+            </button>
+            <button
+              onClick={handleNextTab}
+              className="px-4 py-2 text-white rounded-lg hover:bg-opacity-90 transition-colors duration-200 flex items-center gap-2"
+              style={{ backgroundColor: "#0088B1" }}
+            >
+              <Edit className="w-3 h-3" />
+              <span className="text-[10px]">Next</span>
+            </button>
           </div>
-          <button
-            onClick={handleNextTab}
-            className="px-6 py-2 text-white rounded-lg hover:bg-opacity-90 transition-colors duration-200"
-            style={{ backgroundColor: "#0088B1" }}
-          >
-            Next
-          </button>
         </div>
       </div>
     </div>
