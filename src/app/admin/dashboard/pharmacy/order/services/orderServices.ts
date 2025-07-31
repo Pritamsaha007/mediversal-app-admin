@@ -2,6 +2,8 @@ import axios from "axios";
 import { Order, ApiResponse, FilterOptions, SortOption } from "../types/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const RAPID_SHYP_API_URL = process.env.NEXT_PUBLIC_RAPID_SHYP_API_URL;
+const ACCESS_TOKEN = process.env.NEXT_PUBLIC_RAPID_SHYP_ACCESS_TOKEN;
 
 export class OrderService {
   static checkAllowedMethods(orderId: number) {
@@ -81,7 +83,7 @@ export class OrderService {
         const matchesSearch =
           order.orderId.toString().includes(searchLower) ||
           order.customerName.toLowerCase().includes(searchLower) ||
-          order.customerEmail.toLowerCase().includes(searchLower) ||
+          order.customerEmail?.toLowerCase().includes(searchLower) ||
           order.customerPhone.includes(searchLower);
 
         if (!matchesSearch) return false;
@@ -255,3 +257,65 @@ export class OrderService {
     };
   }
 }
+
+export const trackOrders = async (seller_order_id: number, awb: string) => {
+  try {
+    const response = await axios.post(
+      `${RAPID_SHYP_API_URL}/track_order`,
+      {
+        seller_order_id,
+        awb,
+      },
+      {
+        headers: {
+          "content-type": "application/json",
+          "rapidshyp-token": ACCESS_TOKEN,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("Tracking failed:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+      });
+    } else {
+      console.error("Unexpected error:", error);
+    }
+    throw error;
+  }
+};
+export const cancelOrder = async (orderId: string, reason: string) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/app/api/order/cancel-order`,
+      {
+        orderId: orderId,
+        storeName: "DEFAULT",
+        reason: reason,
+      },
+
+      {
+        headers: {
+          "content-type": "application/json",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("Order cancellation failed:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+      });
+    } else {
+      console.error("Unexpected error:", error);
+    }
+    throw error;
+  }
+};

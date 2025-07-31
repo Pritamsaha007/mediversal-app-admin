@@ -19,7 +19,7 @@ import { StatsCard } from "./components/StatsCard";
 import StatusBadge from "./components/StatusBadge";
 import OrderActionDropdown from "./components/OrderActionDropdown";
 import { Pagination } from "./components/Pagination";
-import PrescriptionModal from "./components/PrescriptionModal";
+import PrescriptionModal from "./components/OrderSummary";
 
 const Orders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -196,7 +196,7 @@ const Orders: React.FC = () => {
           console.log("Delete confirmation for order:", order.orderId);
           if (window.confirm("Are you sure you want to delete this order?")) {
             console.log("User confirmed delete");
-            await OrderService.deleteOrder(order.orderId);
+            await OrderService.deleteOrder(Number(order.orderId));
             console.log("Delete successful, refreshing orders");
             await fetchOrders();
             console.log("Orders refreshed");
