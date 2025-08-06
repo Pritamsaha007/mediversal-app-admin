@@ -1,4 +1,3 @@
-// services/productService.ts
 import axios from "axios";
 import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
 import { ProductFormData } from "../types/productForm.type";
@@ -31,6 +30,7 @@ interface ProductApiResponse {
   ProductStrength: string;
   PackageSize: string;
   GST: string;
+  active: number;
   Coupons: string;
   StockAvailableInInventory: number;
   InventoryUpdated: string;
@@ -38,7 +38,7 @@ interface ProductApiResponse {
   DiscountedPercentage: string;
   updated_by: number;
   archivedProduct: number;
-  images: string[];
+  imageUrls: string[];
   HSN_Code: string;
   substitutes: any[];
   similarProducts: any[];
@@ -46,6 +46,16 @@ interface ProductApiResponse {
   Subcategory: string;
   Category: string;
   featuredProduct: number;
+}
+
+interface StatisticsResponse {
+  activeProducts: string;
+  inactiveProducts: string;
+  inStockProducts: string;
+  outOfStockProducts: string;
+  featuredProducts: string;
+  nonfeaturedProducts: string;
+  totalCategories: number;
 }
 
 /* ---------- MAPPER ---------- */
@@ -58,9 +68,11 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
     costPrice > 0 ? ((costPrice - sellingPrice) / costPrice) * 100 : 0;
 
   return {
-    id: apiProduct.productId?.toString() || "",
+    id: apiProduct.productId
+      ? apiProduct.productId.toString()
+      : `fallback-${Date.now()}-${Math.random()}`,
     name: apiProduct.ProductName,
-    code: `MED-${apiProduct.productId}`,
+    code: apiProduct.SKU || `MED-${apiProduct.productId}`,
     category: apiProduct.Category,
     subcategory: apiProduct.Subcategory,
     brand: apiProduct.ManufacturerName,
@@ -70,7 +82,7 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
     sellingPrice: sellingPrice,
     discount: Math.round(calculatedDiscount),
     stock: apiProduct.StockAvailableInInventory,
-    status: apiProduct.archivedProduct === 0 ? "Active" : "Inactive",
+    status: apiProduct.active === 1 ? "Active" : "Inactive",
     featured: apiProduct.featuredProduct === 1,
     description: apiProduct.ProductInformation,
     composition: apiProduct.Composition,
@@ -89,8 +101,8 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
     storageDescription: apiProduct.StorageInstructions,
     createdAt: apiProduct.InventoryUpdated,
     productImage:
-      Array.isArray(apiProduct.images) && apiProduct.images.length > 0
-        ? apiProduct.images[0]
+      apiProduct.imageUrls && apiProduct.imageUrls.length > 0
+        ? apiProduct.imageUrls[0]
         : undefined,
     Substitutes: Array.isArray(apiProduct.substitutes)
       ? apiProduct.substitutes.map((sub) =>
@@ -110,9 +122,6 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
       : 0,
   };
 };
-
-/* ---------- SERVICE ---------- */
-
 export const productService = {
   /* ----- DELETE PRODUCT ----- */
   async deleteProduct(id: string): Promise<void> {
@@ -124,25 +133,83 @@ export const productService = {
     }
   },
 
-  /* ----- GET ALL PRODUCTS (NO PAGINATION) ----- */
-  async getAllProducts(): Promise<{
+  async getAllProducts(
+    start: number = 0,
+    max: number = 50
+  ): Promise<{
     products: Product[];
     totalCount: number;
+    hasNextPage: boolean;
+    statistics: {
+      activeProducts: number;
+      inactiveProducts: number;
+      inStockProducts: number;
+      outOfStockProducts: number;
+      featuredProducts: number;
+      nonfeaturedProducts: number;
+      totalCategories: number;
+    };
   }> {
     try {
-      const response = await apiClient.get("/app/api/Product/getProducts");
+      const response = await apiClient.get(
+        `/app/api/Product/getProducts?start=${start}&max=${max}`
+      );
 
-      const productsArray = Array.isArray(response.data)
-        ? response.data
-        : response.data.products || [];
-      console.log("Fetched Products:", productsArray);
+      console.log("📦 Raw API response:", response.data);
+
+      const productsArray = response.data.products || [];
+      const statisticsArray = response.data.statistics || [];
+
+      console.log("📦 Products array:", productsArray);
+      console.log("📦 Statistics array:", statisticsArray);
+
+      const mappedProducts = productsArray.map(
+        (product: ProductApiResponse) => {
+          return mapApiResponseToProduct(product);
+        }
+      );
+
+      console.log("📦 Mapped products:", mappedProducts);
+
+      const stats = statisticsArray[0] || {
+        activeProducts: "0",
+        inactiveProducts: "0",
+        inStockProducts: "0",
+        outOfStockProducts: "0",
+        featuredProducts: "0",
+        nonfeaturedProducts: "0",
+        totalCategories: 0,
+      };
+
+      const statistics = {
+        activeProducts: parseInt(stats.activeProducts),
+        inactiveProducts: parseInt(stats.inactiveProducts),
+        inStockProducts: parseInt(stats.inStockProducts),
+        outOfStockProducts: parseInt(stats.outOfStockProducts),
+        featuredProducts: parseInt(stats.featuredProducts),
+        nonfeaturedProducts: parseInt(stats.nonfeaturedProducts),
+        totalCategories: parseInt(stats.totalCategories.toString()),
+      };
+
+      const totalCount =
+        statistics.activeProducts + statistics.inactiveProducts;
+      const hasNextPage = start + max < totalCount;
+
+      console.log("✅ Final result:", {
+        productsCount: mappedProducts.length,
+        totalCount,
+        hasNextPage,
+        statistics,
+      });
 
       return {
-        products: productsArray.map(mapApiResponseToProduct),
-        totalCount: productsArray.length,
+        products: mappedProducts,
+        totalCount,
+        hasNextPage,
+        statistics,
       };
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error("Error fetching paginated products:", error);
       throw new Error("Failed to fetch products");
     }
   },

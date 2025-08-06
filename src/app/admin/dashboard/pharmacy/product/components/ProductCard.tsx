@@ -6,7 +6,6 @@ import { ProductRelationshipsModal } from "./ManageProductRelationshipsModal";
 import { Eye, Edit, Link, MoreVertical, Pill } from "lucide-react";
 import { ProductFormData } from "../types/productForm.type";
 
-// Define RelatedProduct interface for the relationships
 interface RelatedProduct {
   id: string;
   name: string;
@@ -23,7 +22,6 @@ export const ProductCard: React.FC<{
   onDelete: (id: string) => void;
   isSelected: boolean;
   onSelect: (id: string, selected: boolean) => void;
-  // New props for relationships
   availableProducts?: RelatedProduct[];
   onUpdateRelationships?: (
     productId: string,
@@ -164,7 +162,6 @@ export const ProductCard: React.FC<{
       });
     }
   };
-  console.log("productaayakya", product);
 
   const currentSubstitutes: RelatedProduct[] =
     product.Substitutes?.map((name) => ({

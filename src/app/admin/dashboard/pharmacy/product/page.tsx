@@ -9,6 +9,8 @@ import {
   ShoppingBag,
   ListOrdered,
   Projector,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 import { categories, sortOptions, tabs } from "./data/productCatalogData";
 import { AddProductModal } from "./components/AddProductModal";
@@ -36,25 +38,43 @@ const ProductCatalog: React.FC = () => {
   const [actionDropdownOpen, setActionDropdownOpen] = useState(false);
   const { showConfirmation } = useConfirmationDialog();
   const actionDropdownRef = useRef<HTMLDivElement>(null);
+  const [statistics, setStatistics] = useState({
+    activeProducts: 0,
+    inactiveProducts: 0,
+    inStockProducts: 0,
+    outOfStockProducts: 0,
+    featuredProducts: 0,
+    nonfeaturedProducts: 0,
+    totalCategories: 0,
+  });
 
   const refreshProducts = async () => {
     try {
-      const { products, totalCount } = await productService.getAllProducts();
+      const start = (pagination.currentPage - 1) * pagination.itemsPerPage;
+      const {
+        products: fetchedProducts,
+        totalCount,
+        statistics,
+      } = await productService.getAllProducts(start, pagination.itemsPerPage);
 
-      setProducts(products);
-      setPagination((prev) => ({ ...prev, totalItems: totalCount }));
+      setProducts(fetchedProducts);
+      setStatistics(statistics);
+      setPagination((prev) => ({
+        ...prev,
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / pagination.itemsPerPage),
+      }));
       setError(null);
     } catch (err) {
       setError("Failed to refresh products");
       console.error("Error refreshing products:", err);
     }
   };
-
   const handleExportPDF = () => {
     const productsToExport =
       selectedProducts.length > 0
         ? products.filter((p) => selectedProducts.includes(p.id))
-        : filteredProducts;
+        : getFilteredProducts();
 
     if (productsToExport.length === 0) {
       toast.error("No products to export");
@@ -118,9 +138,21 @@ const ProductCatalog: React.FC = () => {
   };
   const [pagination, setPagination] = useState({
     currentPage: 1,
-    pageSize: 10,
+    itemsPerPage: 20,
     totalItems: 0,
+    totalPages: 0,
   });
+  const handlePageChange = (page: number) => {
+    setPagination((prev) => ({ ...prev, currentPage: page }));
+  };
+
+  const handleItemsPerPageChange = (itemsPerPage: number) => {
+    setPagination((prev) => ({
+      ...prev,
+      itemsPerPage,
+      currentPage: 1,
+    }));
+  };
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
@@ -130,9 +162,20 @@ const ProductCatalog: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const { products, totalCount } = await productService.getAllProducts();
-        setProducts(products);
-        setPagination((prev) => ({ ...prev, totalItems: totalCount }));
+
+        const {
+          products: fetchedProducts,
+          totalCount,
+          statistics,
+        } = await productService.getAllProducts(0, pagination.itemsPerPage);
+
+        setProducts(fetchedProducts);
+        setStatistics(statistics);
+        setPagination((prev) => ({
+          ...prev,
+          totalItems: totalCount,
+          totalPages: Math.ceil(totalCount / pagination.itemsPerPage),
+        }));
       } catch (err) {
         setError("Failed to load products. Please try again.");
         console.error("Error fetching products:", err);
@@ -142,9 +185,8 @@ const ProductCatalog: React.FC = () => {
     };
 
     fetchProducts();
-  }, [pagination.currentPage]);
+  }, [pagination.itemsPerPage]);
 
-  // Handle click outside for dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -216,10 +258,56 @@ const ProductCatalog: React.FC = () => {
     }
   };
 
-  // Apply filters and sorting
-  const getFilteredAndSortedProducts = () => {
+  const handleNextPage = async () => {
+    if (pagination.currentPage < pagination.totalPages) {
+      const nextPage = pagination.currentPage + 1;
+      const start = (nextPage - 1) * pagination.itemsPerPage;
+
+      try {
+        setLoading(true);
+        const { products: fetchedProducts } =
+          await productService.getAllProducts(start, pagination.itemsPerPage);
+
+        setProducts(fetchedProducts);
+        setPagination((prev) => ({
+          ...prev,
+          currentPage: nextPage,
+        }));
+      } catch (err) {
+        setError("Failed to load products.");
+        console.error("Error loading products:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handlePreviousPage = async () => {
+    if (pagination.currentPage > 1) {
+      const prevPage = pagination.currentPage - 1;
+      const start = (prevPage - 1) * pagination.itemsPerPage;
+
+      try {
+        setLoading(true);
+        const { products: fetchedProducts } =
+          await productService.getAllProducts(start, pagination.itemsPerPage);
+
+        setProducts(fetchedProducts);
+        setPagination((prev) => ({
+          ...prev,
+          currentPage: prevPage,
+        }));
+      } catch (err) {
+        setError("Failed to load products.");
+        console.error("Error loading products:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const getFilteredProducts = () => {
     let filtered = products.filter((product) => {
-      // Apply tab filter
       let tabMatch = true;
       switch (activeTab) {
         case "Active":
@@ -238,20 +326,19 @@ const ProductCatalog: React.FC = () => {
           tabMatch = true;
       }
 
-      // Apply search filter
-      const searchMatch =
-        searchTerm === "" ||
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.subcategory.toLowerCase().includes(searchTerm.toLowerCase());
+      // const searchMatch =
+      //   searchTerm === "" ||
+      //   product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      //   product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      //   product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      //   product.subcategory.toLowerCase().includes(searchTerm.toLowerCase());
 
       // Apply category filter
       const categoryMatch =
         selectedCategory === "All Categories" ||
         product.category === selectedCategory;
 
-      return tabMatch && searchMatch && categoryMatch;
+      return tabMatch && categoryMatch;
     });
 
     // Apply sorting
@@ -293,29 +380,19 @@ const ProductCatalog: React.FC = () => {
   }, [error]);
 
   const handleSelectAll = (selected: boolean) => {
-    setSelectedProducts(selected ? filteredProducts.map((p) => p.id) : []);
+    setSelectedProducts(selected ? getFilteredProducts().map((p) => p.id) : []);
   };
   const getStatsData = () => {
-    const activeProducts = products.filter((p) => p.status === "Active").length;
-    const inactiveProducts = products.filter(
-      (p) => p.status === "Inactive"
-    ).length;
-    const featuredProducts = products.filter((p) => p.featured).length;
-    const outOfStockProducts = products.filter((p) => p.stock === 0).length;
-
-    // Get unique categories
-    const uniqueCategories = new Set(products.map((p) => p.category));
-    const totalCategories = uniqueCategories.size;
-
     return {
-      totalProducts: products.length,
-      activeProducts,
-      inactiveProducts,
-      featuredProducts,
-      outOfStockProducts,
-      totalCategories,
+      totalProducts: statistics.activeProducts + statistics.inactiveProducts,
+      activeProducts: statistics.activeProducts,
+      inactiveProducts: statistics.inactiveProducts,
+      featuredProducts: statistics.featuredProducts,
+      outOfStockProducts: statistics.outOfStockProducts,
+      totalCategories: statistics.totalCategories,
     };
   };
+
   const handleUpdateProduct = async (
     id: string,
     productData: ProductFormData
@@ -334,7 +411,7 @@ const ProductCatalog: React.FC = () => {
 
   const statsData = getStatsData();
 
-  const filteredProducts = getFilteredAndSortedProducts();
+  const filteredProducts = getFilteredProducts();
 
   const handleDeleteAll = async () => {
     if (selectedProducts.length === 0) {
@@ -357,7 +434,6 @@ const ProductCatalog: React.FC = () => {
           setSelectedProducts([]);
         });
 
-        // Use toast.promise for loading/success/error states
         await toast.promise(deletePromise, {
           loading: "Deleting products...",
           success: `${selectedProducts.length} products deleted successfully`,
@@ -389,7 +465,6 @@ const ProductCatalog: React.FC = () => {
             </button>
           </div>
         </div>
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
           <StatsCard
@@ -401,6 +476,7 @@ const ProductCatalog: React.FC = () => {
             icon={<ShoppingBag className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
+
           <StatsCard
             title="Featured Products"
             stats={[
@@ -413,6 +489,7 @@ const ProductCatalog: React.FC = () => {
             icon={<Projector className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
+
           <StatsCard
             title="Categories"
             stats={[
@@ -422,20 +499,17 @@ const ProductCatalog: React.FC = () => {
             icon={<FileText className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
+
           <StatsCard
             title="Inventory"
             stats={[
-              {
-                label: "In Stock",
-                value: statsData.totalProducts - statsData.outOfStockProducts,
-              },
+              { label: "In Stock", value: statistics.inStockProducts },
               { label: "Out of Stock", value: statsData.outOfStockProducts },
             ]}
             icon={<ListOrdered className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
         </div>
-
         {loading && (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0088B1]"></div>
@@ -455,7 +529,6 @@ const ProductCatalog: React.FC = () => {
             </div>
           </div>
         )}
-
         {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
@@ -532,7 +605,6 @@ const ProductCatalog: React.FC = () => {
             </div>
           </div>
         </div>
-
         {/* Tabs */}
         <div className="flex justify-between mb-4 bg-[#F8F8F8] rounded-lg">
           <div className="">
@@ -585,14 +657,15 @@ const ProductCatalog: React.FC = () => {
             )}
           </div>
         </div>
-
         {/* Products Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
               {activeTab}
               <span className="text-[8px] text-[#899193] font-normal ml-2">
-                {filteredProducts.length} Products
+                Showing {getFilteredProducts().length} of {products.length}{" "}
+                loaded products
+                {pagination.totalItems && " (Load more available)"}
               </span>
             </h3>
           </div>
@@ -606,7 +679,10 @@ const ProductCatalog: React.FC = () => {
                       type="checkbox"
                       checked={
                         selectedProducts.length > 0 &&
-                        selectedProducts.length === filteredProducts.length
+                        selectedProducts.length === filteredProducts.length &&
+                        filteredProducts.every((p) =>
+                          selectedProducts.includes(p.id)
+                        )
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -641,7 +717,7 @@ const ProductCatalog: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {!loading &&
                   !error &&
-                  filteredProducts.map((product) => (
+                  getFilteredProducts().map((product) => (
                     <ProductCard
                       key={product.id}
                       product={product}
@@ -661,12 +737,11 @@ const ProductCatalog: React.FC = () => {
                           productId,
                           data
                         );
-
                         await refreshProducts();
                       }}
                     />
                   ))}
-                {!loading && !error && filteredProducts.length === 0 && (
+                {!loading && !error && getFilteredProducts().length === 0 && (
                   <tr>
                     <td colSpan={9} className="px-6 py-12 text-center">
                       <div className="text-gray-500">
@@ -689,6 +764,43 @@ const ProductCatalog: React.FC = () => {
             </table>
           </div>
         </div>
+        {!loading &&
+          !error &&
+          products.length > 0 &&
+          pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6 px-6 py-4 bg-white rounded-lg border border-gray-200">
+              <div className="text-sm text-gray-600">
+                Showing page {pagination.currentPage} of {pagination.totalPages}
+                ({pagination.totalItems} total products)
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={pagination.currentPage === 1 || loading}
+                  className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </button>
+
+                <span className="text-sm text-gray-600">
+                  Page {pagination.currentPage} of {pagination.totalPages}
+                </span>
+
+                <button
+                  onClick={handleNextPage}
+                  disabled={
+                    pagination.currentPage === pagination.totalPages || loading
+                  }
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         <AddProductModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
