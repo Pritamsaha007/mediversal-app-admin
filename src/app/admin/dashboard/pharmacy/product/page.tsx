@@ -17,12 +17,13 @@ import { AddProductModal } from "./components/AddProductModal";
 import { ProductCard } from "./components/ProductCard";
 import { StatsCard } from "./components/StatsCard";
 import { productService } from "./services/getProductService";
-import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
 import { ProductFormData } from "./types/productForm.type";
 import toast from "react-hot-toast";
 import { useConfirmationDialog } from "./components/ConfirmationDialog";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useProductStore } from "./store/productStore";
+
 const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
@@ -31,45 +32,27 @@ const ProductCatalog: React.FC = () => {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [actionDropdownOpen, setActionDropdownOpen] = useState(false);
   const { showConfirmation } = useConfirmationDialog();
   const actionDropdownRef = useRef<HTMLDivElement>(null);
-  const [statistics, setStatistics] = useState({
-    activeProducts: 0,
-    inactiveProducts: 0,
-    inStockProducts: 0,
-    outOfStockProducts: 0,
-    featuredProducts: 0,
-    nonfeaturedProducts: 0,
-    totalCategories: 0,
-  });
+  const {
+    products,
+    statistics,
+    loading,
+    error,
+    fetchProducts,
+    getStatistics,
+    refreshProducts,
+    updateProductInStore,
+    removeProductFromStore,
+    addProductToStore,
+  } = useProductStore();
 
-  const refreshProducts = async () => {
-    try {
-      const start = (pagination.currentPage - 1) * pagination.itemsPerPage;
-      const {
-        products: fetchedProducts,
-        totalCount,
-        statistics,
-      } = await productService.getAllProducts(start, pagination.itemsPerPage);
-
-      setProducts(fetchedProducts);
-      setStatistics(statistics);
-      setPagination((prev) => ({
-        ...prev,
-        totalItems: totalCount,
-        totalPages: Math.ceil(totalCount / pagination.itemsPerPage),
-      }));
-      setError(null);
-    } catch (err) {
-      setError("Failed to refresh products");
-      console.error("Error refreshing products:", err);
-    }
+  const handleRefreshProducts = async () => {
+    await refreshProducts();
   };
+
   const handleExportPDF = () => {
     const productsToExport =
       selectedProducts.length > 0
@@ -139,53 +122,36 @@ const ProductCatalog: React.FC = () => {
   const [pagination, setPagination] = useState({
     currentPage: 1,
     itemsPerPage: 20,
-    totalItems: 0,
-    totalPages: 0,
+    totalItems: statistics.activeProducts + statistics.inactiveProducts,
+    totalPages: Math.ceil(
+      (statistics.activeProducts + statistics.inactiveProducts) / 20
+    ),
   });
-  const handlePageChange = (page: number) => {
-    setPagination((prev) => ({ ...prev, currentPage: page }));
-  };
 
-  const handleItemsPerPageChange = (itemsPerPage: number) => {
+  useEffect(() => {
     setPagination((prev) => ({
       ...prev,
-      itemsPerPage,
-      currentPage: 1,
+      totalItems: statistics.activeProducts + statistics.inactiveProducts,
+      totalPages: Math.ceil(
+        (statistics.activeProducts + statistics.inactiveProducts) /
+          prev.itemsPerPage
+      ),
     }));
-  };
+  }, [statistics]);
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const {
-          products: fetchedProducts,
-          totalCount,
-          statistics,
-        } = await productService.getAllProducts(0, pagination.itemsPerPage);
-
-        setProducts(fetchedProducts);
-        setStatistics(statistics);
-        setPagination((prev) => ({
-          ...prev,
-          totalItems: totalCount,
-          totalPages: Math.ceil(totalCount / pagination.itemsPerPage),
-        }));
-      } catch (err) {
-        setError("Failed to load products. Please try again.");
-        console.error("Error fetching products:", err);
-      } finally {
-        setLoading(false);
-      }
+    const loadInitialData = async () => {
+      await Promise.all([
+        fetchProducts(0, pagination.itemsPerPage),
+        getStatistics(),
+      ]);
     };
 
-    fetchProducts();
-  }, [pagination.itemsPerPage]);
+    loadInitialData();
+  }, [pagination.itemsPerPage, fetchProducts, getStatistics]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -229,12 +195,16 @@ const ProductCatalog: React.FC = () => {
     if (action === "delete") {
       if (window.confirm("Are you sure you want to delete this product?")) {
         try {
-          await productService.deleteProduct(id);
-          await refreshProducts();
+          removeProductFromStore(id);
           toast.success("Product deleted successfully");
+
+          await productService.deleteProduct(id);
+
+          await getStatistics();
         } catch (error) {
           console.error("Error deleting product:", error);
           toast.error("Failed to delete product");
+          await refreshProducts();
         }
       }
       return;
@@ -243,11 +213,9 @@ const ProductCatalog: React.FC = () => {
     try {
       switch (action) {
         case "deactivate":
-          // await productService.updateProductStatus(id, 'Inactive');
           toast.success("Product deactivated");
           break;
         case "unfeature":
-          // await productService.updateProductFeature(id, false);
           toast.success("Product unfeatured");
           break;
       }
@@ -263,46 +231,14 @@ const ProductCatalog: React.FC = () => {
       const nextPage = pagination.currentPage + 1;
       const start = (nextPage - 1) * pagination.itemsPerPage;
 
-      try {
-        setLoading(true);
-        const { products: fetchedProducts } =
-          await productService.getAllProducts(start, pagination.itemsPerPage);
-
-        setProducts(fetchedProducts);
-        setPagination((prev) => ({
-          ...prev,
-          currentPage: nextPage,
-        }));
-      } catch (err) {
-        setError("Failed to load products.");
-        console.error("Error loading products:", err);
-      } finally {
-        setLoading(false);
-      }
+      await fetchProducts(start, pagination.itemsPerPage);
+      setPagination((prev) => ({ ...prev, currentPage: nextPage }));
     }
   };
 
-  const handlePreviousPage = async () => {
+  const handlePreviousPage = () => {
     if (pagination.currentPage > 1) {
-      const prevPage = pagination.currentPage - 1;
-      const start = (prevPage - 1) * pagination.itemsPerPage;
-
-      try {
-        setLoading(true);
-        const { products: fetchedProducts } =
-          await productService.getAllProducts(start, pagination.itemsPerPage);
-
-        setProducts(fetchedProducts);
-        setPagination((prev) => ({
-          ...prev,
-          currentPage: prevPage,
-        }));
-      } catch (err) {
-        setError("Failed to load products.");
-        console.error("Error loading products:", err);
-      } finally {
-        setLoading(false);
-      }
+      setPagination((prev) => ({ ...prev, currentPage: prev.currentPage - 1 }));
     }
   };
 
@@ -325,13 +261,6 @@ const ProductCatalog: React.FC = () => {
         default:
           tabMatch = true;
       }
-
-      // const searchMatch =
-      //   searchTerm === "" ||
-      //   product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      //   product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      //   product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      //   product.subcategory.toLowerCase().includes(searchTerm.toLowerCase());
 
       // Apply category filter
       const categoryMatch =
@@ -398,21 +327,24 @@ const ProductCatalog: React.FC = () => {
     productData: ProductFormData
   ) => {
     try {
-      await productService.updateProduct(id, productData);
-      await refreshProducts();
+      const updatedProduct = await productService.updateProduct(
+        id,
+        productData
+      );
+      updateProductInStore(updatedProduct);
+      await getStatistics();
+
       toast.success("Product updated successfully");
     } catch (error) {
-      setError("Failed to update product. Please try again.");
       console.error("Error updating product:", error);
-
       toast.error("Failed to update product");
+      await refreshProducts();
     }
   };
 
   const statsData = getStatsData();
 
   const filteredProducts = getFilteredProducts();
-
   const handleDeleteAll = async () => {
     if (selectedProducts.length === 0) {
       toast.error("No products selected");
@@ -445,6 +377,21 @@ const ProductCatalog: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
+      {/* <div className="fixed top-4 right-4 bg-white p-3 shadow-lg rounded-lg z-50 border border-blue-100">
+        <div className="text-sm font-semibold text-gray-700">Store Status</div>
+        <div className="text-xs mt-1">
+          <span className="font-medium text-gray-600">Total Products:</span>
+          <span className="ml-1 font-bold text-blue-600">
+            {useProductStore.getState().products.length}
+          </span>
+        </div>
+        <div className="text-xs">
+          <span className="font-medium text-gray-600">Loaded Chunks:</span>
+          <span className="ml-1 font-bold text-blue-600">
+            {Array.from(useProductStore.getState().loadedChunks).join(", ")}
+          </span>
+        </div>
+      </div> */}
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -521,7 +468,7 @@ const ProductCatalog: React.FC = () => {
             <div className="flex items-center justify-between">
               <span className="text-red-800">{error}</span>
               <button
-                onClick={refreshProducts}
+                onClick={handleRefreshProducts}
                 className="text-red-600 hover:text-red-800 underline text-sm"
               >
                 Retry
@@ -717,30 +664,37 @@ const ProductCatalog: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {!loading &&
                   !error &&
-                  getFilteredProducts().map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      onEdit={handleUpdateProduct}
-                      isSelected={selectedProducts.includes(product.id)}
-                      onSelect={handleProductSelect}
-                      onView={(id) => handleProductAction("view", id)}
-                      onUnfeature={(id) => handleProductAction("unfeature", id)}
-                      onDeactivate={(id) =>
-                        handleProductAction("deactivate", id)
-                      }
-                      onDelete={(id) => handleProductAction("delete", id)}
-                      availableProducts={products}
-                      onUpdateRelationships={async (productId, data) => {
-                        console.log(
-                          "Updating relationships for product:",
-                          productId,
-                          data
-                        );
-                        await refreshProducts();
-                      }}
-                    />
-                  ))}
+                  getFilteredProducts()
+                    .slice(
+                      (pagination.currentPage - 1) * pagination.itemsPerPage,
+                      pagination.currentPage * pagination.itemsPerPage
+                    )
+                    .map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onEdit={handleUpdateProduct}
+                        isSelected={selectedProducts.includes(product.id)}
+                        onSelect={handleProductSelect}
+                        onView={(id) => handleProductAction("view", id)}
+                        onUnfeature={(id) =>
+                          handleProductAction("unfeature", id)
+                        }
+                        onDeactivate={(id) =>
+                          handleProductAction("deactivate", id)
+                        }
+                        onDelete={(id) => handleProductAction("delete", id)}
+                        availableProducts={products}
+                        onUpdateRelationships={async (productId, data) => {
+                          console.log(
+                            "Updating relationships for product:",
+                            productId,
+                            data
+                          );
+                          await refreshProducts();
+                        }}
+                      />
+                    ))}
                 {!loading && !error && getFilteredProducts().length === 0 && (
                   <tr>
                     <td colSpan={9} className="px-6 py-12 text-center">
