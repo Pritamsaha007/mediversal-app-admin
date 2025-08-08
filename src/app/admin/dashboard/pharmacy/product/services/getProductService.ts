@@ -4,15 +4,22 @@ import { ProductFormData } from "../types/productForm.type";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-const apiClient = axios.create({
+export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-/* ---------- API RESPONSE TYPES ---------- */
+const productCache = new Map<string, any>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+interface CacheItem {
+  data: any;
+  timestamp: number;
+}
+
+/* ---------- API RESPONSE TYPES ---------- */
 interface ProductApiResponse {
   productId: number;
   ProductName: string;
@@ -58,8 +65,27 @@ interface StatisticsResponse {
   totalCategories: number;
 }
 
-/* ---------- MAPPER ---------- */
+/* ---------- CACHE HELPERS ---------- */
+const getFromCache = (key: string) => {
+  const item = productCache.get(key) as CacheItem | undefined;
+  if (!item) return null;
 
+  if (Date.now() - item.timestamp > CACHE_TTL) {
+    productCache.delete(key);
+    return null;
+  }
+
+  return item.data;
+};
+
+const setToCache = (key: string, data: any) => {
+  productCache.set(key, {
+    data,
+    timestamp: Date.now(),
+  });
+};
+
+/* ---------- MAPPER ---------- */
 const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
   const costPrice = parseFloat(apiProduct.CostPrice);
   const sellingPrice = parseFloat(apiProduct.SellingPrice);
@@ -122,20 +148,25 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
       : 0,
   };
 };
+
+/* ---------- SERVICE METHODS ---------- */
 export const productService = {
   /* ----- DELETE PRODUCT ----- */
   async deleteProduct(id: string): Promise<void> {
     try {
       await apiClient.delete(`/app/api/Product/deleteProduct/${id}`);
+      // Clear ALL cache instead of selective clearing
+      this.clearCache();
     } catch (error) {
       console.error(`Error deleting product ${id}:`, error);
       throw new Error(`Failed to delete product ${id}`);
     }
   },
 
+  /* ----- GET ALL PRODUCTS WITH PAGINATION ----- */
   async getAllProducts(
     start: number = 0,
-    max: number = 50
+    max: number = 20
   ): Promise<{
     products: Product[];
     totalCount: number;
@@ -150,26 +181,33 @@ export const productService = {
       totalCategories: number;
     };
   }> {
+    const cacheKey = `products_${start}_${max}`;
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("api-call", {
+          detail: `Fetching products ${start}-${start + max}`,
+        })
+      );
+    }
+
+    const cachedData = getFromCache(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
     try {
       const response = await apiClient.get(
         `/app/api/Product/getProducts?start=${start}&max=${max}`
       );
 
-      console.log("📦 Raw API response:", response.data);
-
       const productsArray = response.data.products || [];
       const statisticsArray = response.data.statistics || [];
-
-      console.log("📦 Products array:", productsArray);
-      console.log("📦 Statistics array:", statisticsArray);
 
       const mappedProducts = productsArray.map(
         (product: ProductApiResponse) => {
           return mapApiResponseToProduct(product);
         }
       );
-
-      console.log("📦 Mapped products:", mappedProducts);
 
       const stats = statisticsArray[0] || {
         activeProducts: "0",
@@ -195,22 +233,66 @@ export const productService = {
         statistics.activeProducts + statistics.inactiveProducts;
       const hasNextPage = start + max < totalCount;
 
-      console.log("✅ Final result:", {
-        productsCount: mappedProducts.length,
-        totalCount,
-        hasNextPage,
-        statistics,
-      });
-
-      return {
+      const result = {
         products: mappedProducts,
         totalCount,
         hasNextPage,
         statistics,
       };
+
+      setToCache(cacheKey, result);
+      return result;
     } catch (error) {
       console.error("Error fetching paginated products:", error);
       throw new Error("Failed to fetch products");
+    }
+  },
+
+  /* ----- GET STATISTICS ONLY ----- */
+  async getStatistics(): Promise<{
+    activeProducts: number;
+    inactiveProducts: number;
+    inStockProducts: number;
+    outOfStockProducts: number;
+    featuredProducts: number;
+    nonfeaturedProducts: number;
+    totalCategories: number;
+  }> {
+    const cacheKey = "products_stats";
+    const cachedData = getFromCache(cacheKey);
+    if (cachedData) return cachedData;
+
+    try {
+      const response = await apiClient.get(
+        `/app/api/Product/getProducts?start=0&max=1`
+      );
+
+      const statisticsArray = response.data.statistics || [];
+      const stats = statisticsArray[0] || {
+        activeProducts: "0",
+        inactiveProducts: "0",
+        inStockProducts: "0",
+        outOfStockProducts: "0",
+        featuredProducts: "0",
+        nonfeaturedProducts: "0",
+        totalCategories: 0,
+      };
+
+      const result = {
+        activeProducts: parseInt(stats.activeProducts),
+        inactiveProducts: parseInt(stats.inactiveProducts),
+        inStockProducts: parseInt(stats.inStockProducts),
+        outOfStockProducts: parseInt(stats.outOfStockProducts),
+        featuredProducts: parseInt(stats.featuredProducts),
+        nonfeaturedProducts: parseInt(stats.nonfeaturedProducts),
+        totalCategories: parseInt(stats.totalCategories.toString()),
+      };
+
+      setToCache(cacheKey, result);
+      return result;
+    } catch (error) {
+      console.error("Error fetching statistics:", error);
+      throw new Error("Failed to fetch statistics");
     }
   },
 
@@ -254,18 +336,66 @@ export const productService = {
         productWeight: data.productWeight ?? "0.00",
       };
 
-      console.log("Updating Product with Payload:", payload);
-
       const response = await apiClient.put(
         `/app/api/Product/updateProduct/${id}`,
         payload,
         { headers: { "Content-Type": "application/json" } }
       );
+      this.clearCache();
 
       return mapApiResponseToProduct(response.data);
     } catch (error) {
       console.error(`Error updating product ${id}:`, error);
       throw new Error(`Failed to update product ${id}`);
     }
+  },
+
+  /* ----- SEARCH PRODUCTS ----- */
+  async searchProducts(query: string): Promise<Product[]> {
+    const cacheKey = `search_${query}`;
+    const cachedData = getFromCache(cacheKey);
+    if (cachedData) return cachedData;
+
+    try {
+      const response = await apiClient.get(
+        `/app/api/Product/searchProducts?query=${encodeURIComponent(query)}`
+      );
+
+      const productsArray = response.data.products || [];
+      const mappedProducts = productsArray.map(
+        (product: ProductApiResponse) => {
+          return mapApiResponseToProduct(product);
+        }
+      );
+
+      setToCache(cacheKey, mappedProducts);
+      return mappedProducts;
+    } catch (error) {
+      console.error("Error searching products:", error);
+      throw new Error("Failed to search products");
+    }
+  },
+
+  /* ----- GET SINGLE PRODUCT ----- */
+  async getProductById(id: string): Promise<Product> {
+    const cacheKey = `product_${id}`;
+    const cachedData = getFromCache(cacheKey);
+    if (cachedData) return cachedData;
+
+    try {
+      const response = await apiClient.get(`/app/api/Product/getProduct/${id}`);
+
+      const product = mapApiResponseToProduct(response.data);
+      setToCache(cacheKey, product);
+      return product;
+    } catch (error) {
+      console.error(`Error fetching product ${id}:`, error);
+      throw new Error(`Failed to fetch product ${id}`);
+    }
+  },
+
+  /* ----- CLEAR CACHE ----- */
+  clearCache(): void {
+    productCache.clear();
   },
 };
