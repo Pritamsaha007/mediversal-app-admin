@@ -333,7 +333,6 @@ const ProductCatalog: React.FC = () => {
       );
       updateProductInStore(updatedProduct);
       await getStatistics();
-
       toast.success("Product updated successfully");
     } catch (error) {
       console.error("Error updating product:", error);
@@ -358,7 +357,6 @@ const ProductCatalog: React.FC = () => {
       cancelText: "Cancel",
       variant: "danger",
       onConfirm: async () => {
-        // Show loading state
         const deletePromise = Promise.all(
           selectedProducts.map((id) => productService.deleteProduct(id))
         ).then(async () => {
