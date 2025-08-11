@@ -56,6 +56,7 @@ const Sidebar = () => {
         },
       ],
     },
+
     // {
     //   name: "Patient",
     //   icon: <LucideComputer size={18} />,
@@ -86,6 +87,28 @@ const Sidebar = () => {
         //   name: "List Access Permission",
         //   link: "/dashboard/user-management/list-access-role",
         // },
+      ],
+    },
+    {
+      name: "Home Care",
+      icon: <LucideComputer size={18} />,
+      subItems: [
+        {
+          name: "Services",
+          link: "/admin/dashboard/home-care/services",
+        },
+        {
+          name: "Orders",
+          link: "/admin/dashboard/home-care/orders",
+        },
+        {
+          name: "Staff",
+          link: "/admin/dashboard/home-care/staff",
+        },
+        {
+          name: "Care Plan",
+          link: "/admin/dashboard/home-care/care-plan",
+        },
       ],
     },
   ];
