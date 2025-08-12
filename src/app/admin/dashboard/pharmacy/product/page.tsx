@@ -23,6 +23,7 @@ import { useConfirmationDialog } from "./components/ConfirmationDialog";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useProductStore } from "./store/productStore";
+import { useDebounce } from "./utils/useDebounce";
 
 const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,6 +36,7 @@ const ProductCatalog: React.FC = () => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [actionDropdownOpen, setActionDropdownOpen] = useState(false);
   const { showConfirmation } = useConfirmationDialog();
+  const debouncedSearch = useDebounce(searchTerm, 500);
   const actionDropdownRef = useRef<HTMLDivElement>(null);
   const {
     products,
@@ -103,7 +105,7 @@ const ProductCatalog: React.FC = () => {
         cellPadding: 2,
       },
       headStyles: {
-        fillColor: [0, 112, 154], // #00709A
+        fillColor: [0, 112, 154],
         textColor: 255,
         fontSize: 9,
       },
@@ -127,6 +129,23 @@ const ProductCatalog: React.FC = () => {
       (statistics.activeProducts + statistics.inactiveProducts) / 20
     ),
   });
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    setCategoryDropdownOpen(false);
+    // Reset pagination when category changes
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+  };
+
+  useEffect(() => {
+    const filters = {
+      ...(debouncedSearch && { searchTerm: debouncedSearch }),
+      ...(selectedCategory !== "All Categories" && {
+        searchCategory: selectedCategory,
+      }),
+    };
+    fetchProducts(0, 20, filters);
+  }, [debouncedSearch, selectedCategory]);
 
   useEffect(() => {
     setPagination((prev) => ({
@@ -261,32 +280,32 @@ const ProductCatalog: React.FC = () => {
         default:
           tabMatch = true;
       }
-
-      // Apply category filter
-      const categoryMatch =
-        selectedCategory === "All Categories" ||
-        product.category === selectedCategory;
-
-      return tabMatch && categoryMatch;
+      return tabMatch;
     });
+    // Apply category filter
+    //   const categoryMatch =
+    //     selectedCategory === "All Categories" ||
+    //     product.category === selectedCategory;
+
+    //   return tabMatch && categoryMatch;
+    // });
 
     // Apply sorting
     if (sortBy !== "Sort") {
       filtered = [...filtered].sort((a, b) => {
         switch (sortBy) {
-          case "Selling Price - Low to High":
-            return a.sellingPrice - b.sellingPrice;
-          case "Selling Price - High to Low":
-            return b.sellingPrice - a.sellingPrice;
-          case "Product Status":
-            return a.status.localeCompare(b.status);
-          case "By Name":
+          case "ProductName - A to Z":
             return a.name.localeCompare(b.name);
-          case "By Stock":
+          case "ProductName - Z to A":
+            return b.name.localeCompare(a.name);
+          case "SellingPrice - Low to High":
+            return a.sellingPrice - b.sellingPrice;
+          case "SellingPrice - High to Low":
+            return b.sellingPrice - a.sellingPrice;
+          case "StockAvailableInInventory - High to Low":
             return b.stock - a.stock;
-          case "Discount":
-            return b.discount - a.discount;
-          case "Relevance (default)":
+          case "StockAvailableInInventory - Low to High":
+            return a.stock - b.stock;
           default:
             return 0;
         }
@@ -501,10 +520,7 @@ const ProductCatalog: React.FC = () => {
                   {categories.map((category) => (
                     <button
                       key={category}
-                      onClick={() => {
-                        setSelectedCategory(category);
-                        setCategoryDropdownOpen(false);
-                      }}
+                      onClick={() => handleCategoryChange(category)}
                       className="block w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
                     >
                       {category}
@@ -513,6 +529,7 @@ const ProductCatalog: React.FC = () => {
                 </div>
               )}
             </div>
+
             {/* Sort Dropdown */}
             <div className="relative" ref={sortDropdownRef}>
               <button

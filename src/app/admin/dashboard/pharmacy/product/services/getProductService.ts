@@ -164,9 +164,11 @@ export const productService = {
   },
 
   /* ----- GET ALL PRODUCTS WITH PAGINATION ----- */
+  /* ----- GET ALL PRODUCTS WITH PAGINATION & FILTERS ----- */
   async getAllProducts(
     start: number = 0,
-    max: number = 20
+    max: number = 20,
+    filters: Record<string, any> = {} // <-- new optional filters param
   ): Promise<{
     products: Product[];
     totalCount: number;
@@ -181,32 +183,29 @@ export const productService = {
       totalCategories: number;
     };
   }> {
-    const cacheKey = `products_${start}_${max}`;
+    const cacheKey = `products_${start}_${max}_${JSON.stringify(filters)}`;
     if (typeof window !== "undefined") {
       window.dispatchEvent(
         new CustomEvent("api-call", {
-          detail: `Fetching products ${start}-${start + max}`,
+          detail: `Fetching products ${start}-${start + max} with filters`,
         })
       );
     }
 
     const cachedData = getFromCache(cacheKey);
-    if (cachedData) {
-      return cachedData;
-    }
+    if (cachedData) return cachedData;
 
     try {
-      const response = await apiClient.get(
-        `/app/api/Product/getProducts?start=${start}&max=${max}`
+      const response = await apiClient.post(
+        `/app/api/Product/getProducts?start=${start}&max=${max}`,
+        filters // <-- send filters here
       );
 
       const productsArray = response.data.products || [];
       const statisticsArray = response.data.statistics || [];
 
-      const mappedProducts = productsArray.map(
-        (product: ProductApiResponse) => {
-          return mapApiResponseToProduct(product);
-        }
+      const mappedProducts = productsArray.map((product: ProductApiResponse) =>
+        mapApiResponseToProduct(product)
       );
 
       const stats = statisticsArray[0] || {
