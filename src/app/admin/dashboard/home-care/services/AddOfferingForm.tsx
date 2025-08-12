@@ -111,7 +111,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
               </label>
               <select
                 disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
               >
                 <option>{serviceName}</option>
               </select>
@@ -127,7 +127,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                 value={formData.name}
                 onChange={handleInputChange}
                 placeholder="Enter Offering Name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[10px] placeholder-[#899193]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
                 required
               />
             </div>
@@ -144,7 +144,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                 value={formData.price}
                 onChange={handleInputChange}
                 placeholder="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
                 required
               />
             </div>
@@ -159,7 +159,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                 value={formData.duration}
                 onChange={handleInputChange}
                 placeholder="e.g. 12 Hours, day, week, month..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
                 required
               />
             </div>
@@ -175,7 +175,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
               onChange={handleInputChange}
               placeholder="Detailed description of the service"
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
               required
             />
           </div>
@@ -190,7 +190,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
               onChange={handleInputChange}
               placeholder="Required qualifications (comma separated)"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
               required
             />
           </div>
@@ -205,7 +205,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
               onChange={handleInputChange}
               placeholder="Required equipment (comma separated)"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
               required
             />
           </div>
@@ -220,7 +220,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
               onChange={handleInputChange}
               placeholder="Service features and inclusions (comma separated)"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
               required
             />
           </div>
@@ -233,7 +233,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
               name="status"
               value={formData.status}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
             >
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
