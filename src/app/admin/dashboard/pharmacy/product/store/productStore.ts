@@ -16,7 +16,11 @@ interface ProductState {
   };
   loading: boolean;
   error: string | null;
-  fetchProducts: (start: number, max: number) => Promise<void>;
+  fetchProducts: (
+    start: number,
+    max: number,
+    filters?: Record<string, any>
+  ) => Promise<void>;
   getStatistics: () => Promise<void>;
   refreshProducts: () => Promise<void>;
   resetProducts: () => void;
@@ -39,22 +43,36 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
   loading: false,
   error: null,
-  fetchProducts: async (start, max) => {
+  fetchProducts: async (
+    start: number,
+    max: number,
+    filters?: Record<string, any>
+  ) => {
     const chunkId = Math.floor(start / max);
-    if (get().loadedChunks.has(chunkId)) return;
+
+    if (
+      get().loadedChunks.has(chunkId) &&
+      (!filters || Object.keys(filters).length === 0)
+    )
+      return;
 
     set({ loading: true, error: null });
+
     try {
       const { products: fetchedProducts, statistics } =
-        await productService.getAllProducts(start, max);
-      console.log(`Received ${fetchedProducts.length} products`);
-      console.table(fetchedProducts.slice(0, 3));
+        await productService.getAllProducts(start, max, filters || {});
 
       set((state) => {
-        const newProducts = [...state.products];
-        fetchedProducts.forEach((product, index) => {
-          newProducts[start + index] = product;
-        });
+        const newProducts =
+          filters && Object.keys(filters).length > 0
+            ? fetchedProducts
+            : [...state.products];
+
+        if (!filters || Object.keys(filters).length === 0) {
+          fetchedProducts.forEach((product, index) => {
+            newProducts[start + index] = product;
+          });
+        }
 
         return {
           products: newProducts,
@@ -68,6 +86,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
       throw err;
     }
   },
+
   getStatistics: async () => {
     try {
       const statistics = await productService.getStatistics();
