@@ -48,7 +48,7 @@ export interface AddProductModalProps {
 }
 
 export const categories = [
-  "All",
+  "All Categories",
   "OTC",
   "Prescription",
   "Supplements",
