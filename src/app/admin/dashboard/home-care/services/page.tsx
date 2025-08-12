@@ -112,7 +112,7 @@ const Services: React.FC = () => {
     const totalServices = services.length;
     const activeServices = services.filter((s) => s.status === "Active").length;
     const totalOfferings = services.reduce((acc, service) => {
-      return acc + service.offerings.length; // Now it's an array of objects
+      return acc + service.offerings.length;
     }, 0);
 
     return {
