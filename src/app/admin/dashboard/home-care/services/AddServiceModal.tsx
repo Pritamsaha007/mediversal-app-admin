@@ -314,7 +314,7 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
           </button>
           <button
             onClick={handleAddService}
-            className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+            className="px-6 py-2 bg-[#0088B1] text-[10px] text-white rounded-lg transition-colors"
           >
             Add Service
           </button>

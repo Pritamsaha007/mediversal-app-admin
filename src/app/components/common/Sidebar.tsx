@@ -98,8 +98,8 @@ const Sidebar = () => {
           link: "/admin/dashboard/home-care/services",
         },
         {
-          name: "Orders",
-          link: "/admin/dashboard/home-care/orders",
+          name: "Booking",
+          link: "/admin/dashboard/home-care/booking",
         },
         {
           name: "Staff",
