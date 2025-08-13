@@ -4,6 +4,7 @@ import { SAMPLE_SERVICES } from "./sampleServices";
 import StatusBadge from "../components/StatusBadge";
 import StatsCard from "../components/StatsCard";
 import ManageOfferingsModal from "./ManageOfferingsModal";
+import AddServiceModal from "./AddServiceModal";
 
 import {
   Search,
@@ -102,6 +103,7 @@ const Services: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showManageModal, setShowManageModal] = useState(false);
+  const [showAddServiceModal, setShowAddServiceModal] = useState(false);
   const [selectedServiceForModal, setSelectedServiceForModal] =
     useState<Service | null>(null);
 
@@ -171,6 +173,18 @@ const Services: React.FC = () => {
     setShowManageModal(true);
   };
 
+  const handleAddService = (newServiceData: Omit<Service, "id">) => {
+    // Generate a new ID
+    const newId = Math.max(...services.map((s) => s.id)) + 1;
+    const newService: Service = {
+      ...newServiceData,
+      id: newId,
+    };
+
+    // Add the new service to the beginning of the array so it appears at the top
+    setServices([newService, ...services]);
+  };
+
   // Handle click outside to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -196,7 +210,10 @@ const Services: React.FC = () => {
             Services Management
           </h1>
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 text-[12px] px-4 py-2 bg-[#0088B1] text-[#F8F8F8] rounded-lg hover:bg-[#00729A]">
+            <button
+              onClick={() => setShowAddServiceModal(true)} // Add this onClick
+              className="flex items-center gap-2 text-[12px] px-4 py-2 bg-[#0088B1] text-[#F8F8F8] rounded-lg hover:bg-[#00729A]"
+            >
               <Plus className="w-3 h-3" />
               New Service
             </button>
@@ -423,6 +440,11 @@ const Services: React.FC = () => {
           setSelectedServiceForModal(null);
         }}
         service={selectedServiceForModal}
+      />
+      <AddServiceModal
+        isOpen={showAddServiceModal}
+        onClose={() => setShowAddServiceModal(false)}
+        onAddService={handleAddService}
       />
     </div>
   );
