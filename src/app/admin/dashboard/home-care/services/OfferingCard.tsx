@@ -1,5 +1,6 @@
 import React from "react";
 import { MoreVertical } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 
 interface Offering {
   id: string;
@@ -37,6 +38,22 @@ const OfferingCard: React.FC<OfferingCardProps> = ({
     }
   };
 
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
     <div className="border border-gray-200 rounded-lg p-6 bg-white">
       <div className="flex justify-between items-start mb-4">
@@ -63,9 +80,37 @@ const OfferingCard: React.FC<OfferingCardProps> = ({
             </span>
           </div>
         </div>
-        <button className="p-1 text-gray-500 hover:text-gray-700">
-          <MoreVertical className="w-4 h-4" />
-        </button>
+        <div className="relative" ref={dropdownRef}>
+          <button
+            className="p-1 text-gray-500 hover:text-gray-700"
+            onClick={() => setShowDropdown(!showDropdown)}
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+
+          {showDropdown && (
+            <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-[120px]">
+              <button
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => {
+                  onEdit?.(offering);
+                  setShowDropdown(false);
+                }}
+              >
+                Edit
+              </button>
+              <button
+                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
+                onClick={() => {
+                  onDelete?.(offering.id);
+                  setShowDropdown(false);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

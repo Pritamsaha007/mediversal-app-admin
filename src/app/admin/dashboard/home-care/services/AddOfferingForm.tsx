@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
 interface Offering {
@@ -18,6 +19,7 @@ interface AddOfferingFormProps {
   onClose: () => void;
   onSubmit: (offering: Omit<Offering, "id">) => void;
   serviceName: string;
+  editingOffering?: Offering | null;
 }
 
 const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
@@ -25,6 +27,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
   onClose,
   onSubmit,
   serviceName,
+  editingOffering,
 }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -42,6 +45,30 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
     weekValue: "",
     monthValue: "",
   });
+
+  useEffect(() => {
+    if (editingOffering) {
+      // Parse duration back to individual values (you'll need to implement this based on your duration format)
+      const parsedDuration = parseDurationString(editingOffering.duration);
+
+      setFormData({
+        name: editingOffering.name,
+        price: editingOffering.price.toString(),
+        duration: editingOffering.duration,
+        description: editingOffering.description,
+        staffRequirements: editingOffering.staffRequirements.join(", "),
+        equipmentNeeded: editingOffering.equipmentIncluded.join(", "),
+        features: editingOffering.features.join(", "),
+        status: "Active",
+        selectedTypes: parsedDuration.types,
+        sessionValue: parsedDuration.sessionValue,
+        hoursValue: parsedDuration.hoursValue,
+        dayValue: parsedDuration.dayValue,
+        weekValue: parsedDuration.weekValue,
+        monthValue: parsedDuration.monthValue,
+      });
+    }
+  }, [editingOffering]);
 
   const buildDurationString = () => {
     const parts = [];
@@ -86,7 +113,6 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
       status: "Available",
     };
 
-    // Console log all fields in JSON format
     console.log("Offering Data:", JSON.stringify(offering, null, 2));
     console.log("Raw Form Data:", JSON.stringify(formData, null, 2));
 
@@ -145,6 +171,45 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
     });
   };
 
+  const parseDurationString = (duration: string) => {
+    const types: string[] = [];
+    let sessionValue = "";
+    let hoursValue = "";
+    let dayValue = "";
+    let weekValue = "";
+    let monthValue = "";
+
+    const parts = duration.split(", ");
+
+    parts.forEach((part) => {
+      if (part.includes("Session")) {
+        types.push("Session");
+        sessionValue = part.replace(" Sessions", "");
+      } else if (part.includes("Hour")) {
+        types.push("Hours");
+        hoursValue = part.replace(" Hours", "");
+      } else if (part.includes("Day")) {
+        types.push("Day");
+        dayValue = part.replace(" Days", "");
+      } else if (part.includes("Week")) {
+        types.push("Week");
+        weekValue = part.replace(" Weeks", "");
+      } else if (part.includes("Month")) {
+        types.push("Month");
+        monthValue = part.replace(" Months", "");
+      }
+    });
+
+    return {
+      types,
+      sessionValue,
+      hoursValue,
+      dayValue,
+      weekValue,
+      monthValue,
+    };
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -161,7 +226,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
       <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-[14px] font-medium text-[#161D1F]">
-            Add New Offering
+            {editingOffering ? "Edit Offering" : "Add New Offering"}
           </h2>
           <button
             onClick={onClose}
@@ -382,7 +447,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
               onChange={handleInputChange}
               placeholder="Service features and inclusions (comma separated)"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
               required
             />
           </div>
@@ -395,7 +460,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
               name="status"
               value={formData.status}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
             >
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
@@ -414,7 +479,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
               type="submit"
               className="px-6 py-2 text-[10px] bg-[#0088B1] text-white rounded-md hover:bg-[#00729A]"
             >
-              Add Offering
+              {editingOffering ? "Update Offering" : "Add Offering"}
             </button>
           </div>
         </form>

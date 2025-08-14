@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+"use client";
+import React, { useState, useEffect } from "react";
 import { X, Star } from "lucide-react";
 import OfferingCard from "./OfferingCard";
 import AddOfferingForm from "./AddOfferingForm";
@@ -36,9 +37,8 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
   service,
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
-  const [offerings, setOfferings] = useState<Offering[]>(
-    service?.offerings || []
-  );
+  const [offerings, setOfferings] = useState<Offering[]>([]);
+  const [editingOffering, setEditingOffering] = useState<Offering | null>(null);
 
   // Sample data - replace with actual service data
   const sampleOfferings: Offering[] = [
@@ -78,19 +78,46 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
     },
   ];
 
-  const currentOfferings = offerings.length > 0 ? offerings : sampleOfferings;
+  // Initialize offerings when service changes
+  useEffect(() => {
+    if (service) {
+      // Combine service offerings with sample data, or use sample data if no service offerings
+      const serviceOfferings = service.offerings || [];
+      const combinedOfferings =
+        serviceOfferings.length > 0
+          ? [...serviceOfferings]
+          : [...sampleOfferings];
+      setOfferings(combinedOfferings);
+    }
+  }, [service]);
 
   const handleAddOffering = (newOffering: Omit<Offering, "id">) => {
-    const offering: Offering = {
-      ...newOffering,
-      id: Date.now().toString(),
-    };
-    setOfferings((prev) => [...prev, offering]);
+    if (editingOffering) {
+      // Update existing offering
+      const updatedOffering: Offering = {
+        ...newOffering,
+        id: editingOffering.id,
+      };
+      setOfferings((prev) =>
+        prev.map((offering) =>
+          offering.id === editingOffering.id ? updatedOffering : offering
+        )
+      );
+    } else {
+      // Add new offering
+      const offering: Offering = {
+        ...newOffering,
+        id: Date.now().toString(),
+      };
+      setOfferings((prev) => [...prev, offering]);
+    }
     setShowAddForm(false);
+    setEditingOffering(null);
   };
 
   const handleEditOffering = (offering: Offering) => {
-    console.log("Edit offering:", offering);
+    setEditingOffering(offering);
+    setShowAddForm(true);
   };
 
   const handleDeleteOffering = (offeringId: string) => {
@@ -143,7 +170,7 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
           <div className="p-6">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-[14px] font-semibold text-[#161D1F]">
-                Service Offerings
+                Service Offerings ({offerings.length})
               </h3>
               <button
                 onClick={() => setShowAddForm(true)}
@@ -153,21 +180,23 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
               </button>
             </div>
 
-            {/* Offerings List */}
-            <div className="space-y-6 max-h-[400px] overflow-y-auto">
-              {currentOfferings.length === 0 ? (
+            {/* Offerings List - Enhanced scrollable area */}
+            <div className="max-h-[400px] overflow-y-auto pr-2">
+              {offerings.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   No offerings available. Click "Add Offering" to create one.
                 </div>
               ) : (
-                currentOfferings.map((offering) => (
-                  <OfferingCard
-                    key={offering.id}
-                    offering={offering}
-                    onEdit={handleEditOffering}
-                    onDelete={handleDeleteOffering}
-                  />
-                ))
+                <div className="space-y-4">
+                  {offerings.map((offering) => (
+                    <OfferingCard
+                      key={offering.id}
+                      offering={offering}
+                      onEdit={handleEditOffering}
+                      onDelete={handleDeleteOffering}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           </div>
@@ -177,9 +206,13 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
       {/* Add Offering Form */}
       <AddOfferingForm
         isOpen={showAddForm}
-        onClose={() => setShowAddForm(false)}
+        onClose={() => {
+          setShowAddForm(false);
+          setEditingOffering(null);
+        }}
         onSubmit={handleAddOffering}
         serviceName={service.name}
+        editingOffering={editingOffering}
       />
     </>
   );
