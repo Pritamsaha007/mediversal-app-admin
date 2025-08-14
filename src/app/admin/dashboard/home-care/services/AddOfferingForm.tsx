@@ -35,7 +35,33 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
     equipmentNeeded: "",
     features: "",
     status: "Active" as const,
+    selectedTypes: [] as string[],
+    sessionValue: "",
+    hoursValue: "",
+    dayValue: "",
+    weekValue: "",
+    monthValue: "",
   });
+
+  const buildDurationString = () => {
+    const parts = [];
+    if (formData.sessionValue && formData.selectedTypes.includes("Session")) {
+      parts.push(`${formData.sessionValue} Sessions`);
+    }
+    if (formData.hoursValue && formData.selectedTypes.includes("Hours")) {
+      parts.push(`${formData.hoursValue} Hours`);
+    }
+    if (formData.dayValue && formData.selectedTypes.includes("Day")) {
+      parts.push(`${formData.dayValue} Days`);
+    }
+    if (formData.weekValue && formData.selectedTypes.includes("Week")) {
+      parts.push(`${formData.weekValue} Weeks`);
+    }
+    if (formData.monthValue && formData.selectedTypes.includes("Month")) {
+      parts.push(`${formData.monthValue} Months`);
+    }
+    return parts.join(", ");
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +70,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
       name: formData.name,
       description: formData.description,
       price: parseFloat(formData.price) || 0,
-      duration: formData.duration,
+      duration: buildDurationString(),
       features: formData.features
         .split(",")
         .map((f) => f.trim())
@@ -60,8 +86,43 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
       status: "Available",
     };
 
+    // Console log all fields in JSON format
+    console.log("Offering Data:", JSON.stringify(offering, null, 2));
+    console.log("Raw Form Data:", JSON.stringify(formData, null, 2));
+
     onSubmit(offering);
     handleReset();
+  };
+
+  const toggleDurationType = (type: string) => {
+    setFormData((prev) => {
+      if (type === "Session") {
+        // If Session is selected, only allow Session
+        return {
+          ...prev,
+          selectedTypes: prev.selectedTypes.includes("Session")
+            ? []
+            : ["Session"],
+          hoursValue: "",
+          dayValue: "",
+          weekValue: "",
+          monthValue: "",
+        };
+      } else {
+        // For other types, toggle and remove Session if present
+        const newSelectedTypes = prev.selectedTypes.includes(type)
+          ? prev.selectedTypes.filter((t) => t !== type)
+          : prev.selectedTypes.filter((t) => t !== "Session").concat(type);
+
+        return {
+          ...prev,
+          selectedTypes: newSelectedTypes,
+          sessionValue: newSelectedTypes.includes("Session")
+            ? prev.sessionValue
+            : "",
+        };
+      }
+    });
   };
 
   const handleReset = () => {
@@ -74,6 +135,13 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
       equipmentNeeded: "",
       features: "",
       status: "Active",
+      // Reset duration fields
+      selectedTypes: [],
+      sessionValue: "",
+      hoursValue: "",
+      dayValue: "",
+      weekValue: "",
+      monthValue: "",
     });
   };
 
@@ -90,7 +158,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-40 p-4">
-      <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-[14px] font-medium text-[#161D1F]">
             Add New Offering
@@ -153,15 +221,109 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
               <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
                 * Duration
               </label>
-              <input
-                type="text"
-                name="duration"
-                value={formData.duration}
-                onChange={handleInputChange}
-                placeholder="e.g. 12 Hours, day, week, month..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
-                required
-              />
+              <div className="space-y-3">
+                {/* Duration type buttons */}
+                <div className="flex gap-2 flex-wrap">
+                  {["Session", "Hours", "Day", "Week", "Month"].map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => toggleDurationType(type)}
+                      className={`px-4 py-2 rounded-full text-[10px] font-medium transition-colors ${
+                        formData.selectedTypes.includes(type)
+                          ? "bg-[#0088B1] text-white"
+                          : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Dynamic input fields based on selected types */}
+                <div className="space-y-2">
+                  {formData.selectedTypes.includes("Session") && (
+                    <input
+                      type="text"
+                      value={formData.sessionValue}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          sessionValue: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g., 1,2,3,4,5,....24"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+                    />
+                  )}
+
+                  {formData.selectedTypes.includes("Hours") && (
+                    <input
+                      type="text"
+                      value={formData.hoursValue}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          hoursValue: e.target.value,
+                        }))
+                      }
+                      placeholder="Hours: e.g., 1,2,3,4,5"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+                    />
+                  )}
+
+                  {formData.selectedTypes.includes("Day") && (
+                    <input
+                      type="text"
+                      value={formData.dayValue}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          dayValue: e.target.value,
+                        }))
+                      }
+                      placeholder="Days: e.g., 1,2,3,4,5"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+                    />
+                  )}
+
+                  {formData.selectedTypes.includes("Week") && (
+                    <input
+                      type="text"
+                      value={formData.weekValue}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          weekValue: e.target.value,
+                        }))
+                      }
+                      placeholder="Weeks: e.g., 1,2,3,4"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+                    />
+                  )}
+
+                  {formData.selectedTypes.includes("Month") && (
+                    <input
+                      type="text"
+                      value={formData.monthValue}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          monthValue: e.target.value,
+                        }))
+                      }
+                      placeholder="Months: e.g., 1,2,3,4,5,6"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+                    />
+                  )}
+
+                  {formData.selectedTypes.length === 0 && (
+                    <div className="text-[8px] text-[#899193] py-4 text-center border border-gray-200 rounded-md bg-gray-50">
+                      Select duration types above to add values
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
