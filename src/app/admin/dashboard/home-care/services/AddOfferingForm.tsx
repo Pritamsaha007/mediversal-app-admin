@@ -279,7 +279,6 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                 required
               />
             </div>
-
             <div>
               <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
                 * Duration
