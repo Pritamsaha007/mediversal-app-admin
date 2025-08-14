@@ -48,9 +48,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
 
   useEffect(() => {
     if (editingOffering) {
-      // Parse duration back to individual values (you'll need to implement this based on your duration format)
       const parsedDuration = parseDurationString(editingOffering.duration);
-
       setFormData({
         name: editingOffering.name,
         price: editingOffering.price.toString(),
