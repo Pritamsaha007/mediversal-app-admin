@@ -81,7 +81,6 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
   // Initialize offerings when service changes
   useEffect(() => {
     if (service) {
-      // Combine service offerings with sample data, or use sample data if no service offerings
       const serviceOfferings = service.offerings || [];
       const combinedOfferings =
         serviceOfferings.length > 0
@@ -93,7 +92,6 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
 
   const handleAddOffering = (newOffering: Omit<Offering, "id">) => {
     if (editingOffering) {
-      // Update existing offering
       const updatedOffering: Offering = {
         ...newOffering,
         id: editingOffering.id,
