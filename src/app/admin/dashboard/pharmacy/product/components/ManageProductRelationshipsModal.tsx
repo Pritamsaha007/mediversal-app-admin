@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import { X, Search, Trash2, CloudFog } from "lucide-react";
+import { X, Search, Trash2 } from "lucide-react";
 import {
   getProductsById,
   removeProductRelationship,
@@ -67,6 +67,15 @@ export const ProductRelationshipsModal: React.FC<
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [productData, setProductData] = useState<ProductData | null>(null);
+  const [availableProductsList, setAvailableProductsList] = useState<
+    RelatedProduct[]
+  >([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    currentPage: 0,
+    hasMore: true,
+    loading: false,
+  });
 
   const convertToRelatedProduct = (product: any): RelatedProduct => {
     return {
@@ -75,6 +84,59 @@ export const ProductRelationshipsModal: React.FC<
       code: product.Type || product.SKU || "",
       manufacturer: product.ManufacturerName || "",
     };
+  };
+
+  const searchAvailableProducts = async (
+    query: string = "",
+    loadMore: boolean = false
+  ) => {
+    try {
+      setSearchLoading(true);
+
+      const currentPage = loadMore ? pagination.currentPage + 1 : 0;
+      const start = currentPage * 20;
+
+      // Build filters object - only add searchTerm if query is not empty
+      const filters: any = {};
+      if (query.trim()) {
+        filters.searchTerm = query.trim();
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/app/api/Product/getProducts?start=${start}&max=20`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(filters),
+        }
+      );
+
+      const data = await response.json();
+      const products = data.products || [];
+
+      const convertedProducts = products.map((product: any) =>
+        convertToRelatedProduct(product)
+      );
+
+      if (loadMore) {
+        setAvailableProductsList((prev) => [...prev, ...convertedProducts]);
+      } else {
+        setAvailableProductsList(convertedProducts);
+      }
+
+      setPagination({
+        currentPage,
+        hasMore: convertedProducts.length === 20,
+        loading: false,
+      });
+    } catch (error) {
+      console.error("Error searching products:", error);
+      setError("Failed to search products");
+    } finally {
+      setSearchLoading(false);
+    }
   };
 
   const fetchProductData = async () => {
@@ -117,21 +179,17 @@ export const ProductRelationshipsModal: React.FC<
 
   useEffect(() => {
     if (isOpen) {
-      fetchProductData();
+      searchAvailableProducts(""); // Load initial products with empty search
     }
-  }, [isOpen, productId]);
+  }, [isOpen]);
 
   const getFilteredAvailableProducts = () => {
     const currentList =
       activeTab === "substitutes" ? substitutes : similarProducts;
     const currentIds = currentList.map((p) => p.id);
 
-    return availableProducts.filter(
-      (product) =>
-        !currentIds.includes(product.id) &&
-        product.id !== productId &&
-        (product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.code.toLowerCase().includes(searchQuery.toLowerCase()))
+    return availableProductsList.filter(
+      (product) => !currentIds.includes(product.id) && product.id !== productId
     );
   };
 
@@ -339,7 +397,7 @@ export const ProductRelationshipsModal: React.FC<
           {/* Add New Items Section */}
           <div>
             <h3 className="text-[12px] font-medium text-[#161D1F] mb-4">
-              Add{" "}
+              Add
               {activeTab === "substitutes" ? "Substitutes" : "Similar Products"}
             </h3>
 
@@ -350,42 +408,77 @@ export const ProductRelationshipsModal: React.FC<
                 type="text"
                 placeholder="Search products..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchQuery(value);
+                  searchAvailableProducts(value);
+                }}
                 disabled={isLoading}
-                className="w-full pl-10 pr-4 py-3 text-[#333] placeholder-[#B0B6B8] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0891B2] focus:border-transparent disabled:opacity-50"
+                className="w-full pl-10 pr-4 py-3 text-[#333] placeholder-[#B0B6B8] border border-gray-300 rounded-lg focus:ring-2  focus:border-transparent disabled:opacity-50"
               />
             </div>
 
             {/* Available Products */}
             <div className="space-y-3">
               {filteredAvailableProducts.length > 0 ? (
-                filteredAvailableProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-                  >
-                    <div>
-                      <div className="font-medium text-[14px] text-[#161D1F]">
-                        {product.name}
-                      </div>
-                      <div className="text-sm text-[#899193]">
-                        {product.code} | {product.manufacturer}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleAddProduct(product)}
-                      disabled={isLoading}
-                      className="px-4 py-2 text-[12px] text-[#0891B2] hover:bg-[#0891B2] hover:text-white border border-[#0891B2] rounded-lg transition-colors disabled:opacity-50"
+                <>
+                  {filteredAvailableProducts.map((product) => (
+                    <div
+                      key={product.id}
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
                     >
-                      Add
-                    </button>
-                  </div>
-                ))
+                      <div>
+                        <div className="font-medium text-[14px] text-[#161D1F]">
+                          {product.name}
+                        </div>
+                        <div className="text-sm text-[#899193]">
+                          {product.code} | {product.manufacturer}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleAddProduct(product)}
+                        disabled={isLoading}
+                        className="px-4 py-2 text-[12px] text-[#0891B2] hover:bg-[#0891B2] hover:text-white border border-[#0891B2] rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Load More Button */}
+                  {pagination.hasMore && (
+                    <div className="flex justify-center pt-4">
+                      <button
+                        onClick={() =>
+                          searchAvailableProducts(searchQuery, true)
+                        }
+                        disabled={searchLoading}
+                        className="px-6 py-2 text-[12px] font-medium text-[#0891B2] hover:bg-[#0891B2] hover:text-white border border-[#0891B2] rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                      >
+                        {searchLoading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                            Loading...
+                          </>
+                        ) : (
+                          "Load More"
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="text-[12px] text-[#899193] py-8 text-center">
-                  {searchQuery
-                    ? "No products found matching your search"
-                    : "No available products"}
+                  {searchLoading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#0891B2] border-t-transparent"></div>
+                      Loading products...
+                    </div>
+                  ) : searchQuery ? (
+                    "No products found matching your search"
+                  ) : (
+                    "No available products"
+                  )}
                 </div>
               )}
             </div>

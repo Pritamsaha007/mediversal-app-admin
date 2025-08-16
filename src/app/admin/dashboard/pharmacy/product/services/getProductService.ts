@@ -156,7 +156,6 @@ export const productService = {
   async deleteProduct(id: string): Promise<void> {
     try {
       await apiClient.delete(`/app/api/Product/deleteProduct/${id}`);
-      // Clear ALL cache instead of selective clearing
       this.clearCache();
     } catch (error) {
       console.error(`Error deleting product ${id}:`, error);
@@ -164,12 +163,11 @@ export const productService = {
     }
   },
 
-  /* ----- GET ALL PRODUCTS WITH PAGINATION ----- */
   /* ----- GET ALL PRODUCTS WITH PAGINATION & FILTERS ----- */
   async getAllProducts(
     start: number = 0,
     max: number = 20,
-    filters: Record<string, any> = {} // <-- new optional filters param
+    filters: Record<string, any> = {}
   ): Promise<{
     products: Product[];
     totalCount: number;
@@ -199,7 +197,7 @@ export const productService = {
     try {
       const response = await apiClient.post(
         `/app/api/Product/getProducts?start=${start}&max=${max}`,
-        filters // <-- send filters here
+        filters
       );
 
       const productsArray = response.data.products || [];
