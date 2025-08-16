@@ -212,7 +212,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     {booking.currentMedication}
                   </p>
                 </div>
-
                 <div>
                   <p className="text-[10px] text-[#899193] mb-1">
                     Medical Condition
@@ -245,10 +244,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
               </div>
 
               <div className="mt-4">
-                <h4 className="font-semibold text-[#161D1F] mb-2">
+                <h4 className="font-semibold text-[12px] text-[#161D1F] mb-2">
                   {booking.serviceDetails.name}
                 </h4>
-                <p className="text-[#899193] text-sm">
+                <p className="text-[#899193] text-[10px]">
                   {booking.serviceDetails.description}
                 </p>
               </div>
@@ -257,16 +256,18 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
           {/* Assigned Staff */}
           <div className="mt-8">
-            <h3 className="text-lg font-semibold text-[#161D1F] mb-4">
+            <h3 className="text-[10px] font-semibold text-[#161D1F] mb-4">
               Assigned Staff
             </h3>
             <div className="bg-gray-50 rounded-lg p-6">
               {booking.assignedStaff ? (
-                <p className="font-medium text-[12px] text-[#161D1F]">
+                <p className="font-medium text-[10px] text-[#161D1F]">
                   {booking.assignedStaff}
                 </p>
               ) : (
-                <p className="text-red-500 font-medium">No staff assigned</p>
+                <p className="text-red-500 font-medium text-[10px]">
+                  No staff assigned
+                </p>
               )}
             </div>
           </div>
@@ -275,25 +276,25 @@ const BookingModal: React.FC<BookingModalProps> = ({
           <div className="mt-8 flex flex-wrap gap-4">
             <button
               onClick={() => onAssignStaff(booking.id)}
-              className="flex items-center gap-2 bg-cyan-600 text-white px-6 py-3 rounded-lg hover:bg-cyan-700 transition-colors"
+              className="flex items-center text-[10px] gap-2 bg-cyan-600 text-white px-6 py-3 rounded-lg hover:bg-cyan-700 transition-colors"
             >
-              <User className="w-5 h-5" />
+              <User className="w-3 h-3" />
               Assign Staff
             </button>
 
             <button
               onClick={() => onContactPatient(booking.customer.phone)}
-              className="flex items-center gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center text-[10px] gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <Phone className="w-5 h-5" />
+              <Phone className="w-3 h-3" />
               Contact Patient
             </button>
 
             <button
               onClick={() => onEditOrder(booking.id)}
-              className="flex items-center gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center text-[10px] gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <Edit className="w-5 h-5" />
+              <Edit className="w-3 h-3" />
               Edit Order
             </button>
           </div>
