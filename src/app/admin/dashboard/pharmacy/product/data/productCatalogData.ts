@@ -1,20 +1,26 @@
 export const categories = [
   "All Categories",
-  "Medicines",
-  "Medical Devices",
+  "OTC",
+  "Prescription",
   "Supplements",
+  "Devices",
+  "Surgical Care",
+  "Vaccines",
   "Personal Care",
+  "Sexual Wellness",
+  "Mom & Baby",
+  "Senior Care",
+  "Seasonal Needs",
 ];
 
 export const sortOptions = [
   "Sort",
-  "Relevance (default)",
-  "Selling Price - Low to High",
-  "Selling Price - High to Low",
-  "Product Status",
-  "By Name",
-  "By Stock",
-  "Discount",
+  "ProductName - A to Z",
+  "ProductName - Z to A",
+  "SellingPrice - Low to High",
+  "SellingPrice - High to Low",
+  "Stock Available - High to Low",
+  "Stock Available - Low to High",
 ];
 
 export const tabs = [

@@ -9,18 +9,22 @@ import {
   ShoppingBag,
   ListOrdered,
   Projector,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 import { categories, sortOptions, tabs } from "./data/productCatalogData";
 import { AddProductModal } from "./components/AddProductModal";
 import { ProductCard } from "./components/ProductCard";
 import { StatsCard } from "./components/StatsCard";
 import { productService } from "./services/getProductService";
-import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
 import { ProductFormData } from "./types/productForm.type";
 import toast from "react-hot-toast";
 import { useConfirmationDialog } from "./components/ConfirmationDialog";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useProductStore } from "./store/productStore";
+import { useDebounce } from "./utils/useDebounce";
+
 const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
@@ -29,32 +33,33 @@ const ProductCatalog: React.FC = () => {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [actionDropdownOpen, setActionDropdownOpen] = useState(false);
   const { showConfirmation } = useConfirmationDialog();
+  const debouncedSearch = useDebounce(searchTerm, 500);
   const actionDropdownRef = useRef<HTMLDivElement>(null);
+  const {
+    products,
+    statistics,
+    loading,
+    error,
+    fetchProducts,
+    getStatistics,
+    refreshProducts,
+    updateProductInStore,
+    removeProductFromStore,
+    addProductToStore,
+  } = useProductStore();
 
-  const refreshProducts = async () => {
-    try {
-      const { products, totalCount } = await productService.getAllProducts();
-
-      setProducts(products);
-      setPagination((prev) => ({ ...prev, totalItems: totalCount }));
-      setError(null);
-    } catch (err) {
-      setError("Failed to refresh products");
-      console.error("Error refreshing products:", err);
-    }
+  const handleRefreshProducts = async () => {
+    await refreshProducts();
   };
 
   const handleExportPDF = () => {
     const productsToExport =
       selectedProducts.length > 0
         ? products.filter((p) => selectedProducts.includes(p.id))
-        : filteredProducts;
+        : getFilteredProducts();
 
     if (productsToExport.length === 0) {
       toast.error("No products to export");
@@ -100,7 +105,7 @@ const ProductCatalog: React.FC = () => {
         cellPadding: 2,
       },
       headStyles: {
-        fillColor: [0, 112, 154], // #00709A
+        fillColor: [0, 112, 154],
         textColor: 255,
         fontSize: 9,
       },
@@ -118,33 +123,55 @@ const ProductCatalog: React.FC = () => {
   };
   const [pagination, setPagination] = useState({
     currentPage: 1,
-    pageSize: 10,
-    totalItems: 0,
+    itemsPerPage: 20,
+    totalItems: statistics.activeProducts + statistics.inactiveProducts,
+    totalPages: Math.ceil(
+      (statistics.activeProducts + statistics.inactiveProducts) / 20
+    ),
   });
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    setCategoryDropdownOpen(false);
+    // Reset pagination when category changes
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+  };
+
+  useEffect(() => {
+    const filters = {
+      ...(debouncedSearch && { searchTerm: debouncedSearch }),
+      ...(selectedCategory !== "All Categories" && {
+        searchCategory: selectedCategory,
+      }),
+    };
+    fetchProducts(0, 20, filters);
+  }, [debouncedSearch, selectedCategory]);
+
+  useEffect(() => {
+    setPagination((prev) => ({
+      ...prev,
+      totalItems: statistics.activeProducts + statistics.inactiveProducts,
+      totalPages: Math.ceil(
+        (statistics.activeProducts + statistics.inactiveProducts) /
+          prev.itemsPerPage
+      ),
+    }));
+  }, [statistics]);
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const { products, totalCount } = await productService.getAllProducts();
-        setProducts(products);
-        setPagination((prev) => ({ ...prev, totalItems: totalCount }));
-      } catch (err) {
-        setError("Failed to load products. Please try again.");
-        console.error("Error fetching products:", err);
-      } finally {
-        setLoading(false);
-      }
+    const loadInitialData = async () => {
+      await Promise.all([
+        fetchProducts(0, pagination.itemsPerPage),
+        getStatistics(),
+      ]);
     };
 
-    fetchProducts();
-  }, [pagination.currentPage]);
+    loadInitialData();
+  }, [pagination.itemsPerPage, fetchProducts, getStatistics]);
 
-  // Handle click outside for dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -187,12 +214,16 @@ const ProductCatalog: React.FC = () => {
     if (action === "delete") {
       if (window.confirm("Are you sure you want to delete this product?")) {
         try {
-          await productService.deleteProduct(id);
-          await refreshProducts();
+          removeProductFromStore(id);
           toast.success("Product deleted successfully");
+
+          await productService.deleteProduct(id);
+
+          await getStatistics();
         } catch (error) {
           console.error("Error deleting product:", error);
           toast.error("Failed to delete product");
+          await refreshProducts();
         }
       }
       return;
@@ -201,11 +232,9 @@ const ProductCatalog: React.FC = () => {
     try {
       switch (action) {
         case "deactivate":
-          // await productService.updateProductStatus(id, 'Inactive');
           toast.success("Product deactivated");
           break;
         case "unfeature":
-          // await productService.updateProductFeature(id, false);
           toast.success("Product unfeatured");
           break;
       }
@@ -216,10 +245,24 @@ const ProductCatalog: React.FC = () => {
     }
   };
 
-  // Apply filters and sorting
-  const getFilteredAndSortedProducts = () => {
+  const handleNextPage = async () => {
+    if (pagination.currentPage < pagination.totalPages) {
+      const nextPage = pagination.currentPage + 1;
+      const start = (nextPage - 1) * pagination.itemsPerPage;
+
+      await fetchProducts(start, pagination.itemsPerPage);
+      setPagination((prev) => ({ ...prev, currentPage: nextPage }));
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (pagination.currentPage > 1) {
+      setPagination((prev) => ({ ...prev, currentPage: prev.currentPage - 1 }));
+    }
+  };
+
+  const getFilteredProducts = () => {
     let filtered = products.filter((product) => {
-      // Apply tab filter
       let tabMatch = true;
       switch (activeTab) {
         case "Active":
@@ -237,40 +280,32 @@ const ProductCatalog: React.FC = () => {
         default:
           tabMatch = true;
       }
-
-      // Apply search filter
-      const searchMatch =
-        searchTerm === "" ||
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.subcategory.toLowerCase().includes(searchTerm.toLowerCase());
-
-      // Apply category filter
-      const categoryMatch =
-        selectedCategory === "All Categories" ||
-        product.category === selectedCategory;
-
-      return tabMatch && searchMatch && categoryMatch;
+      return tabMatch;
     });
+    // Apply category filter
+    //   const categoryMatch =
+    //     selectedCategory === "All Categories" ||
+    //     product.category === selectedCategory;
+
+    //   return tabMatch && categoryMatch;
+    // });
 
     // Apply sorting
     if (sortBy !== "Sort") {
       filtered = [...filtered].sort((a, b) => {
         switch (sortBy) {
-          case "Selling Price - Low to High":
-            return a.sellingPrice - b.sellingPrice;
-          case "Selling Price - High to Low":
-            return b.sellingPrice - a.sellingPrice;
-          case "Product Status":
-            return a.status.localeCompare(b.status);
-          case "By Name":
+          case "ProductName - A to Z":
             return a.name.localeCompare(b.name);
-          case "By Stock":
+          case "ProductName - Z to A":
+            return b.name.localeCompare(a.name);
+          case "SellingPrice - Low to High":
+            return a.sellingPrice - b.sellingPrice;
+          case "SellingPrice - High to Low":
+            return b.sellingPrice - a.sellingPrice;
+          case "StockAvailableInInventory - High to Low":
             return b.stock - a.stock;
-          case "Discount":
-            return b.discount - a.discount;
-          case "Relevance (default)":
+          case "StockAvailableInInventory - Low to High":
+            return a.stock - b.stock;
           default:
             return 0;
         }
@@ -293,49 +328,41 @@ const ProductCatalog: React.FC = () => {
   }, [error]);
 
   const handleSelectAll = (selected: boolean) => {
-    setSelectedProducts(selected ? filteredProducts.map((p) => p.id) : []);
+    setSelectedProducts(selected ? getFilteredProducts().map((p) => p.id) : []);
   };
   const getStatsData = () => {
-    const activeProducts = products.filter((p) => p.status === "Active").length;
-    const inactiveProducts = products.filter(
-      (p) => p.status === "Inactive"
-    ).length;
-    const featuredProducts = products.filter((p) => p.featured).length;
-    const outOfStockProducts = products.filter((p) => p.stock === 0).length;
-
-    // Get unique categories
-    const uniqueCategories = new Set(products.map((p) => p.category));
-    const totalCategories = uniqueCategories.size;
-
     return {
-      totalProducts: products.length,
-      activeProducts,
-      inactiveProducts,
-      featuredProducts,
-      outOfStockProducts,
-      totalCategories,
+      totalProducts: statistics.activeProducts + statistics.inactiveProducts,
+      activeProducts: statistics.activeProducts,
+      inactiveProducts: statistics.inactiveProducts,
+      featuredProducts: statistics.featuredProducts,
+      outOfStockProducts: statistics.outOfStockProducts,
+      totalCategories: statistics.totalCategories,
     };
   };
+
   const handleUpdateProduct = async (
     id: string,
     productData: ProductFormData
   ) => {
     try {
-      await productService.updateProduct(id, productData);
-      await refreshProducts();
+      const updatedProduct = await productService.updateProduct(
+        id,
+        productData
+      );
+      updateProductInStore(updatedProduct);
+      await getStatistics();
       toast.success("Product updated successfully");
     } catch (error) {
-      setError("Failed to update product. Please try again.");
       console.error("Error updating product:", error);
-
       toast.error("Failed to update product");
+      await refreshProducts();
     }
   };
 
   const statsData = getStatsData();
 
-  const filteredProducts = getFilteredAndSortedProducts();
-
+  const filteredProducts = getFilteredProducts();
   const handleDeleteAll = async () => {
     if (selectedProducts.length === 0) {
       toast.error("No products selected");
@@ -349,7 +376,6 @@ const ProductCatalog: React.FC = () => {
       cancelText: "Cancel",
       variant: "danger",
       onConfirm: async () => {
-        // Show loading state
         const deletePromise = Promise.all(
           selectedProducts.map((id) => productService.deleteProduct(id))
         ).then(async () => {
@@ -357,7 +383,6 @@ const ProductCatalog: React.FC = () => {
           setSelectedProducts([]);
         });
 
-        // Use toast.promise for loading/success/error states
         await toast.promise(deletePromise, {
           loading: "Deleting products...",
           success: `${selectedProducts.length} products deleted successfully`,
@@ -369,6 +394,21 @@ const ProductCatalog: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
+      {/* <div className="fixed top-4 right-4 bg-white p-3 shadow-lg rounded-lg z-50 border border-blue-100">
+        <div className="text-sm font-semibold text-gray-700">Store Status</div>
+        <div className="text-xs mt-1">
+          <span className="font-medium text-gray-600">Total Products:</span>
+          <span className="ml-1 font-bold text-blue-600">
+            {useProductStore.getState().products.length}
+          </span>
+        </div>
+        <div className="text-xs">
+          <span className="font-medium text-gray-600">Loaded Chunks:</span>
+          <span className="ml-1 font-bold text-blue-600">
+            {Array.from(useProductStore.getState().loadedChunks).join(", ")}
+          </span>
+        </div>
+      </div> */}
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -389,7 +429,6 @@ const ProductCatalog: React.FC = () => {
             </button>
           </div>
         </div>
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
           <StatsCard
@@ -401,6 +440,7 @@ const ProductCatalog: React.FC = () => {
             icon={<ShoppingBag className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
+
           <StatsCard
             title="Featured Products"
             stats={[
@@ -413,6 +453,7 @@ const ProductCatalog: React.FC = () => {
             icon={<Projector className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
+
           <StatsCard
             title="Categories"
             stats={[
@@ -422,20 +463,17 @@ const ProductCatalog: React.FC = () => {
             icon={<FileText className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
+
           <StatsCard
             title="Inventory"
             stats={[
-              {
-                label: "In Stock",
-                value: statsData.totalProducts - statsData.outOfStockProducts,
-              },
+              { label: "In Stock", value: statistics.inStockProducts },
               { label: "Out of Stock", value: statsData.outOfStockProducts },
             ]}
             icon={<ListOrdered className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
         </div>
-
         {loading && (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0088B1]"></div>
@@ -447,7 +485,7 @@ const ProductCatalog: React.FC = () => {
             <div className="flex items-center justify-between">
               <span className="text-red-800">{error}</span>
               <button
-                onClick={refreshProducts}
+                onClick={handleRefreshProducts}
                 className="text-red-600 hover:text-red-800 underline text-sm"
               >
                 Retry
@@ -455,7 +493,6 @@ const ProductCatalog: React.FC = () => {
             </div>
           </div>
         )}
-
         {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
@@ -483,10 +520,7 @@ const ProductCatalog: React.FC = () => {
                   {categories.map((category) => (
                     <button
                       key={category}
-                      onClick={() => {
-                        setSelectedCategory(category);
-                        setCategoryDropdownOpen(false);
-                      }}
+                      onClick={() => handleCategoryChange(category)}
                       className="block w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
                     >
                       {category}
@@ -495,6 +529,7 @@ const ProductCatalog: React.FC = () => {
                 </div>
               )}
             </div>
+
             {/* Sort Dropdown */}
             <div className="relative" ref={sortDropdownRef}>
               <button
@@ -532,7 +567,6 @@ const ProductCatalog: React.FC = () => {
             </div>
           </div>
         </div>
-
         {/* Tabs */}
         <div className="flex justify-between mb-4 bg-[#F8F8F8] rounded-lg">
           <div className="">
@@ -585,14 +619,15 @@ const ProductCatalog: React.FC = () => {
             )}
           </div>
         </div>
-
         {/* Products Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
               {activeTab}
               <span className="text-[8px] text-[#899193] font-normal ml-2">
-                {filteredProducts.length} Products
+                Showing {getFilteredProducts().length} of {products.length}{" "}
+                loaded products
+                {pagination.totalItems && " (Load more available)"}
               </span>
             </h3>
           </div>
@@ -606,7 +641,10 @@ const ProductCatalog: React.FC = () => {
                       type="checkbox"
                       checked={
                         selectedProducts.length > 0 &&
-                        selectedProducts.length === filteredProducts.length
+                        selectedProducts.length === filteredProducts.length &&
+                        filteredProducts.every((p) =>
+                          selectedProducts.includes(p.id)
+                        )
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -641,32 +679,38 @@ const ProductCatalog: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {!loading &&
                   !error &&
-                  filteredProducts.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      onEdit={handleUpdateProduct}
-                      isSelected={selectedProducts.includes(product.id)}
-                      onSelect={handleProductSelect}
-                      onView={(id) => handleProductAction("view", id)}
-                      onUnfeature={(id) => handleProductAction("unfeature", id)}
-                      onDeactivate={(id) =>
-                        handleProductAction("deactivate", id)
-                      }
-                      onDelete={(id) => handleProductAction("delete", id)}
-                      availableProducts={products}
-                      onUpdateRelationships={async (productId, data) => {
-                        console.log(
-                          "Updating relationships for product:",
-                          productId,
-                          data
-                        );
-
-                        await refreshProducts();
-                      }}
-                    />
-                  ))}
-                {!loading && !error && filteredProducts.length === 0 && (
+                  getFilteredProducts()
+                    .slice(
+                      (pagination.currentPage - 1) * pagination.itemsPerPage,
+                      pagination.currentPage * pagination.itemsPerPage
+                    )
+                    .map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onEdit={handleUpdateProduct}
+                        isSelected={selectedProducts.includes(product.id)}
+                        onSelect={handleProductSelect}
+                        onView={(id) => handleProductAction("view", id)}
+                        onUnfeature={(id) =>
+                          handleProductAction("unfeature", id)
+                        }
+                        onDeactivate={(id) =>
+                          handleProductAction("deactivate", id)
+                        }
+                        onDelete={(id) => handleProductAction("delete", id)}
+                        availableProducts={products}
+                        onUpdateRelationships={async (productId, data) => {
+                          console.log(
+                            "Updating relationships for product:",
+                            productId,
+                            data
+                          );
+                          await refreshProducts();
+                        }}
+                      />
+                    ))}
+                {!loading && !error && getFilteredProducts().length === 0 && (
                   <tr>
                     <td colSpan={9} className="px-6 py-12 text-center">
                       <div className="text-gray-500">
@@ -689,6 +733,43 @@ const ProductCatalog: React.FC = () => {
             </table>
           </div>
         </div>
+        {!loading &&
+          !error &&
+          products.length > 0 &&
+          pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6 px-6 py-4 bg-white rounded-lg border border-gray-200">
+              <div className="text-sm text-gray-600">
+                Showing page {pagination.currentPage} of {pagination.totalPages}
+                ({pagination.totalItems} total products)
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={pagination.currentPage === 1 || loading}
+                  className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </button>
+
+                <span className="text-sm text-gray-600">
+                  Page {pagination.currentPage} of {pagination.totalPages}
+                </span>
+
+                <button
+                  onClick={handleNextPage}
+                  disabled={
+                    pagination.currentPage === pagination.totalPages || loading
+                  }
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         <AddProductModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
