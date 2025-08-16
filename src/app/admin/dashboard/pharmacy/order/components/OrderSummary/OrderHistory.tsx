@@ -82,19 +82,19 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ order }) => {
     );
   }
 
-  if (error) {
+  if (order.deliverystatus == "Order cancelled successfully.") {
     console.error(error);
     return (
       <div className="bg-white p-4 rounded-lg border h-80 border-gray-300 flex flex-col items-center justify-center">
-        <p className="text-xs text-gray-600">Order cancelled</p>
+        <p className="text-xs text-gray-600">Order Cancelled</p>
       </div>
     );
   }
 
   if (trackingData.length === 0) {
     return (
-      <div className="p-4 text-center text-gray-500 text-sm">
-        No tracking history available
+      <div className="bg-white p-4 rounded-lg border h-80 border-gray-300 flex flex-col items-center justify-center">
+        <p className="text-xs text-gray-600">No tracking history available</p>
       </div>
     );
   }
