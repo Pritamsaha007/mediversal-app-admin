@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
 import { ProductFormData } from "../types/productForm.type";
+import { productStore } from "@/app/store/productStore";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 

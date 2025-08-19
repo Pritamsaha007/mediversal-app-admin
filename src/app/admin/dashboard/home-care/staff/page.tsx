@@ -1,10 +1,606 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
+import {
+  Search,
+  ChevronDown,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  Star,
+  X,
+} from "lucide-react";
+import AddStaffModal from "./components/AddStaffModal";
+import ViewStaffModal from "./components/ViewStaffModal";
+import { Staff } from "./types";
 
-const CarePlane: React.FC = () => {
+const StaffManagement: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("All Statuses");
+  const [activeTab, setActiveTab] = useState("All Staffs");
+  const [openDropdown, setOpenDropdown] = useState<
+    null | "status" | "department"
+  >(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [staffActionDropdown, setStaffActionDropdown] = useState<number | null>(
+    null
+  );
+  const [viewStaff, setViewStaff] = useState<Staff | null>(null);
+  const [editStaff, setEditStaff] = useState<Staff | null>(null);
+
+  const [staffList, setStaffList] = useState<Staff[]>([
+    {
+      id: 1,
+      name: "Sarah Wilson",
+      phone: "+91 9876543211",
+      address: "456 Oak Avenue, Andheri East, Mumbai - 4000069",
+      experience: "6 Years",
+      rating: 4.9,
+      status: "Available",
+      departments: [
+        "Neurological Rehabilitation",
+        "Sports Injury",
+        "Geriatric Care",
+      ],
+      position: "Physiotherapist",
+      joinDate: "20-07-2021",
+      email: "sarah.wilson@example.com",
+      certifications: ["PPT", "Neurological Specialist", "Manual Therapy"],
+    },
+    {
+      id: 2,
+      name: "John Doe",
+      phone: "+91 9876543212",
+      address: "123 Pine Street, Bandra West, Mumbai - 400050",
+      experience: "4 Years",
+      rating: 4.7,
+      status: "Available",
+      departments: ["Sports Injury", "Orthopedic"],
+      position: "Senior Physiotherapist",
+      joinDate: "15-05-2020",
+      email: "john.doe@example.com",
+      certifications: ["PPT", "Orthopedic Specialist"],
+    },
+  ]);
+
+  const handleAddStaff = (newStaff: Staff) => {
+    setStaffList((prev) => [...prev, newStaff]);
+    console.log("New staff added:", newStaff);
+  };
+
+  const handleUpdateStaff = (updatedStaff: Staff) => {
+    setStaffList((prev) =>
+      prev.map((staff) => (staff.id === updatedStaff.id ? updatedStaff : staff))
+    );
+    setEditStaff(null);
+    console.log("Staff updated:", updatedStaff);
+  };
+
+  const [filteredStaff, setFilteredStaff] = useState<Staff[]>(staffList);
+
+  const statusOptions = ["All Statuses", "Available", "Not available"];
+
+  // Filter staff based on search and filters
+  useEffect(() => {
+    let filtered = staffList;
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(
+        (staff) =>
+          staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          staff.departments.some((dept) =>
+            dept.toLowerCase().includes(searchTerm.toLowerCase())
+          ) ||
+          staff.position.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (selectedStatus !== "All Statuses") {
+      filtered = filtered.filter((staff) => staff.status === selectedStatus);
+    }
+
+    setFilteredStaff(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [searchTerm, selectedStatus, staffList]);
+
+  const getPaginatedStaff = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredStaff.slice(startIndex, endIndex);
+  };
+
+  const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
+
+  const handleStatusChange = (status: string) => {
+    setSelectedStatus(status);
+    setOpenDropdown(null);
+  };
+
+  const handleSelectStaff = (staffId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedStaff([...selectedStaff, staffId]);
+    } else {
+      setSelectedStaff(selectedStaff.filter((id) => id !== staffId));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedStaff(filteredStaff.map((staff) => staff.id.toString()));
+    } else {
+      setSelectedStaff([]);
+    }
+  };
+
+  const handleStaffAction = (action: string, staff: Staff) => {
+    switch (action) {
+      case "view":
+        setViewStaff(staff);
+        break;
+      case "edit":
+        setEditStaff(staff);
+        break;
+      case "delete":
+        if (window.confirm(`Are you sure you want to delete ${staff.name}?`)) {
+          setStaffList((prev) => prev.filter((s) => s.id !== staff.id));
+          console.log("Delete staff:", staff);
+        }
+        break;
+    }
+    setStaffActionDropdown(null);
+  };
+
+  const renderStars = (rating: number) => {
+    return (
+      <div className="flex items-center gap-1">
+        {[...Array(5)].map((_, i) => (
+          <Star
+            key={i}
+            className={`w-3 h-3 ${
+              i < Math.floor(rating)
+                ? "text-yellow-400 fill-current"
+                : "text-gray-300"
+            }`}
+          />
+        ))}
+        <span className="text-[10px] text-gray-600 ml-1 ">
+          {rating.toFixed(1)}
+        </span>
+      </div>
+    );
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusColors = {
+      Available: "bg-green-100 text-green-800",
+      "Not available": "bg-red-100 text-red-800",
+    };
+
+    return (
+      <span
+        className={`px-2 py-1 text-xs font-medium rounded-full text-[10px] ${
+          statusColors[status as keyof typeof statusColors] ||
+          "bg-gray-100 text-gray-800"
+        }`}
+      >
+        {status}
+      </span>
+    );
+  };
+
+  const getDepartmentChip = (department: string) => {
+    return (
+      <span className="inline-block px-2 py-1 text-xs font-medium rounded-full mr-1 mb-1 bg-gray-100 text-gray-800 text-[10px]">
+        {department}
+      </span>
+    );
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".dropdown-toggle")) {
+        setOpenDropdown(null);
+        setStaffActionDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
+  // Enhanced pagination component with items per page selector
+  const Pagination = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage + 1;
+    const endIndex = Math.min(currentPage * itemsPerPage, filteredStaff.length);
+
+    const renderPageNumbers = () => {
+      const pages = [];
+      const maxVisiblePages = 5;
+      let startPage = Math.max(
+        1,
+        currentPage - Math.floor(maxVisiblePages / 2)
+      );
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+      if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
+
+      // First page
+      if (startPage > 1) {
+        pages.push(
+          <button
+            key={1}
+            onClick={() => handlePageChange(1)}
+            className="px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50"
+          >
+            1
+          </button>
+        );
+        if (startPage > 2) {
+          pages.push(
+            <span key="ellipsis1" className="px-2 text-gray-500">
+              ...
+            </span>
+          );
+        }
+      }
+
+      // Page numbers
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(
+          <button
+            key={i}
+            onClick={() => handlePageChange(i)}
+            className={`px-3 py-2 text-sm border rounded ${
+              i === currentPage
+                ? "bg-[#0088B1] text-white border-[#0088B1]"
+                : "border-gray-300 hover:bg-gray-50"
+            }`}
+          >
+            {i}
+          </button>
+        );
+      }
+
+      // Last page
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pages.push(
+            <span key="ellipsis2" className="px-2 text-gray-500">
+              ...
+            </span>
+          );
+        }
+        pages.push(
+          <button
+            key={totalPages}
+            onClick={() => handlePageChange(totalPages)}
+            className="px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50"
+          >
+            {totalPages}
+          </button>
+        );
+      }
+
+      return pages;
+    };
+
+    if (filteredStaff.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="px-6 py-4 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          {/* Left side - Items per page selector and showing info */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">Show:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) =>
+                  handleItemsPerPageChange(Number(e.target.value))
+                }
+                className="text-sm border border-gray-300 rounded px-2 py-1 focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-black"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <span className="text-sm text-gray-700">entries</span>
+            </div>
+            <div className="text-sm text-gray-700">
+              Showing {startIndex} to {endIndex} of {filteredStaff.length} staff
+              members
+            </div>
+          </div>
+
+          {/* Right side - Pagination controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+
+              <div className="flex items-center gap-1">
+                {renderPageNumbers()}
+              </div>
+
+              <button
+                onClick={() =>
+                  handlePageChange(Math.min(totalPages, currentPage + 1))
+                }
+                disabled={currentPage === totalPages || totalPages === 0}
+                className="px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div>
-      <h1>Staff</h1>
+    <div className="min-h-screen bg-gray-50 p-2">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-[20px] font-semibold text-[#161D1F]">
+            Staff Management
+          </h1>
+          <div className="flex gap-3">
+            <button
+              className="flex items-center gap-2 text-[12px] px-4 py-2 bg-[#0088B1] text-[#F8F8F8] rounded-lg hover:bg-[#00729A]"
+              onClick={() => setIsModalOpen(true)}
+            >
+              <Plus className="w-3 h-3" />
+              Add Staff
+            </button>
+          </div>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
+          <div className="flex-1 relative">
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
+            <input
+              type="text"
+              placeholder="Search by name, department, or position"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
+            />
+          </div>
+          <div className="flex gap-3">
+            {/* Status Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() =>
+                  setOpenDropdown(openDropdown === "status" ? null : "status")
+                }
+                className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
+              >
+                {selectedStatus}
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              {openDropdown === "status" && (
+                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
+                  {statusOptions.map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => handleStatusChange(status)}
+                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
+                        selectedStatus === status
+                          ? "bg-blue-50 text-blue-600"
+                          : "text-[#161D1F]"
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Staff Table */}
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-[16px] font-medium text-[#161D1F]">
+              {activeTab}
+              <span className="text-[8px] text-[#899193] font-normal ml-2">
+                {filteredStaff.length} Staff Members
+                {filteredStaff.length > itemsPerPage &&
+                  ` (${getPaginatedStaff().length} shown)`}
+              </span>
+            </h3>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+                      checked={
+                        selectedStaff.length === filteredStaff.length &&
+                        filteredStaff.length > 0
+                      }
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                    />
+                  </th>
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                    Staff Detail
+                  </th>
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                    Address
+                  </th>
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                    Experience
+                  </th>
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                    Rating
+                  </th>
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {getPaginatedStaff().length > 0 ? (
+                  getPaginatedStaff().map((staff) => (
+                    <tr key={staff.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+                          checked={selectedStaff.includes(staff.id.toString())}
+                          onChange={(e) =>
+                            handleSelectStaff(
+                              staff.id.toString(),
+                              e.target.checked
+                            )
+                          }
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-start">
+                          <div className="ml-4">
+                            <div className="text-xs font-medium text-[#161D1F] mb-1">
+                              {staff.name}
+                            </div>
+                            {/* Department Chips */}
+                            <div className="flex flex-wrap">
+                              {staff.departments.map((department, index) => (
+                                <span key={index}>
+                                  {getDepartmentChip(department)}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-[10px] text-[#161D1F] max-w-xs">
+                          {staff.address}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-[10px] text-[#161D1F]">
+                          {staff.experience}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-[10px]">
+                        {renderStars(staff.rating)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-[10px]">
+                        {getStatusBadge(staff.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleStaffAction("view", staff)}
+                            className="p-1 text-gray-500 hover:text-blue-500"
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleStaffAction("edit", staff)}
+                            className="p-1 text-gray-500 hover:text-green-500"
+                            title="Edit Staff"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleStaffAction("delete", staff)}
+                            className="p-1 text-gray-500 hover:text-red-500"
+                            title="Delete Staff"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-8 text-center">
+                      <div className="text-gray-500 text-sm">
+                        {staffList.length === 0
+                          ? "No staff members found. Click 'Add Staff' to add your first staff member."
+                          : "No staff members match your search criteria."}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            <Pagination />
+          </div>
+        </div>
+      </div>
+
+      {/* Add Staff Modal */}
+      <AddStaffModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleAddStaff}
+      />
+
+      {viewStaff && (
+        <ViewStaffModal
+          staff={viewStaff}
+          onClose={() => setViewStaff(null)}
+          onEdit={() => {
+            setViewStaff(null);
+            setEditStaff(viewStaff);
+          }}
+        />
+      )}
+
+      {editStaff && (
+        <AddStaffModal
+          isOpen={true}
+          onClose={() => setEditStaff(null)}
+          onSubmit={handleUpdateStaff}
+          initialData={editStaff}
+        />
+      )}
     </div>
   );
 };
-export default CarePlane;
+
+export default StaffManagement;
