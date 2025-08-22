@@ -214,7 +214,7 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto mx-4">
+      <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-[16px] font-medium text-[#161D1F]">
@@ -616,7 +616,7 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
               <div className="flex justify-end mt-8">
                 <button
                   onClick={handleCreateOrder}
-                  className="px-8 py-2 bg-[#0088B1] text-white rounded-lg hover:bg-cyan-700 transition-colors font-medium"
+                  className="px-8 py-2 text-[10px] bg-[#0088B1] text-white rounded-lg hover:bg-cyan-700 transition-colors font-medium"
                 >
                   Create Order
                 </button>
