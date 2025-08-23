@@ -4,6 +4,7 @@ import { Search, Plus, ChevronDown } from "lucide-react";
 import { bookingsData } from "./bookingData";
 import DropdownMenu from "./DropdownMenu";
 import BookingModal from "./BookingModal";
+import AddBookingModal from "./AddBookingModal";
 
 interface Booking {
   id: string;
@@ -56,6 +57,7 @@ const BookingManagement: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
+  const [isAddBookingModalOpen, setIsAddBookingModalOpen] = useState(false);
 
   // Filter bookings based on search term and status
   const filteredBookings = bookings.filter((booking) => {
@@ -167,10 +169,8 @@ const BookingManagement: React.FC = () => {
   };
 
   const handleNewBooking = () => {
-    console.log("Create new booking");
-    alert("Create new booking functionality would be implemented here");
+    setIsAddBookingModalOpen(true);
   };
-
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedBookings(filteredBookings.map((booking) => booking.id));
@@ -471,6 +471,10 @@ const BookingManagement: React.FC = () => {
           onAssignStaff={handleAssignStaff}
           onContactPatient={handleContactPatient}
           onEditOrder={handleEditOrder}
+        />
+        <AddBookingModal
+          isOpen={isAddBookingModalOpen}
+          onClose={() => setIsAddBookingModalOpen(false)}
         />
       </div>
     </div>

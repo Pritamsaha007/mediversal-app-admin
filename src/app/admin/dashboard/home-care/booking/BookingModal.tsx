@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { X, User, Phone, Edit } from "lucide-react";
 import { Booking } from "./bookingData";
+import AssignStaffModal from "./AssignStaffModal";
+import { AssignedStaff } from "./staffData";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -9,6 +11,7 @@ interface BookingModalProps {
   onAssignStaff: (bookingId: string) => void;
   onContactPatient: (phone: string) => void;
   onEditOrder: (bookingId: string) => void;
+  onUpdateAssignedStaff?: (bookingId: string, staffs: AssignedStaff[]) => void; // Add this
 }
 
 const BookingModal: React.FC<BookingModalProps> = ({
@@ -18,6 +21,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
   onAssignStaff,
   onContactPatient,
   onEditOrder,
+  onUpdateAssignedStaff,
 }) => {
   if (!isOpen || !booking) return null;
 
@@ -48,6 +52,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         return "bg-gray-100 text-gray-800";
     }
   };
+  const [isAssignStaffModalOpen, setIsAssignStaffModalOpen] = useState(false);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
@@ -69,14 +74,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
         <div className="p-6 border-b">
           <div className="flex gap-3">
             <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+              className={`px-3 py-1 rounded-full text-[10px] font-medium ${getStatusColor(
                 booking.status
               )}`}
             >
               {booking.status}
             </span>
             <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${getPaymentColor(
+              className={`px-3 py-1 rounded-full text-[10px] font-medium ${getPaymentColor(
                 booking.payment
               )}`}
             >
@@ -89,7 +94,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         <div className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Patient Information */}
-            <div className="rounded-lg p-6">
+            <div className="rounded-lg p-6 border border-[#899193] bg-white">
               <h3 className="text-[14px] font-semibold text-[#161D1F] mb-4">
                 Patient Information
               </h3>
@@ -132,14 +137,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     </p>
                   </div>
                 </div>
-
                 <div>
                   <p className="text-[10px] text-[#899193] mb-1">Email</p>
                   <p className="font-medium text-[12px] text-[#161D1F]">
                     {booking.customer.email}
                   </p>
                 </div>
-
                 <div>
                   <p className="text-[10px] text-[#899193] mb-1">Address</p>
                   <p className="font-medium text-[12px] text-[#161D1F]">
@@ -175,7 +178,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
             </div>
 
             {/* Booking Information */}
-            <div className="bg-gray-50 rounded-lg p-6">
+            <div className=" rounded-lg p-6 border border-[#899193] bg-white">
               <h3 className="text-[14px] font-semibold text-[#161D1F] mb-4">
                 Booking Information
               </h3>
@@ -275,7 +278,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
           {/* Action Buttons */}
           <div className="mt-8 flex flex-wrap gap-4">
             <button
-              onClick={() => onAssignStaff(booking.id)}
+              onClick={() => setIsAssignStaffModalOpen(true)} // Change this line
               className="flex items-center text-[10px] gap-2 bg-cyan-600 text-white px-6 py-3 rounded-lg hover:bg-cyan-700 transition-colors"
             >
               <User className="w-3 h-3" />
@@ -300,6 +303,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
           </div>
         </div>
       </div>
+      {/* Add this before the closing </div> */}
+      <AssignStaffModal
+        isOpen={isAssignStaffModalOpen}
+        onClose={() => setIsAssignStaffModalOpen(false)}
+        bookingId={booking.id}
+        onUpdateStaff={onUpdateAssignedStaff || (() => {})}
+      />
     </div>
   );
 };
