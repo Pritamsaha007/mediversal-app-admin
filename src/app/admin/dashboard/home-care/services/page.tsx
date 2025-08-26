@@ -6,10 +6,10 @@ import ManageOfferingsModal from "./ManageOfferingsModal";
 import AddServiceModal from "./AddServiceModal";
 import {
   getHomecareServices,
+  createOrUpdateHomecareService,
+  deleteHomecareService,
   type HomecareService,
 } from "./service/api/homecareServices";
-import { createOrUpdateHomecareService } from "./service/api/homecareServices";
-
 import { useAdminStore } from "@/app/store/adminStore";
 
 import {
@@ -244,12 +244,11 @@ const Services: React.FC = () => {
       setSelectedServices([]);
     }
   };
-  const handleServiceAction = (action: string, service: Service) => {
+  const handleServiceAction = async (action: string, service: Service) => {
     setServiceActionDropdown(null); // Close dropdown
 
     switch (action) {
       case "view":
-        // Handle view action - you can implement this
         console.log("View service:", service);
         break;
       case "edit":
@@ -257,10 +256,15 @@ const Services: React.FC = () => {
         setShowAddServiceModal(true);
         break;
       case "delete":
-        // Handle delete action - you can implement this
         if (confirm(`Are you sure you want to delete "${service.name}"?`)) {
-          console.log("Delete service:", service);
-          // Implement delete API call
+          try {
+            await deleteHomecareService(service.id, token);
+            setServices(services.filter((s) => s.id !== service.id));
+            alert("Service deleted successfully!");
+          } catch (error: any) {
+            console.error("Error deleting service:", error);
+            alert(error.message || "Failed to delete service");
+          }
         }
         break;
       default:
@@ -525,7 +529,12 @@ const Services: React.FC = () => {
                           >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="p-1 text-[#F44336] hover:text-red-500">
+                          <button
+                            onClick={() =>
+                              handleServiceAction("delete", service)
+                            }
+                            className="p-1 text-[#F44336] hover:text-red-500"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
