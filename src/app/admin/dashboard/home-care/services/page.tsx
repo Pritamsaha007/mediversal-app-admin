@@ -22,7 +22,6 @@ import {
   Eye,
   Edit,
   Trash2,
-  MoreVertical,
 } from "lucide-react";
 
 const transformHomecareServiceToService = (
