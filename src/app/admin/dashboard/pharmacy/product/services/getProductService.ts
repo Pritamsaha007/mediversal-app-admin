@@ -202,6 +202,7 @@ export const productService = {
 
       const productsArray = response.data.products || [];
       const statisticsArray = response.data.statistics || [];
+      console.log("Fetched products:", productsArray);
 
       const mappedProducts = productsArray.map((product: ProductApiResponse) =>
         mapApiResponseToProduct(product)

@@ -80,7 +80,7 @@ export async function refreshCognitoToken(): Promise<{
       throw new Error("No access token received");
     }
 
-    const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
+    const expiresAt = Date.now() + 60 * 60 * 1000;
 
     return {
       token: session.tokens.accessToken.toString(),
