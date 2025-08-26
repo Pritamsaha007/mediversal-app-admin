@@ -52,3 +52,60 @@ export async function getHomecareServices(
 
   return await response.json();
 }
+
+export interface CreateUpdateServicePayload {
+  id?: string;
+  name: string;
+  description: string;
+  is_active: boolean;
+  display_pic_url?: string;
+  service_tags: string[];
+  display_sections: string[];
+  custom_medical_info?: any;
+}
+
+export async function createOrUpdateHomecareService(
+  payload: CreateUpdateServicePayload,
+  token: string
+): Promise<{ success: boolean; service?: HomecareService; message?: string }> {
+  console.log("Making API call to:", `${HOMECARE_API_BASE_URL}/api/homecare/`);
+  console.log("With payload:", JSON.stringify(payload, null, 2));
+
+  const response = await fetch(`${HOMECARE_API_BASE_URL}/api/homecare/`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  console.log("Response status:", response.status);
+  console.log(
+    "Response headers:",
+    Object.fromEntries(response.headers.entries())
+  );
+
+  if (!response.ok) {
+    let errorData;
+    try {
+      errorData = await response.json();
+      console.log("Error response data:", errorData);
+    } catch (e) {
+      console.log("Could not parse error response as JSON");
+      const textError = await response.text();
+      console.log("Error response text:", textError);
+      errorData = { message: textError };
+    }
+
+    throw new Error(
+      errorData?.message ||
+        errorData?.error ||
+        `HTTP error! status: ${response.status}`
+    );
+  }
+
+  const responseData = await response.json();
+  console.log("Success response:", responseData);
+  return responseData;
+}

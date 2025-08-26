@@ -1,9 +1,11 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { X, ChevronDown } from "lucide-react";
+import { createOrUpdateHomecareService } from "./service/api/homecareServices";
+import { useAdminStore } from "@/app/store/adminStore";
 
 interface Service {
-  id: number;
+  id: string;
   name: string;
   description: string;
   category: string;
@@ -29,13 +31,17 @@ interface AddServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddService: (service: Omit<Service, "id">) => void;
+  onUpdateService?: (service: Service) => void; // New prop
+  editService?: Service | null; // New prop for service to edit
 }
-
 const AddServiceModal: React.FC<AddServiceModalProps> = ({
   isOpen,
   onClose,
   onAddService,
+  onUpdateService,
+  editService,
 }) => {
+  const { token, admin } = useAdminStore();
   const [serviceName, setServiceName] = useState("");
   const [serviceDescription, setServiceDescription] = useState("");
   const [serviceStatus, setServiceStatus] = useState<"Active" | "Inactive">(
@@ -46,6 +52,20 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
   const [consents, setConsents] = useState<string[]>([]);
   const [newConsent, setNewConsent] = useState("");
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (editService && isOpen) {
+      setServiceName(editService.name);
+      setServiceDescription(editService.description);
+      setServiceStatus(editService.status);
+      setServiceTags([editService.category]); // Assuming category maps to first tag
+      // You might want to populate consents if available in your Service interface
+      setConsents([]);
+    } else if (isOpen) {
+      handleReset();
+    }
+  }, [editService, isOpen]);
 
   const handleAddTag = () => {
     if (newTag.trim() && !serviceTags.includes(newTag.trim())) {
@@ -90,35 +110,71 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
     console.log("Form Values:", JSON.stringify(formData, null, 2));
   };
 
-  const handleAddService = () => {
+  const handleAddService = async () => {
     if (!serviceName.trim() || !serviceDescription.trim()) {
       alert("Please fill in all required fields");
       return;
     }
 
-    console.log({
-      serviceName,
-      serviceDescription,
-      serviceStatus,
-      serviceTags,
-      consents,
-    });
+    if (!token || !admin.id) {
+      alert("Authentication required");
+      return;
+    }
 
-    const newService: Omit<Service, "id"> = {
-      name: serviceName.trim(),
-      description: serviceDescription.trim(),
-      category: serviceTags[0] || "General",
-      status: serviceStatus,
-      offerings: [],
-      rating: 0,
-      reviewCount: 0,
-    };
+    setIsSubmitting(true);
 
-    onAddService(newService);
-    handleReset();
-    onClose();
+    try {
+      const payload = {
+        ...(editService && { id: editService.id }),
+        name: serviceName.trim(),
+        description: serviceDescription.trim(),
+        is_active: serviceStatus === "Active",
+        display_pic_url: "http://example.com/pic.jpg",
+        service_tags: serviceTags,
+        display_sections: ["PatientInfo", "MedicalInfo", "ContactInfo"],
+        custom_medical_info: {
+          medicalhistory: "textbox",
+        },
+      };
+      console.log(
+        "API URL:",
+        `${process.env.NEXT_PUBLIC_HOMECARE_API_BASE_URL}/api/homecare/`
+      );
+      console.log("Payload:", JSON.stringify(payload, null, 2));
+      console.log("Token:", token ? "Present" : "Missing");
+      console.log("Admin ID:", admin.id);
+
+      const response = await createOrUpdateHomecareService(payload, token);
+
+      if (response.success) {
+        if (editService && onUpdateService) {
+          const updatedService: Service = {
+            ...editService,
+            name: serviceName.trim(),
+            description: serviceDescription.trim(),
+            status: serviceStatus,
+            category: serviceTags[0] || "General",
+          };
+          onUpdateService(updatedService);
+          alert("Service updated successfully!");
+        } else {
+          onAddService({} as Omit<Service, "id">);
+          alert("Service created successfully!");
+        }
+
+        handleReset();
+        onClose();
+      } else {
+        throw new Error("Failed to save service");
+      }
+    } catch (error: any) {
+      console.error("Full error:", error);
+      console.error("Error saving service:", error);
+      alert(error.message || "Failed to save service");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
   if (!isOpen) return null;
 
   return (
@@ -128,10 +184,12 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div>
             <h3 className="text-[16px] font-semibold text-[#161D1F]">
-              Add New Service
+              {editService ? "Edit Service" : "Add New Service"}
             </h3>
             <p className="text-[10px] text-[#899193] mt-1">
-              Enter the service details below
+              {editService
+                ? "Update the service details below"
+                : "Enter the service details below"}
             </p>
           </div>
           <button
@@ -314,9 +372,18 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
           </button>
           <button
             onClick={handleAddService}
-            className="px-6 py-2 bg-[#0088B1] text-[10px] text-white rounded-lg transition-colors"
+            disabled={isSubmitting}
+            className={`px-6 py-2 text-[10px] text-white rounded-lg transition-colors ${
+              isSubmitting
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-[#0088B1] hover:bg-[#00729A]"
+            }`}
           >
-            Add Service
+            {isSubmitting
+              ? "Saving..."
+              : editService
+              ? "Update Service"
+              : "Add Service"}
           </button>
         </div>
       </div>

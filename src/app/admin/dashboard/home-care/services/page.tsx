@@ -8,6 +8,8 @@ import {
   getHomecareServices,
   type HomecareService,
 } from "./service/api/homecareServices";
+import { createOrUpdateHomecareService } from "./service/api/homecareServices";
+
 import { useAdminStore } from "@/app/store/adminStore";
 
 import {
@@ -28,7 +30,7 @@ const transformHomecareServiceToService = (
   homecareService: HomecareService
 ): Service => {
   return {
-    id: parseInt(homecareService.id.split("-")[0], 16),
+    id: homecareService.id, // Keep original UUID string
     name: homecareService.name,
     description: homecareService.description,
     category: homecareService.display_sections?.[0] || "General",
@@ -39,7 +41,7 @@ const transformHomecareServiceToService = (
       description: `${tag} service`,
       price: 0,
       duration: "1 hour",
-      features: homecareService.display_sections,
+      features: homecareService.display_sections || [],
       staffRequirements: [],
       equipmentIncluded: [],
       status: "Available" as const,
@@ -62,7 +64,7 @@ interface Offering {
 }
 
 interface Service {
-  id: number;
+  id: string;
   name: string;
   description: string;
   category: string;
@@ -139,6 +141,7 @@ const Services: React.FC = () => {
 
   // Get token from store
   const { token, isLoggedIn } = useAdminStore();
+  const [editingService, setEditingService] = useState<Service | null>(null);
 
   const statusOptions = ["All Status", "Active", "Inactive"];
 
@@ -228,7 +231,7 @@ const Services: React.FC = () => {
     if (checked) {
       setSelectedServices([...selectedServices, serviceId]);
     } else {
-      setSelectedServices(selectedServices.filter((id) => id !== serviceId));
+      setSelectedServices(filteredServices.map((service) => service.id));
     }
   };
 
@@ -241,22 +244,50 @@ const Services: React.FC = () => {
       setSelectedServices([]);
     }
   };
+  const handleServiceAction = (action: string, service: Service) => {
+    setServiceActionDropdown(null); // Close dropdown
+
+    switch (action) {
+      case "view":
+        // Handle view action - you can implement this
+        console.log("View service:", service);
+        break;
+      case "edit":
+        setEditingService(service);
+        setShowAddServiceModal(true);
+        break;
+      case "delete":
+        // Handle delete action - you can implement this
+        if (confirm(`Are you sure you want to delete "${service.name}"?`)) {
+          console.log("Delete service:", service);
+          // Implement delete API call
+        }
+        break;
+      default:
+        break;
+    }
+  };
 
   const handleManageOfferings = (service: Service) => {
     setSelectedServiceForModal(service);
     setShowManageModal(true);
   };
 
-  const handleAddService = (newServiceData: Omit<Service, "id">) => {
-    // Generate a new ID
-    const newId = Math.max(...services.map((s) => s.id)) + 1;
-    const newService: Service = {
-      ...newServiceData,
-      id: newId,
-    };
+  const handleAddService = async (newServiceData: Omit<Service, "id">) => {
+    // Don't generate ID locally - let the backend create it
+    // After successful API call, refetch the services to get the real data
+    await fetchServices(); // This will reload all services with the new one from backend
+  };
 
-    // Add the new service to the beginning of the array so it appears at the top
-    setServices([newService, ...services]);
+  // Add the new service to the beginning of the array so it appears at the top
+
+  const handleUpdateService = (updatedService: Service) => {
+    setServices(
+      services.map((service) =>
+        service.id === updatedService.id ? updatedService : service
+      )
+    );
+    setEditingService(null);
   };
 
   // Handle click outside to close dropdowns
@@ -434,14 +465,9 @@ const Services: React.FC = () => {
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                          checked={selectedServices.includes(
-                            service.id.toString()
-                          )}
+                          checked={selectedServices.includes(service.id)}
                           onChange={(e) =>
-                            handleSelectService(
-                              service.id.toString(),
-                              e.target.checked
-                            )
+                            handleSelectService(service.id, e.target.checked)
                           }
                         />
                       </td>
@@ -493,7 +519,10 @@ const Services: React.FC = () => {
                           <button className="p-1 text-gray-500 hover:text-blue-500">
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="p-1 text-gray-500 hover:text-blue-500">
+                          <button
+                            onClick={() => handleServiceAction("edit", service)}
+                            className="p-1 text-gray-500 hover:text-blue-500"
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button className="p-1 text-[#F44336] hover:text-red-500">
@@ -519,8 +548,13 @@ const Services: React.FC = () => {
       />
       <AddServiceModal
         isOpen={showAddServiceModal}
-        onClose={() => setShowAddServiceModal(false)}
+        onClose={() => {
+          setShowAddServiceModal(false);
+          setEditingService(null);
+        }}
         onAddService={handleAddService}
+        onUpdateService={handleUpdateService}
+        editService={editingService}
       />
     </div>
   );

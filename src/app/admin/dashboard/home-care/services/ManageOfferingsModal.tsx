@@ -17,7 +17,7 @@ interface Offering {
 }
 
 interface Service {
-  id: number;
+  id: string;
   name: string;
   description: string;
   offerings: Offering[];
