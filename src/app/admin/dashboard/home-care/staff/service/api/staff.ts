@@ -131,7 +131,29 @@ export const createUpdateStaff = async (
   console.log("API Success Response:", json);
   return json;
 };
-export interface Role {
+export interface RoleApiResponse {
   id: string;
   role_name: string;
+  created_date: string;
+  updated_date: string;
 }
+
+export const fetchRoles = async (): Promise<RoleApiResponse[]> => {
+  const { token, refreshTokenIfNeeded } = useAdminStore.getState();
+
+  await refreshTokenIfNeeded();
+  const updatedToken = useAdminStore.getState().token;
+
+  const response = await fetch(`${API_BASE_URL}/admin/employees/roles`, {
+    headers: {
+      Authorization: `Bearer ${updatedToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch roles");
+  }
+
+  return response.json();
+};

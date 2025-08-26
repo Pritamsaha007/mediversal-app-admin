@@ -5,6 +5,8 @@ import { Staff } from "../types";
 import {
   createUpdateStaff,
   CreateUpdateStaffPayload,
+  fetchRoles,
+  RoleApiResponse,
 } from "../service/api/staff";
 
 interface AddStaffModalProps {
@@ -42,19 +44,23 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
   const [certificationInput, setCertificationInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [roleOptions, setRoleOptions] = useState<RoleApiResponse[]>([]);
+  const [selectedRoleId, setSelectedRoleId] = useState<string>(
+    initialData?.position || ""
+  );
 
-  const roleOptions = [
-    "Senior Nurse",
-    "Staff Nurse",
-    "Nursing Assistant",
-    "Charge Nurse",
-    "Clinical Specialist",
-    "Nurse Practitioner",
-    "Head Nurse",
-    "ICU Nurse",
-    "Emergency Nurse",
-    "Physiotherapist",
-  ];
+  // const roleOptions = [
+  //   "Senior Nurse",
+  //   "Staff Nurse",
+  //   "Nursing Assistant",
+  //   "Charge Nurse",
+  //   "Clinical Specialist",
+  //   "Nurse Practitioner",
+  //   "Head Nurse",
+  //   "ICU Nurse",
+  //   "Emergency Nurse",
+  //   "Physiotherapist",
+  // ];
 
   useEffect(() => {
     if (initialData) {
@@ -64,14 +70,13 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
         experience: initialData.experience,
         specialization: "",
         role: initialData.position,
-        emailAddress: initialData.email || "", // Add fallback
-        location: initialData.address || "", // Add fallback
+        emailAddress: initialData.email || "",
+        location: initialData.address || "",
         certifications: "",
       });
       setSpecializationTags(initialData.departments || []);
       setCertificationTags(initialData.certifications || []);
     } else {
-      // Reset form for new staff
       setFormData({
         fullName: "",
         phoneNumber: "",
@@ -87,6 +92,31 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
     }
   }, [initialData]);
 
+  useEffect(() => {
+    const loadRoles = async () => {
+      try {
+        const roles = await fetchRoles();
+        setRoleOptions(roles);
+
+        // If editing, find the role ID from the role name
+        if (initialData?.position) {
+          const matchingRole = roles.find(
+            (role) => role.role_name === initialData.position
+          );
+          if (matchingRole) {
+            setSelectedRoleId(matchingRole.id);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch roles:", error);
+      }
+    };
+
+    if (isOpen) {
+      loadRoles();
+    }
+  }, [isOpen, initialData]);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -94,8 +124,9 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
     }));
   };
 
-  const handleRoleSelect = (role: string) => {
-    handleInputChange("role", role);
+  const handleRoleSelect = (role: RoleApiResponse) => {
+    handleInputChange("role", role.role_name);
+    setSelectedRoleId(role.id);
     setRoleDropdownOpen(false);
   };
 
@@ -167,10 +198,10 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
         formData.experience.match(/(\d+)\s*months?/i)?.[1] || "0";
 
       const payload: CreateUpdateStaffPayload = {
-        ...(initialData?.id ? { id: initialData.id } : {}), // only include id for update
+        ...(initialData?.id ? { id: initialData.id } : {}),
         name: formData.fullName,
         mobile_number: formData.phoneNumber,
-        role: "ddcddd74-7694-4801-aa29-4105b8c991b8", // ✅ hardcoded
+        role: selectedRoleId,
         email: formData.emailAddress || "",
         experience_in_yrs: parseInt(experienceYears),
         experience_in_months: parseInt(experienceMonths),
@@ -183,8 +214,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
           : 5.0,
         profile_image_url: "https://example.com/default-profile.jpg",
       };
-
-      // Debug logs
       console.log(
         "Submitting Staff Payload:",
         JSON.stringify(payload, null, 2)
@@ -250,7 +279,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
     onClose();
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -332,12 +360,12 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                   <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                     {roleOptions.map((role) => (
                       <button
-                        key={role}
+                        key={role.id}
                         type="button"
                         onClick={() => handleRoleSelect(role)}
                         className="w-full px-4 py-3 text-left hover:bg-gray-50 text-[10px] border-b border-gray-100 last:border-b-0 text-black"
                       >
-                        {role}
+                        {role.role_name}
                       </button>
                     ))}
                   </div>
