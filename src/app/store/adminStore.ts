@@ -86,11 +86,7 @@ export const useAdminStore = create<AdminStore>()(
       setHasHydrated: (value: boolean) => set({ hasHydrated: value }),
 
       refreshTokenIfNeeded: async () => {
-        const {
-          refreshToken: currentRefreshToken,
-          expiresAt,
-          isLoggedIn,
-        } = get();
+        const { isLoggedIn, expiresAt } = get();
 
         if (!isLoggedIn) {
           return;
@@ -99,8 +95,8 @@ export const useAdminStore = create<AdminStore>()(
         const now = Date.now();
         const timeUntilExpiry = expiresAt - now;
 
-        // Refresh if token expires in less than 10 seconds
-        if (timeUntilExpiry < 10000) {
+        // Refresh if token expires in less than 5 minutes
+        if (timeUntilExpiry < 5 * 60 * 1000) {
           try {
             const refreshedData = await refreshCognitoToken();
             set({
@@ -125,7 +121,7 @@ export const useAdminStore = create<AdminStore>()(
         // Set up a timer to check token expiry every 30 seconds
         const timer = setInterval(() => {
           refreshTokenIfNeeded();
-        }, 300000);
+        }, 30000);
 
         set({ tokenRefreshTimer: timer });
       },
@@ -140,7 +136,7 @@ export const useAdminStore = create<AdminStore>()(
     }),
     {
       name: "admin-auth-storage",
-      version: 2, // Increment version due to schema changes
+      version: 2,
       partialize: (state) => ({
         token: state.token,
         refreshToken: state.refreshToken,
@@ -151,8 +147,10 @@ export const useAdminStore = create<AdminStore>()(
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
         // Start token refresh timer when store is rehydrated
-        if (state?.isLoggedIn && state?.refreshToken) {
+        if (state?.isLoggedIn) {
           state?.startTokenRefreshTimer();
+          // Check if token needs immediate refresh
+          state?.refreshTokenIfNeeded();
         }
       },
     }

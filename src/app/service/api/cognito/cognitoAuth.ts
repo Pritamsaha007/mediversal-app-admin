@@ -40,17 +40,23 @@ export async function cognitoAdminLogin(
         throw new Error("No access token received");
       }
 
-      // Get expiration time (60 seconds from now as per your requirement)
-      const expiresAt = Date.now() + 60 * 1000;
+      // Extract refresh token safely
+      const refreshToken =
+        (session.tokens as any).refreshToken?.toString() ||
+        session.tokens.idToken?.toString() ||
+        "";
+
+      // Set expiration time (typically access tokens expire in 1 hour)
+      const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
 
       return {
         token: session.tokens.accessToken.toString(),
-        refreshToken: session.tokens.refreshToken?.toString() || "",
+        refreshToken,
         message: "Login successful",
         admin: {
           id: user.userId,
           email: user.username,
-          name: user.username, // You can customize this based on your user attributes
+          name: user.signInDetails?.loginId || user.username,
         },
         expiresAt,
       };
@@ -74,7 +80,7 @@ export async function refreshCognitoToken(): Promise<{
       throw new Error("No access token received");
     }
 
-    const expiresAt = Date.now() + 60 * 1000;
+    const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
 
     return {
       token: session.tokens.accessToken.toString(),
