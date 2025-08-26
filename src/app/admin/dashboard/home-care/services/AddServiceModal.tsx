@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { X, ChevronDown } from "lucide-react";
 import { createOrUpdateHomecareService } from "./service/api/homecareServices";
 import { useAdminStore } from "@/app/store/adminStore";
+import toast from "react-hot-toast";
 
 interface Service {
   id: string;
@@ -59,8 +60,7 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
       setServiceName(editService.name);
       setServiceDescription(editService.description);
       setServiceStatus(editService.status);
-      setServiceTags([editService.category]); // Assuming category maps to first tag
-      // You might want to populate consents if available in your Service interface
+      setServiceTags(editService.offerings.map((offering) => offering.name));
       setConsents([]);
     } else if (isOpen) {
       handleReset();
@@ -99,25 +99,14 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
     setNewConsent("");
   };
 
-  const logFormValues = () => {
-    const formData = {
-      serviceName: serviceName.trim(),
-      serviceDescription: serviceDescription.trim(),
-      serviceStatus,
-      serviceTags,
-      consents,
-    };
-    console.log("Form Values:", JSON.stringify(formData, null, 2));
-  };
-
   const handleAddService = async () => {
     if (!serviceName.trim() || !serviceDescription.trim()) {
-      alert("Please fill in all required fields");
+      toast.error("Please fill in all required fields");
       return;
     }
 
     if (!token || !admin.id) {
-      alert("Authentication required");
+      toast.error("Authentication required");
       return;
     }
 
@@ -136,13 +125,6 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
           medicalhistory: "textbox",
         },
       };
-      console.log(
-        "API URL:",
-        `${process.env.NEXT_PUBLIC_HOMECARE_API_BASE_URL}/api/homecare/`
-      );
-      console.log("Payload:", JSON.stringify(payload, null, 2));
-      console.log("Token:", token ? "Present" : "Missing");
-      console.log("Admin ID:", admin.id);
 
       const response = await createOrUpdateHomecareService(payload, token);
 
@@ -156,10 +138,10 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
             category: serviceTags[0] || "General",
           };
           onUpdateService(updatedService);
-          alert("Service updated successfully!");
+          toast.success("Service updated successfully!");
         } else {
           onAddService({} as Omit<Service, "id">);
-          alert("Service created successfully!");
+          toast.success("Service created successfully!");
         }
 
         handleReset();
@@ -168,9 +150,8 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
         throw new Error("Failed to save service");
       }
     } catch (error: any) {
-      console.error("Full error:", error);
       console.error("Error saving service:", error);
-      alert(error.message || "Failed to save service");
+      toast.error(error.message || "Failed to save service");
     } finally {
       setIsSubmitting(false);
     }

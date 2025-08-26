@@ -6,11 +6,11 @@ import ManageOfferingsModal from "./ManageOfferingsModal";
 import AddServiceModal from "./AddServiceModal";
 import {
   getHomecareServices,
-  createOrUpdateHomecareService,
   deleteHomecareService,
   type HomecareService,
 } from "./service/api/homecareServices";
 import { useAdminStore } from "@/app/store/adminStore";
+import toast from "react-hot-toast";
 
 import {
   Search,
@@ -25,12 +25,11 @@ import {
   MoreVertical,
 } from "lucide-react";
 
-// Transform function to convert API data to component interface
 const transformHomecareServiceToService = (
   homecareService: HomecareService
 ): Service => {
   return {
-    id: homecareService.id, // Keep original UUID string
+    id: homecareService.id,
     name: homecareService.name,
     description: homecareService.description,
     category: homecareService.display_sections?.[0] || "General",
@@ -80,48 +79,6 @@ interface ServiceStats {
   totalOfferings: number;
 }
 
-// Service Action Dropdown Component
-const ServiceActionDropdown: React.FC<{
-  service: Service;
-  isOpen: boolean;
-  onToggle: () => void;
-  onAction: (action: string, service: Service) => void;
-}> = ({ service, isOpen, onToggle, onAction }) => (
-  <div className="relative">
-    <button
-      onClick={onToggle}
-      className="dropdown-toggle p-1 text-gray-500 hover:text-gray-700"
-    >
-      <MoreVertical className="w-4 h-4" />
-    </button>
-    {isOpen && (
-      <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-        <button
-          onClick={() => onAction("view", service)}
-          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100"
-        >
-          <Eye className="w-4 h-4" />
-          View Details
-        </button>
-        <button
-          onClick={() => onAction("edit", service)}
-          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100"
-        >
-          <Edit className="w-4 h-4" />
-          Edit Service
-        </button>
-        <button
-          onClick={() => onAction("delete", service)}
-          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
-        >
-          <Trash2 className="w-4 h-4" />
-          Delete Service
-        </button>
-      </div>
-    )}
-  </div>
-);
-
 const Services: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
@@ -133,7 +90,6 @@ const Services: React.FC = () => {
     number | null
   >(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showManageModal, setShowManageModal] = useState(false);
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
   const [selectedServiceForModal, setSelectedServiceForModal] =
@@ -164,12 +120,11 @@ const Services: React.FC = () => {
   // API fetch function
   const fetchServices = async () => {
     if (!isLoggedIn || !token) {
-      setError("Please login to access services");
+      toast.error("Please login to access services");
       return;
     }
 
     setLoading(true);
-    setError(null);
 
     try {
       const response = await getHomecareServices(
@@ -191,13 +146,12 @@ const Services: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Error fetching services:", err);
-      setError(err.message || "Failed to fetch services");
+      const errorMessage = err.message || "Failed to fetch services";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
-
-  // Effect to fetch data on component mount and when auth state changes
   useEffect(() => {
     if (isLoggedIn && token) {
       fetchServices();
@@ -205,20 +159,20 @@ const Services: React.FC = () => {
       setServices([]);
       setFilteredServices([]);
       if (!isLoggedIn) {
-        setError("Please login to access services");
+        toast.error("Please login to access services");
       }
     }
   }, [isLoggedIn, token]);
 
-  // Effect to refetch data when filters change
   useEffect(() => {
     if (isLoggedIn && token) {
-      // Debounce the API call to avoid too many requests
-      const timeoutId = setTimeout(() => {
-        fetchServices();
-      }, 500);
+      if (searchTerm.length === 0 || searchTerm.length > 2) {
+        const timeoutId = setTimeout(() => {
+          fetchServices();
+        }, 500);
 
-      return () => clearTimeout(timeoutId);
+        return () => clearTimeout(timeoutId);
+      }
     }
   }, [searchTerm, selectedStatus]);
 
@@ -227,14 +181,76 @@ const Services: React.FC = () => {
     setOpenDropdown(null);
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedServices.length === 0) return;
+
+    const confirmed = await new Promise<boolean>((resolve) => {
+      const toastId = toast(
+        (t) => (
+          <div className="flex flex-col gap-2">
+            <span>
+              Are you sure you want to delete {selectedServices.length} selected
+              services?
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  toast.dismiss(toastId);
+                  resolve(true);
+                }}
+                className="px-3 py-1 bg-red-400 text-white rounded text-sm"
+              >
+                Yes, Delete
+              </button>
+              <button
+                onClick={() => {
+                  toast.dismiss(toastId);
+                  resolve(false);
+                }}
+                className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ),
+        {
+          duration: Infinity,
+        }
+      );
+    });
+
+    if (confirmed) {
+      setLoading(true);
+      try {
+        // Delete all selected services
+        await Promise.all(
+          selectedServices.map((serviceId) =>
+            deleteHomecareService(serviceId, token)
+          )
+        );
+
+        toast.success(
+          `${selectedServices.length} services deleted successfully!`
+        );
+        setSelectedServices([]);
+        await fetchServices();
+      } catch (error: any) {
+        console.error("Error deleting services:", error);
+        toast.error(error.message || "Failed to delete some services");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const handleSelectService = (serviceId: string, checked: boolean) => {
     if (checked) {
       setSelectedServices([...selectedServices, serviceId]);
     } else {
-      setSelectedServices(filteredServices.map((service) => service.id));
+      setSelectedServices(selectedServices.filter((id) => id !== serviceId));
     }
   };
-
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedServices(
@@ -245,7 +261,7 @@ const Services: React.FC = () => {
     }
   };
   const handleServiceAction = async (action: string, service: Service) => {
-    setServiceActionDropdown(null); // Close dropdown
+    setServiceActionDropdown(null);
 
     switch (action) {
       case "view":
@@ -256,14 +272,47 @@ const Services: React.FC = () => {
         setShowAddServiceModal(true);
         break;
       case "delete":
-        if (confirm(`Are you sure you want to delete "${service.name}"?`)) {
+        const confirmed = await new Promise<boolean>((resolve) => {
+          const toastId = toast(
+            (t) => (
+              <div className="flex flex-col gap-2 ">
+                <span>Are you sure you want to delete "{service.name}"?</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      toast.dismiss(toastId);
+                      resolve(true);
+                    }}
+                    className="px-3 py-1 bg-red-400 text-white rounded text-sm"
+                  >
+                    Yes, Delete
+                  </button>
+                  <button
+                    onClick={() => {
+                      toast.dismiss(toastId);
+                      resolve(false);
+                    }}
+                    className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ),
+            {
+              duration: Infinity,
+            }
+          );
+        });
+
+        if (confirmed) {
           try {
             await deleteHomecareService(service.id, token);
-            setServices(services.filter((s) => s.id !== service.id));
-            alert("Service deleted successfully!");
+            toast.success("Service deleted successfully!");
+            await fetchServices();
           } catch (error: any) {
             console.error("Error deleting service:", error);
-            alert(error.message || "Failed to delete service");
+            toast.error(error.message || "Failed to delete service");
           }
         }
         break;
@@ -278,23 +327,14 @@ const Services: React.FC = () => {
   };
 
   const handleAddService = async (newServiceData: Omit<Service, "id">) => {
-    // Don't generate ID locally - let the backend create it
-    // After successful API call, refetch the services to get the real data
-    await fetchServices(); // This will reload all services with the new one from backend
+    await fetchServices();
+    toast.success("Service list updated!");
   };
-
-  // Add the new service to the beginning of the array so it appears at the top
-
-  const handleUpdateService = (updatedService: Service) => {
-    setServices(
-      services.map((service) =>
-        service.id === updatedService.id ? updatedService : service
-      )
-    );
+  const handleUpdateService = async (updatedService: Service) => {
+    await fetchServices();
     setEditingService(null);
+    toast.success("Service updated successfully!");
   };
-
-  // Handle click outside to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -321,11 +361,32 @@ const Services: React.FC = () => {
           <div className="flex gap-3">
             <button
               onClick={() => setShowAddServiceModal(true)}
-              className="flex items-center gap-2 text-[12px] px-4 py-2 bg-[#0088B1] text-[#F8F8F8] rounded-lg hover:bg-[#00729A]"
+              disabled={loading}
+              className={`flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-[#0088B1] hover:bg-[#00729A]"
+              } text-[#F8F8F8]`}
             >
               <Plus className="w-3 h-3" />
-              New Service
+              {loading ? "Loading..." : "New Service"}
             </button>
+            {selectedServices.length > 0 && (
+              <button
+                onClick={() => handleBulkDelete()}
+                disabled={loading}
+                className={`flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg ${
+                  loading
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-red-400 hover:bg-red-500"
+                } text-[#F8F8F8]`}
+              >
+                <Trash2 className="w-3 h-3" />
+                {loading
+                  ? "Deleting..."
+                  : `Delete (${selectedServices.length})`}
+              </button>
+            )}
           </div>
         </div>
 
@@ -350,20 +411,6 @@ const Services: React.FC = () => {
             color="text-purple-500"
           />
         </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-            <div className="flex items-center justify-between">
-              <span className="text-red-800">{error}</span>
-              <button
-                onClick={() => setError(null)}
-                className="text-red-600 hover:text-red-800 underline text-sm"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-4">
@@ -457,9 +504,7 @@ const Services: React.FC = () => {
                 ) : filteredServices.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">
-                        {error ? "Error loading services" : "No services found"}
-                      </div>
+                      <div className="text-gray-500">No services found.</div>
                     </td>
                   </tr>
                 ) : (
@@ -520,7 +565,10 @@ const Services: React.FC = () => {
                           >
                             Manage Offerings
                           </span>
-                          <button className="p-1 text-gray-500 hover:text-blue-500">
+                          <button
+                            className="p-1 text-gray-500 hover:text-blue-500"
+                            onClick={() => handleManageOfferings(service)}
+                          >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button

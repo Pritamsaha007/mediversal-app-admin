@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { X, Star } from "lucide-react";
 import OfferingCard from "./OfferingCard";
 import AddOfferingForm from "./AddOfferingForm";
+import toast from "react-hot-toast";
 
 interface Offering {
   id: string;
@@ -101,13 +102,14 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
           offering.id === editingOffering.id ? updatedOffering : offering
         )
       );
+      toast.success("Offering updated successfully!");
     } else {
-      // Add new offering
       const offering: Offering = {
         ...newOffering,
         id: Date.now().toString(),
       };
       setOfferings((prev) => [...prev, offering]);
+      toast.success("Offering added successfully!");
     }
     setShowAddForm(false);
     setEditingOffering(null);
@@ -120,6 +122,7 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
 
   const handleDeleteOffering = (offeringId: string) => {
     setOfferings((prev) => prev.filter((o) => o.id !== offeringId));
+    toast.success("Offering deleted successfully!");
   };
 
   if (!isOpen || !service) return null;
