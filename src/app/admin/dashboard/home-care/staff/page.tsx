@@ -13,9 +13,12 @@ import {
 import AddStaffModal from "./components/AddStaffModal";
 import ViewStaffModal from "./components/ViewStaffModal";
 import { Staff } from "./types";
+import { ApiStaff, fetchStaff, deleteStaff } from "./service/api/staff";
 
 const StaffManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchDebounceTimer, setSearchDebounceTimer] =
+    useState<NodeJS.Timeout | null>(null);
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
   const [activeTab, setActiveTab] = useState("All Staffs");
   const [openDropdown, setOpenDropdown] = useState<
@@ -31,50 +34,85 @@ const StaffManagement: React.FC = () => {
   const [viewStaff, setViewStaff] = useState<Staff | null>(null);
   const [editStaff, setEditStaff] = useState<Staff | null>(null);
 
-  const [staffList, setStaffList] = useState<Staff[]>([
-    {
-      id: 1,
-      name: "Sarah Wilson",
-      phone: "+91 9876543211",
-      address: "456 Oak Avenue, Andheri East, Mumbai - 4000069",
-      experience: "6 Years",
-      rating: 4.9,
-      status: "Available",
-      departments: [
-        "Neurological Rehabilitation",
-        "Sports Injury",
-        "Geriatric Care",
-      ],
-      position: "Physiotherapist",
-      joinDate: "20-07-2021",
-      email: "sarah.wilson@example.com",
-      certifications: ["PPT", "Neurological Specialist", "Manual Therapy"],
-    },
-    {
-      id: 2,
-      name: "John Doe",
-      phone: "+91 9876543212",
-      address: "123 Pine Street, Bandra West, Mumbai - 400050",
-      experience: "4 Years",
-      rating: 4.7,
-      status: "Available",
-      departments: ["Sports Injury", "Orthopedic"],
-      position: "Senior Physiotherapist",
-      joinDate: "15-05-2020",
-      email: "john.doe@example.com",
-      certifications: ["PPT", "Orthopedic Specialist"],
-    },
-  ]);
+  const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAddStaff = (newStaff: Staff) => {
+  const handleAddStaff = async (newStaff: Staff) => {
+    // Add to local state immediately for UI feedback
     setStaffList((prev) => [...prev, newStaff]);
+
+    // Refresh the list from API to get the actual ID
+    try {
+      const response = await fetchStaff();
+      if (response.success) {
+        const transformedStaff = response.staffs.map(transformApiStaff);
+        setStaffList(transformedStaff);
+      }
+    } catch (error) {
+      console.error("Error refreshing staff list:", error);
+    }
+
     console.log("New staff added:", newStaff);
   };
 
-  const handleUpdateStaff = (updatedStaff: Staff) => {
+  const transformApiStaff = (apiStaff: ApiStaff): Staff => {
+    const totalExperience = `${apiStaff.experience_in_yrs} Years`;
+
+    return {
+      id: apiStaff.id,
+      name: apiStaff.name,
+      phone: apiStaff.mobile_number,
+      experience: totalExperience,
+      rating: parseFloat(apiStaff.rating) || 0,
+      status: apiStaff.availability_status,
+      departments: apiStaff.specializations,
+      position: apiStaff.role_name,
+      email: apiStaff.email,
+      certifications: apiStaff.certifications,
+      // Add default values for optional fields
+      address: "", // Since API doesn't provide this
+      joinDate: new Date().toISOString().split("T")[0], // Default to today
+    };
+  };
+
+  useEffect(() => {
+    const loadStaff = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchStaff();
+        if (response.success) {
+          const transformedStaff = response.staffs.map(transformApiStaff);
+          setStaffList(transformedStaff);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load staff");
+        console.error("Error loading staff:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStaff();
+  }, []);
+
+  const handleUpdateStaff = async (updatedStaff: Staff) => {
+    // Update local state immediately for UI feedback
     setStaffList((prev) =>
       prev.map((staff) => (staff.id === updatedStaff.id ? updatedStaff : staff))
     );
+
+    // Refresh the list from API
+    try {
+      const response = await fetchStaff();
+      if (response.success) {
+        const transformedStaff = response.staffs.map(transformApiStaff);
+        setStaffList(transformedStaff);
+      }
+    } catch (error) {
+      console.error("Error refreshing staff list:", error);
+    }
+
     setEditStaff(null);
     console.log("Staff updated:", updatedStaff);
   };
@@ -121,6 +159,32 @@ const StaffManagement: React.FC = () => {
     setOpenDropdown(null);
   };
 
+  const handleSearch = (searchTerm: string) => {
+    setSearchTerm(searchTerm);
+
+    // Clear existing timer
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+    }
+
+    // Set new timer for debounced search
+    const timer = setTimeout(async () => {
+      try {
+        setLoading(true);
+        const response = await fetchStaff(searchTerm || undefined);
+        if (response.success) {
+          const transformedStaff = response.staffs.map(transformApiStaff);
+          setStaffList(transformedStaff);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to search staff");
+      } finally {
+        setLoading(false);
+      }
+    }, 500);
+
+    setSearchDebounceTimer(timer);
+  };
   const handleSelectStaff = (staffId: string, checked: boolean) => {
     if (checked) {
       setSelectedStaff([...selectedStaff, staffId]);
@@ -131,13 +195,12 @@ const StaffManagement: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedStaff(filteredStaff.map((staff) => staff.id.toString()));
+      setSelectedStaff(filteredStaff.map((staff) => staff.id));
     } else {
       setSelectedStaff([]);
     }
   };
-
-  const handleStaffAction = (action: string, staff: Staff) => {
+  const handleStaffAction = async (action: string, staff: Staff) => {
     switch (action) {
       case "view":
         setViewStaff(staff);
@@ -147,12 +210,63 @@ const StaffManagement: React.FC = () => {
         break;
       case "delete":
         if (window.confirm(`Are you sure you want to delete ${staff.name}?`)) {
-          setStaffList((prev) => prev.filter((s) => s.id !== staff.id));
-          console.log("Delete staff:", staff);
+          try {
+            setLoading(true);
+            await deleteStaff(staff.id);
+
+            // Remove from local state
+            setStaffList((prev) => prev.filter((s) => s.id !== staff.id));
+
+            // Also remove from selected staff if it was selected
+            setSelectedStaff((prev) => prev.filter((id) => id !== staff.id));
+
+            console.log("Staff deleted successfully:", staff.name);
+          } catch (error) {
+            console.error("Error deleting staff:", error);
+            setError(
+              error instanceof Error ? error.message : "Failed to delete staff"
+            );
+          } finally {
+            setLoading(false);
+          }
         }
         break;
     }
     setStaffActionDropdown(null);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedStaff.length === 0) return;
+
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${selectedStaff.length} selected staff members?`
+      )
+    ) {
+      try {
+        setLoading(true);
+
+        // Delete all selected staff
+        await Promise.all(selectedStaff.map((staffId) => deleteStaff(staffId)));
+
+        // Remove from local state
+        setStaffList((prev) =>
+          prev.filter((staff) => !selectedStaff.includes(staff.id))
+        );
+        setSelectedStaff([]);
+
+        console.log("Bulk delete completed successfully");
+      } catch (error) {
+        console.error("Error in bulk delete:", error);
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to delete selected staff"
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   const renderStars = (rating: number) => {
@@ -201,6 +315,7 @@ const StaffManagement: React.FC = () => {
     );
   };
 
+  // Add to the existing useEffect with cleanup
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -211,10 +326,15 @@ const StaffManagement: React.FC = () => {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      // Add this cleanup for search timer
+      if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer);
+      }
     };
-  }, []);
+  }, [searchDebounceTimer]); // Add searchDebounceTimer to dependencies
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -382,6 +502,17 @@ const StaffManagement: React.FC = () => {
               <Plus className="w-3 h-3" />
               Add Staff
             </button>
+            {/* Add this after the "Add Staff" button in your header */}
+            {selectedStaff.length > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-2 text-[12px] px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                disabled={loading}
+              >
+                <Trash2 className="w-3 h-3" />
+                Delete Selected ({selectedStaff.length})
+              </button>
+            )}
           </div>
         </div>
 
@@ -393,7 +524,7 @@ const StaffManagement: React.FC = () => {
               type="text"
               placeholder="Search by name, department, or position"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
@@ -479,19 +610,36 @@ const StaffManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {getPaginatedStaff().length > 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-8 text-center">
+                      <div className="text-gray-500 text-sm">
+                        Loading staff...
+                      </div>
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-8 text-center">
+                      <div className="text-red-500 text-sm">Error: {error}</div>
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="mt-2 text-blue-500 hover:underline text-sm"
+                      >
+                        Retry
+                      </button>
+                    </td>
+                  </tr>
+                ) : getPaginatedStaff().length > 0 ? (
                   getPaginatedStaff().map((staff) => (
                     <tr key={staff.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                          checked={selectedStaff.includes(staff.id.toString())}
+                          checked={selectedStaff.includes(staff.id)}
                           onChange={(e) =>
-                            handleSelectStaff(
-                              staff.id.toString(),
-                              e.target.checked
-                            )
+                            handleSelectStaff(staff.id, e.target.checked)
                           }
                         />
                       </td>

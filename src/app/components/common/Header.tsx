@@ -111,9 +111,7 @@ const Header: React.FC<HeaderProps> = () => {
             >
               <div className="flex items-center space-x-2 mr-2 flex-row">
                 <User size={16} />
-                <span className="text-xs">
-                  {admin?.name?.trim() || admin?.email || "User"}
-                </span>
+                <span className="text-xs">{admin.name || "User"}</span>
               </div>
 
               <ChevronDown size={16} className="ml-1" />

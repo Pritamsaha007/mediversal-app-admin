@@ -125,7 +125,7 @@ export const useAdminStore = create<AdminStore>()(
         // Set up a timer to check token expiry every 30 seconds
         const timer = setInterval(() => {
           refreshTokenIfNeeded();
-        }, 30000);
+        }, 300000);
 
         set({ tokenRefreshTimer: timer });
       },

@@ -1,16 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import {
-  Search,
-  ChevronDown,
-  Plus,
-  Eye,
-  Edit,
-  Trash2,
-  Star,
-  X,
-} from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import { Staff } from "../types";
+import {
+  createUpdateStaff,
+  CreateUpdateStaffPayload,
+} from "../service/api/staff";
 
 interface AddStaffModalProps {
   isOpen: boolean;
@@ -45,6 +40,8 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
   );
   const [specializationInput, setSpecializationInput] = useState("");
   const [certificationInput, setCertificationInput] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const roleOptions = [
     "Senior Nurse",
@@ -67,8 +64,8 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
         experience: initialData.experience,
         specialization: "",
         role: initialData.position,
-        emailAddress: initialData.email || "",
-        location: initialData.address,
+        emailAddress: initialData.email || "", // Add fallback
+        location: initialData.address || "", // Add fallback
         certifications: "",
       });
       setSpecializationTags(initialData.departments || []);
@@ -144,7 +141,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Basic validation
     if (!formData.fullName.trim()) {
       alert("Please enter full name");
@@ -159,25 +156,74 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
       return;
     }
 
-    const staffData: Staff = {
-      id: initialData?.id || Date.now(),
-      name: formData.fullName,
-      phone: formData.phoneNumber,
-      address: formData.location || "Not provided",
-      experience: formData.experience || "Not specified",
-      rating: initialData?.rating || 5, // Default to 5 stars for new staff
-      status: initialData?.status || "Available",
-      departments:
-        specializationTags.length > 0 ? specializationTags : ["General"],
-      position: formData.role,
-      joinDate: initialData?.joinDate || new Date().toISOString().split("T")[0],
-      email: formData.emailAddress,
-      certifications: certificationTags,
-    };
+    setIsSubmitting(true);
+    setSubmitError(null);
 
-    onSubmit(staffData);
-    handleReset();
-    onClose();
+    try {
+      // Parse experience with fallbacks
+      const experienceYears =
+        formData.experience.match(/(\d+)\s*years?/i)?.[1] || "0";
+      const experienceMonths =
+        formData.experience.match(/(\d+)\s*months?/i)?.[1] || "0";
+
+      const payload: CreateUpdateStaffPayload = {
+        ...(initialData?.id ? { id: initialData.id } : {}), // only include id for update
+        name: formData.fullName,
+        mobile_number: formData.phoneNumber,
+        role: "ddcddd74-7694-4801-aa29-4105b8c991b8", // ✅ hardcoded
+        email: formData.emailAddress || "",
+        experience_in_yrs: parseInt(experienceYears),
+        experience_in_months: parseInt(experienceMonths),
+        experience_in_days: 0,
+        specializations:
+          specializationTags.length > 0 ? specializationTags : ["General"],
+        certifications: certificationTags,
+        rating: initialData?.rating
+          ? parseFloat(initialData.rating.toString())
+          : 5.0,
+        profile_image_url: "https://example.com/default-profile.jpg",
+      };
+
+      // Debug logs
+      console.log(
+        "Submitting Staff Payload:",
+        JSON.stringify(payload, null, 2)
+      );
+
+      if (initialData?.id) {
+        payload.id = initialData.id;
+      }
+
+      await createUpdateStaff(payload);
+      console.log("Submitting payload:", payload);
+
+      const staffData: Staff = {
+        id: initialData?.id || `temp-${Date.now()}`,
+        name: formData.fullName,
+        phone: formData.phoneNumber,
+        address: formData.location || "Not provided",
+        experience: formData.experience || "Not specified",
+        rating: payload.rating,
+        status: initialData?.status || "Available",
+        departments: payload.specializations,
+        position: formData.role,
+        joinDate:
+          initialData?.joinDate || new Date().toISOString().split("T")[0],
+        email: formData.emailAddress,
+        certifications: certificationTags,
+      };
+
+      onSubmit(staffData);
+      handleReset();
+      onClose();
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "Failed to save staff"
+      );
+      console.error("Error saving staff:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -461,12 +507,31 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
           >
             Reset
           </button>
+          {/* Add error message above buttons */}
+          {submitError && (
+            <div className="px-6 py-2 bg-red-50 border-l-4 border-red-400">
+              <p className="text-red-700 text-sm">{submitError}</p>
+            </div>
+          )}
+
+          {/* Update the submit button */}
           <button
             type="button"
             onClick={handleSubmit}
-            className="px-8 py-3 bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors text-[10px] font-medium"
+            disabled={isSubmitting}
+            className={`px-8 py-3 ${
+              isSubmitting
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-[#0088B1] hover:bg-[#00729A]"
+            } text-white rounded-lg transition-colors text-[10px] font-medium`}
           >
-            {initialData ? "Update Staff" : "Add Staff Member"}
+            {isSubmitting
+              ? initialData
+                ? "Updating..."
+                : "Adding..."
+              : initialData
+              ? "Update Staff"
+              : "Add Staff Member"}
           </button>
         </div>
       </div>

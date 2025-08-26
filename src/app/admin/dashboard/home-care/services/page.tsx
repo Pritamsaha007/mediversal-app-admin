@@ -1,10 +1,14 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { SAMPLE_SERVICES } from "./sampleServices";
 import StatusBadge from "../components/StatusBadge";
 import StatsCard from "../components/StatsCard";
 import ManageOfferingsModal from "./ManageOfferingsModal";
 import AddServiceModal from "./AddServiceModal";
+import {
+  getHomecareServices,
+  type HomecareService,
+} from "./service/api/homecareServices";
+import { useAdminStore } from "@/app/store/adminStore";
 
 import {
   Search,
@@ -18,6 +22,32 @@ import {
   Trash2,
   MoreVertical,
 } from "lucide-react";
+
+// Transform function to convert API data to component interface
+const transformHomecareServiceToService = (
+  homecareService: HomecareService
+): Service => {
+  return {
+    id: parseInt(homecareService.id.split("-")[0], 16),
+    name: homecareService.name,
+    description: homecareService.description,
+    category: homecareService.display_sections?.[0] || "General",
+    status: homecareService.status,
+    offerings: homecareService.service_tags.map((tag, index) => ({
+      id: `${homecareService.id}-offering-${index}`,
+      name: tag,
+      description: `${tag} service`,
+      price: 0,
+      duration: "1 hour",
+      features: homecareService.display_sections,
+      staffRequirements: [],
+      equipmentIncluded: [],
+      status: "Available" as const,
+    })),
+    rating: 4.5,
+    reviewCount: 10,
+  };
+};
 
 interface Offering {
   id: string;
@@ -37,10 +67,11 @@ interface Service {
   description: string;
   category: string;
   status: "Active" | "Inactive";
-  offerings: Offering[]; // Change from string[] to Offering[]
+  offerings: Offering[];
   rating?: number;
   reviewCount?: number;
 }
+
 interface ServiceStats {
   totalServices: number;
   activeServices: number;
@@ -92,9 +123,8 @@ const ServiceActionDropdown: React.FC<{
 const Services: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
-  const [services, setServices] = useState<Service[]>(SAMPLE_SERVICES);
-  const [filteredServices, setFilteredServices] =
-    useState<Service[]>(SAMPLE_SERVICES);
+  const [services, setServices] = useState<Service[]>([]);
+  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
   const [openDropdown, setOpenDropdown] = useState<null | "status">(null);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [serviceActionDropdown, setServiceActionDropdown] = useState<
@@ -106,6 +136,9 @@ const Services: React.FC = () => {
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
   const [selectedServiceForModal, setSelectedServiceForModal] =
     useState<Service | null>(null);
+
+  // Get token from store
+  const { token, isLoggedIn } = useAdminStore();
 
   const statusOptions = ["All Status", "Active", "Inactive"];
 
@@ -125,26 +158,66 @@ const Services: React.FC = () => {
   };
   const stats = generateStats();
 
-  useEffect(() => {
-    let filtered = services;
-    if (searchTerm.trim()) {
-      filtered = filtered.filter(
-        (service) =>
-          service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          service.description
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          service.category.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    if (selectedStatus !== "All Status") {
-      filtered = filtered.filter(
-        (service) => service.status === selectedStatus
-      );
+  // API fetch function
+  const fetchServices = async () => {
+    if (!isLoggedIn || !token) {
+      setError("Please login to access services");
+      return;
     }
 
-    setFilteredServices(filtered);
-  }, [services, searchTerm, selectedStatus]);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await getHomecareServices(
+        {
+          status: selectedStatus === "All Status" ? null : selectedStatus,
+          search: searchTerm || null,
+        },
+        token
+      );
+
+      if (response.success) {
+        const transformedServices = response.services.map(
+          transformHomecareServiceToService
+        );
+        setServices(transformedServices);
+        setFilteredServices(transformedServices);
+      } else {
+        throw new Error("Failed to fetch services");
+      }
+    } catch (err: any) {
+      console.error("Error fetching services:", err);
+      setError(err.message || "Failed to fetch services");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Effect to fetch data on component mount and when auth state changes
+  useEffect(() => {
+    if (isLoggedIn && token) {
+      fetchServices();
+    } else {
+      setServices([]);
+      setFilteredServices([]);
+      if (!isLoggedIn) {
+        setError("Please login to access services");
+      }
+    }
+  }, [isLoggedIn, token]);
+
+  // Effect to refetch data when filters change
+  useEffect(() => {
+    if (isLoggedIn && token) {
+      // Debounce the API call to avoid too many requests
+      const timeoutId = setTimeout(() => {
+        fetchServices();
+      }, 500);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchTerm, selectedStatus]);
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -168,6 +241,7 @@ const Services: React.FC = () => {
       setSelectedServices([]);
     }
   };
+
   const handleManageOfferings = (service: Service) => {
     setSelectedServiceForModal(service);
     setShowManageModal(true);
@@ -211,7 +285,7 @@ const Services: React.FC = () => {
           </h1>
           <div className="flex gap-3">
             <button
-              onClick={() => setShowAddServiceModal(true)} // Add this onClick
+              onClick={() => setShowAddServiceModal(true)}
               className="flex items-center gap-2 text-[12px] px-4 py-2 bg-[#0088B1] text-[#F8F8F8] rounded-lg hover:bg-[#00729A]"
             >
               <Plus className="w-3 h-3" />
@@ -348,7 +422,9 @@ const Services: React.FC = () => {
                 ) : filteredServices.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">No services found</div>
+                      <div className="text-gray-500">
+                        {error ? "Error loading services" : "No services found"}
+                      </div>
                     </td>
                   </tr>
                 ) : (
