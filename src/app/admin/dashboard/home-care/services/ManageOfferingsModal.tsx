@@ -213,6 +213,7 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
         }}
         onSubmit={handleAddOffering}
         serviceName={service.name}
+        serviceId={service.id} // Add this line
         editingOffering={editingOffering}
       />
     </>

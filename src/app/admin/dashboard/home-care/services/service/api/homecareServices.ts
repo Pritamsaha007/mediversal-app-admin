@@ -134,3 +134,80 @@ export async function deleteHomecareService(
 
   return await response.json();
 }
+
+export async function getDurationTypes(token: string): Promise<{
+  success: boolean;
+  roles: Array<{
+    id: string;
+    value: string;
+    code: string;
+    slno: number;
+  }>;
+}> {
+  const response = await fetch(`${HOMECARE_API_BASE_URL}/api/lookup/enums`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: null,
+      code: "DURATION_TYPE",
+      value: null,
+      sort_by: null,
+      sort_order: null,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return await response.json();
+}
+
+// Create or update offering
+export interface CreateUpdateOfferingPayload {
+  id?: string; // Only include for updates
+  homecare_service_id: string;
+  name: string;
+  price: number;
+  duration_in_hrs: number;
+  duration_type_id: string;
+  description: string;
+  staff_requirements: string[];
+  equipment_requirements: string[];
+  features: string[];
+  is_device: boolean;
+  device_stock_count: number;
+  is_active: boolean;
+}
+
+export async function createOrUpdateOffering(
+  payload: CreateUpdateOfferingPayload,
+  token: string
+): Promise<{ success: boolean; offering?: any; message?: string }> {
+  const response = await fetch(
+    `${HOMECARE_API_BASE_URL}/api/homecare/offerings`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return await response.json();
+}
