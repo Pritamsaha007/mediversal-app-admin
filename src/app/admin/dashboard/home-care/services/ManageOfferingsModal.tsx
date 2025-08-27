@@ -4,6 +4,12 @@ import { X, Star } from "lucide-react";
 import OfferingCard from "./OfferingCard";
 import AddOfferingForm from "./AddOfferingForm";
 import toast from "react-hot-toast";
+import {
+  getHomecareOfferings,
+  deleteHomecareOffering,
+  type OfferingResponse,
+} from "./service/api/homecareServices";
+import { useAdminStore } from "@/app/store/adminStore";
 
 interface Offering {
   id: string;
@@ -37,80 +43,97 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
   onClose,
   service,
 }) => {
+  const { token } = useAdminStore();
   const [showAddForm, setShowAddForm] = useState(false);
   const [offerings, setOfferings] = useState<Offering[]>([]);
   const [editingOffering, setEditingOffering] = useState<Offering | null>(null);
+  const [loadingOfferings, setLoadingOfferings] = useState(false);
 
   // Sample data - replace with actual service data
-  const sampleOfferings: Offering[] = [
-    {
-      id: "1",
-      name: "Oxygen Concentrator",
-      description: "5L capacity, continuous oxygen supply",
-      price: 200,
-      duration: "day",
-      features: [
-        "5L capacity",
-        "Continuous flow",
-        "Low noise operation",
-        "Power backup support",
-        "24/7 technical support",
-      ],
-      staffRequirements: ["Medical Prescription", "Medical Prescription"],
-      equipmentIncluded: ["Oxygen Concentrator", "Nasal Cannula", "Tubing"],
-      status: "Excellent",
-    },
-    {
-      id: "2",
-      name: "Hospital Bed",
-      description: "Fully electric with adjustable height and backrest",
-      price: 350,
-      duration: "day",
-      features: [
-        "Fully electric",
-        "Adjustable height",
-        "Adjustable backrest",
-        "Side rails included",
-        "Emergency controls",
-      ],
-      staffRequirements: ["Medical Prescription"],
-      equipmentIncluded: ["Hospital Bed", "Mattress", "Side Rails"],
-      status: "Good",
-    },
-  ];
-
-  // Initialize offerings when service changes
   useEffect(() => {
-    if (service) {
-      const serviceOfferings = service.offerings || [];
-      const combinedOfferings =
-        serviceOfferings.length > 0
-          ? [...serviceOfferings]
-          : [...sampleOfferings];
-      setOfferings(combinedOfferings);
-    }
-  }, [service]);
+    const fetchOfferings = async () => {
+      if (!service || !token) return;
 
-  const handleAddOffering = (newOffering: Omit<Offering, "id">) => {
-    if (editingOffering) {
-      const updatedOffering: Offering = {
-        ...newOffering,
-        id: editingOffering.id,
-      };
-      setOfferings((prev) =>
-        prev.map((offering) =>
-          offering.id === editingOffering.id ? updatedOffering : offering
-        )
-      );
-      toast.success("Offering updated successfully!");
-    } else {
-      const offering: Offering = {
-        ...newOffering,
-        id: Date.now().toString(),
-      };
-      setOfferings((prev) => [...prev, offering]);
-      toast.success("Offering added successfully!");
+      setLoadingOfferings(true);
+      console.log("Fetching offerings for service:", service.id);
+
+      try {
+        const response = await getHomecareOfferings(
+          { service_id: service.id },
+          token
+        );
+
+        if (response.success) {
+          console.log("Fetched offerings:", response.offerings);
+
+          // Transform API response to match your Offering interface
+          const transformedOfferings: Offering[] = response.offerings.map(
+            (offering: OfferingResponse) => ({
+              id: offering.id,
+              name: offering.name,
+              description: offering.description,
+              price: parseFloat(offering.price),
+              duration: `${offering.duration_in_hrs} ${offering.duration_type}`,
+              features: offering.features,
+              staffRequirements: offering.staff_requirements,
+              equipmentIncluded: offering.equipment_requirements,
+              status:
+                offering.status === "Active" ? "Available" : ("Good" as const),
+            })
+          );
+
+          setOfferings(transformedOfferings);
+        }
+      } catch (error) {
+        console.error("Error fetching offerings:", error);
+        toast.error("Failed to load offerings");
+        setOfferings([]); // Set empty array on error
+      } finally {
+        setLoadingOfferings(false);
+      }
+    };
+
+    if (isOpen && service) {
+      fetchOfferings();
     }
+  }, [isOpen, service, token]);
+  // Initialize offerings when service changes
+
+  const handleAddOffering = async (newOffering: Omit<Offering, "id">) => {
+    // Refresh offerings list after adding/updating
+    try {
+      const response = await getHomecareOfferings(
+        { service_id: service!.id },
+        token!
+      );
+
+      if (response.success) {
+        const transformedOfferings: Offering[] = response.offerings.map(
+          (offering: OfferingResponse) => ({
+            id: offering.id,
+            name: offering.name,
+            description: offering.description,
+            price: parseFloat(offering.price),
+            duration: `${offering.duration_in_hrs} ${offering.duration_type}`,
+            features: offering.features,
+            staffRequirements: offering.staff_requirements,
+            equipmentIncluded: offering.equipment_requirements,
+            status:
+              offering.status === "Active" ? "Available" : ("Good" as const),
+          })
+        );
+
+        setOfferings(transformedOfferings);
+        toast.success(
+          editingOffering
+            ? "Offering updated successfully!"
+            : "Offering added successfully!"
+        );
+      }
+    } catch (error) {
+      console.error("Error refreshing offerings:", error);
+    }
+
     setShowAddForm(false);
     setEditingOffering(null);
   };
@@ -120,9 +143,86 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
     setShowAddForm(true);
   };
 
-  const handleDeleteOffering = (offeringId: string) => {
-    setOfferings((prev) => prev.filter((o) => o.id !== offeringId));
-    toast.success("Offering deleted successfully!");
+  // Add to imports
+
+  // Update the handleDeleteOffering function:
+  const handleDeleteOffering = async (offeringId: string) => {
+    console.log("Delete offering requested for ID:", offeringId);
+
+    const confirmed = await new Promise<boolean>((resolve) => {
+      const toastId = toast(
+        (t) => (
+          <div className="flex flex-col gap-2">
+            <span>Are you sure you want to delete this offering?</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  toast.dismiss(toastId);
+                  resolve(true);
+                }}
+                className="px-3 py-1 bg-red-400 text-white rounded text-sm"
+              >
+                Yes, Delete
+              </button>
+              <button
+                onClick={() => {
+                  toast.dismiss(toastId);
+                  resolve(false);
+                }}
+                className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ),
+        {
+          duration: Infinity,
+        }
+      );
+    });
+
+    if (confirmed) {
+      try {
+        setLoadingOfferings(true);
+        console.log("Proceeding with delete for offering:", offeringId);
+
+        await deleteHomecareOffering(offeringId, token!);
+
+        console.log("Offering deleted successfully, refreshing list...");
+        toast.success("Offering deleted successfully!");
+
+        // Refresh offerings list after deletion
+        const response = await getHomecareOfferings(
+          { service_id: service!.id },
+          token!
+        );
+
+        if (response.success) {
+          const transformedOfferings: Offering[] = response.offerings.map(
+            (offering: OfferingResponse) => ({
+              id: offering.id,
+              name: offering.name,
+              description: offering.description,
+              price: parseFloat(offering.price),
+              duration: `${offering.duration_in_hrs} ${offering.duration_type}`,
+              features: offering.features,
+              staffRequirements: offering.staff_requirements,
+              equipmentIncluded: offering.equipment_requirements,
+              status:
+                offering.status === "Active" ? "Available" : ("Good" as const),
+            })
+          );
+
+          setOfferings(transformedOfferings);
+        }
+      } catch (error: any) {
+        console.error("Error deleting offering:", error);
+        toast.error(error.message || "Failed to delete offering");
+      } finally {
+        setLoadingOfferings(false);
+      }
+    }
   };
 
   if (!isOpen || !service) return null;
@@ -183,9 +283,14 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
 
             {/* Offerings List - Enhanced scrollable area */}
             <div className="max-h-[400px] overflow-y-auto pr-2">
-              {offerings.length === 0 ? (
+              {loadingOfferings ? (
                 <div className="text-center py-8 text-gray-500">
-                  No offerings available. Click "Add Offering" to create one.
+                  <div className="text-sm">Loading offerings...</div>
+                </div>
+              ) : offerings.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No offerings available for this service. Click "Add Offering"
+                  to create one.
                 </div>
               ) : (
                 <div className="space-y-4">
