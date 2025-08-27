@@ -1,6 +1,15 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { X, Search, Calendar, Clock, Trash2 } from "lucide-react";
+import {
+  getHomecareOfferings,
+  GetOfferingsResponse,
+  OfferingResponse,
+  getOrderStatus,
+  createOrder,
+  OrderStatusResponse,
+} from "./services/api/orderServices";
+import { useAdminStore } from "../../../../store/adminStore";
 
 interface AddBookingModalProps {
   isOpen: boolean;
@@ -11,14 +20,12 @@ interface SelectedOffering {
   id: string;
   name: string;
   description: string;
-  price: number;
+  price: string;
+  homecare_service_name: string;
 }
 
 interface BookingFormData {
-  // Offerings
   selectedOfferings: SelectedOffering[];
-
-  // Patient & Health Details
   patientName: string;
   age: string;
   gender: string;
@@ -28,47 +35,12 @@ interface BookingFormData {
   emergencyContactNumber: string;
   currentMedication: string;
   medicalCondition: string;
-
-  // Address & Schedule
   completeAddress: string;
   startDate: string;
   startTime: string;
-  priorityLevel: string;
+  orderStatus: string;
   estimatedDuration: string;
 }
-
-const availableOfferings = [
-  {
-    id: "oxygen-concentrator",
-    name: "Oxygen Concentrator",
-    description: "5L capacity continuous oxygen supply",
-    price: 200,
-  },
-  {
-    id: "hospital-bed",
-    name: "Hospital Bed",
-    description: "Semi-fowler bed with adjustable headrest",
-    price: 150,
-  },
-  {
-    id: "wheelchair",
-    name: "Wheelchair",
-    description: "Standard foldable wheelchair with armrests",
-    price: 100,
-  },
-  {
-    id: "bipap-machine",
-    name: "BIPAP Machine",
-    description: "For respiratory support with bi-level pressure",
-    price: 350,
-  },
-  {
-    id: "patient-monitor",
-    name: "Patient Monitor",
-    description: "Multipara monitor for vitals (ECG, SpO2, BP)",
-    price: 400,
-  },
-];
 
 const AddBookingModal: React.FC<AddBookingModalProps> = ({
   isOpen,
@@ -78,6 +50,49 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
     "offerings" | "patient" | "address"
   >("offerings");
   const [searchTerm, setSearchTerm] = useState("");
+  const [availableOfferings, setAvailableOfferings] = useState<
+    OfferingResponse[]
+  >([]);
+  const [orderStatuses, setOrderStatuses] = useState<
+    Array<{
+      id: string;
+      value: string;
+      code: string;
+      slno: number;
+    }>
+  >([]);
+  const [loading, setLoading] = useState(false);
+
+  const { token } = useAdminStore();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!token) {
+        console.error("No token available");
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        const [offeringsResponse, statusResponse] = await Promise.all([
+          getHomecareOfferings({}, token),
+          getOrderStatus(token),
+        ]);
+
+        setAvailableOfferings(offeringsResponse.offerings);
+        setOrderStatuses(statusResponse.roles);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchData();
+    }
+  }, [isOpen, token]);
 
   const [formData, setFormData] = useState<BookingFormData>({
     selectedOfferings: [],
@@ -93,7 +108,7 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
     completeAddress: "",
     startDate: "",
     startTime: "",
-    priorityLevel: "",
+    orderStatus: "",
     estimatedDuration: "",
   });
 
@@ -103,7 +118,7 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
       offering.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleOfferingAdd = (offering: (typeof availableOfferings)[0]) => {
+  const handleOfferingAdd = (offering: OfferingResponse) => {
     if (!formData.selectedOfferings.find((item) => item.id === offering.id)) {
       setFormData((prev) => ({
         ...prev,
@@ -136,59 +151,48 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
     }
   };
 
-  const handleCreateOrder = () => {
-    console.log("=== NEW BOOKING ORDER ===");
-    console.log("Selected Offerings:", formData.selectedOfferings);
-    console.log("Patient Details:", {
-      name: formData.patientName,
-      age: formData.age,
-      gender: formData.gender,
-      phone: formData.phoneNumber,
-      email: formData.emailAddress,
-      emergencyContact: {
-        name: formData.emergencyContactName,
-        number: formData.emergencyContactNumber,
-      },
-    });
-    console.log("Health Details:", {
-      currentMedication: formData.currentMedication,
-      medicalCondition: formData.medicalCondition,
-    });
-    console.log("Address & Schedule:", {
-      address: formData.completeAddress,
-      startDate: formData.startDate,
-      startTime: formData.startTime,
-      priority: formData.priorityLevel,
-      duration: formData.estimatedDuration,
-    });
+  const handleCreateOrder = async () => {
+    if (!token) {
+      alert("Authentication required. Please log in again.");
+      return;
+    }
+    try {
+      const orderTotal = formData.selectedOfferings
+        .reduce((sum, offering) => sum + parseFloat(offering.price), 0)
+        .toString();
+      const orderPayload = {
+        customer_id: "56bfecc2-3778-49f5-88b0-ae83eb905dbf",
+        homecare_service_offering_id: formData.selectedOfferings[0]?.id || "", // Use first selected offering
+        order_total: orderTotal,
+        order_status: formData.orderStatus,
+        schedule_in_days: "1", // Calculate based on your logic
+        schedule_in_hours: "24", // Calculate based on your logic
+        order_details: {
+          Patient_name: formData.patientName,
+          Age: formData.age,
+          "Medical Information": {
+            "Medical Condition": formData.medicalCondition,
+            "Current Medication": formData.currentMedication,
+          },
+          "Contact & Location": {
+            "Service Address": formData.completeAddress,
+            "Contact Person Name": formData.patientName,
+            "Contact Number": formData.phoneNumber,
+            "Emergency Contact": formData.emergencyContactNumber,
+            "Date & Time": `${formData.startDate} ${formData.startTime}:00`,
+          },
+        },
+      };
 
-    const totalAmount = formData.selectedOfferings.reduce(
-      (sum, offering) => sum + offering.price,
-      0
-    );
-    console.log("Total Amount: ₹", totalAmount);
-
-    alert("Order created successfully! Check console for details.");
-    onClose();
-    // Reset form
-    setFormData({
-      selectedOfferings: [],
-      patientName: "",
-      age: "",
-      gender: "",
-      phoneNumber: "",
-      emailAddress: "",
-      emergencyContactName: "",
-      emergencyContactNumber: "",
-      currentMedication: "",
-      medicalCondition: "",
-      completeAddress: "",
-      startDate: "",
-      startTime: "",
-      priorityLevel: "",
-      estimatedDuration: "",
-    });
-    setCurrentTab("offerings");
+      const response = await createOrder(orderPayload, token);
+      console.log("Order created:", response);
+      alert("Order created successfully!");
+      onClose();
+      // Reset form...
+    } catch (error) {
+      console.error("Error creating order:", error);
+      alert("Failed to create order. Please try again.");
+    }
   };
 
   const renderTabButton = (tabKey: typeof currentTab, label: string) => (
@@ -317,7 +321,7 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="font-semibold text-[#161D1F] text-[10px]">
-                            ₹{offering.price}/day
+                            ₹{offering.price}
                           </span>
                           <button
                             onClick={() => handleOfferingAdd(offering)}
@@ -578,19 +582,21 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
                   {/* Priority Level */}
                   <div>
                     <label className="block text-[10px] font-medium text-gray-700 mb-2">
-                      <span className="text-red-500">*</span> Priority Level
+                      <span className="text-red-500">*</span> Status
                     </label>
                     <select
-                      value={formData.priorityLevel}
+                      value={formData.orderStatus}
                       onChange={(e) =>
-                        handleInputChange("priorityLevel", e.target.value)
+                        handleInputChange("orderStatus", e.target.value)
                       }
                       className="w-full px-4 py-2 border text-[10px] text-[#161D1F] border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                     >
-                      <option value="">Select Priority</option>
-                      <option value="High Priority">High Priority</option>
-                      <option value="Medium Priority">Medium Priority</option>
-                      <option value="Low Priority">Low Priority</option>
+                      <option value="">Select Status</option>
+                      {orderStatuses.map((status) => (
+                        <option key={status.id} value={status.id}>
+                          {status.value}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
