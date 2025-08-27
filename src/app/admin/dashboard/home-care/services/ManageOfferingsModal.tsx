@@ -204,7 +204,6 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
         </div>
       </div>
 
-      {/* Add Offering Form */}
       <AddOfferingForm
         isOpen={showAddForm}
         onClose={() => {
@@ -213,7 +212,7 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
         }}
         onSubmit={handleAddOffering}
         serviceName={service.name}
-        serviceId={service.id} // Add this line
+        serviceId={service.id}
         editingOffering={editingOffering}
       />
     </>

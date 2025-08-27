@@ -84,7 +84,6 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
           console.log("Failed to fetch duration types:", response);
         }
       } catch (error) {
-        console.error("Error fetching duration types:", error);
         toast.error("Failed to load duration types");
       }
     };
