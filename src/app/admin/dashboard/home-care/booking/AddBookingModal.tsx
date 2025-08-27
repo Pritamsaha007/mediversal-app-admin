@@ -266,7 +266,7 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="font-semibold text-[#161D1F] text-[10px]">
-                            ₹{offering.price}/day
+                            ₹{offering.price}
                           </span>
                           <button
                             onClick={() => handleOfferingRemove(offering.id)}
