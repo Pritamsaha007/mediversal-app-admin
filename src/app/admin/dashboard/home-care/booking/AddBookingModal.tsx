@@ -162,11 +162,11 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
         .toString();
       const orderPayload = {
         customer_id: "56bfecc2-3778-49f5-88b0-ae83eb905dbf",
-        homecare_service_offering_id: formData.selectedOfferings[0]?.id || "", // Use first selected offering
+        homecare_service_offering_id: formData.selectedOfferings[0]?.id || "",
         order_total: orderTotal,
         order_status: formData.orderStatus,
-        schedule_in_days: "1", // Calculate based on your logic
-        schedule_in_hours: "24", // Calculate based on your logic
+        schedule_in_days: "1",
+        schedule_in_hours: "24",
         order_details: {
           Patient_name: formData.patientName,
           Age: formData.age,
@@ -188,7 +188,6 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
       console.log("Order created:", response);
       alert("Order created successfully!");
       onClose();
-      // Reset form...
     } catch (error) {
       console.error("Error creating order:", error);
       alert("Failed to create order. Please try again.");
