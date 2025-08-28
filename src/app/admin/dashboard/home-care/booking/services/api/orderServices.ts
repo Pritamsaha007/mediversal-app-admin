@@ -233,3 +233,61 @@ export async function assignStaffToOrder(
 
   return await response.json();
 }
+export interface OrdersPayload {
+  customer_id: string | null;
+  serach: string | null;
+  filter_order_status: string | null;
+}
+
+export interface ApiOrderResponse {
+  id: string;
+  customer_id: string;
+  homecare_service_id: string;
+  schedule_in_days: number;
+  schedule_in_hours: number;
+  order_total: string;
+  paid_amount: string;
+  order_status: string;
+  order_date: string | null;
+  order_time: string | null;
+  payment_status: string;
+  order_status_name: string;
+  homecare_service_name: string;
+  customer_name: string;
+  customer_details: {
+    address_line1: string | null;
+    address_line2: string | null;
+    city: string | null;
+    state: string | null;
+    postal_code: string | null;
+    country: string | null;
+  };
+}
+
+export interface GetOrdersResponse {
+  success: boolean;
+  orders: ApiOrderResponse[];
+}
+
+export async function getHomecareOrders(
+  payload: OrdersPayload,
+  token: string
+): Promise<GetOrdersResponse> {
+  const response = await fetch(`${HOMECARE_API_BASE_URL}/api/homecare/orders`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return await response.json();
+}
