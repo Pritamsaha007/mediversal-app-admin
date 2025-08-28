@@ -1,6 +1,8 @@
-import React, { useState } from "react";
-import { X, Search, Star } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, Search, Star, Loader2 } from "lucide-react";
 import { mockStaffs, staffCategories, Staff, AssignedStaff } from "./staffData";
+import { getHomecareStaff, StaffResponse } from "./services/api/orderServices";
+import { useAdminStore } from "../../../../store/adminStore";
 
 interface AssignStaffModalProps {
   isOpen: boolean;
@@ -17,21 +19,85 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
   currentAssignedStaff = [],
   onUpdateStaff,
 }) => {
+  const { token } = useAdminStore();
   const [selectedCategory, setSelectedCategory] = useState("All Staffs");
   const [searchTerm, setSearchTerm] = useState("");
   const [assignedStaffs, setAssignedStaffs] =
     useState<AssignedStaff[]>(currentAssignedStaff);
+  const [apiStaffs, setApiStaffs] = useState<StaffResponse[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchStaffData();
+    }
+  }, [isOpen, token]);
+
+  const fetchStaffData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getHomecareStaff({}, token);
+      if (response.success) {
+        setApiStaffs(response.staffs);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch staff");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const mapApiStatusToLocalStatus = (
+    apiStatus: string
+  ): "Available" | "On Duty" | "Busy" => {
+    switch (apiStatus.toLowerCase()) {
+      case "available":
+        return "Available";
+      case "on duty":
+      case "onduty":
+        return "On Duty";
+      case "busy":
+      case "occupied":
+        return "Busy";
+      default:
+        return "Available"; // Default fallback
+    }
+  };
+
+  const convertApiStaffToStaff = (apiStaff: StaffResponse) => ({
+    id: apiStaff.id,
+    name: apiStaff.name,
+    role: apiStaff.role_name,
+    initials: apiStaff.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase(),
+    experience: apiStaff.experience_in_yrs,
+    rating: parseFloat(apiStaff.rating),
+    status: mapApiStatusToLocalStatus(apiStaff.availability_status),
+    category: apiStaff.role_name, // You might want to map this differently
+  });
 
   if (!isOpen) return null;
 
-  const filteredStaffs = mockStaffs.filter((staff) => {
-    const matchesCategory =
-      selectedCategory === "All Staffs" || staff.category === selectedCategory;
-    const matchesSearch = staff.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredStaffs = apiStaffs
+    .filter((apiStaff) => {
+      const staff = convertApiStaffToStaff(apiStaff);
+      const matchesCategory =
+        selectedCategory === "All Staffs" ||
+        staff.category === selectedCategory;
+      const matchesSearch = staff.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    })
+    .map(convertApiStaffToStaff);
+  const staffCategories = [
+    "All Staffs",
+    ...Array.from(new Set(apiStaffs.map((staff) => staff.role_name))),
+  ];
 
   const handleAssignStaff = (staff: Staff) => {
     if (staff.status === "Busy") return;
@@ -206,67 +272,92 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
 
           {/* Staff List */}
           <div className="max-h-64 overflow-y-auto space-y-2">
-            {filteredStaffs.map((staff) => {
-              const isAssigned = assignedStaffs.some((s) => s.id === staff.id);
-              return (
-                <div
-                  key={staff.id}
-                  className={`flex items-center justify-between p-3 border rounded-lg ${
-                    staff.status === "Busy"
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:bg-gray-50 cursor-pointer"
-                  }`}
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-cyan-600" />
+                <span className="ml-2 text-sm text-gray-600">
+                  Loading staff...
+                </span>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-red-600">{error}</p>
+                <button
+                  onClick={fetchStaffData}
+                  className="mt-2 text-sm text-cyan-600 hover:text-cyan-700"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-[#E8F4F7] text-[12px] text-[#161D1F] rounded-full flex items-center justify-center font-semibold">
-                      {staff.initials}
-                    </div>
-                    <div>
-                      <p className="font-medium text-[#161D1F] text-[10px]">
-                        {staff.name}
-                      </p>
-                      <p className="text-xs text-[#899193]">{staff.role}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-x-16">
-                    <div className="text-right">
-                      <p className="text-xs text-[#161D1F]">
-                        Experience: {staff.experience} Years
-                      </p>
-                      <div className="flex items-center gap-1">
-                        <p className="text-xs text-[#161D1F]">Rating:</p>
-                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                        <span className="text-xs text-[#161D1F]">
-                          {staff.rating}
-                        </span>
+                  Try again
+                </button>
+              </div>
+            ) : filteredStaffs.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-gray-600">No staff found</p>
+              </div>
+            ) : (
+              filteredStaffs.map((staff) => {
+                const isAssigned = assignedStaffs.some(
+                  (s) => s.id === staff.id
+                );
+                return (
+                  <div
+                    key={staff.id}
+                    className={`flex items-center justify-between p-3 border rounded-lg ${
+                      staff.status === "Busy"
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:bg-gray-50 cursor-pointer"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-[#E8F4F7] text-[12px] text-[#161D1F] rounded-full flex items-center justify-center font-semibold">
+                        {staff.initials}
+                      </div>
+                      <div>
+                        <p className="font-medium text-[#161D1F] text-[10px]">
+                          {staff.name}
+                        </p>
+                        <p className="text-xs text-[#899193]">{staff.role}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-16">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                          staff.status
-                        )}`}
-                      >
-                        {staff.status}
-                      </span>
-                      <button
-                        onClick={() => handleAssignStaff(staff)}
-                        disabled={staff.status === "Busy" || isAssigned}
-                        className={`px-3 py-1 text-xs rounded ${
-                          isAssigned
-                            ? "bg-gray-300 text-[#161D1F] cursor-not-allowed"
-                            : staff.status === "Busy"
-                            ? "bg-gray-300 text-[#161D1F] cursor-not-allowed"
-                            : "bg-cyan-600 text-white hover:bg-cyan-700"
-                        }`}
-                      >
-                        {isAssigned ? "Assigned" : "Assign"}
-                      </button>
+                    <div className="flex items-center gap-x-16">
+                      <div className="text-right">
+                        <p className="text-xs text-[#161D1F]">
+                          Experience: {staff.experience} Years
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <p className="text-xs text-[#161D1F]">Rating:</p>
+                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                          <span className="text-xs text-[#161D1F]">
+                            {staff.rating}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-16">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                            staff.status
+                          )}`}
+                        >
+                          {staff.status}
+                        </span>
+                        <button
+                          onClick={() => handleAssignStaff(staff)}
+                          disabled={staff.status === "Busy" || isAssigned}
+                          className={`px-3 py-1 text-xs rounded ${
+                            isAssigned
+                              ? "bg-gray-300 text-[#161D1F] cursor-not-allowed"
+                              : staff.status === "Busy"
+                              ? "bg-gray-300 text-[#161D1F] cursor-not-allowed"
+                              : "bg-cyan-600 text-white hover:bg-cyan-700"
+                          }`}
+                        >
+                          {isAssigned ? "Assigned" : "Assign"}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 

@@ -303,7 +303,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
           </div>
         </div>
       </div>
-      {/* Add this before the closing </div> */}
       <AssignStaffModal
         isOpen={isAssignStaffModalOpen}
         onClose={() => setIsAssignStaffModalOpen(false)}

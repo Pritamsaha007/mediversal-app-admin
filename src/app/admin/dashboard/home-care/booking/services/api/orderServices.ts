@@ -140,3 +140,59 @@ export async function getHomecareOfferings(
 
   return await response.json();
 }
+
+export interface StaffResponse {
+  id: string;
+  name: string;
+  mobile_number: string;
+  role_name: string;
+  email: string;
+  experience_in_yrs: number;
+  experience_in_months: number;
+  experience_in_days: number;
+  specializations: string[];
+  certifications: string[];
+  rating: string;
+  profile_image_url: string;
+  availability_status: string;
+}
+
+export interface GetStaffResponse {
+  success: boolean;
+  staffs: StaffResponse[];
+}
+
+export interface GetStaffParams {
+  search?: string | null;
+  start?: string | null;
+  max?: string | null;
+}
+
+export async function getHomecareStaff(
+  params: GetStaffParams = {},
+  token: string
+): Promise<GetStaffResponse> {
+  const { search = null, start = null, max = null } = params;
+
+  const url = new URL(`${HOMECARE_API_BASE_URL}/api/homecare/staff`);
+  url.searchParams.append("search", search?.toString() || "null");
+  url.searchParams.append("start", start?.toString() || "null");
+  url.searchParams.append("max", max?.toString() || "null");
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return await response.json();
+}
