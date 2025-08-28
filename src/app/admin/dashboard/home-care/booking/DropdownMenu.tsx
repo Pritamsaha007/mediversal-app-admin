@@ -139,7 +139,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                 <button
                   key={index}
                   onClick={item.onClick}
-                  className={`flex items-center gap-3 w-full px-4 py-2 text-left transition-colors ${item.className}`}
+                  className={`flex text-[12px] items-center gap-3 w-full px-4 py-2 text-left transition-colors ${item.className}`}
                 >
                   <IconComponent className="w-4 h-4" />
                   {item.label}

@@ -5,6 +5,7 @@ import { bookingsData } from "./bookingData";
 import DropdownMenu from "./DropdownMenu";
 import BookingModal from "./BookingModal";
 import AddBookingModal from "./AddBookingModal";
+import AssignStaffModal from "./AssignStaffModal";
 
 interface Booking {
   id: string;
@@ -58,6 +59,9 @@ const BookingManagement: React.FC = () => {
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
   const [isAddBookingModalOpen, setIsAddBookingModalOpen] = useState(false);
+  const [isAssignStaffModalOpen, setIsAssignStaffModalOpen] = useState(false);
+  const [selectedBookingForStaff, setSelectedBookingForStaff] =
+    useState<string>("");
 
   // Filter bookings based on search term and status
   const filteredBookings = bookings.filter((booking) => {
@@ -124,8 +128,8 @@ const BookingManagement: React.FC = () => {
   };
 
   const handleAssignStaff = (bookingId: string) => {
-    console.log("Assign staff to booking:", bookingId);
-    alert(`Assign staff to booking: ${bookingId}`);
+    setSelectedBookingForStaff(bookingId);
+    setIsAssignStaffModalOpen(true);
   };
 
   const handleCancelBooking = (bookingId: string) => {
@@ -166,6 +170,23 @@ const BookingManagement: React.FC = () => {
   const handleEditOrder = (bookingId: string) => {
     console.log("Edit order:", bookingId);
     alert(`Edit order: ${bookingId}`);
+  };
+
+  const handleUpdateAssignedStaff = (bookingId: string, staffs: any[]) => {
+    setBookings((prev) =>
+      prev.map((booking) =>
+        booking.id === bookingId
+          ? {
+              ...booking,
+              assignedStaff:
+                staffs.map((staff) => staff.name).join(", ") || null,
+              status:
+                staffs.length > 0 ? ("In Progress" as const) : booking.status,
+            }
+          : booking
+      )
+    );
+    setIsAssignStaffModalOpen(false);
   };
 
   const handleNewBooking = () => {
@@ -232,7 +253,6 @@ const BookingManagement: React.FC = () => {
               <span className="text-[#161D1F] text-[12px]">{statusFilter}</span>
               <ChevronDown className="w-4 h-4 text-[#899193]" />
             </button>
-
             {isStatusDropdownOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                 <div className="py-2">
@@ -329,7 +349,7 @@ const BookingManagement: React.FC = () => {
                           {booking.date}
                         </div>
                         <div className="text-xs text-[#899193]">
-                          Booking ID: {booking.bookingId}
+                          Booking ID222: {booking.bookingId}
                         </div>
                         <div className="mt-1">
                           <span
@@ -475,6 +495,12 @@ const BookingManagement: React.FC = () => {
         <AddBookingModal
           isOpen={isAddBookingModalOpen}
           onClose={() => setIsAddBookingModalOpen(false)}
+        />
+        <AssignStaffModal
+          isOpen={isAssignStaffModalOpen}
+          onClose={() => setIsAssignStaffModalOpen(false)}
+          bookingId={selectedBookingForStaff}
+          onUpdateStaff={handleUpdateAssignedStaff}
         />
       </div>
     </div>

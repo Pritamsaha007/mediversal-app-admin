@@ -196,3 +196,40 @@ export async function getHomecareStaff(
 
   return await response.json();
 }
+
+export interface AssignStaffPayload {
+  orderId: string;
+  staffId: string;
+  userId: string | null;
+}
+
+export interface AssignStaffResponse {
+  success: boolean;
+  message?: string;
+}
+
+export async function assignStaffToOrder(
+  payload: AssignStaffPayload,
+  token: string
+): Promise<AssignStaffResponse> {
+  const response = await fetch(
+    `${HOMECARE_API_BASE_URL}/api/homecare/order/staff`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return await response.json();
+}

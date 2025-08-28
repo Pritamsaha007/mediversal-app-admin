@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { X, Search, Star, Loader2 } from "lucide-react";
 import { mockStaffs, staffCategories, Staff, AssignedStaff } from "./staffData";
-import { getHomecareStaff, StaffResponse } from "./services/api/orderServices";
+import {
+  getHomecareStaff,
+  StaffResponse,
+  assignStaffToOrder,
+  AssignStaffPayload,
+} from "./services/api/orderServices";
 import { useAdminStore } from "../../../../store/adminStore";
+import toast from "react-hot-toast";
 
 interface AssignStaffModalProps {
   isOpen: boolean;
@@ -27,6 +33,7 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
   const [apiStaffs, setApiStaffs] = useState<StaffResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAssigning, setIsAssigning] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -122,9 +129,47 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
     setAssignedStaffs(assignedStaffs.filter((staff) => staff.id !== staffId));
   };
 
-  const handleUpdateAssignedStaff = () => {
-    onUpdateStaff(bookingId, assignedStaffs);
-    onClose();
+  const handleUpdateAssignedStaff = async () => {
+    if (assignedStaffs.length === 0) {
+      toast.error("Please select at least one staff member");
+      return;
+    }
+
+    setIsAssigning(true);
+
+    try {
+      // For now, assign only the first selected staff
+      // You can modify this to handle multiple staff assignments
+      const firstStaff = assignedStaffs[0];
+
+      const payload: AssignStaffPayload = {
+        orderId: "769b3c0c-8e57-4a24-9008-138b76b261f0", // This should be the actual order ID
+        staffId: firstStaff.id,
+        userId: null,
+      };
+
+      await assignStaffToOrder(payload, token);
+
+      // Show success message
+      toast.success(
+        `Staff ${firstStaff.name} has been successfully assigned to the order!`
+      );
+
+      // Update parent component
+      onUpdateStaff(bookingId, assignedStaffs);
+
+      // Close modal
+      onClose();
+    } catch (error) {
+      console.error("Error assigning staff:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to assign staff. Please try again."
+      );
+    } finally {
+      setIsAssigning(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -365,9 +410,14 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
         <div className="p-4 border-t bg-gray-50">
           <button
             onClick={handleUpdateAssignedStaff}
-            className="justify-end  text-[#F8F8F8] flex bg-cyan-600  text-[10px] py-3 px-4 rounded-lg hover:bg-cyan-700 transition-colors font-medium"
+            disabled={isAssigning || assignedStaffs.length === 0}
+            className={`justify-end text-[#F8F8F8] flex text-[10px] py-3 px-4 rounded-lg transition-colors font-medium ${
+              isAssigning || assignedStaffs.length === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-cyan-600 hover:bg-cyan-700"
+            }`}
           >
-            Update Assigned Staff
+            {isAssigning ? "Assigning..." : "Update Assigned Staff"}
           </button>
         </div>
       </div>

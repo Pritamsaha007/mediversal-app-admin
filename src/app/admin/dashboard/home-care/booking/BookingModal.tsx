@@ -278,7 +278,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
           {/* Action Buttons */}
           <div className="mt-8 flex flex-wrap gap-4">
             <button
-              onClick={() => setIsAssignStaffModalOpen(true)} // Change this line
+              onClick={() => setIsAssignStaffModalOpen(true)}
               className="flex items-center text-[10px] gap-2 bg-cyan-600 text-white px-6 py-3 rounded-lg hover:bg-cyan-700 transition-colors"
             >
               <User className="w-3 h-3" />
