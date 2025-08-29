@@ -1,51 +1,53 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { Search, Plus, ChevronDown } from "lucide-react";
-import { bookingsData } from "./bookingData";
 import DropdownMenu from "./DropdownMenu";
 import BookingModal from "./BookingModal";
 import AddBookingModal from "./AddBookingModal";
 import AssignStaffModal from "./AssignStaffModal";
 import { useAdminStore } from "../../../../store/adminStore";
+import { DetailedBooking } from "./booking";
+
 import {
   getHomecareOrders,
   ApiOrderResponse,
 } from "./services/api/orderServices";
 
-interface Booking {
-  id: string;
-  bookingId: string;
-  date: string;
-  customer: {
-    name: string;
-    location: string;
-    age: number;
-    gender: string;
-    phone: string;
-    email: string;
-    address: string;
-  };
-  status: "Pending Assignment" | "In Progress" | "Completed" | "Cancelled";
-  payment: "Partial Payment" | "Paid" | "Refunded";
-  service: string;
-  serviceDetails: {
-    name: string;
-    description: string;
-    pricePerDay: number;
-  };
-  total: number;
-  gst: number;
-  priority: "High Priority" | "Medium Priority" | "Low Priority";
-  scheduled: string;
-  duration: string;
-  currentMedication: string;
-  medicalCondition: string;
-  emergencyContact: {
-    name: string;
-    number: string;
-  };
-  assignedStaff: string | null;
-}
+// interface Booking {
+//   id: string;
+//   bookingId: string;
+//   date: string;
+//   customer: {
+//     name: string;
+//     location: string;
+//     age: number;
+//     gender: string;
+//     phone: string;
+//     email: string;
+//     address: string;
+//   };
+//   status: "Pending Assignment" | "In Progress" | "Completed" | "Cancelled";
+//   payment: "Partial Payment" | "Paid" | "Refunded";
+//   service: string;
+//   serviceDetails: {
+//     name: string;
+//     description: string;
+//     pricePerDay: number;
+//   };
+//   total: number;
+//   gst: number;
+//   priority: "High Priority" | "Medium Priority" | "Low Priority";
+//   scheduled: string;
+//   duration: string;
+//   currentMedication: string;
+//   medicalCondition: string;
+//   emergencyContact: {
+//     name: string;
+//     number: string;
+//   };
+//   assignedStaff: string | null;
+// }
+
 const statusOptions = [
   "All Status",
   "Pending Assignment",
@@ -56,10 +58,11 @@ const statusOptions = [
 
 // Main Booking Management Component
 const BookingManagement: React.FC = () => {
-  const [bookings, setBookings] = useState<Booking[]>(bookingsData);
+  const [bookings, setBookings] = useState<DetailedBooking[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [selectedBooking, setSelectedBooking] =
+    useState<DetailedBooking | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
@@ -76,7 +79,9 @@ const BookingManagement: React.FC = () => {
     fetchOrders();
   }, [token]);
 
-  const convertApiOrderToBooking = (apiOrder: ApiOrderResponse): Booking => {
+  const convertApiOrderToBooking = (
+    apiOrder: ApiOrderResponse
+  ): DetailedBooking => {
     const getFullAddress = () => {
       const { customer_details } = apiOrder;
       const addressParts = [
@@ -166,7 +171,8 @@ const BookingManagement: React.FC = () => {
         name: "Not available",
         number: "Not available",
       },
-      assignedStaff: null, // Not available in API response
+      assignedStaff: null,
+      actualOrderId: apiOrder.id,
     };
   };
 
@@ -251,7 +257,7 @@ const BookingManagement: React.FC = () => {
     fetchOrders();
   };
 
-  const handleViewDetails = (booking: Booking) => {
+  const handleViewDetails = (booking: DetailedBooking) => {
     setSelectedBooking(booking);
     setIsModalOpen(true);
   };

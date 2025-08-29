@@ -1,44 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MoreVertical, Eye, Edit, UserPlus, X, Trash2 } from "lucide-react";
 
-interface Booking {
-  id: string;
-  bookingId: string;
-  date: string;
-  customer: {
-    name: string;
-    location: string;
-    age: number;
-    gender: string;
-    phone: string;
-    email: string;
-    address: string;
-  };
-  status: "Pending Assignment" | "In Progress" | "Completed" | "Cancelled";
-  payment: "Partial Payment" | "Paid" | "Refunded";
-  service: string;
-  serviceDetails: {
-    name: string;
-    description: string;
-    pricePerDay: number;
-  };
-  total: number;
-  gst: number;
-  priority: "High Priority" | "Medium Priority" | "Low Priority";
-  scheduled: string;
-  duration: string;
-  currentMedication: string;
-  medicalCondition: string;
-  emergencyContact: {
-    name: string;
-    number: string;
-  };
-  assignedStaff: string | null;
-}
+import { DetailedBooking } from "./booking";
 
 interface DropdownMenuProps {
-  booking: Booking;
-  onViewDetails: (booking: Booking) => void;
+  booking: DetailedBooking; // Change this
+  onViewDetails: (booking: DetailedBooking) => void; // Change this
   onEditBooking: (bookingId: string) => void;
   onAssignStaff: (bookingId: string) => void;
   onCancelBooking: (bookingId: string) => void;

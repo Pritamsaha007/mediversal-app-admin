@@ -291,3 +291,79 @@ export async function getHomecareOrders(
 
   return await response.json();
 }
+
+export interface OrderDetailResponse {
+  success: boolean;
+  order: {
+    id: string;
+    customer_id: string;
+    schedule_in_days: number;
+    schedule_in_hours: number;
+    order_details: string;
+    order_total: string;
+    paid_amount: string;
+    order_date: string;
+    order_time: string;
+    payment_status: string;
+    order_status: string;
+    staff_details: any[];
+    service_details: {
+      homecare_service_id: string;
+      homecare_service_name: string;
+      homecare_service_description: string;
+      homecare_service_offering_name: string;
+      homecare_service_offering_price: number;
+      duration_in_hrs: number;
+      duration_type: string;
+      description: string;
+      staff_requirements: string[];
+      equipment_requirements: string[];
+      features: string[];
+      is_device: boolean;
+      device_stock_count: number | null;
+    };
+    customer_details: {
+      id: string;
+      first_name: string;
+      last_name: string;
+      email: string;
+      phone_number: string | null;
+      address_line1: string | null;
+      address_line2: string | null;
+      city: string | null;
+      state: string | null;
+      postal_code: string | null;
+      country: string | null;
+      registration_date: string;
+      birthday: string | null;
+      created_date: string;
+      updated_date: string;
+      is_deleted: boolean;
+    };
+  };
+}
+
+export async function getOrderById(
+  orderId: string,
+  token: string
+): Promise<OrderDetailResponse> {
+  const response = await fetch(
+    `${HOMECARE_API_BASE_URL}/api/homecare/orders/${orderId}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return await response.json();
+}

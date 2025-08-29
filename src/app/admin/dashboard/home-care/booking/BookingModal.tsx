@@ -1,17 +1,22 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { X, User, Phone, Edit } from "lucide-react";
-import { Booking } from "./bookingData";
 import AssignStaffModal from "./AssignStaffModal";
 import { AssignedStaff } from "./staffData";
+import { DetailedBooking } from "./booking";
+import { useAdminStore } from "@/app/store/adminStore";
+import {
+  getOrderById,
+  OrderDetailResponse,
+} from "./services/api/orderServices";
 
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  booking: Booking | null;
+  booking: DetailedBooking | null; // Change this
   onAssignStaff: (bookingId: string) => void;
   onContactPatient: (phone: string) => void;
   onEditOrder: (bookingId: string) => void;
-  onUpdateAssignedStaff?: (bookingId: string, staffs: AssignedStaff[]) => void; // Add this
+  onUpdateAssignedStaff?: (bookingId: string, staffs: AssignedStaff[]) => void;
 }
 
 const BookingModal: React.FC<BookingModalProps> = ({
@@ -23,6 +28,46 @@ const BookingModal: React.FC<BookingModalProps> = ({
   onEditOrder,
   onUpdateAssignedStaff,
 }) => {
+  const [orderDetails, setOrderDetails] = useState<
+    OrderDetailResponse["order"] | null
+  >(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isAssignStaffModalOpen, setIsAssignStaffModalOpen] = useState(false);
+  const { token } = useAdminStore();
+
+  useEffect(() => {
+    if (isOpen && booking?.actualOrderId && token) {
+      fetchOrderDetails();
+    }
+  }, [isOpen, booking?.actualOrderId, token]);
+  if (!isOpen || !booking) return null;
+
+  const fetchOrderDetails = async () => {
+    if (!booking?.actualOrderId) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getOrderById(booking.actualOrderId, token);
+      if (response.success) {
+        setOrderDetails(response.order);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch order details"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const parsedOrderDetails = orderDetails
+    ? JSON.parse(orderDetails.order_details)
+    : null;
+  const medicalInfo = parsedOrderDetails?.["Medical Information"] || {};
+  const contactLocation = parsedOrderDetails?.["Contact & Location"] || {};
+
   if (!isOpen || !booking) return null;
 
   const getStatusColor = (status: string) => {
@@ -52,7 +97,33 @@ const BookingModal: React.FC<BookingModalProps> = ({
         return "bg-gray-100 text-gray-800";
     }
   };
-  const [isAssignStaffModalOpen, setIsAssignStaffModalOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
+        <div className="bg-white rounded-lg p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Loading order details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
+        <div className="bg-white rounded-lg p-8">
+          <p className="text-sm text-red-600">{error}</p>
+          <button
+            onClick={onClose}
+            className="mt-4 px-4 py-2 bg-gray-500 text-white rounded"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
@@ -106,7 +177,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       Patient Name
                     </p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
-                      {booking.customer.name}
+                      {parsedOrderDetails?.Patient_name ||
+                        orderDetails?.customer_details?.first_name +
+                          " " +
+                          orderDetails?.customer_details?.last_name}
                     </p>
                   </div>
                   <div>
@@ -114,7 +188,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       Patient Age
                     </p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
-                      {booking.customer.age} Years
+                      {parsedOrderDetails?.Age || "Not specified"} Years
                     </p>
                   </div>
                 </div>
@@ -125,7 +199,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       Patient Gender
                     </p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
-                      {booking.customer.gender}
+                      Not specified
                     </p>
                   </div>
                   <div>
@@ -133,20 +207,25 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       Phone Number
                     </p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
-                      {booking.customer.phone}
+                      {contactLocation?.["Contact Number"] ||
+                        orderDetails?.customer_details?.phone_number ||
+                        "Not available"}
                     </p>
                   </div>
                 </div>
                 <div>
                   <p className="text-[10px] text-[#899193] mb-1">Email</p>
                   <p className="font-medium text-[12px] text-[#161D1F]">
-                    {booking.customer.email}
+                    {orderDetails?.customer_details?.email || "Not available"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-[#899193] mb-1">Address</p>
+                  <p className="text-[10px] text-[#899193] mb-1">
+                    Service Address
+                  </p>
                   <p className="font-medium text-[12px] text-[#161D1F]">
-                    {booking.customer.address}
+                    {contactLocation?.["Service Address"] ||
+                      "Address not available"}
                   </p>
                 </div>
               </div>
@@ -162,15 +241,17 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       Contact Name
                     </p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
-                      {booking.emergencyContact.name}
+                      {contactLocation?.["Contact Person Name"] ||
+                        "Not available"}
                     </p>
                   </div>
                   <div>
                     <p className="text-[10px] text-[#899193] mb-1">
-                      Contact Number
+                      Emergency Contact
                     </p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
-                      {booking.emergencyContact.number}
+                      {contactLocation?.["Emergency Contact"] ||
+                        "Not available"}
                     </p>
                   </div>
                 </div>
@@ -189,21 +270,27 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     Booking Amount
                   </p>
                   <p className="font-medium text-[12px] text-[#161D1F]">
-                    ₹{booking.total.toLocaleString()}
+                    ₹
+                    {orderDetails?.order_total
+                      ? Number(orderDetails.order_total).toLocaleString()
+                      : booking.total.toLocaleString()}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-[10px] text-[#899193] mb-1">Scheduled</p>
                   <p className="font-medium text-[12px] text-[#161D1F]">
-                    {booking.scheduled}
+                    {contactLocation?.["Date & Time"] ||
+                      `${orderDetails?.schedule_in_days || 0} days, ${
+                        orderDetails?.schedule_in_hours || 0
+                      } hours`}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-[10px] text-[#899193] mb-1">Duration</p>
                   <p className="font-medium text-[12px] text-[#161D1F]">
-                    {booking.duration}
+                    {orderDetails?.schedule_in_days || 0} days
                   </p>
                 </div>
 
@@ -212,7 +299,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     Current Medication
                   </p>
                   <p className="font-medium text-[12px] text-[#161D1F]">
-                    {booking.currentMedication}
+                    {medicalInfo?.["Current Medication"] || "Not specified"}
                   </p>
                 </div>
                 <div>
@@ -220,7 +307,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     Medical Condition
                   </p>
                   <p className="font-medium text-[12px] text-[#161D1F]">
-                    {booking.medicalCondition}
+                    {medicalInfo?.["Medical Condition"] || "Not specified"}
                   </p>
                 </div>
               </div>
@@ -236,22 +323,31 @@ const BookingModal: React.FC<BookingModalProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <span className="bg-cyan-600 text-white px-3 py-1 rounded text-[10px] font-medium">
-                    Service: {booking.service}
+                    Service:{" "}
+                    {orderDetails?.service_details?.homecare_service_name ||
+                      booking.service}
                   </span>
                 </div>
                 <div className="text-right">
                   <p className="font-medium text-[12px] text-[#161D1F]">
-                    ₹{booking.serviceDetails.pricePerDay}/day
+                    ₹
+                    {orderDetails?.service_details
+                      ?.homecare_service_offering_price ||
+                      booking.serviceDetails.pricePerDay}
+                    /day
                   </p>
                 </div>
               </div>
 
               <div className="mt-4">
                 <h4 className="font-semibold text-[12px] text-[#161D1F] mb-2">
-                  {booking.serviceDetails.name}
+                  {orderDetails?.service_details
+                    ?.homecare_service_offering_name ||
+                    booking.serviceDetails.name}
                 </h4>
                 <p className="text-[#899193] text-[10px]">
-                  {booking.serviceDetails.description}
+                  {orderDetails?.service_details?.description ||
+                    booking.serviceDetails.description}
                 </p>
               </div>
             </div>
@@ -263,10 +359,20 @@ const BookingModal: React.FC<BookingModalProps> = ({
               Assigned Staff
             </h3>
             <div className="bg-gray-50 rounded-lg p-6">
-              {booking.assignedStaff ? (
-                <p className="font-medium text-[10px] text-[#161D1F]">
-                  {booking.assignedStaff}
-                </p>
+              {orderDetails?.staff_details &&
+              orderDetails.staff_details.length > 0 ? (
+                <div>
+                  {orderDetails.staff_details.map(
+                    (staff: any, index: number) => (
+                      <p
+                        key={index}
+                        className="font-medium text-[10px] text-[#161D1F]"
+                      >
+                        {staff.name || "Staff Name Not Available"}
+                      </p>
+                    )
+                  )}
+                </div>
               ) : (
                 <p className="text-red-500 font-medium text-[10px]">
                   No staff assigned
