@@ -110,7 +110,7 @@ const BookingManagement: React.FC = () => {
             year: "numeric",
           }),
       customer: {
-        name: apiOrder.customer_name,
+        name: apiOrder.customer_name || "New Customer",
         location: apiOrder.customer_details.city || "Location not specified",
         age: 0, // Not available in API response
         gender: "Not specified", // Not available in API response
@@ -634,7 +634,7 @@ const BookingManagement: React.FC = () => {
           isOpen={isAssignStaffModalOpen}
           onClose={() => setIsAssignStaffModalOpen(false)}
           bookingId={selectedBookingForStaff}
-          actualOrderId={selectedActualOrderId} // Add this line
+          actualOrderId={selectedActualOrderId}
           onUpdateStaff={handleUpdateAssignedStaff}
         />
       </div>
