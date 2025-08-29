@@ -98,6 +98,19 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }
   };
 
+  const handleStaffAssignment = (
+    bookingId: string,
+    staffs: AssignedStaff[]
+  ) => {
+    // Refresh order details to get updated staff info
+    fetchOrderDetails();
+
+    // Call parent callback if provided
+    if (onUpdateAssignedStaff) {
+      onUpdateAssignedStaff(bookingId, staffs);
+    }
+  };
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
@@ -413,7 +426,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
         isOpen={isAssignStaffModalOpen}
         onClose={() => setIsAssignStaffModalOpen(false)}
         bookingId={booking.id}
-        onUpdateStaff={onUpdateAssignedStaff || (() => {})}
+        actualOrderId={booking.actualOrderId}
+        onUpdateStaff={handleStaffAssignment}
       />
     </div>
   );

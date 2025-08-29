@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 interface AssignStaffModalProps {
   isOpen: boolean;
   onClose: () => void;
+  actualOrderId?: string; // Add this line
   bookingId: string;
   currentAssignedStaff?: AssignedStaff[];
   onUpdateStaff: (bookingId: string, staffs: AssignedStaff[]) => void;
@@ -22,6 +23,7 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
   isOpen,
   onClose,
   bookingId,
+  actualOrderId,
   currentAssignedStaff = [],
   onUpdateStaff,
 }) => {
@@ -138,12 +140,10 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
     setIsAssigning(true);
 
     try {
-      // For now, assign only the first selected staff
-      // You can modify this to handle multiple staff assignments
       const firstStaff = assignedStaffs[0];
 
       const payload: AssignStaffPayload = {
-        orderId: "769b3c0c-8e57-4a24-9008-138b76b261f0",
+        orderId: actualOrderId || bookingId, // Use actualOrderId if available, fallback to bookingId
         staffId: firstStaff.id,
         userId: null,
       };

@@ -13,41 +13,6 @@ import {
   ApiOrderResponse,
 } from "./services/api/orderServices";
 
-// interface Booking {
-//   id: string;
-//   bookingId: string;
-//   date: string;
-//   customer: {
-//     name: string;
-//     location: string;
-//     age: number;
-//     gender: string;
-//     phone: string;
-//     email: string;
-//     address: string;
-//   };
-//   status: "Pending Assignment" | "In Progress" | "Completed" | "Cancelled";
-//   payment: "Partial Payment" | "Paid" | "Refunded";
-//   service: string;
-//   serviceDetails: {
-//     name: string;
-//     description: string;
-//     pricePerDay: number;
-//   };
-//   total: number;
-//   gst: number;
-//   priority: "High Priority" | "Medium Priority" | "Low Priority";
-//   scheduled: string;
-//   duration: string;
-//   currentMedication: string;
-//   medicalCondition: string;
-//   emergencyContact: {
-//     name: string;
-//     number: string;
-//   };
-//   assignedStaff: string | null;
-// }
-
 const statusOptions = [
   "All Status",
   "Pending Assignment",
@@ -74,6 +39,8 @@ const BookingManagement: React.FC = () => {
   const [apiBookings, setApiBookings] = useState<ApiOrderResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedActualOrderId, setSelectedActualOrderId] =
+    useState<string>("");
 
   useEffect(() => {
     fetchOrders();
@@ -268,7 +235,9 @@ const BookingManagement: React.FC = () => {
   };
 
   const handleAssignStaff = (bookingId: string) => {
+    const booking = filteredBookings.find((b) => b.id === bookingId);
     setSelectedBookingForStaff(bookingId);
+    setSelectedActualOrderId(booking?.actualOrderId || "");
     setIsAssignStaffModalOpen(true);
   };
 
@@ -313,19 +282,25 @@ const BookingManagement: React.FC = () => {
   };
 
   const handleUpdateAssignedStaff = (bookingId: string, staffs: any[]) => {
-    setBookings((prev) =>
-      prev.map((booking) =>
-        booking.id === bookingId
-          ? {
-              ...booking,
-              assignedStaff:
-                staffs.map((staff) => staff.name).join(", ") || null,
-              status:
-                staffs.length > 0 ? ("In Progress" as const) : booking.status,
-            }
-          : booking
-      )
+    setApiBookings((prev) =>
+      prev.map((order) => {
+        const booking = convertApiOrderToBooking(order);
+        if (
+          booking.id === bookingId ||
+          booking.actualOrderId === staffs[0]?.actualOrderId
+        ) {
+          return {
+            ...order,
+            staff_details: staffs.map((staff) => ({
+              name: staff.name,
+              id: staff.id,
+            })),
+          };
+        }
+        return order;
+      })
     );
+
     setIsAssignStaffModalOpen(false);
   };
 
@@ -659,6 +634,7 @@ const BookingManagement: React.FC = () => {
           isOpen={isAssignStaffModalOpen}
           onClose={() => setIsAssignStaffModalOpen(false)}
           bookingId={selectedBookingForStaff}
+          actualOrderId={selectedActualOrderId} // Add this line
           onUpdateStaff={handleUpdateAssignedStaff}
         />
       </div>
