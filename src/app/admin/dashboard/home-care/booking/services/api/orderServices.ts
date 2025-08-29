@@ -367,3 +367,56 @@ export async function getOrderById(
 
   return await response.json();
 }
+
+export interface UnassignStaffPayload {
+  orderId: string;
+  staffId: string;
+}
+
+export async function unassignStaffFromOrder(
+  payload: UnassignStaffPayload,
+  token: string
+): Promise<AssignStaffResponse> {
+  console.log(
+    "Making DELETE request to:",
+    `${HOMECARE_API_BASE_URL}/api/homecare/order/staff`
+  );
+  console.log("Payload:", payload);
+  console.log("Token:", token ? "Present" : "Missing");
+
+  const response = await fetch(
+    `${HOMECARE_API_BASE_URL}/api/homecare/order/staff`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  console.log("Response status:", response.status);
+  console.log("Response ok:", response.ok);
+
+  if (!response.ok) {
+    let errorData;
+    try {
+      errorData = await response.json();
+      console.log("Error response data:", errorData);
+    } catch (jsonError) {
+      console.error("Failed to parse error response as JSON:", jsonError);
+      errorData = {};
+    }
+
+    throw new Error(
+      errorData?.message ||
+        errorData?.error ||
+        `HTTP error! status: ${response.status}`
+    );
+  }
+
+  const result = await response.json();
+  console.log("Success response:", result);
+  return result;
+}

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { X, Search, Star, Loader2 } from "lucide-react";
-import { mockStaffs, staffCategories, Staff, AssignedStaff } from "./staffData";
+import { AssignedStaff } from "./staffData";
 import {
   getHomecareStaff,
   StaffResponse,
   assignStaffToOrder,
   AssignStaffPayload,
+  unassignStaffFromOrder,
+  UnassignStaffPayload,
+  getOrderById,
 } from "./services/api/orderServices";
 import { useAdminStore } from "../../../../store/adminStore";
 import toast from "react-hot-toast";
@@ -13,7 +16,7 @@ import toast from "react-hot-toast";
 interface AssignStaffModalProps {
   isOpen: boolean;
   onClose: () => void;
-  actualOrderId?: string; // Add this line
+  actualOrderId?: string;
   bookingId: string;
   currentAssignedStaff?: AssignedStaff[];
   onUpdateStaff: (bookingId: string, staffs: AssignedStaff[]) => void;
@@ -36,12 +39,57 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [currentAssignedStaffFromAPI, setCurrentAssignedStaffFromAPI] =
+    useState<AssignedStaff[]>([]);
 
   useEffect(() => {
     if (isOpen) {
       fetchStaffData();
     }
   }, [isOpen, token]);
+
+  useEffect(() => {
+    if (isOpen && actualOrderId) {
+      fetchCurrentAssignedStaff();
+    }
+  }, [isOpen, actualOrderId]);
+
+  const fetchCurrentAssignedStaff = async () => {
+    if (!actualOrderId) return;
+
+    try {
+      const response = await getOrderById(actualOrderId, token);
+      if (response.success && response.order.staff_details) {
+        const staffs = response.order.staff_details.map((staff: any) => {
+          const staffId = staff.id;
+          if (!staffId) {
+            toast.error("No staff ID found in API response:", staff);
+          }
+
+          return {
+            id: staffId,
+            name: staff.name || "",
+            role: staff.role_name || staff.role || "",
+            initials: staff.name
+              ? staff.name
+                  .split(" ")
+                  .map((n: string) => n[0])
+                  .join("")
+                  .toUpperCase()
+              : "",
+            experience: staff.experience_in_yrs || 0,
+            rating: parseFloat(staff.rating || "0"),
+            status: "On Duty" as const,
+          };
+        });
+
+        setCurrentAssignedStaffFromAPI(staffs);
+        setAssignedStaffs(staffs);
+      }
+    } catch (error) {
+      console.error("Error fetching assigned staff:", error);
+    }
+  };
 
   const fetchStaffData = async () => {
     try {
@@ -70,65 +118,108 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
       case "occupied":
         return "Busy";
       default:
-        return "Available"; // Default fallback
+        return "Available";
     }
   };
 
-  const convertApiStaffToStaff = (apiStaff: StaffResponse) => ({
-    id: apiStaff.id,
-    name: apiStaff.name,
-    role: apiStaff.role_name,
-    initials: apiStaff.name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase(),
-    experience: apiStaff.experience_in_yrs,
-    rating: parseFloat(apiStaff.rating),
-    status: mapApiStatusToLocalStatus(apiStaff.availability_status),
-    category: apiStaff.role_name, // You might want to map this differently
-  });
+  const handleRemoveStaffFromAPI = async (staffId: string) => {
+    if (!actualOrderId) {
+      toast.error("Missing order ID");
+      return;
+    }
+
+    if (!staffId) {
+      console.error("Empty staffId in handleRemoveStaffFromAPI");
+      toast.error("Invalid staff ID");
+      return;
+    }
+
+    try {
+      const payload: UnassignStaffPayload = {
+        orderId: actualOrderId,
+        staffId: staffId,
+      };
+      await unassignStaffFromOrder(payload, token);
+
+      setAssignedStaffs((prev) => prev.filter((staff) => staff.id !== staffId));
+      setCurrentAssignedStaffFromAPI((prev) =>
+        prev.filter((staff) => staff.id !== staffId)
+      );
+
+      toast.success("Staff has been unassigned successfully!");
+    } catch (error) {
+      console.error("Error unassigning staff:", error);
+      toast.error("Failed to unassign staff. Please try again.");
+    }
+  };
+
+  const convertApiStaffToStaff = (apiStaff: StaffResponse) => {
+    return {
+      id: apiStaff.id,
+      name: apiStaff.name,
+      role: apiStaff.role_name,
+      initials: apiStaff.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase(),
+      experience: apiStaff.experience_in_yrs,
+      rating: parseFloat(apiStaff.rating),
+      status: mapApiStatusToLocalStatus(apiStaff.availability_status),
+      category: apiStaff.role_name,
+    };
+  };
 
   if (!isOpen) return null;
 
-  const filteredStaffs = apiStaffs
-    .filter((apiStaff) => {
-      const staff = convertApiStaffToStaff(apiStaff);
-      const matchesCategory =
-        selectedCategory === "All Staffs" ||
-        staff.category === selectedCategory;
-      const matchesSearch = staff.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      return matchesCategory && matchesSearch;
-    })
-    .map(convertApiStaffToStaff);
   const staffCategories = [
     "All Staffs",
     ...Array.from(new Set(apiStaffs.map((staff) => staff.role_name))),
   ];
 
-  const handleAssignStaff = (staff: Staff) => {
-    if (staff.status === "Busy") return;
+  const handleAssignStaff = (apiStaff: StaffResponse) => {
+    const staffStatus = mapApiStatusToLocalStatus(apiStaff.availability_status);
+
+    if (staffStatus === "Busy") return;
+
+    const isAlreadyAssigned =
+      assignedStaffs.some((s) => s.id === apiStaff.id) ||
+      currentAssignedStaffFromAPI.some((s) => s.id === apiStaff.id);
+
+    if (isAlreadyAssigned) return;
 
     const newAssignedStaff: AssignedStaff = {
-      id: staff.id,
-      name: staff.name,
-      role: staff.role,
-      initials: staff.initials,
-      experience: staff.experience,
-      rating: staff.rating,
-      status: staff.status as "Available" | "On Duty",
+      id: apiStaff.id,
+      name: apiStaff.name,
+      role: apiStaff.role_name,
+      initials: apiStaff.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase(),
+      experience: apiStaff.experience_in_yrs,
+      rating: parseFloat(apiStaff.rating),
+      status: staffStatus,
     };
 
-    const isAlreadyAssigned = assignedStaffs.some((s) => s.id === staff.id);
-    if (!isAlreadyAssigned) {
-      setAssignedStaffs([...assignedStaffs, newAssignedStaff]);
-    }
+    setAssignedStaffs([...assignedStaffs, newAssignedStaff]);
   };
 
   const handleRemoveStaff = (staffId: string) => {
-    setAssignedStaffs(assignedStaffs.filter((staff) => staff.id !== staffId));
+    if (!staffId) {
+      toast.error("Invalid staff ID");
+      return;
+    }
+
+    const isFromAPI = currentAssignedStaffFromAPI.some(
+      (staff) => staff.id === staffId
+    );
+
+    if (isFromAPI) {
+      handleRemoveStaffFromAPI(staffId);
+    } else {
+      setAssignedStaffs(assignedStaffs.filter((staff) => staff.id !== staffId));
+    }
   };
 
   const handleUpdateAssignedStaff = async () => {
@@ -143,22 +234,19 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
       const firstStaff = assignedStaffs[0];
 
       const payload: AssignStaffPayload = {
-        orderId: actualOrderId || bookingId, // Use actualOrderId if available, fallback to bookingId
+        orderId: actualOrderId || bookingId,
         staffId: firstStaff.id,
         userId: null,
       };
 
       await assignStaffToOrder(payload, token);
 
-      // Show success message
       toast.success(
         `Staff ${firstStaff.name} has been successfully assigned to the order!`
       );
 
-      // Update parent component
       onUpdateStaff(bookingId, assignedStaffs);
 
-      // Close modal
       onClose();
     } catch (error) {
       console.error("Error assigning staff:", error);
@@ -225,53 +313,63 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
           </h3>
           {assignedStaffs.length > 0 ? (
             <div className="space-y-2">
-              {assignedStaffs.map((staff) => (
-                <div
-                  key={staff.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-[#E8F4F7] text-[#161D1F] rounded-full text-[12px] flex items-center justify-center font-semibold">
-                      {staff.initials}
-                    </div>
-                    <div>
-                      <p className="font-medium text-[#161D1F] text-[12px]">
-                        {staff.name}
-                      </p>
-                      <p className="text-xs text-[#161D1F]">{staff.role}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center margin- gap-4">
-                    <div className="text-right">
-                      <p className="text-xs text-[#161D1F]">
-                        Experience: {staff.experience} Years
-                      </p>
-                      <div className="flex items-center gap-1">
-                        <p className="text-xs text-[#161D1F]">Rating:</p>
-                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                        <span className="text-xs text-[#161D1F]">
-                          {staff.rating}
-                        </span>
+              {assignedStaffs.map((staff) => {
+                const isFromAPI = currentAssignedStaffFromAPI.some(
+                  (s) => s.id === staff.id
+                );
+                return (
+                  <div
+                    key={staff.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-[#E8F4F7] text-[#161D1F] rounded-full text-[12px] flex items-center justify-center font-semibold">
+                        {staff.initials}
+                      </div>
+                      <div>
+                        <p className="font-medium text-[#161D1F] text-[12px]">
+                          {staff.name}
+                        </p>
+                        <p className="text-xs text-[#161D1F]">{staff.role}</p>
+                        {isFromAPI && (
+                          <span className="text-xs text-green-600 font-medium">
+                            Currently Assigned
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`px-2 py-1 rounded-full text-[12px] font-medium ${getStatusColor(
-                          staff.status
-                        )}`}
-                      >
-                        {staff.status}
-                      </span>
-                      <button
-                        onClick={() => handleRemoveStaff(staff.id)}
-                        className="text-red-500 hover:text-red-700 text-[10px]"
-                      >
-                        Remove
-                      </button>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-xs text-[#161D1F]">
+                          Experience: {staff.experience} Years
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <p className="text-xs text-[#161D1F]">Rating:</p>
+                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                          <span className="text-xs text-[#161D1F]">
+                            {staff.rating}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-1 rounded-full text-[12px] font-medium ${getStatusColor(
+                            staff.status
+                          )}`}
+                        >
+                          {staff.status}
+                        </span>
+                        <button
+                          onClick={() => handleRemoveStaff(staff.id)}
+                          className="text-red-500 hover:text-red-700 text-[10px]"
+                        >
+                          {isFromAPI ? "Unassign" : "Remove"}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-[10px] text-[#161D1F]">No staff assigned</p>
@@ -334,79 +432,104 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
                   Try again
                 </button>
               </div>
-            ) : filteredStaffs.length === 0 ? (
+            ) : apiStaffs.filter((apiStaff) => {
+                const staff = convertApiStaffToStaff(apiStaff);
+                const matchesCategory =
+                  selectedCategory === "All Staffs" ||
+                  staff.category === selectedCategory;
+                const matchesSearch = staff.name
+                  .toLowerCase()
+                  .includes(searchTerm.toLowerCase());
+                return matchesCategory && matchesSearch;
+              }).length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-sm text-gray-600">No staff found</p>
               </div>
             ) : (
-              filteredStaffs.map((staff) => {
-                const isAssigned = assignedStaffs.some(
-                  (s) => s.id === staff.id
-                );
-                return (
-                  <div
-                    key={staff.id}
-                    className={`flex items-center justify-between p-3 border rounded-lg ${
-                      staff.status === "Busy"
-                        ? "opacity-50 cursor-not-allowed"
-                        : "hover:bg-gray-50 cursor-pointer"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-[#E8F4F7] text-[12px] text-[#161D1F] rounded-full flex items-center justify-center font-semibold">
-                        {staff.initials}
-                      </div>
-                      <div>
-                        <p className="font-medium text-[#161D1F] text-[10px]">
-                          {staff.name}
-                        </p>
-                        <p className="text-xs text-[#899193]">{staff.role}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-x-16">
-                      <div className="text-right">
-                        <p className="text-xs text-[#161D1F]">
-                          Experience: {staff.experience} Years
-                        </p>
-                        <div className="flex items-center gap-1">
-                          <p className="text-xs text-[#161D1F]">Rating:</p>
-                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                          <span className="text-xs text-[#161D1F]">
-                            {staff.rating}
-                          </span>
+              apiStaffs
+                .filter((apiStaff) => {
+                  const staff = convertApiStaffToStaff(apiStaff);
+                  const matchesCategory =
+                    selectedCategory === "All Staffs" ||
+                    staff.category === selectedCategory;
+                  const matchesSearch = staff.name
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase());
+                  return matchesCategory && matchesSearch;
+                })
+                .map((apiStaff) => {
+                  const staff = convertApiStaffToStaff(apiStaff);
+                  const isAssigned = assignedStaffs.some(
+                    (s) => s.id === apiStaff.id
+                  );
+                  const isCurrentlyAssigned = currentAssignedStaffFromAPI.some(
+                    (s) => s.id === apiStaff.id
+                  );
+                  const isAnyAssigned = isAssigned || isCurrentlyAssigned;
+
+                  return (
+                    <div
+                      key={apiStaff.id}
+                      className={`flex items-center justify-between p-3 border rounded-lg ${
+                        staff.status === "Busy" || isAnyAssigned
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:bg-gray-50 cursor-pointer"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-[#E8F4F7] text-[12px] text-[#161D1F] rounded-full flex items-center justify-center font-semibold">
+                          {staff.initials}
+                        </div>
+                        <div>
+                          <p className="font-medium text-[#161D1F] text-[10px]">
+                            {staff.name}
+                          </p>
+                          <p className="text-xs text-[#899193]">{staff.role}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-16">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                            staff.status
-                          )}`}
-                        >
-                          {staff.status}
-                        </span>
-                        <button
-                          onClick={() => handleAssignStaff(staff)}
-                          disabled={staff.status === "Busy" || isAssigned}
-                          className={`px-3 py-1 text-xs rounded ${
-                            isAssigned
-                              ? "bg-gray-300 text-[#161D1F] cursor-not-allowed"
-                              : staff.status === "Busy"
-                              ? "bg-gray-300 text-[#161D1F] cursor-not-allowed"
-                              : "bg-cyan-600 text-white hover:bg-cyan-700"
-                          }`}
-                        >
-                          {isAssigned ? "Assigned" : "Assign"}
-                        </button>
+                      <div className="flex items-center gap-x-16">
+                        <div className="text-right">
+                          <p className="text-xs text-[#161D1F]">
+                            Experience: {staff.experience} Years
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <p className="text-xs text-[#161D1F]">Rating:</p>
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            <span className="text-xs text-[#161D1F]">
+                              {staff.rating}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-16">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                              staff.status
+                            )}`}
+                          >
+                            {staff.status}
+                          </span>
+                          <button
+                            onClick={() => handleAssignStaff(apiStaff)}
+                            disabled={staff.status === "Busy" || isAnyAssigned}
+                            className={`px-3 py-1 text-xs rounded ${
+                              isAnyAssigned
+                                ? "bg-gray-300 text-[#161D1F] cursor-not-allowed"
+                                : staff.status === "Busy"
+                                ? "bg-gray-300 text-[#161D1F] cursor-not-allowed"
+                                : "bg-cyan-600 text-white hover:bg-cyan-700"
+                            }`}
+                          >
+                            {isAnyAssigned ? "Assigned" : "Assign"}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })
             )}
           </div>
         </div>
 
-        {/* Footer */}
         <div className="p-4 border-t bg-gray-50">
           <button
             onClick={handleUpdateAssignedStaff}
