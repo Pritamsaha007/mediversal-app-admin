@@ -143,7 +143,7 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
       const firstStaff = assignedStaffs[0];
 
       const payload: AssignStaffPayload = {
-        orderId: "769b3c0c-8e57-4a24-9008-138b76b261f0", // This should be the actual order ID
+        orderId: "769b3c0c-8e57-4a24-9008-138b76b261f0",
         staffId: firstStaff.id,
         userId: null,
       };

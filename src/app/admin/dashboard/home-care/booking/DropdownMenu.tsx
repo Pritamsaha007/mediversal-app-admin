@@ -4,8 +4,8 @@ import { MoreVertical, Eye, Edit, UserPlus, X, Trash2 } from "lucide-react";
 import { DetailedBooking } from "./booking";
 
 interface DropdownMenuProps {
-  booking: DetailedBooking; // Change this
-  onViewDetails: (booking: DetailedBooking) => void; // Change this
+  booking: DetailedBooking;
+  onViewDetails: (booking: DetailedBooking) => void;
   onEditBooking: (bookingId: string) => void;
   onAssignStaff: (bookingId: string) => void;
   onCancelBooking: (bookingId: string) => void;
