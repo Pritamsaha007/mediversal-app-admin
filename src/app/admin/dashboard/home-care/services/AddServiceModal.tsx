@@ -143,7 +143,6 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Build display_sections - always include PatientInfo
       const displaySections = ["PatientInfo"];
       if (sectionFieldData.sections.length > 0) {
         const mappedSections = sectionFieldData.sections.map(
@@ -152,7 +151,6 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
         displaySections.push(...mappedSections);
       }
 
-      // Build custom medical info object
       const customMedicalInfo: { [key: string]: string } = {};
       if (sectionFieldData.medicalFields.length > 0) {
         sectionFieldData.medicalFields.forEach((field) => {
@@ -163,7 +161,6 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
         });
       }
 
-      // Default medical info if none selected
       if (Object.keys(customMedicalInfo).length === 0) {
         customMedicalInfo.medicalhistory = "textbox";
       }
