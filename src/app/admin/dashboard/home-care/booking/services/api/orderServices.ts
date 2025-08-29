@@ -57,6 +57,7 @@ export interface CreateOrderPayload {
       "Contact Number": string;
       "Emergency Contact": string;
       "Date & Time": string;
+      Email: string;
     };
   };
 }

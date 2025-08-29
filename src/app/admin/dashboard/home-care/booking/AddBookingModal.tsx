@@ -161,7 +161,7 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
         .reduce((sum, offering) => sum + parseFloat(offering.price), 0)
         .toString();
       const orderPayload = {
-        customer_id: "56bfecc2-3778-49f5-88b0-ae83eb905dbf",
+        customer_id: "",
         homecare_service_offering_id: formData.selectedOfferings[0]?.id || "",
         order_total: orderTotal,
         order_status: formData.orderStatus,
@@ -180,6 +180,7 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
             "Contact Number": formData.phoneNumber,
             "Emergency Contact": formData.emergencyContactNumber,
             "Date & Time": `${formData.startDate} ${formData.startTime}:00`,
+            Email: formData.emailAddress || "",
           },
         },
       };
