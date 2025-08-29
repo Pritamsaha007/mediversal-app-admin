@@ -232,7 +232,6 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
 
     try {
       const firstStaff = assignedStaffs[0];
-
       const payload: AssignStaffPayload = {
         orderId: actualOrderId || bookingId,
         staffId: firstStaff.id,
