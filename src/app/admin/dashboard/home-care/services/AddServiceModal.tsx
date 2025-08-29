@@ -4,6 +4,7 @@ import { X, ChevronDown } from "lucide-react";
 import { createOrUpdateHomecareService } from "./service/api/homecareServices";
 import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
+import SectionFieldSelector from "./SectionFieldSelector";
 
 interface Service {
   id: string;
@@ -26,6 +27,10 @@ interface Offering {
   staffRequirements: string[];
   equipmentIncluded: string[];
   status: "Excellent" | "Good" | "Available";
+}
+interface SectionFieldData {
+  sections: string[];
+  medicalFields: string[];
 }
 
 interface AddServiceModalProps {
@@ -54,6 +59,30 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
   const [newConsent, setNewConsent] = useState("");
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSectionSelector, setShowSectionSelector] = useState(false);
+  const [sectionFieldData, setSectionFieldData] = useState<SectionFieldData>({
+    sections: [],
+    medicalFields: [],
+  });
+
+  const sectionMapping: { [key: string]: string } = {
+    "Medical Information": "MedicalInfo",
+    "Doctor's Information": "DoctorInfo",
+    "Installation Requirements": "InstallationInfo",
+    "Contact & Location": "ContactInfo",
+    "Patient Information": "PatientInfo",
+  };
+
+  const medicalFieldMapping: { [key: string]: string } = {
+    "Allergies & Restrictions": "allergies",
+    "Pain Level": "painlevel",
+    "Mobility Level": "mobilitylevel",
+    "Previous Physiotherapy History": "physiohistory",
+    "Therapy Goals": "therapygoals",
+    "Reason for Procedure": "procedureason",
+    "Previous Similar Procedures": "similarprocedures",
+    "Medical History": "medicalhistory",
+  };
 
   useEffect(() => {
     if (editService && isOpen) {
@@ -97,6 +126,7 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
     setNewTag("");
     setConsents([]);
     setNewConsent("");
+    setSectionFieldData({ sections: [], medicalFields: [] });
   };
 
   const handleAddService = async () => {
@@ -113,6 +143,31 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
     setIsSubmitting(true);
 
     try {
+      // Build display_sections - always include PatientInfo
+      const displaySections = ["PatientInfo"];
+      if (sectionFieldData.sections.length > 0) {
+        const mappedSections = sectionFieldData.sections.map(
+          (section) => sectionMapping[section] || section
+        );
+        displaySections.push(...mappedSections);
+      }
+
+      // Build custom medical info object
+      const customMedicalInfo: { [key: string]: string } = {};
+      if (sectionFieldData.medicalFields.length > 0) {
+        sectionFieldData.medicalFields.forEach((field) => {
+          const mappedField = medicalFieldMapping[field];
+          if (mappedField) {
+            customMedicalInfo[mappedField] = "textbox";
+          }
+        });
+      }
+
+      // Default medical info if none selected
+      if (Object.keys(customMedicalInfo).length === 0) {
+        customMedicalInfo.medicalhistory = "textbox";
+      }
+
       const payload = {
         ...(editService && { id: editService.id }),
         name: serviceName.trim(),
@@ -120,10 +175,8 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
         is_active: serviceStatus === "Active",
         display_pic_url: "http://example.com/pic.jpg",
         service_tags: serviceTags,
-        display_sections: ["PatientInfo", "MedicalInfo", "ContactInfo"],
-        custom_medical_info: {
-          medicalhistory: "textbox",
-        },
+        display_sections: displaySections,
+        custom_medical_info: customMedicalInfo,
       };
 
       const response = await createOrUpdateHomecareService(payload, token);
@@ -155,6 +208,11 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSectionFieldSave = (data: SectionFieldData) => {
+    setSectionFieldData(data);
+    setShowSectionSelector(false);
   };
   if (!isOpen) return null;
 
@@ -246,8 +304,6 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
                   )}
                 </div>
               </div>
-
-              {/* Service Tags */}
               <div>
                 <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
                   Service Tags
@@ -352,6 +408,12 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
             Reset
           </button>
           <button
+            onClick={() => setShowSectionSelector(true)}
+            className="px-6 py-2 text-[#161D1F] text-[10px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Next
+          </button>
+          <button
             onClick={handleAddService}
             disabled={isSubmitting}
             className={`px-6 py-2 text-[10px] text-white rounded-lg transition-colors ${
@@ -368,6 +430,12 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
           </button>
         </div>
       </div>
+      <SectionFieldSelector
+        isOpen={showSectionSelector}
+        onClose={() => setShowSectionSelector(false)}
+        onSave={handleSectionFieldSave}
+        initialData={sectionFieldData}
+      />
     </div>
   );
 };
