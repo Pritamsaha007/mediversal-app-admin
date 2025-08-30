@@ -119,13 +119,11 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
   };
 
   const handleSave = async () => {
-    // First save the section/field selections
     onSave({
       sections: selectedSections,
       medicalFields: selectedMedicalFields,
     });
 
-    // Then proceed with service creation/update
     if (!serviceData.name.trim() || !serviceData.description.trim()) {
       toast.error("Please fill in all required fields");
       return;
