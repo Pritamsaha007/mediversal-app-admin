@@ -105,10 +105,10 @@ const Sidebar = () => {
           name: "Staff",
           link: "/admin/dashboard/home-care/staff",
         },
-        {
-          name: "Care Plan",
-          link: "/admin/dashboard/home-care/care-plan",
-        },
+        // {
+        //   name: "Care Plan",
+        //   link: "/admin/dashboard/home-care/care-plan",
+        // },
       ],
     },
   ];

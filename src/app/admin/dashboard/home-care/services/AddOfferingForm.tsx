@@ -1,6 +1,13 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import {
+  getDurationTypes,
+  createOrUpdateOffering,
+  type CreateUpdateOfferingPayload,
+} from "./service/api/homecareServices";
+import { useAdminStore } from "@/app/store/adminStore";
+import toast from "react-hot-toast";
 
 interface Offering {
   id: string;
@@ -19,7 +26,15 @@ interface AddOfferingFormProps {
   onClose: () => void;
   onSubmit: (offering: Omit<Offering, "id">) => void;
   serviceName: string;
+  serviceId: string;
   editingOffering?: Offering | null;
+}
+
+interface DurationType {
+  id: string;
+  value: string;
+  code: string;
+  slno: number;
 }
 
 const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
@@ -27,185 +42,167 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
   onClose,
   onSubmit,
   serviceName,
+  serviceId,
   editingOffering,
 }) => {
+  const { token } = useAdminStore();
+  const [durationTypes, setDurationTypes] = useState<DurationType[]>([]);
+  const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     price: "",
-    duration: "",
+    duration_in_hrs: "",
+    duration_type_id: "",
     description: "",
     staffRequirements: "",
-    equipmentNeeded: "",
+    equipmentRequirements: "",
     features: "",
-    status: "Active" as const,
-    selectedTypes: [] as string[],
-    sessionValue: "",
-    hoursValue: "",
-    dayValue: "",
-    weekValue: "",
-    monthValue: "",
+    is_device: false,
+    device_stock_count: "0",
+    is_active: true,
   });
 
+  // Fetch duration types on component mount
+  useEffect(() => {
+    const fetchDurationTypes = async () => {
+      if (!token) {
+        console.log("No token available for fetching duration types");
+        return;
+      }
+
+      console.log("Fetching duration types...");
+
+      try {
+        const response = await getDurationTypes(token);
+        console.log("Duration types response:", response);
+
+        if (response.success) {
+          console.log("Duration types loaded:", response.roles);
+          setDurationTypes(response.roles);
+        } else {
+          console.log("Failed to fetch duration types:", response);
+        }
+      } catch (error) {
+        toast.error("Failed to load duration types");
+      }
+    };
+
+    if (isOpen) {
+      fetchDurationTypes();
+    }
+  }, [isOpen, token]);
+
+  // Populate form when editing
   useEffect(() => {
     if (editingOffering) {
-      const parsedDuration = parseDurationString(editingOffering.duration);
+      console.log("Populating form for editing:", editingOffering);
       setFormData({
         name: editingOffering.name,
         price: editingOffering.price.toString(),
-        duration: editingOffering.duration,
+        duration_in_hrs: "1",
+        duration_type_id: "",
         description: editingOffering.description,
         staffRequirements: editingOffering.staffRequirements.join(", "),
-        equipmentNeeded: editingOffering.equipmentIncluded.join(", "),
+        equipmentRequirements: editingOffering.equipmentIncluded.join(", "),
         features: editingOffering.features.join(", "),
-        status: "Active",
-        selectedTypes: parsedDuration.types,
-        sessionValue: parsedDuration.sessionValue,
-        hoursValue: parsedDuration.hoursValue,
-        dayValue: parsedDuration.dayValue,
-        weekValue: parsedDuration.weekValue,
-        monthValue: parsedDuration.monthValue,
+        is_device: false,
+        device_stock_count: "0",
+        is_active: true,
       });
+    } else {
+      handleReset();
     }
   }, [editingOffering]);
 
-  const buildDurationString = () => {
-    const parts = [];
-    if (formData.sessionValue && formData.selectedTypes.includes("Session")) {
-      parts.push(`${formData.sessionValue} Sessions`);
-    }
-    if (formData.hoursValue && formData.selectedTypes.includes("Hours")) {
-      parts.push(`${formData.hoursValue} Hours`);
-    }
-    if (formData.dayValue && formData.selectedTypes.includes("Day")) {
-      parts.push(`${formData.dayValue} Days`);
-    }
-    if (formData.weekValue && formData.selectedTypes.includes("Week")) {
-      parts.push(`${formData.weekValue} Weeks`);
-    }
-    if (formData.monthValue && formData.selectedTypes.includes("Month")) {
-      parts.push(`${formData.monthValue} Months`);
-    }
-    return parts.join(", ");
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
-    const offering: Omit<Offering, "id"> = {
-      name: formData.name,
-      description: formData.description,
-      price: parseFloat(formData.price) || 0,
-      duration: buildDurationString(),
-      features: formData.features
-        .split(",")
-        .map((f) => f.trim())
-        .filter((f) => f),
-      staffRequirements: formData.staffRequirements
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s),
-      equipmentIncluded: formData.equipmentNeeded
-        .split(",")
-        .map((e) => e.trim())
-        .filter((e) => e),
-      status: "Available",
-    };
+    console.log("=== FORM SUBMISSION STARTED ===");
+    console.log("Raw form data:", formData);
+    console.log("Service ID:", serviceId);
+    console.log("Editing offering:", editingOffering);
 
-    console.log("Offering Data:", JSON.stringify(offering, null, 2));
-    console.log("Raw Form Data:", JSON.stringify(formData, null, 2));
+    try {
+      const payload: CreateUpdateOfferingPayload = {
+        ...(editingOffering?.id && { id: editingOffering.id }),
+        homecare_service_id: serviceId,
+        name: formData.name.trim(),
+        price: parseFloat(formData.price) || 0,
+        duration_in_hrs: parseFloat(formData.duration_in_hrs) || 1,
+        duration_type_id: formData.duration_type_id,
+        description: formData.description.trim(),
+        staff_requirements: formData.staffRequirements
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => s),
+        equipment_requirements: formData.equipmentRequirements
+          .split(",")
+          .map((e) => e.trim())
+          .filter((e) => e),
+        features: formData.features
+          .split(",")
+          .map((f) => f.trim())
+          .filter((f) => f),
+        is_device: formData.is_device,
+        device_stock_count: parseInt(formData.device_stock_count) || 0,
+        is_active: formData.is_active,
+      };
 
-    onSubmit(offering);
-    handleReset();
-  };
+      console.log("=== API PAYLOAD ===");
+      console.log("Payload being sent:", JSON.stringify(payload, null, 2));
 
-  const toggleDurationType = (type: string) => {
-    setFormData((prev) => {
-      if (type === "Session") {
-        // If Session is selected, only allow Session
-        return {
-          ...prev,
-          selectedTypes: prev.selectedTypes.includes("Session")
-            ? []
-            : ["Session"],
-          hoursValue: "",
-          dayValue: "",
-          weekValue: "",
-          monthValue: "",
-        };
+      const response = await createOrUpdateOffering(payload, token!);
+
+      console.log("=== API RESPONSE ===");
+      console.log("API response:", response);
+
+      if (response.success) {
+        const successMessage = editingOffering
+          ? "Offering updated successfully!"
+          : "New offering added successfully!";
+
+        toast.success(successMessage);
+
+        handleReset();
+        onClose();
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } else {
-        // For other types, toggle and remove Session if present
-        const newSelectedTypes = prev.selectedTypes.includes(type)
-          ? prev.selectedTypes.filter((t) => t !== type)
-          : prev.selectedTypes.filter((t) => t !== "Session").concat(type);
-
-        return {
-          ...prev,
-          selectedTypes: newSelectedTypes,
-          sessionValue: newSelectedTypes.includes("Session")
-            ? prev.sessionValue
-            : "",
-        };
+        console.log("❌ API returned success: false");
+        throw new Error(response.message || "Failed to save offering");
       }
-    });
+    } catch (error: any) {
+      console.error("=== ERROR DETAILS ===");
+      console.error("Error object:", error);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+
+      toast.error(error.message || "Failed to save offering");
+    } finally {
+      setLoading(false);
+      console.log("=== FORM SUBMISSION ENDED ===");
+    }
   };
 
   const handleReset = () => {
+    console.log("Resetting form data");
     setFormData({
       name: "",
       price: "",
-      duration: "",
+      duration_in_hrs: "",
+      duration_type_id: "",
       description: "",
       staffRequirements: "",
-      equipmentNeeded: "",
+      equipmentRequirements: "",
       features: "",
-      status: "Active",
-      // Reset duration fields
-      selectedTypes: [],
-      sessionValue: "",
-      hoursValue: "",
-      dayValue: "",
-      weekValue: "",
-      monthValue: "",
+      is_device: false,
+      device_stock_count: "0",
+      is_active: true,
     });
-  };
-
-  const parseDurationString = (duration: string) => {
-    const types: string[] = [];
-    let sessionValue = "";
-    let hoursValue = "";
-    let dayValue = "";
-    let weekValue = "";
-    let monthValue = "";
-
-    const parts = duration.split(", ");
-
-    parts.forEach((part) => {
-      if (part.includes("Session")) {
-        types.push("Session");
-        sessionValue = part.replace(" Sessions", "");
-      } else if (part.includes("Hour")) {
-        types.push("Hours");
-        hoursValue = part.replace(" Hours", "");
-      } else if (part.includes("Day")) {
-        types.push("Day");
-        dayValue = part.replace(" Days", "");
-      } else if (part.includes("Week")) {
-        types.push("Week");
-        weekValue = part.replace(" Weeks", "");
-      } else if (part.includes("Month")) {
-        types.push("Month");
-        monthValue = part.replace(" Months", "");
-      }
-    });
-
-    return {
-      types,
-      sessionValue,
-      hoursValue,
-      dayValue,
-      weekValue,
-      monthValue,
-    };
   };
 
   const handleInputChange = (
@@ -213,10 +210,14 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    if (type === "checkbox") {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData((prev) => ({ ...prev, [name]: checked }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
-
   if (!isOpen) return null;
 
   return (
@@ -279,112 +280,74 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                 required
               />
             </div>
+
             <div>
               <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
                 * Duration
               </label>
-              <div className="space-y-3">
-                {/* Duration type buttons */}
-                <div className="flex gap-2 flex-wrap">
-                  {["Session", "Hours", "Day", "Week", "Month"].map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => toggleDurationType(type)}
-                      className={`px-4 py-2 rounded-full text-[10px] font-medium transition-colors ${
-                        formData.selectedTypes.includes(type)
-                          ? "bg-[#0088B1] text-white"
-                          : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Dynamic input fields based on selected types */}
+              <div className="space-y-4">
+                {/* Duration type selection */}
                 <div className="space-y-2">
-                  {formData.selectedTypes.includes("Session") && (
-                    <input
-                      type="text"
-                      value={formData.sessionValue}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          sessionValue: e.target.value,
-                        }))
-                      }
-                      placeholder="e.g., 1,2,3,4,5,....24"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
-                    />
-                  )}
-
-                  {formData.selectedTypes.includes("Hours") && (
-                    <input
-                      type="text"
-                      value={formData.hoursValue}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          hoursValue: e.target.value,
-                        }))
-                      }
-                      placeholder="Hours: e.g., 1,2,3,4,5"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
-                    />
-                  )}
-
-                  {formData.selectedTypes.includes("Day") && (
-                    <input
-                      type="text"
-                      value={formData.dayValue}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          dayValue: e.target.value,
-                        }))
-                      }
-                      placeholder="Days: e.g., 1,2,3,4,5"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
-                    />
-                  )}
-
-                  {formData.selectedTypes.includes("Week") && (
-                    <input
-                      type="text"
-                      value={formData.weekValue}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          weekValue: e.target.value,
-                        }))
-                      }
-                      placeholder="Weeks: e.g., 1,2,3,4"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
-                    />
-                  )}
-
-                  {formData.selectedTypes.includes("Month") && (
-                    <input
-                      type="text"
-                      value={formData.monthValue}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          monthValue: e.target.value,
-                        }))
-                      }
-                      placeholder="Months: e.g., 1,2,3,4,5,6"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
-                    />
-                  )}
-
-                  {formData.selectedTypes.length === 0 && (
-                    <div className="text-[8px] text-[#899193] py-4 text-center border border-gray-200 rounded-md bg-gray-50">
-                      Select duration types above to add values
-                    </div>
-                  )}
+                  <div className="text-[9px] text-gray-600 mb-2">
+                    Select Duration Type:
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    {durationTypes.map((type) => (
+                      <button
+                        key={type.id}
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            duration_type_id:
+                              prev.duration_type_id === type.id ? "" : type.id,
+                          }));
+                        }}
+                        className={`px-3 py-2 rounded-lg text-[9px] font-medium transition-all duration-200 border ${
+                          formData.duration_type_id === type.id
+                            ? "bg-[#0088B1] text-white border-[#0088B1] shadow-sm"
+                            : "bg-white text-gray-600 border-gray-300 hover:border-[#0088B1] hover:bg-blue-50"
+                        }`}
+                      >
+                        {type.value}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Duration hours input */}
+                {formData.duration_type_id ? (
+                  <div className="space-y-2">
+                    <div className="text-[9px] text-gray-600">Duration:</div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="number"
+                        name="duration_in_hrs"
+                        value={formData.duration_in_hrs}
+                        onChange={handleInputChange}
+                        placeholder="Enter Value (e.g., 1, 2, 24)"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
+                        required
+                      />
+                      <div className="text-[8px] text-[#0088B1] bg-blue-50 px-2 py-1 rounded">
+                        {
+                          durationTypes.find(
+                            (t) => t.id === formData.duration_type_id
+                          )?.value
+                        }
+                      </div>
+                    </div>
+                    {/* {formData.duration_in_hrs && (
+                      <div className="text-[8px] text-green-600 bg-green-50 px-2 py-1 rounded">
+                        Total: {formData.duration_in_hrs} hours
+                      </div>
+                    )} */}
+                  </div>
+                ) : (
+                  <div className="text-[8px] text-[#899193] py-6 text-center border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
+                    Please select a duration type above to continue
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -421,11 +384,11 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
 
           <div>
             <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
-              * Equipment Needed
+              * Equipment Requirements
             </label>
             <textarea
-              name="equipmentNeeded"
-              value={formData.equipmentNeeded}
+              name="equipmentRequirements"
+              value={formData.equipmentRequirements}
               onChange={handleInputChange}
               placeholder="Required equipment (comma separated)"
               rows={3}
@@ -449,34 +412,111 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
             />
           </div>
 
-          <div>
-            <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
-              * Service Status
-            </label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-[8px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193]"
-            >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div className="text-[10px] font-medium text-[#161D1F] mb-3">
+              Additional Settings
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Is Device */}
+              <div className="bg-white p-3 rounded-lg border border-gray-200">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="is_device"
+                    name="is_device"
+                    checked={formData.is_device}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded cursor-pointer accent-[#0088B1]"
+                  />
+                  <label
+                    htmlFor="is_device"
+                    className="text-[9px] font-medium text-[#161D1F] cursor-pointer select-none"
+                  >
+                    Device Required
+                  </label>
+                </div>
+                <div className="text-[7px] text-gray-500 mt-1">
+                  Check if this offering requires a device
+                </div>
+              </div>
+
+              {/* Device Stock Count */}
+              <div className="bg-white p-3 rounded-lg border border-gray-200">
+                <label
+                  htmlFor="device_stock_count"
+                  className="block text-[9px] font-medium text-[#161D1F] mb-2"
+                >
+                  Device Stock Count
+                </label>
+                <input
+                  type="number"
+                  id="device_stock_count"
+                  name="device_stock_count"
+                  value={formData.device_stock_count}
+                  onChange={handleInputChange}
+                  placeholder="0"
+                  disabled={!formData.is_device}
+                  className={`w-full px-3 py-2 border rounded-lg text-[8px] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent placeholder:text-[8px] placeholder-[#899193] transition-all ${
+                    formData.is_device
+                      ? "border-gray-300 text-[#161D1F] bg-white"
+                      : "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
+                  }`}
+                  min="0"
+                />
+                <div className="text-[7px] text-gray-500 mt-1">
+                  {formData.is_device
+                    ? "Available devices in stock"
+                    : "Enable device option first"}
+                </div>
+              </div>
+
+              {/* Active Status */}
+              <div className="bg-white p-3 rounded-lg border border-gray-200">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="is_active"
+                    name="is_active"
+                    checked={formData.is_active}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded cursor-pointer accent-[#0088B1]"
+                  />
+
+                  <label
+                    htmlFor="is_active"
+                    className="text-[9px] font-medium text-[#161D1F] cursor-pointer select-none"
+                  >
+                    Active Status
+                  </label>
+                </div>
+                <div className="text-[7px] text-gray-500 mt-1">
+                  {formData.is_active
+                    ? "Offering is active"
+                    : "Offering is inactive"}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
               onClick={handleReset}
-              className="px-6 py-2 text-[10px] text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+              disabled={loading}
+              className="px-6 py-2 text-[10px] text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
             >
               Reset
             </button>
             <button
               type="submit"
-              className="px-6 py-2 text-[10px] bg-[#0088B1] text-white rounded-md hover:bg-[#00729A]"
+              disabled={loading}
+              className="px-6 py-2 text-[10px] bg-[#0088B1] text-white rounded-md hover:bg-[#00729A] disabled:opacity-50"
             >
-              {editingOffering ? "Update Offering" : "Add Offering"}
+              {loading
+                ? "Saving..."
+                : editingOffering
+                ? "Update Offering"
+                : "Add Offering"}
             </button>
           </div>
         </form>

@@ -13,9 +13,12 @@ import {
 import AddStaffModal from "./components/AddStaffModal";
 import ViewStaffModal from "./components/ViewStaffModal";
 import { Staff } from "./types";
+import { ApiStaff, fetchStaff, deleteStaff } from "./service/api/staff";
 
 const StaffManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchDebounceTimer, setSearchDebounceTimer] =
+    useState<NodeJS.Timeout | null>(null);
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
   const [activeTab, setActiveTab] = useState("All Staffs");
   const [openDropdown, setOpenDropdown] = useState<
@@ -23,58 +26,88 @@ const StaffManagement: React.FC = () => {
   >(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [staffActionDropdown, setStaffActionDropdown] = useState<number | null>(
     null
   );
   const [viewStaff, setViewStaff] = useState<Staff | null>(null);
   const [editStaff, setEditStaff] = useState<Staff | null>(null);
 
-  const [staffList, setStaffList] = useState<Staff[]>([
-    {
-      id: 1,
-      name: "Sarah Wilson",
-      phone: "+91 9876543211",
-      address: "456 Oak Avenue, Andheri East, Mumbai - 4000069",
-      experience: "6 Years",
-      rating: 4.9,
-      status: "Available",
-      departments: [
-        "Neurological Rehabilitation",
-        "Sports Injury",
-        "Geriatric Care",
-      ],
-      position: "Physiotherapist",
-      joinDate: "20-07-2021",
-      email: "sarah.wilson@example.com",
-      certifications: ["PPT", "Neurological Specialist", "Manual Therapy"],
-    },
-    {
-      id: 2,
-      name: "John Doe",
-      phone: "+91 9876543212",
-      address: "123 Pine Street, Bandra West, Mumbai - 400050",
-      experience: "4 Years",
-      rating: 4.7,
-      status: "Available",
-      departments: ["Sports Injury", "Orthopedic"],
-      position: "Senior Physiotherapist",
-      joinDate: "15-05-2020",
-      email: "john.doe@example.com",
-      certifications: ["PPT", "Orthopedic Specialist"],
-    },
-  ]);
+  const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAddStaff = (newStaff: Staff) => {
+  const handleAddStaff = async (newStaff: Staff) => {
+    // Add to local state immediately for UI feedback
     setStaffList((prev) => [...prev, newStaff]);
+
+    // Refresh the list from API to get the actual ID
+    try {
+      const response = await fetchStaff();
+      if (response.success) {
+        const transformedStaff = response.staffs.map(transformApiStaff);
+        setStaffList(transformedStaff);
+      }
+    } catch (error) {
+      console.error("Error refreshing staff list:", error);
+    }
+
     console.log("New staff added:", newStaff);
   };
 
-  const handleUpdateStaff = (updatedStaff: Staff) => {
+  const transformApiStaff = (apiStaff: ApiStaff): Staff => {
+    const totalExperience = `${apiStaff.experience_in_yrs} Years`;
+
+    return {
+      id: apiStaff.id,
+      name: apiStaff.name,
+      phone: apiStaff.mobile_number,
+      experience: totalExperience,
+      rating: parseFloat(apiStaff.rating) || 0,
+      status: apiStaff.availability_status,
+      departments: apiStaff.specializations,
+      position: apiStaff.role_name,
+      email: apiStaff.email,
+      certifications: apiStaff.certifications,
+      address: "",
+      joinDate: new Date().toISOString().split("T")[0],
+    };
+  };
+
+  useEffect(() => {
+    const loadStaff = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchStaff();
+        if (response.success) {
+          const transformedStaff = response.staffs.map(transformApiStaff);
+          setStaffList(transformedStaff);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load staff");
+        console.error("Error loading staff:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStaff();
+  }, []);
+
+  const handleUpdateStaff = async (updatedStaff: Staff) => {
     setStaffList((prev) =>
       prev.map((staff) => (staff.id === updatedStaff.id ? updatedStaff : staff))
     );
+
+    try {
+      const response = await fetchStaff();
+      if (response.success) {
+        const transformedStaff = response.staffs.map(transformApiStaff);
+        setStaffList(transformedStaff);
+      }
+    } catch (error) {
+      console.error("Error refreshing staff list:", error);
+    }
+
     setEditStaff(null);
     console.log("Staff updated:", updatedStaff);
   };
@@ -99,28 +132,42 @@ const StaffManagement: React.FC = () => {
       );
     }
 
-    // Apply status filter
     if (selectedStatus !== "All Statuses") {
       filtered = filtered.filter((staff) => staff.status === selectedStatus);
     }
 
     setFilteredStaff(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
   }, [searchTerm, selectedStatus, staffList]);
-
-  const getPaginatedStaff = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredStaff.slice(startIndex, endIndex);
-  };
-
-  const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
     setOpenDropdown(null);
   };
 
+  const handleSearch = (searchTerm: string) => {
+    setSearchTerm(searchTerm);
+
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setLoading(true);
+        const response = await fetchStaff(searchTerm || undefined);
+        if (response.success) {
+          const transformedStaff = response.staffs.map(transformApiStaff);
+          setStaffList(transformedStaff);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to search staff");
+      } finally {
+        setLoading(false);
+      }
+    }, 500);
+
+    setSearchDebounceTimer(timer);
+  };
   const handleSelectStaff = (staffId: string, checked: boolean) => {
     if (checked) {
       setSelectedStaff([...selectedStaff, staffId]);
@@ -131,13 +178,12 @@ const StaffManagement: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedStaff(filteredStaff.map((staff) => staff.id.toString()));
+      setSelectedStaff(filteredStaff.map((staff) => staff.id));
     } else {
       setSelectedStaff([]);
     }
   };
-
-  const handleStaffAction = (action: string, staff: Staff) => {
+  const handleStaffAction = async (action: string, staff: Staff) => {
     switch (action) {
       case "view":
         setViewStaff(staff);
@@ -147,12 +193,63 @@ const StaffManagement: React.FC = () => {
         break;
       case "delete":
         if (window.confirm(`Are you sure you want to delete ${staff.name}?`)) {
-          setStaffList((prev) => prev.filter((s) => s.id !== staff.id));
-          console.log("Delete staff:", staff);
+          try {
+            setLoading(true);
+            await deleteStaff(staff.id);
+
+            // Remove from local state
+            setStaffList((prev) => prev.filter((s) => s.id !== staff.id));
+
+            // Also remove from selected staff if it was selected
+            setSelectedStaff((prev) => prev.filter((id) => id !== staff.id));
+
+            console.log("Staff deleted successfully:", staff.name);
+          } catch (error) {
+            console.error("Error deleting staff:", error);
+            setError(
+              error instanceof Error ? error.message : "Failed to delete staff"
+            );
+          } finally {
+            setLoading(false);
+          }
         }
         break;
     }
     setStaffActionDropdown(null);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedStaff.length === 0) return;
+
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${selectedStaff.length} selected staff members?`
+      )
+    ) {
+      try {
+        setLoading(true);
+
+        // Delete all selected staff
+        await Promise.all(selectedStaff.map((staffId) => deleteStaff(staffId)));
+
+        // Remove from local state
+        setStaffList((prev) =>
+          prev.filter((staff) => !selectedStaff.includes(staff.id))
+        );
+        setSelectedStaff([]);
+
+        console.log("Bulk delete completed successfully");
+      } catch (error) {
+        console.error("Error in bulk delete:", error);
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to delete selected staff"
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   const renderStars = (rating: number) => {
@@ -201,6 +298,7 @@ const StaffManagement: React.FC = () => {
     );
   };
 
+  // Add to the existing useEffect with cleanup
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -211,160 +309,17 @@ const StaffManagement: React.FC = () => {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      // Add this cleanup for search timer
+      if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer);
+      }
     };
-  }, []);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
-  };
+  }, [searchDebounceTimer]); // Add searchDebounceTimer to dependencies
 
   // Enhanced pagination component with items per page selector
-  const Pagination = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage + 1;
-    const endIndex = Math.min(currentPage * itemsPerPage, filteredStaff.length);
-
-    const renderPageNumbers = () => {
-      const pages = [];
-      const maxVisiblePages = 5;
-      let startPage = Math.max(
-        1,
-        currentPage - Math.floor(maxVisiblePages / 2)
-      );
-      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-      if (endPage - startPage + 1 < maxVisiblePages) {
-        startPage = Math.max(1, endPage - maxVisiblePages + 1);
-      }
-
-      // First page
-      if (startPage > 1) {
-        pages.push(
-          <button
-            key={1}
-            onClick={() => handlePageChange(1)}
-            className="px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50"
-          >
-            1
-          </button>
-        );
-        if (startPage > 2) {
-          pages.push(
-            <span key="ellipsis1" className="px-2 text-gray-500">
-              ...
-            </span>
-          );
-        }
-      }
-
-      // Page numbers
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(
-          <button
-            key={i}
-            onClick={() => handlePageChange(i)}
-            className={`px-3 py-2 text-sm border rounded ${
-              i === currentPage
-                ? "bg-[#0088B1] text-white border-[#0088B1]"
-                : "border-gray-300 hover:bg-gray-50"
-            }`}
-          >
-            {i}
-          </button>
-        );
-      }
-
-      // Last page
-      if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-          pages.push(
-            <span key="ellipsis2" className="px-2 text-gray-500">
-              ...
-            </span>
-          );
-        }
-        pages.push(
-          <button
-            key={totalPages}
-            onClick={() => handlePageChange(totalPages)}
-            className="px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50"
-          >
-            {totalPages}
-          </button>
-        );
-      }
-
-      return pages;
-    };
-
-    if (filteredStaff.length === 0) {
-      return null;
-    }
-
-    return (
-      <div className="px-6 py-4 border-t border-gray-200">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Left side - Items per page selector and showing info */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700">Show:</span>
-              <select
-                value={itemsPerPage}
-                onChange={(e) =>
-                  handleItemsPerPageChange(Number(e.target.value))
-                }
-                className="text-sm border border-gray-300 rounded px-2 py-1 focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-black"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-              <span className="text-sm text-gray-700">entries</span>
-            </div>
-            <div className="text-sm text-gray-700">
-              Showing {startIndex} to {endIndex} of {filteredStaff.length} staff
-              members
-            </div>
-          </div>
-
-          {/* Right side - Pagination controls */}
-          {totalPages > 1 && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-
-              <div className="flex items-center gap-1">
-                {renderPageNumbers()}
-              </div>
-
-              <button
-                onClick={() =>
-                  handlePageChange(Math.min(totalPages, currentPage + 1))
-                }
-                disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
@@ -382,6 +337,17 @@ const StaffManagement: React.FC = () => {
               <Plus className="w-3 h-3" />
               Add Staff
             </button>
+            {/* Add this after the "Add Staff" button in your header */}
+            {selectedStaff.length > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-2 text-[12px] px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                disabled={loading}
+              >
+                <Trash2 className="w-3 h-3" />
+                Delete Selected ({selectedStaff.length})
+              </button>
+            )}
           </div>
         </div>
 
@@ -393,7 +359,7 @@ const StaffManagement: React.FC = () => {
               type="text"
               placeholder="Search by name, department, or position"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
@@ -431,21 +397,19 @@ const StaffManagement: React.FC = () => {
         </div>
 
         {/* Staff Table */}
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden h-screen max-h-screen flex flex-col">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
               {activeTab}
               <span className="text-[8px] text-[#899193] font-normal ml-2">
                 {filteredStaff.length} Staff Members
-                {filteredStaff.length > itemsPerPage &&
-                  ` (${getPaginatedStaff().length} shown)`}
               </span>
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+          <div className="flex-1 overflow-y-auto">
+            <table className="w-full ">
+              <thead className="bg-gray-100">
                 <tr>
                   <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     <input
@@ -461,9 +425,9 @@ const StaffManagement: React.FC = () => {
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Staff Detail
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  {/* <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Address
-                  </th>
+                  </th> */}
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Experience
                   </th>
@@ -479,19 +443,36 @@ const StaffManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {getPaginatedStaff().length > 0 ? (
-                  getPaginatedStaff().map((staff) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-8 text-center">
+                      <div className="text-gray-500 text-sm">
+                        Loading staff...
+                      </div>
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-8 text-center">
+                      <div className="text-red-500 text-sm">Error: {error}</div>
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="mt-2 text-blue-500 hover:underline text-sm"
+                      >
+                        Retry
+                      </button>
+                    </td>
+                  </tr>
+                ) : filteredStaff.length > 0 ? (
+                  filteredStaff.map((staff) => (
                     <tr key={staff.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                          checked={selectedStaff.includes(staff.id.toString())}
+                          checked={selectedStaff.includes(staff.id)}
                           onChange={(e) =>
-                            handleSelectStaff(
-                              staff.id.toString(),
-                              e.target.checked
-                            )
+                            handleSelectStaff(staff.id, e.target.checked)
                           }
                         />
                       </td>
@@ -512,11 +493,11 @@ const StaffManagement: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      {/* <td className="px-6 py-4">
                         <div className="text-[10px] text-[#161D1F] max-w-xs">
                           {staff.address}
                         </div>
-                      </td>
+                      </td> */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-[10px] text-[#161D1F]">
                           {staff.experience}
@@ -568,7 +549,6 @@ const StaffManagement: React.FC = () => {
                 )}
               </tbody>
             </table>
-            <Pagination />
           </div>
         </div>
       </div>

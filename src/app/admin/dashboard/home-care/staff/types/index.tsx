@@ -1,17 +1,19 @@
 export interface Staff {
-  id: number;
+  id: string;
   name: string;
   phone: string;
-  address: string;
+  address?: string;
   experience: string;
   rating: number;
-  status: "Available" | "Busy" | "Not available";
+  status: string;
   departments: string[];
   position: string;
-  joinDate: string;
-  email?: string;
-  certifications?: string[];
-  avatar?: string;
+  joinDate?: string;
+  email: string;
+  certifications: string[];
   activeOrders?: number;
   completedOrders?: number;
+  // Optional: Add these if you want to store API data
+  profile_image_url?: string; // From API
+  role_id?: string; // If API uses role IDs
 }

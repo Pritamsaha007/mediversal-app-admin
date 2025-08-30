@@ -1,16 +1,13 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import {
-  Search,
-  ChevronDown,
-  Plus,
-  Eye,
-  Edit,
-  Trash2,
-  Star,
-  X,
-} from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import { Staff } from "../types";
+import {
+  createUpdateStaff,
+  CreateUpdateStaffPayload,
+  fetchRoles,
+  RoleApiResponse,
+} from "../service/api/staff";
 
 interface AddStaffModalProps {
   isOpen: boolean;
@@ -45,19 +42,25 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
   );
   const [specializationInput, setSpecializationInput] = useState("");
   const [certificationInput, setCertificationInput] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [roleOptions, setRoleOptions] = useState<RoleApiResponse[]>([]);
+  const [selectedRoleId, setSelectedRoleId] = useState<string>(
+    initialData?.position || ""
+  );
 
-  const roleOptions = [
-    "Senior Nurse",
-    "Staff Nurse",
-    "Nursing Assistant",
-    "Charge Nurse",
-    "Clinical Specialist",
-    "Nurse Practitioner",
-    "Head Nurse",
-    "ICU Nurse",
-    "Emergency Nurse",
-    "Physiotherapist",
-  ];
+  // const roleOptions = [
+  //   "Senior Nurse",
+  //   "Staff Nurse",
+  //   "Nursing Assistant",
+  //   "Charge Nurse",
+  //   "Clinical Specialist",
+  //   "Nurse Practitioner",
+  //   "Head Nurse",
+  //   "ICU Nurse",
+  //   "Emergency Nurse",
+  //   "Physiotherapist",
+  // ];
 
   useEffect(() => {
     if (initialData) {
@@ -68,13 +71,12 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
         specialization: "",
         role: initialData.position,
         emailAddress: initialData.email || "",
-        location: initialData.address,
+        location: initialData.address || "",
         certifications: "",
       });
       setSpecializationTags(initialData.departments || []);
       setCertificationTags(initialData.certifications || []);
     } else {
-      // Reset form for new staff
       setFormData({
         fullName: "",
         phoneNumber: "",
@@ -90,6 +92,31 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
     }
   }, [initialData]);
 
+  useEffect(() => {
+    const loadRoles = async () => {
+      try {
+        const roles = await fetchRoles();
+        setRoleOptions(roles);
+
+        // If editing, find the role ID from the role name
+        if (initialData?.position) {
+          const matchingRole = roles.find(
+            (role) => role.role_name === initialData.position
+          );
+          if (matchingRole) {
+            setSelectedRoleId(matchingRole.id);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch roles:", error);
+      }
+    };
+
+    if (isOpen) {
+      loadRoles();
+    }
+  }, [isOpen, initialData]);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -97,8 +124,9 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
     }));
   };
 
-  const handleRoleSelect = (role: string) => {
-    handleInputChange("role", role);
+  const handleRoleSelect = (role: RoleApiResponse) => {
+    handleInputChange("role", role.role_name);
+    setSelectedRoleId(role.id);
     setRoleDropdownOpen(false);
   };
 
@@ -144,7 +172,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Basic validation
     if (!formData.fullName.trim()) {
       alert("Please enter full name");
@@ -159,25 +187,72 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
       return;
     }
 
-    const staffData: Staff = {
-      id: initialData?.id || Date.now(),
-      name: formData.fullName,
-      phone: formData.phoneNumber,
-      address: formData.location || "Not provided",
-      experience: formData.experience || "Not specified",
-      rating: initialData?.rating || 5, // Default to 5 stars for new staff
-      status: initialData?.status || "Available",
-      departments:
-        specializationTags.length > 0 ? specializationTags : ["General"],
-      position: formData.role,
-      joinDate: initialData?.joinDate || new Date().toISOString().split("T")[0],
-      email: formData.emailAddress,
-      certifications: certificationTags,
-    };
+    setIsSubmitting(true);
+    setSubmitError(null);
 
-    onSubmit(staffData);
-    handleReset();
-    onClose();
+    try {
+      // Parse experience with fallbacks
+      const experienceYears =
+        formData.experience.match(/(\d+)\s*years?/i)?.[1] || "0";
+      const experienceMonths =
+        formData.experience.match(/(\d+)\s*months?/i)?.[1] || "0";
+
+      const payload: CreateUpdateStaffPayload = {
+        ...(initialData?.id ? { id: initialData.id } : {}),
+        name: formData.fullName,
+        mobile_number: formData.phoneNumber,
+        role: selectedRoleId,
+        email: formData.emailAddress || "",
+        experience_in_yrs: parseInt(experienceYears),
+        experience_in_months: parseInt(experienceMonths),
+        experience_in_days: 0,
+        specializations:
+          specializationTags.length > 0 ? specializationTags : ["General"],
+        certifications: certificationTags,
+        rating: initialData?.rating
+          ? parseFloat(initialData.rating.toString())
+          : 5.0,
+        profile_image_url: "https://example.com/default-profile.jpg",
+      };
+      console.log(
+        "Submitting Staff Payload:",
+        JSON.stringify(payload, null, 2)
+      );
+
+      if (initialData?.id) {
+        payload.id = initialData.id;
+      }
+
+      await createUpdateStaff(payload);
+      console.log("Submitting payload:", payload);
+
+      const staffData: Staff = {
+        id: initialData?.id || `temp-${Date.now()}`,
+        name: formData.fullName,
+        phone: formData.phoneNumber,
+        address: formData.location || "Not provided",
+        experience: formData.experience || "Not specified",
+        rating: payload.rating,
+        status: initialData?.status || "Available",
+        departments: payload.specializations,
+        position: formData.role,
+        joinDate:
+          initialData?.joinDate || new Date().toISOString().split("T")[0],
+        email: formData.emailAddress,
+        certifications: certificationTags,
+      };
+
+      onSubmit(staffData);
+      handleReset();
+      onClose();
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "Failed to save staff"
+      );
+      console.error("Error saving staff:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -204,7 +279,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
     onClose();
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -286,12 +360,12 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                   <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                     {roleOptions.map((role) => (
                       <button
-                        key={role}
+                        key={role.id}
                         type="button"
                         onClick={() => handleRoleSelect(role)}
                         className="w-full px-4 py-3 text-left hover:bg-gray-50 text-[10px] border-b border-gray-100 last:border-b-0 text-black"
                       >
-                        {role}
+                        {role.role_name}
                       </button>
                     ))}
                   </div>
@@ -461,12 +535,31 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
           >
             Reset
           </button>
+          {/* Add error message above buttons */}
+          {submitError && (
+            <div className="px-6 py-2 bg-red-50 border-l-4 border-red-400">
+              <p className="text-red-700 text-sm">{submitError}</p>
+            </div>
+          )}
+
+          {/* Update the submit button */}
           <button
             type="button"
             onClick={handleSubmit}
-            className="px-8 py-3 bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors text-[10px] font-medium"
+            disabled={isSubmitting}
+            className={`px-8 py-3 ${
+              isSubmitting
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-[#0088B1] hover:bg-[#00729A]"
+            } text-white rounded-lg transition-colors text-[10px] font-medium`}
           >
-            {initialData ? "Update Staff" : "Add Staff Member"}
+            {isSubmitting
+              ? initialData
+                ? "Updating..."
+                : "Adding..."
+              : initialData
+              ? "Update Staff"
+              : "Add Staff Member"}
           </button>
         </div>
       </div>

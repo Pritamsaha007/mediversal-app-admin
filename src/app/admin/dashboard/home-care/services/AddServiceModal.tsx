@@ -1,9 +1,11 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { X, ChevronDown } from "lucide-react";
+import { useAdminStore } from "@/app/store/adminStore";
+import SectionFieldSelector from "./SectionFieldSelector";
 
 interface Service {
-  id: number;
+  id: string;
   name: string;
   description: string;
   category: string;
@@ -24,17 +26,24 @@ interface Offering {
   equipmentIncluded: string[];
   status: "Excellent" | "Good" | "Available";
 }
+interface SectionFieldData {
+  sections: string[];
+  medicalFields: string[];
+}
 
 interface AddServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddService: (service: Omit<Service, "id">) => void;
+  onUpdateService?: (service: Service) => void;
+  editService?: Service | null;
 }
-
 const AddServiceModal: React.FC<AddServiceModalProps> = ({
   isOpen,
   onClose,
   onAddService,
+  onUpdateService,
+  editService,
 }) => {
   const [serviceName, setServiceName] = useState("");
   const [serviceDescription, setServiceDescription] = useState("");
@@ -46,6 +55,23 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
   const [consents, setConsents] = useState<string[]>([]);
   const [newConsent, setNewConsent] = useState("");
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const [showSectionSelector, setShowSectionSelector] = useState(false);
+  const [sectionFieldData, setSectionFieldData] = useState<SectionFieldData>({
+    sections: [],
+    medicalFields: [],
+  });
+
+  useEffect(() => {
+    if (editService && isOpen) {
+      setServiceName(editService.name);
+      setServiceDescription(editService.description);
+      setServiceStatus(editService.status);
+      setServiceTags(editService.offerings.map((offering) => offering.name));
+      setConsents([]);
+    } else if (isOpen) {
+      handleReset();
+    }
+  }, [editService, isOpen]);
 
   const handleAddTag = () => {
     if (newTag.trim() && !serviceTags.includes(newTag.trim())) {
@@ -77,46 +103,12 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
     setNewTag("");
     setConsents([]);
     setNewConsent("");
+    setSectionFieldData({ sections: [], medicalFields: [] });
   };
 
-  const logFormValues = () => {
-    const formData = {
-      serviceName: serviceName.trim(),
-      serviceDescription: serviceDescription.trim(),
-      serviceStatus,
-      serviceTags,
-      consents,
-    };
-    console.log("Form Values:", JSON.stringify(formData, null, 2));
-  };
-
-  const handleAddService = () => {
-    if (!serviceName.trim() || !serviceDescription.trim()) {
-      alert("Please fill in all required fields");
-      return;
-    }
-
-    console.log({
-      serviceName,
-      serviceDescription,
-      serviceStatus,
-      serviceTags,
-      consents,
-    });
-
-    const newService: Omit<Service, "id"> = {
-      name: serviceName.trim(),
-      description: serviceDescription.trim(),
-      category: serviceTags[0] || "General",
-      status: serviceStatus,
-      offerings: [],
-      rating: 0,
-      reviewCount: 0,
-    };
-
-    onAddService(newService);
-    handleReset();
-    onClose();
+  const handleSectionFieldSave = (data: SectionFieldData) => {
+    setSectionFieldData(data);
+    setShowSectionSelector(false);
   };
 
   if (!isOpen) return null;
@@ -128,10 +120,12 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div>
             <h3 className="text-[16px] font-semibold text-[#161D1F]">
-              Add New Service
+              {editService ? "Edit Service" : "Add New Service"}
             </h3>
             <p className="text-[10px] text-[#899193] mt-1">
-              Enter the service details below
+              {editService
+                ? "Update the service details below"
+                : "Enter the service details below"}
             </p>
           </div>
           <button
@@ -207,8 +201,6 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
                   )}
                 </div>
               </div>
-
-              {/* Service Tags */}
               <div>
                 <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
                   Service Tags
@@ -313,13 +305,31 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
             Reset
           </button>
           <button
-            onClick={handleAddService}
-            className="px-6 py-2 bg-[#0088B1] text-[10px] text-white rounded-lg transition-colors"
+            onClick={() => setShowSectionSelector(true)}
+            className="px-6 py-2 text-[#161D1F] text-[10px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            Add Service
+            Next
           </button>
         </div>
       </div>
+      <SectionFieldSelector
+        isOpen={showSectionSelector}
+        onClose={() => setShowSectionSelector(false)}
+        onSave={handleSectionFieldSave}
+        initialData={sectionFieldData}
+        editService={editService}
+        serviceData={{
+          name: serviceName,
+          description: serviceDescription,
+          status: serviceStatus,
+          tags: serviceTags,
+          consents: consents,
+        }}
+        onAddService={onAddService}
+        onUpdateService={onUpdateService}
+        onCloseMainModal={onClose}
+        onResetMainForm={handleReset}
+      />
     </div>
   );
 };

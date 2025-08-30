@@ -1,44 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MoreVertical, Eye, Edit, UserPlus, X, Trash2 } from "lucide-react";
 
-interface Booking {
-  id: string;
-  bookingId: string;
-  date: string;
-  customer: {
-    name: string;
-    location: string;
-    age: number;
-    gender: string;
-    phone: string;
-    email: string;
-    address: string;
-  };
-  status: "Pending Assignment" | "In Progress" | "Completed" | "Cancelled";
-  payment: "Partial Payment" | "Paid" | "Refunded";
-  service: string;
-  serviceDetails: {
-    name: string;
-    description: string;
-    pricePerDay: number;
-  };
-  total: number;
-  gst: number;
-  priority: "High Priority" | "Medium Priority" | "Low Priority";
-  scheduled: string;
-  duration: string;
-  currentMedication: string;
-  medicalCondition: string;
-  emergencyContact: {
-    name: string;
-    number: string;
-  };
-  assignedStaff: string | null;
-}
+import { DetailedBooking } from "./booking";
 
 interface DropdownMenuProps {
-  booking: Booking;
-  onViewDetails: (booking: Booking) => void;
+  booking: DetailedBooking;
+  onViewDetails: (booking: DetailedBooking) => void;
   onEditBooking: (bookingId: string) => void;
   onAssignStaff: (bookingId: string) => void;
   onCancelBooking: (bookingId: string) => void;
@@ -82,15 +49,15 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
       },
       className: "text-[#161D1F] hover:bg-gray-50",
     },
-    {
-      icon: Edit,
-      label: "Edit Booking",
-      onClick: () => {
-        onEditBooking(booking.id);
-        setIsOpen(false);
-      },
-      className: "text-[#161D1F] hover:bg-gray-50",
-    },
+    // {
+    //   icon: Edit,
+    //   label: "Edit Booking",
+    //   onClick: () => {
+    //     onEditBooking(booking.id);
+    //     setIsOpen(false);
+    //   },
+    //   className: "text-[#161D1F] hover:bg-gray-50",
+    // },
     {
       icon: UserPlus,
       label: "Assign Staff",
@@ -100,24 +67,24 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
       },
       className: "text-[#161D1F] hover:bg-gray-50",
     },
-    {
-      icon: X,
-      label: "Cancel Booking",
-      onClick: () => {
-        onCancelBooking(booking.id);
-        setIsOpen(false);
-      },
-      className: "text-[#161D1F] hover:bg-gray-50",
-    },
-    {
-      icon: Trash2,
-      label: "Delete Booking",
-      onClick: () => {
-        onDeleteBooking(booking.id);
-        setIsOpen(false);
-      },
-      className: "text-red-600 hover:bg-red-50",
-    },
+    // {
+    //   icon: X,
+    //   label: "Cancel Booking",
+    //   onClick: () => {
+    //     onCancelBooking(booking.id);
+    //     setIsOpen(false);
+    //   },
+    //   className: "text-[#161D1F] hover:bg-gray-50",
+    // },
+    // {
+    //   icon: Trash2,
+    //   label: "Delete Booking",
+    //   onClick: () => {
+    //     onDeleteBooking(booking.id);
+    //     setIsOpen(false);
+    //   },
+    //   className: "text-red-600 hover:bg-red-50",
+    // },
   ];
 
   return (
@@ -139,7 +106,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                 <button
                   key={index}
                   onClick={item.onClick}
-                  className={`flex items-center gap-3 w-full px-4 py-2 text-left transition-colors ${item.className}`}
+                  className={`flex text-[12px] items-center gap-3 w-full px-4 py-2 text-left transition-colors ${item.className}`}
                 >
                   <IconComponent className="w-4 h-4" />
                   {item.label}
