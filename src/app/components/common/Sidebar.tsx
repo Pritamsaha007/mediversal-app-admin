@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LucideComputer,
   ChevronRight,
@@ -19,12 +19,26 @@ interface MenuItem {
   }[];
 }
 
+import { usePathname } from "next/navigation";
+
 const Sidebar = () => {
   const [selectedMenu, setSelectedMenu] = useState<string>("Dashboard");
   const [openMenu, setOpenMenu] = useState<string | null>("Front Desk");
   const [selectedSubMenu, setSelectedSubMenu] = useState<string | null>(
     "Patient Search"
   );
+  const pathname = usePathname();
+  useEffect(() => {
+    menuItems.forEach((menu) => {
+      menu.subItems?.forEach((sub) => {
+        if (pathname.startsWith(sub.link)) {
+          setSelectedMenu(menu.name);
+          setOpenMenu(menu.name);
+          setSelectedSubMenu(sub.name);
+        }
+      });
+    });
+  }, [pathname]);
 
   const menuItems: MenuItem[] = [
     {

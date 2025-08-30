@@ -262,7 +262,7 @@ export const productService = {
     if (cachedData) return cachedData;
 
     try {
-      const response = await apiClient.get(
+      const response = await apiClient.post(
         `/app/api/Product/getProducts?start=0&max=1`
       );
 
