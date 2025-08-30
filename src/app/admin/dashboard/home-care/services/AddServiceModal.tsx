@@ -37,8 +37,8 @@ interface AddServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddService: (service: Omit<Service, "id">) => void;
-  onUpdateService?: (service: Service) => void; // New prop
-  editService?: Service | null; // New prop for service to edit
+  onUpdateService?: (service: Service) => void;
+  editService?: Service | null;
 }
 const AddServiceModal: React.FC<AddServiceModalProps> = ({
   isOpen,
@@ -432,6 +432,7 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
         onClose={() => setShowSectionSelector(false)}
         onSave={handleSectionFieldSave}
         initialData={sectionFieldData}
+        editService={editService}
       />
     </div>
   );

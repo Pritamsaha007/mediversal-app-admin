@@ -12,6 +12,7 @@ interface SectionFieldSelectorProps {
   onClose: () => void;
   onSave: (data: SectionFieldData) => void;
   initialData?: SectionFieldData;
+  editService?: any;
 }
 
 const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
@@ -19,6 +20,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
   onClose,
   onSave,
   initialData,
+  editService,
 }) => {
   const [selectedSections, setSelectedSections] = useState<string[]>(
     initialData?.sections || []
@@ -122,16 +124,23 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
                       </span>
                       <button
                         onClick={() => handleSectionToggle(section)}
-                        className="px-4 py-2 text-[10px] bg-[#0088B1] text-white rounded hover:bg-[#00729A] transition-colors"
+                        className={`px-4 py-2 text-[10px] text-white rounded hover:bg-[#00729A] transition-colors ${
+                          selectedSections.includes(section)
+                            ? "bg-gray-400"
+                            : "bg-[#0088B1]"
+                        }`}
+                        disabled={selectedSections.includes(section)}
                       >
-                        Add
+                        {selectedSections.includes(section) ? "Added" : "Add"}
                       </button>
                     </div>
                   ))}
                 </div>
               </div>
+            </div>
 
-              {/* Medical Fields - Only show if Medical Information is selected */}
+            {/* Right Column - Medical Fields (only when Medical Information is selected) */}
+            <div className="space-y-6">
               {selectedSections.includes("Medical Information") && (
                 <div>
                   <h4 className="text-[14px] font-medium text-[#161D1F] mb-4">
@@ -148,9 +157,16 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
                         </span>
                         <button
                           onClick={() => handleMedicalFieldToggle(field)}
-                          className="px-4 py-2 text-[10px] bg-[#0088B1] text-white rounded hover:bg-[#00729A] transition-colors"
+                          className={`px-4 py-2 text-[10px] text-white rounded hover:bg-[#00729A] transition-colors ${
+                            selectedMedicalFields.includes(field)
+                              ? "bg-gray-400"
+                              : "bg-[#0088B1]"
+                          }`}
+                          disabled={selectedMedicalFields.includes(field)}
                         >
-                          Add
+                          {selectedMedicalFields.includes(field)
+                            ? "Added"
+                            : "Add"}
                         </button>
                       </div>
                     ))}
@@ -158,101 +174,96 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Right Column - Selected Items */}
-            <div className="space-y-6">
-              {/* Selected Sections */}
-              <div>
-                <h4 className="text-[14px] font-medium text-[#161D1F] mb-4">
-                  Selected Sections
-                </h4>
-                <div className="min-h-[100px] p-4 border border-gray-200 rounded-lg">
-                  {selectedSections.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-[12px] text-gray-500">
-                        Patient Information
-                      </p>
-                      <p className="text-[10px] text-gray-400 mt-1">
-                        (Default section)
-                      </p>
+          {/* Bottom Section - Selected Items */}
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Selected Sections */}
+            <div>
+              <h4 className="text-[14px] font-medium text-[#161D1F] mb-4">
+                Selected Sections
+              </h4>
+              <div className="min-h-[150px] p-4 border border-gray-200 rounded-lg">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                    <span className="text-[12px] text-[#161D1F]">
+                      Patient Information
+                    </span>
+                    <span className="text-[10px] text-gray-500">(Default)</span>
+                  </div>
+                  {selectedSections.map((section) => (
+                    <div
+                      key={section}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded border"
+                    >
+                      <span className="text-[12px] text-[#161D1F]">
+                        {section}
+                      </span>
+                      <button
+                        onClick={() => handleSectionToggle(section)}
+                        className="text-[10px] text-red-500 hover:text-red-700"
+                      >
+                        Remove
+                      </button>
                     </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded border">
-                        <span className="text-[12px] text-[#161D1F]">
-                          Patient Information
-                        </span>
-                        <span className="text-[10px] text-gray-500">
-                          (Default)
-                        </span>
-                      </div>
-                      {selectedSections.map((section) => (
-                        <div
-                          key={section}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded border"
-                        >
-                          <span className="text-[12px] text-[#161D1F]">
-                            {section}
-                          </span>
-                          <button
-                            onClick={() => handleSectionToggle(section)}
-                            className="text-[10px] text-red-500 hover:text-red-700"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  ))}
                 </div>
               </div>
+            </div>
 
-              {/* Selected Fields */}
-              {selectedMedicalFields.length > 0 && (
-                <div>
-                  <h4 className="text-[14px] font-medium text-[#161D1F] mb-4">
-                    Selected Fields
-                  </h4>
-                  <div className="p-4 border border-gray-200 rounded-lg">
-                    <div className="space-y-2">
-                      {selectedMedicalFields.map((field) => (
-                        <div
-                          key={field}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded border"
-                        >
-                          <span className="text-[12px] text-[#161D1F]">
-                            {field}
-                          </span>
-                          <button
-                            onClick={() => handleMedicalFieldToggle(field)}
-                            className="text-[10px] text-red-500 hover:text-red-700"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+            {/* Selected Fields */}
+            <div>
+              <h4 className="text-[14px] font-medium text-[#161D1F] mb-4">
+                Selected Fields
+              </h4>
+              <div className="min-h-[150px] p-4 border border-gray-200 rounded-lg">
+                {selectedMedicalFields.length === 0 ? (
+                  <div className="flex items-center justify-center h-full min-h-[120px]">
+                    <p className="text-[12px] text-gray-500">
+                      No fields selected
+                    </p>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="space-y-2">
+                    {selectedMedicalFields.map((field) => (
+                      <div
+                        key={field}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded border"
+                      >
+                        <span className="text-[12px] text-[#161D1F]">
+                          {field}
+                        </span>
+                        <button
+                          onClick={() => handleMedicalFieldToggle(field)}
+                          className="text-[10px] text-red-500 hover:text-red-700"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 flex-shrink-0">
+        <div className="flex items-center justify-between gap-3 p-6 border-t border-gray-200 flex-shrink-0">
           <button
             onClick={handleReset}
             className="px-6 py-2 text-[#161D1F] text-[10px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Reset
           </button>
-          <button
-            onClick={handleSave}
-            className="px-6 py-2 text-[10px] bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors"
-          >
-            Add Service
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleSave}
+              className="px-6 py-2 text-[10px] bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors"
+            >
+              {editService ? "Update Service" : "Add Service"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
