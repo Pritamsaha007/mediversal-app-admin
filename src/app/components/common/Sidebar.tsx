@@ -130,12 +130,6 @@ const Sidebar = () => {
   const toggleMenu = (menuName: string) => {
     setOpenMenu(openMenu === menuName ? null : menuName);
     setSelectedMenu(menuName);
-    if (openMenu !== menuName) {
-      const menu = menuItems.find((m) => m.name === menuName);
-      if (menu?.subItems && menu.subItems.length > 0) {
-        setSelectedSubMenu(menu.subItems[0].name);
-      }
-    }
   };
   const handleSubMenuClick = (subMenuName: string) => {
     setSelectedSubMenu(subMenuName);
