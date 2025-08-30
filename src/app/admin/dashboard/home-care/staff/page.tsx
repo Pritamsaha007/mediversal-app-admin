@@ -26,8 +26,6 @@ const StaffManagement: React.FC = () => {
   >(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [staffActionDropdown, setStaffActionDropdown] = useState<number | null>(
     null
   );
@@ -143,16 +141,7 @@ const StaffManagement: React.FC = () => {
     }
 
     setFilteredStaff(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
   }, [searchTerm, selectedStatus, staffList]);
-
-  const getPaginatedStaff = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredStaff.slice(startIndex, endIndex);
-  };
-
-  const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -336,155 +325,7 @@ const StaffManagement: React.FC = () => {
     };
   }, [searchDebounceTimer]); // Add searchDebounceTimer to dependencies
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
-  };
-
   // Enhanced pagination component with items per page selector
-  const Pagination = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage + 1;
-    const endIndex = Math.min(currentPage * itemsPerPage, filteredStaff.length);
-
-    const renderPageNumbers = () => {
-      const pages = [];
-      const maxVisiblePages = 5;
-      let startPage = Math.max(
-        1,
-        currentPage - Math.floor(maxVisiblePages / 2)
-      );
-      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-      if (endPage - startPage + 1 < maxVisiblePages) {
-        startPage = Math.max(1, endPage - maxVisiblePages + 1);
-      }
-
-      // First page
-      if (startPage > 1) {
-        pages.push(
-          <button
-            key={1}
-            onClick={() => handlePageChange(1)}
-            className="px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50"
-          >
-            1
-          </button>
-        );
-        if (startPage > 2) {
-          pages.push(
-            <span key="ellipsis1" className="px-2 text-gray-500">
-              ...
-            </span>
-          );
-        }
-      }
-
-      // Page numbers
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(
-          <button
-            key={i}
-            onClick={() => handlePageChange(i)}
-            className={`px-3 py-2 text-sm border rounded ${
-              i === currentPage
-                ? "bg-[#0088B1] text-white border-[#0088B1]"
-                : "border-gray-300 hover:bg-gray-50"
-            }`}
-          >
-            {i}
-          </button>
-        );
-      }
-
-      // Last page
-      if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-          pages.push(
-            <span key="ellipsis2" className="px-2 text-gray-500">
-              ...
-            </span>
-          );
-        }
-        pages.push(
-          <button
-            key={totalPages}
-            onClick={() => handlePageChange(totalPages)}
-            className="px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50"
-          >
-            {totalPages}
-          </button>
-        );
-      }
-
-      return pages;
-    };
-
-    if (filteredStaff.length === 0) {
-      return null;
-    }
-
-    return (
-      <div className="px-6 py-4 border-t border-gray-200">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Left side - Items per page selector and showing info */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700">Show:</span>
-              <select
-                value={itemsPerPage}
-                onChange={(e) =>
-                  handleItemsPerPageChange(Number(e.target.value))
-                }
-                className="text-sm border border-gray-300 rounded px-2 py-1 focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-black"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-              <span className="text-sm text-gray-700">entries</span>
-            </div>
-            <div className="text-sm text-gray-700">
-              Showing {startIndex} to {endIndex} of {filteredStaff.length} staff
-              members
-            </div>
-          </div>
-
-          {/* Right side - Pagination controls */}
-          {totalPages > 1 && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-
-              <div className="flex items-center gap-1">
-                {renderPageNumbers()}
-              </div>
-
-              <button
-                onClick={() =>
-                  handlePageChange(Math.min(totalPages, currentPage + 1))
-                }
-                disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
@@ -562,21 +403,19 @@ const StaffManagement: React.FC = () => {
         </div>
 
         {/* Staff Table */}
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden h-screen max-h-screen flex flex-col">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
               {activeTab}
               <span className="text-[8px] text-[#899193] font-normal ml-2">
                 {filteredStaff.length} Staff Members
-                {filteredStaff.length > itemsPerPage &&
-                  ` (${getPaginatedStaff().length} shown)`}
               </span>
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+          <div className="flex-1 overflow-y-auto">
+            <table className="w-full ">
+              <thead className="bg-gray-100">
                 <tr>
                   <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     <input
@@ -592,9 +431,9 @@ const StaffManagement: React.FC = () => {
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Staff Detail
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  {/* <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Address
-                  </th>
+                  </th> */}
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Experience
                   </th>
@@ -630,8 +469,8 @@ const StaffManagement: React.FC = () => {
                       </button>
                     </td>
                   </tr>
-                ) : getPaginatedStaff().length > 0 ? (
-                  getPaginatedStaff().map((staff) => (
+                ) : filteredStaff.length > 0 ? (
+                  filteredStaff.map((staff) => (
                     <tr key={staff.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
@@ -660,11 +499,11 @@ const StaffManagement: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      {/* <td className="px-6 py-4">
                         <div className="text-[10px] text-[#161D1F] max-w-xs">
                           {staff.address}
                         </div>
-                      </td>
+                      </td> */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-[10px] text-[#161D1F]">
                           {staff.experience}
@@ -716,7 +555,6 @@ const StaffManagement: React.FC = () => {
                 )}
               </tbody>
             </table>
-            <Pagination />
           </div>
         </div>
       </div>
