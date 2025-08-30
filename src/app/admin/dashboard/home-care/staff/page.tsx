@@ -68,9 +68,8 @@ const StaffManagement: React.FC = () => {
       position: apiStaff.role_name,
       email: apiStaff.email,
       certifications: apiStaff.certifications,
-      // Add default values for optional fields
-      address: "", // Since API doesn't provide this
-      joinDate: new Date().toISOString().split("T")[0], // Default to today
+      address: "",
+      joinDate: new Date().toISOString().split("T")[0],
     };
   };
 
@@ -95,12 +94,10 @@ const StaffManagement: React.FC = () => {
   }, []);
 
   const handleUpdateStaff = async (updatedStaff: Staff) => {
-    // Update local state immediately for UI feedback
     setStaffList((prev) =>
       prev.map((staff) => (staff.id === updatedStaff.id ? updatedStaff : staff))
     );
 
-    // Refresh the list from API
     try {
       const response = await fetchStaff();
       if (response.success) {
@@ -135,7 +132,6 @@ const StaffManagement: React.FC = () => {
       );
     }
 
-    // Apply status filter
     if (selectedStatus !== "All Statuses") {
       filtered = filtered.filter((staff) => staff.status === selectedStatus);
     }
@@ -151,12 +147,10 @@ const StaffManagement: React.FC = () => {
   const handleSearch = (searchTerm: string) => {
     setSearchTerm(searchTerm);
 
-    // Clear existing timer
     if (searchDebounceTimer) {
       clearTimeout(searchDebounceTimer);
     }
 
-    // Set new timer for debounced search
     const timer = setTimeout(async () => {
       try {
         setLoading(true);
