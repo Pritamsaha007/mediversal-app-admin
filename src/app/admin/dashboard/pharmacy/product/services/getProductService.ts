@@ -150,7 +150,6 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
   };
 };
 
-/* ---------- SERVICE METHODS ---------- */
 export const productService = {
   /* ----- DELETE PRODUCT ----- */
   async deleteProduct(id: string): Promise<void> {
@@ -262,7 +261,7 @@ export const productService = {
     if (cachedData) return cachedData;
 
     try {
-      const response = await apiClient.get(
+      const response = await apiClient.post(
         `/app/api/Product/getProducts?start=0&max=1`
       );
 

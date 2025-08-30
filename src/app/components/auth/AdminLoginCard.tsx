@@ -28,7 +28,7 @@ const AdminLoginCard: React.FC<AdminLoginCardProps> = ({ className = "" }) => {
       const response = await cognitoAdminLogin({ email, password });
       setAdminData(response);
       toast.success("Login successful", { id: "admin-login" });
-      router.push("/admin/dashboard");
+      router.push("/admin/dashboard/pharmacy/product");
     } catch (error: any) {
       console.error("Cognito login error:", error);
       toast.error(error?.message || "Login failed", { id: "admin-login" });

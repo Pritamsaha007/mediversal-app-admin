@@ -394,21 +394,6 @@ const ProductCatalog: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
-      {/* <div className="fixed top-4 right-4 bg-white p-3 shadow-lg rounded-lg z-50 border border-blue-100">
-        <div className="text-sm font-semibold text-gray-700">Store Status</div>
-        <div className="text-xs mt-1">
-          <span className="font-medium text-gray-600">Total Products:</span>
-          <span className="ml-1 font-bold text-blue-600">
-            {useProductStore.getState().products.length}
-          </span>
-        </div>
-        <div className="text-xs">
-          <span className="font-medium text-gray-600">Loaded Chunks:</span>
-          <span className="ml-1 font-bold text-blue-600">
-            {Array.from(useProductStore.getState().loadedChunks).join(", ")}
-          </span>
-        </div>
-      </div> */}
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -474,12 +459,7 @@ const ProductCatalog: React.FC = () => {
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
           />
         </div>
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0088B1]"></div>
-            <span className="ml-3 text-gray-600">Loading products...</span>
-          </div>
-        )}
+
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
             <div className="flex items-center justify-between">
@@ -677,8 +657,18 @@ const ProductCatalog: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {!loading &&
-                  !error &&
+                {loading ? (
+                  <tr>
+                    <td colSpan={9} className="px-6 py-12 text-center">
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0088B1]"></div>
+                        <span className="ml-3 text-gray-600">
+                          Loading products...
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : !error && getFilteredProducts().length > 0 ? (
                   getFilteredProducts()
                     .slice(
                       (pagination.currentPage - 1) * pagination.itemsPerPage,
@@ -709,8 +699,8 @@ const ProductCatalog: React.FC = () => {
                           await refreshProducts();
                         }}
                       />
-                    ))}
-                {!loading && !error && getFilteredProducts().length === 0 && (
+                    ))
+                ) : (
                   <tr>
                     <td colSpan={9} className="px-6 py-12 text-center">
                       <div className="text-gray-500">
