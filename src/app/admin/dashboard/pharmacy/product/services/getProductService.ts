@@ -150,7 +150,6 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
   };
 };
 
-/* ---------- SERVICE METHODS ---------- */
 export const productService = {
   /* ----- DELETE PRODUCT ----- */
   async deleteProduct(id: string): Promise<void> {
