@@ -1,6 +1,20 @@
 "use client";
 import React, { useState } from "react";
 import { X } from "lucide-react";
+import { createOrUpdateHomecareService } from "./service/api/homecareServices";
+import { useAdminStore } from "@/app/store/adminStore";
+import toast from "react-hot-toast";
+
+interface Service {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  status: "Active" | "Inactive";
+  offerings: any[];
+  rating?: number;
+  reviewCount?: number;
+}
 
 interface SectionFieldData {
   sections: string[];
@@ -12,7 +26,18 @@ interface SectionFieldSelectorProps {
   onClose: () => void;
   onSave: (data: SectionFieldData) => void;
   initialData?: SectionFieldData;
-  editService?: any;
+  editService?: Service | null;
+  serviceData: {
+    name: string;
+    description: string;
+    status: "Active" | "Inactive";
+    tags: string[];
+    consents: string[];
+  };
+  onAddService: (service: Omit<Service, "id">) => void;
+  onUpdateService?: (service: Service) => void;
+  onCloseMainModal: () => void;
+  onResetMainForm: () => void;
 }
 
 const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
@@ -21,13 +46,20 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
   onSave,
   initialData,
   editService,
+  serviceData,
+  onAddService,
+  onUpdateService,
+  onCloseMainModal,
+  onResetMainForm,
 }) => {
+  const { token, admin } = useAdminStore();
   const [selectedSections, setSelectedSections] = useState<string[]>(
     initialData?.sections || []
   );
   const [selectedMedicalFields, setSelectedMedicalFields] = useState<string[]>(
     initialData?.medicalFields || []
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const availableSections = [
     "Medical Information",
@@ -46,6 +78,25 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
     "Previous Similar Procedures",
     "Medical History",
   ];
+
+  const sectionMapping: { [key: string]: string } = {
+    "Medical Information": "MedicalInfo",
+    "Doctor's Information": "DoctorInfo",
+    "Installation Requirements": "InstallationInfo",
+    "Contact & Location": "ContactInfo",
+    "Patient Information": "PatientInfo",
+  };
+
+  const medicalFieldMapping: { [key: string]: string } = {
+    "Allergies & Restrictions": "allergies",
+    "Pain Level": "painlevel",
+    "Mobility Level": "mobilitylevel",
+    "Previous Physiotherapy History": "physiohistory",
+    "Therapy Goals": "therapygoals",
+    "Reason for Procedure": "procedureason",
+    "Previous Similar Procedures": "similarprocedures",
+    "Medical History": "medicalhistory",
+  };
 
   const handleSectionToggle = (section: string) => {
     setSelectedSections((prev) => {
@@ -67,12 +118,90 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // First save the section/field selections
     onSave({
       sections: selectedSections,
       medicalFields: selectedMedicalFields,
     });
-    onClose();
+
+    // Then proceed with service creation/update
+    if (!serviceData.name.trim() || !serviceData.description.trim()) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (!token || !admin.id) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const displaySections = ["PatientInfo"];
+      if (selectedSections.length > 0) {
+        const mappedSections = selectedSections.map(
+          (section) => sectionMapping[section] || section
+        );
+        displaySections.push(...mappedSections);
+      }
+
+      const customMedicalInfo: { [key: string]: string } = {};
+      if (selectedMedicalFields.length > 0) {
+        selectedMedicalFields.forEach((field) => {
+          const mappedField = medicalFieldMapping[field];
+          if (mappedField) {
+            customMedicalInfo[mappedField] = "textbox";
+          }
+        });
+      }
+
+      if (Object.keys(customMedicalInfo).length === 0) {
+        customMedicalInfo.medicalhistory = "textbox";
+      }
+
+      const payload = {
+        ...(editService && { id: editService.id }),
+        name: serviceData.name.trim(),
+        description: serviceData.description.trim(),
+        is_active: serviceData.status === "Active",
+        display_pic_url: "http://example.com/pic.jpg",
+        service_tags: serviceData.tags,
+        display_sections: displaySections,
+        custom_medical_info: customMedicalInfo,
+      };
+
+      const response = await createOrUpdateHomecareService(payload, token);
+
+      if (response.success) {
+        if (editService && onUpdateService) {
+          const updatedService: Service = {
+            ...editService,
+            name: serviceData.name.trim(),
+            description: serviceData.description.trim(),
+            status: serviceData.status,
+            category: serviceData.tags[0] || "General",
+          };
+          onUpdateService(updatedService);
+          toast.success("Service updated successfully!");
+        } else {
+          onAddService({} as Omit<Service, "id">);
+          toast.success("Service created successfully!");
+        }
+
+        onResetMainForm();
+        onCloseMainModal();
+        onClose();
+      } else {
+        throw new Error("Failed to save service");
+      }
+    } catch (error: any) {
+      console.error("Error saving service:", error);
+      toast.error(error.message || "Failed to save service");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -84,7 +213,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-6xl max-h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+      <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div>
@@ -113,21 +242,21 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
                 <h4 className="text-[14px] font-medium text-[#161D1F] mb-4">
                   Sections
                 </h4>
-                <div className="space-y-3">
+                <div className="space-y-1 border border-gray-300 rounded-lg">
                   {availableSections.map((section) => (
                     <div
                       key={section}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                      className="flex items-center justify-between p-4 border-b border-gray-200 hover:border-gray-300 transition-colors"
                     >
                       <span className="text-[12px] text-[#161D1F]">
                         {section}
                       </span>
                       <button
                         onClick={() => handleSectionToggle(section)}
-                        className={`px-4 py-2 text-[10px] text-white rounded hover:bg-[#00729A] transition-colors ${
+                        className={`text-[10px] text-[#0088B1] font-semibold ${
                           selectedSections.includes(section)
-                            ? "bg-gray-400"
-                            : "bg-[#0088B1]"
+                            ? "text-gray-400"
+                            : "text-[#0088B1]"
                         }`}
                         disabled={selectedSections.includes(section)}
                       >
@@ -146,21 +275,21 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
                   <h4 className="text-[14px] font-medium text-[#161D1F] mb-4">
                     Medical Information Fields
                   </h4>
-                  <div className="space-y-3">
+                  <div className="space-y-1 border border-gray-300 rounded-lg">
                     {medicalFields.map((field) => (
                       <div
                         key={field}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                        className="flex items-center justify-between p-4 border-b border-gray-200 hover:border-gray-300 transition-colors"
                       >
                         <span className="text-[12px] text-[#161D1F]">
                           {field}
                         </span>
                         <button
                           onClick={() => handleMedicalFieldToggle(field)}
-                          className={`px-4 py-2 text-[10px] text-white rounded hover:bg-[#00729A] transition-colors ${
+                          className={`text-[10px] text-[#0088B1] font-semibold ${
                             selectedMedicalFields.includes(field)
-                              ? "bg-gray-400"
-                              : "bg-[#0088B1]"
+                              ? "text-gray-400"
+                              : "text-[#0088B1]"
                           }`}
                           disabled={selectedMedicalFields.includes(field)}
                         >
@@ -183,9 +312,9 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
               <h4 className="text-[14px] font-medium text-[#161D1F] mb-4">
                 Selected Sections
               </h4>
-              <div className="min-h-[150px] p-4 border border-gray-200 rounded-lg">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+              <div className="min-h-[150px] border border-gray-300 rounded-lg">
+                <div className="space-y-0">
+                  <div className="flex items-center justify-between p-4 border-b">
                     <span className="text-[12px] text-[#161D1F]">
                       Patient Information
                     </span>
@@ -194,7 +323,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
                   {selectedSections.map((section) => (
                     <div
                       key={section}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded border"
+                      className="flex items-center justify-between p-4 border-b"
                     >
                       <span className="text-[12px] text-[#161D1F]">
                         {section}
@@ -216,7 +345,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
               <h4 className="text-[14px] font-medium text-[#161D1F] mb-4">
                 Selected Fields
               </h4>
-              <div className="min-h-[150px] p-4 border border-gray-200 rounded-lg">
+              <div className="min-h-[150px] border border-gray-300 rounded-lg">
                 {selectedMedicalFields.length === 0 ? (
                   <div className="flex items-center justify-center h-full min-h-[120px]">
                     <p className="text-[12px] text-gray-500">
@@ -228,7 +357,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
                     {selectedMedicalFields.map((field) => (
                       <div
                         key={field}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded border"
+                        className="flex items-center justify-between p-4 border-b"
                       >
                         <span className="text-[12px] text-[#161D1F]">
                           {field}
@@ -259,9 +388,18 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
           <div className="flex gap-3">
             <button
               onClick={handleSave}
-              className="px-6 py-2 text-[10px] bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors"
+              disabled={isSubmitting}
+              className={`px-6 py-2 text-[10px] text-white rounded-lg transition-colors ${
+                isSubmitting
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-[#0088B1] hover:bg-[#00729A]"
+              }`}
             >
-              {editService ? "Update Service" : "Add Service"}
+              {isSubmitting
+                ? "Saving..."
+                : editService
+                ? "Update Service"
+                : "Add Service"}
             </button>
           </div>
         </div>

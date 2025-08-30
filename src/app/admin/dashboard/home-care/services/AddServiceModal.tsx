@@ -1,9 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { X, ChevronDown } from "lucide-react";
-import { createOrUpdateHomecareService } from "./service/api/homecareServices";
 import { useAdminStore } from "@/app/store/adminStore";
-import toast from "react-hot-toast";
 import SectionFieldSelector from "./SectionFieldSelector";
 
 interface Service {
@@ -47,7 +45,6 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
   onUpdateService,
   editService,
 }) => {
-  const { token, admin } = useAdminStore();
   const [serviceName, setServiceName] = useState("");
   const [serviceDescription, setServiceDescription] = useState("");
   const [serviceStatus, setServiceStatus] = useState<"Active" | "Inactive">(
@@ -58,31 +55,11 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
   const [consents, setConsents] = useState<string[]>([]);
   const [newConsent, setNewConsent] = useState("");
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSectionSelector, setShowSectionSelector] = useState(false);
   const [sectionFieldData, setSectionFieldData] = useState<SectionFieldData>({
     sections: [],
     medicalFields: [],
   });
-
-  const sectionMapping: { [key: string]: string } = {
-    "Medical Information": "MedicalInfo",
-    "Doctor's Information": "DoctorInfo",
-    "Installation Requirements": "InstallationInfo",
-    "Contact & Location": "ContactInfo",
-    "Patient Information": "PatientInfo",
-  };
-
-  const medicalFieldMapping: { [key: string]: string } = {
-    "Allergies & Restrictions": "allergies",
-    "Pain Level": "painlevel",
-    "Mobility Level": "mobilitylevel",
-    "Previous Physiotherapy History": "physiohistory",
-    "Therapy Goals": "therapygoals",
-    "Reason for Procedure": "procedureason",
-    "Previous Similar Procedures": "similarprocedures",
-    "Medical History": "medicalhistory",
-  };
 
   useEffect(() => {
     if (editService && isOpen) {
@@ -129,88 +106,11 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
     setSectionFieldData({ sections: [], medicalFields: [] });
   };
 
-  const handleAddService = async () => {
-    if (!serviceName.trim() || !serviceDescription.trim()) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    if (!token || !admin.id) {
-      toast.error("Authentication required");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const displaySections = ["PatientInfo"];
-      if (sectionFieldData.sections.length > 0) {
-        const mappedSections = sectionFieldData.sections.map(
-          (section) => sectionMapping[section] || section
-        );
-        displaySections.push(...mappedSections);
-      }
-
-      const customMedicalInfo: { [key: string]: string } = {};
-      if (sectionFieldData.medicalFields.length > 0) {
-        sectionFieldData.medicalFields.forEach((field) => {
-          const mappedField = medicalFieldMapping[field];
-          if (mappedField) {
-            customMedicalInfo[mappedField] = "textbox";
-          }
-        });
-      }
-
-      if (Object.keys(customMedicalInfo).length === 0) {
-        customMedicalInfo.medicalhistory = "textbox";
-      }
-
-      const payload = {
-        ...(editService && { id: editService.id }),
-        name: serviceName.trim(),
-        description: serviceDescription.trim(),
-        is_active: serviceStatus === "Active",
-        display_pic_url: "http://example.com/pic.jpg",
-        service_tags: serviceTags,
-        display_sections: displaySections,
-        custom_medical_info: customMedicalInfo,
-      };
-
-      const response = await createOrUpdateHomecareService(payload, token);
-
-      if (response.success) {
-        if (editService && onUpdateService) {
-          const updatedService: Service = {
-            ...editService,
-            name: serviceName.trim(),
-            description: serviceDescription.trim(),
-            status: serviceStatus,
-            category: serviceTags[0] || "General",
-          };
-          onUpdateService(updatedService);
-          toast.success("Service updated successfully!");
-        } else {
-          onAddService({} as Omit<Service, "id">);
-          toast.success("Service created successfully!");
-        }
-
-        handleReset();
-        onClose();
-      } else {
-        throw new Error("Failed to save service");
-      }
-    } catch (error: any) {
-      console.error("Error saving service:", error);
-      toast.error(error.message || "Failed to save service");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleSectionFieldSave = (data: SectionFieldData) => {
     setSectionFieldData(data);
     setShowSectionSelector(false);
   };
+
   if (!isOpen) return null;
 
   return (
@@ -410,21 +310,6 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
           >
             Next
           </button>
-          <button
-            onClick={handleAddService}
-            disabled={isSubmitting}
-            className={`px-6 py-2 text-[10px] text-white rounded-lg transition-colors ${
-              isSubmitting
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-[#0088B1] hover:bg-[#00729A]"
-            }`}
-          >
-            {isSubmitting
-              ? "Saving..."
-              : editService
-              ? "Update Service"
-              : "Add Service"}
-          </button>
         </div>
       </div>
       <SectionFieldSelector
@@ -433,6 +318,17 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
         onSave={handleSectionFieldSave}
         initialData={sectionFieldData}
         editService={editService}
+        serviceData={{
+          name: serviceName,
+          description: serviceDescription,
+          status: serviceStatus,
+          tags: serviceTags,
+          consents: consents,
+        }}
+        onAddService={onAddService}
+        onUpdateService={onUpdateService}
+        onCloseMainModal={onClose}
+        onResetMainForm={handleReset}
       />
     </div>
   );
