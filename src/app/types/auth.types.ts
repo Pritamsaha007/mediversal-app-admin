@@ -48,11 +48,12 @@ export interface CouponItem {
   id: number;
   coupon_name: string;
   coupon_code: string;
-  discount_type: "fixed" | "percentage"; // Assuming these are the two possible values
-  discount_value: string; // Could also be number if you parse it
-  minimum_order_value: string; // Could also be number if you parse it
-  start_date: string; // ISO date string
-  expiry_date: string; // ISO date string
+  discount_type: "fixed" | "percentage";
+  discount_value: number;
+  minimum_item_quantity: number;
+  minimum_order_value: number;
+  start_date: string | null; // Allow null values
+  expiry_date: string | null; // Allow null values
   uses_limit: number | null;
   category: string;
   description: string;
@@ -64,8 +65,8 @@ export interface CouponItem {
   is_general_coupon: 0 | 1;
   is_for_new_customer: 0 | 1;
   is_for_existing_customer: 0 | 1;
-  created_at: string; // ISO date string
-  updated_at: string; // ISO date string
+  created_at: string;
+  updated_at: string;
 }
 export interface AddCouponModalProps {
   isOpen: boolean;

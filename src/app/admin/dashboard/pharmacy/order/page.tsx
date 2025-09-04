@@ -179,7 +179,7 @@ const Orders: React.FC = () => {
   };
 
   const handleOrderAction = async (action: string, order: Order) => {
-    console.log(`Action: ${action}, Order ID: ${order.orderId}`);
+    console.log(`Action: ${action}, Order ID: ${order.id}`);
 
     try {
       setLoading(true);
@@ -193,10 +193,10 @@ const Orders: React.FC = () => {
           console.log("Print order:", order);
           break;
         case "delete":
-          console.log("Delete confirmation for order:", order.orderId);
+          console.log("Delete confirmation for order:", order.id);
           if (window.confirm("Are you sure you want to delete this order?")) {
             console.log("User confirmed delete");
-            await OrderService.deleteOrder(Number(order.orderId));
+            await OrderService.deleteOrder(Number(order.id));
             console.log("Delete successful, refreshing orders");
             await fetchOrders();
             console.log("Orders refreshed");
@@ -216,6 +216,8 @@ const Orders: React.FC = () => {
   };
 
   const handleSelectOrder = (orderId: string, checked: boolean) => {
+    if (!orderId) return;
+
     if (checked) {
       setSelectedOrders([...selectedOrders, orderId]);
     } else {
@@ -225,11 +227,23 @@ const Orders: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedOrders(
-        filteredOrders.map((order) => order.orderId.toString())
-      );
+      // Select only orders on the current page
+      const currentPageOrders = getPaginatedOrders()
+        .filter((order) => order.id != null)
+        .map((order) => order.id.toString());
+
+      setSelectedOrders([
+        ...new Set([...selectedOrders, ...currentPageOrders]),
+      ]);
     } else {
-      setSelectedOrders([]);
+      // Deselect only orders on the current page
+      const currentPageOrderIds = getPaginatedOrders()
+        .filter((order) => order.id != null)
+        .map((order) => order.id.toString());
+
+      setSelectedOrders(
+        selectedOrders.filter((id) => !currentPageOrderIds.includes(id))
+      );
     }
   };
 
@@ -518,8 +532,12 @@ const Orders: React.FC = () => {
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                       checked={
-                        selectedOrders.length === filteredOrders.length &&
-                        filteredOrders.length > 0
+                        getPaginatedOrders().length > 0 &&
+                        getPaginatedOrders().every(
+                          (order) =>
+                            order.id != null &&
+                            selectedOrders.includes(order.id.toString())
+                        )
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
@@ -555,26 +573,31 @@ const Orders: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  getPaginatedOrders().map((order) => (
-                    <tr key={order.orderId} className="hover:bg-gray-50">
+                  getPaginatedOrders().map((order, index) => (
+                    <tr
+                      key={order.id || `order-${index}`}
+                      className="hover:bg-gray-50"
+                    >
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                           checked={selectedOrders.includes(
-                            order.orderId.toString()
+                            order?.id?.toString() ?? ""
                           )}
-                          onChange={(e) =>
-                            handleSelectOrder(
-                              order.orderId.toString(),
-                              e.target.checked
-                            )
-                          }
+                          onChange={(e) => {
+                            if (order?.id != null) {
+                              handleSelectOrder(
+                                order.id.toString(),
+                                e.target.checked
+                              );
+                            }
+                          }}
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-[#161D1F]">
-                          #{order.orderId}
+                          {order.id.slice(0, 6).toUpperCase()}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

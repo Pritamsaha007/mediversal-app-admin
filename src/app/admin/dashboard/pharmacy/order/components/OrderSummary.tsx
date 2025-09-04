@@ -37,7 +37,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
       const cancellationReason = "Order canceled by admin";
 
       const response = await cancelOrder(
-        order.orderId.toString(),
+        order.id.toString(),
         cancellationReason
       );
 
@@ -93,7 +93,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h2 className="text-base font-semibold text-gray-800">
-              Order ID: {order.orderId}
+              Order ID: {order.id}
             </h2>
             <div className="flex items-center gap-2 mt-1">
               <StatusBadge status={order.deliverystatus || "Pending"} />

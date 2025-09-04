@@ -11,7 +11,7 @@ export interface StatsCardData {
 }
 
 export interface Order {
-  orderId: string;
+  id: string;
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
