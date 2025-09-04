@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAdminStore } from "@/app/store/adminStore";
+import { signOut } from "aws-amplify/auth";
 
 interface HeaderProps {
   userName?: string;
@@ -44,7 +45,8 @@ const Header: React.FC<HeaderProps> = () => {
     });
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut();
     logout();
     router.push("/login");
   };

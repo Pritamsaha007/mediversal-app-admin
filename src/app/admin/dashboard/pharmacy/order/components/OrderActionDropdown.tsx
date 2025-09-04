@@ -17,7 +17,7 @@ const OrderActionDropdown: React.FC<OrderActionDropdownProps> = ({
 }) => {
   const handleViewClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent event bubbling
-    console.log("DEBUG - View button clicked", order.orderId);
+    console.log("DEBUG - View button clicked", order.id);
     onAction("view", order);
   };
 

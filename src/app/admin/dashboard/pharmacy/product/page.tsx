@@ -420,7 +420,7 @@ const ProductCatalog: React.FC = () => {
             title="Total Products"
             stats={[
               { label: "Active", value: statsData.activeProducts },
-              { label: "Deactivated", value: statsData.inactiveProducts },
+              { label: "Inactive", value: statsData.inactiveProducts },
             ]}
             icon={<ShoppingBag className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"

@@ -1,13 +1,22 @@
+import { useAdminStore } from "@/app/store/adminStore";
 import { CouponItem } from "@/app/types/auth.types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+const getAuthHeaders = () => {
+  const { token } = useAdminStore.getState();
+  return {
+    "Content-Type": "application/json",
+    ...(token && {
+      Authorization: `Bearer ${token}`,
+    }),
+  };
+};
+
 export const getAllCoupons = async (): Promise<CouponItem[]> => {
-  const response = await fetch(`${API_BASE_URL}/app/admin/coupons`, {
+  const response = await fetch(`${API_BASE_URL}/admin/coupons`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -20,33 +29,42 @@ export const getAllCoupons = async (): Promise<CouponItem[]> => {
 };
 
 export const createCoupon = async (coupon: CouponItem): Promise<CouponItem> => {
-  const response = await fetch(`${API_BASE_URL}/app/admin/coupons`, {
+  const response = await fetch(`${API_BASE_URL}/admin/coupons`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(coupon),
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    console.error("Failed to create coupon:", errorData);
-    throw new Error(errorData?.message || "Failed to create coupon");
+    let errorData: any;
+    try {
+      errorData = await response.json();
+    } catch {
+      errorData = await response.text();
+    }
+
+    console.error("❌ Failed to create coupon:", {
+      status: response.status,
+      statusText: response.statusText,
+      body: coupon,
+      error: errorData,
+    });
+
+    throw new Error(
+      errorData?.message ||
+        `Failed to create coupon (status: ${response.status})`
+    );
   }
 
   return await response.json();
 };
+
 export const updateCoupon = async (coupon: CouponItem): Promise<CouponItem> => {
-  const response = await fetch(
-    `${API_BASE_URL}/app/admin/coupons/${coupon.id}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(coupon),
-    }
-  );
+  const response = await fetch(`${API_BASE_URL}/admin/coupons/${coupon.id}`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(coupon),
+  });
 
   if (!response.ok) {
     const errorData = await response.json();
@@ -58,11 +76,9 @@ export const updateCoupon = async (coupon: CouponItem): Promise<CouponItem> => {
 };
 
 export const deleteCoupon = async (id: string): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/app/admin/coupons/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/admin/coupons/${id}`, {
     method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {

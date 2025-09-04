@@ -38,7 +38,7 @@ export default function CouponRow({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const isExpired = new Date(coupon.expiry_date) < new Date();
+  const isExpired = new Date(coupon.expiry_date || "") < new Date();
 
   return (
     <tr className="hover:bg-gray-50">
@@ -86,7 +86,7 @@ export default function CouponRow({
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
         <div className="flex items-center">
-          {new Date(coupon.expiry_date).toLocaleDateString()}
+          {new Date(coupon.expiry_date || "").toLocaleDateString()}
         </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">

@@ -1,18 +1,30 @@
 import axios from "axios";
 import { Order, ApiResponse, FilterOptions, SortOption } from "../types/types";
+import { useAdminStore } from "@/app/store/adminStore";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const RAPID_SHYP_API_URL = process.env.NEXT_PUBLIC_RAPID_SHYP_API_URL;
 const ACCESS_TOKEN = process.env.NEXT_PUBLIC_RAPID_SHYP_ACCESS_TOKEN;
 
+const getAuthHeaders = () => {
+  const { token } = useAdminStore.getState();
+  return {
+    "Content-Type": "application/json",
+    ...(token && {
+      Authorization: `Bearer ${token}`,
+    }),
+  };
+};
+
 export class OrderService {
-  static checkAllowedMethods(orderId: number) {
+  static checkAllowedMethods(Id: number) {
     throw new Error("Method not implemented.");
   }
   static async fetchOrders(): Promise<Order[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/app/api/order`);
-      console.log("Fetched orders:", response.data);
+      const response = await axios.get(`${API_BASE_URL}/api/order`, {
+        headers: getAuthHeaders(),
+      });
 
       if (Array.isArray(response.data)) {
         return response.data;
@@ -77,14 +89,16 @@ export class OrderService {
 
   static filterOrders(orders: Order[], filters: FilterOptions): Order[] {
     return orders.filter((order) => {
-      // Search filter
+      // Search filter - with null/undefined checks
       if (filters.searchTerm) {
         const searchLower = filters.searchTerm.toLowerCase();
         const matchesSearch =
-          order.orderId.toString().includes(searchLower) ||
-          order.customerName.toLowerCase().includes(searchLower) ||
-          order.customerEmail?.toLowerCase().includes(searchLower) ||
-          order.customerPhone.includes(searchLower);
+          (order.id && order.id.toString().includes(searchLower)) ||
+          (order.customerName &&
+            order.customerName.toLowerCase().includes(searchLower)) ||
+          (order.customerEmail &&
+            order.customerEmail.toLowerCase().includes(searchLower)) ||
+          (order.customerPhone && order.customerPhone.includes(searchLower));
 
         if (!matchesSearch) return false;
       }
@@ -150,11 +164,9 @@ export class OrderService {
     try {
       console.log(`Attempting to delete order: ${orderId}`);
       const response = await axios.delete(
-        `${API_BASE_URL}/app/api/order/${orderId}`,
+        `${API_BASE_URL}/api/order/${orderId}`,
         {
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(),
           timeout: 10000, // 10 second timeout
         }
       );
@@ -291,17 +303,14 @@ export const trackOrders = async (seller_order_id: number, awb: string) => {
 export const cancelOrder = async (orderId: string, reason: string) => {
   try {
     const response = await axios.post(
-      `${API_BASE_URL}/app/api/order/cancel-order`,
+      `${API_BASE_URL}/api/order/cancel-order`,
       {
         orderId: orderId,
         storeName: "DEFAULT",
         reason: reason,
       },
-
       {
-        headers: {
-          "content-type": "application/json",
-        },
+        headers: getAuthHeaders(),
       }
     );
 

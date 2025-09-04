@@ -29,10 +29,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ order }) => {
           throw new Error("Tracking number (AWB) is required");
         }
 
-        const data = await trackOrders(
-          Number(order.orderId),
-          order.rapidshypAwb
-        );
+        const data = await trackOrders(Number(order.id), order.rapidshypAwb);
 
         if (data?.records?.[0]?.shipment_details?.[0]?.track_scans) {
           setTrackingData(data.records[0].shipment_details[0].track_scans);

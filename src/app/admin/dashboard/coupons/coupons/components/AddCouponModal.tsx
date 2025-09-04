@@ -61,7 +61,6 @@ export const CouponModal: React.FC<CouponModalProps> = ({
   };
 
   const handleSubmit = () => {
-    // Validate required fields
     if (!formData.coupon_code) {
       toast.error("Coupon code is required");
       return;
@@ -78,6 +77,20 @@ export const CouponModal: React.FC<CouponModalProps> = ({
     const couponData: CouponItem = {
       ...formData,
       id: isEditMode && couponToEdit?.id ? couponToEdit.id : Date.now(),
+      start_date: formData.start_date || null,
+      expiry_date: formData.expiry_date
+        ? formData.expiry_date.includes("T") ||
+          formData.expiry_date.includes(" ")
+          ? formData.expiry_date
+          : `${formData.expiry_date} 23:59:59`
+        : null,
+      is_for_first_time_user: formData.is_for_first_time_user ? 1 : 0,
+      is_for_comeback_user: formData.is_for_comeback_user ? 1 : 0,
+      is_for_loyal_user: formData.is_for_loyal_user ? 1 : 0,
+      is_for_birthday_user: formData.is_for_birthday_user ? 1 : 0,
+      is_general_coupon: formData.is_general_coupon ? 1 : 0,
+      is_for_new_customer: formData.is_for_new_customer ? 1 : 0,
+      is_for_existing_customer: formData.is_for_existing_customer ? 1 : 0,
     };
 
     onSubmit(couponData);
@@ -244,6 +257,23 @@ export const CouponModal: React.FC<CouponModalProps> = ({
               />
             </div>
 
+            {/* Start Date */}
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-[#161D1F]">
+                Start Date (Optional)
+              </label>
+              <div className="relative">
+                <input
+                  type="date"
+                  value={formData.start_date || ""}
+                  onChange={(e) =>
+                    handleInputChange("start_date", e.target.value)
+                  }
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-500"
+                />
+              </div>
+            </div>
+
             {/* Expiry Date */}
             <div className="space-y-1">
               <label className="block text-xs font-medium text-[#161D1F]">
@@ -252,14 +282,13 @@ export const CouponModal: React.FC<CouponModalProps> = ({
               <div className="relative">
                 <input
                   type="date"
-                  value={formData.expiry_date}
+                  value={formData.expiry_date || ""}
                   onChange={(e) =>
                     handleInputChange("expiry_date", e.target.value)
                   }
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-500"
                   required
                 />
-                <CalendarIcon className="absolute right-3 top-2 h-4 w-4 text-gray-400" />
               </div>
             </div>
 

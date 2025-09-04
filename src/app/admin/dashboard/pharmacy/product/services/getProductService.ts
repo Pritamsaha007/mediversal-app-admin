@@ -2,6 +2,7 @@ import axios from "axios";
 import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
 import { ProductFormData } from "../types/productForm.type";
 import { productStore } from "@/app/store/productStore";
+import { useAdminStore } from "@/app/store/adminStore";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -11,6 +12,16 @@ export const apiClient = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+const getAuthHeaders = () => {
+  const { token } = useAdminStore.getState();
+  return {
+    "Content-Type": "application/json",
+    ...(token && {
+      Authorization: `Bearer ${token}`,
+    }),
+  };
+};
 
 const productCache = new Map<string, any>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -38,7 +49,7 @@ interface ProductApiResponse {
   ProductStrength: string;
   PackageSize: string;
   GST: string;
-  active: number;
+  active: boolean;
   Coupons: string;
   StockAvailableInInventory: number;
   InventoryUpdated: string;
@@ -53,7 +64,7 @@ interface ProductApiResponse {
   SKU: string;
   Subcategory: string;
   Category: string;
-  featuredProduct: number;
+  featuredProduct: boolean;
 }
 
 interface StatisticsResponse {
@@ -109,8 +120,8 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
     sellingPrice: sellingPrice,
     discount: Math.round(calculatedDiscount),
     stock: apiProduct.StockAvailableInInventory,
-    status: apiProduct.active === 1 ? "Active" : "Inactive",
-    featured: apiProduct.featuredProduct === 1,
+    status: apiProduct.active === true ? "Active" : "Inactive",
+    featured: apiProduct.featuredProduct === true,
     description: apiProduct.ProductInformation,
     composition: apiProduct.Composition,
     dosageForm: "",
@@ -118,7 +129,7 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
     ProductStrength: apiProduct.ProductStrength || "",
     PackageSize: apiProduct.PackageSize || "",
     schedule: apiProduct.ColdChain === "Yes" ? "Cold Chain" : "Non-Cold Chain",
-    taxRate: parseFloat(apiProduct.GST),
+    taxRate: parseFloat(apiProduct.GST || apiProduct.GST || "0"),
     hsnCode: apiProduct.HSN_Code || "",
     storageConditions: apiProduct.SafetyAdvices,
     shelfLife: 0,
@@ -154,7 +165,9 @@ export const productService = {
   /* ----- DELETE PRODUCT ----- */
   async deleteProduct(id: string): Promise<void> {
     try {
-      await apiClient.delete(`/app/api/Product/deleteProduct/${id}`);
+      await apiClient.delete(`/api/Product/deleteProduct/${id}`, {
+        headers: getAuthHeaders(),
+      });
       this.clearCache();
     } catch (error) {
       console.error(`Error deleting product ${id}:`, error);
@@ -195,8 +208,9 @@ export const productService = {
 
     try {
       const response = await apiClient.post(
-        `/app/api/Product/getProducts?start=${start}&max=${max}`,
-        filters
+        `/api/Product/getProducts?start=${start}&max=${max}`,
+        filters,
+        { headers: getAuthHeaders() }
       );
 
       const productsArray = response.data.products || [];
@@ -218,13 +232,13 @@ export const productService = {
       };
 
       const statistics = {
-        activeProducts: parseInt(stats.activeProducts),
-        inactiveProducts: parseInt(stats.inactiveProducts),
-        inStockProducts: parseInt(stats.inStockProducts),
-        outOfStockProducts: parseInt(stats.outOfStockProducts),
-        featuredProducts: parseInt(stats.featuredProducts),
-        nonfeaturedProducts: parseInt(stats.nonfeaturedProducts),
-        totalCategories: parseInt(stats.totalCategories.toString()),
+        activeProducts: parseInt(stats.activeproducts),
+        inactiveProducts: parseInt(stats.inactiveproducts),
+        inStockProducts: parseInt(stats.instockproducts),
+        outOfStockProducts: parseInt(stats.outofstockproducts),
+        featuredProducts: parseInt(stats.featuredproducts),
+        nonfeaturedProducts: parseInt(stats.nonfeaturedproducts),
+        totalCategories: parseInt(stats.totalcategories.toString()),
       };
 
       const totalCount =
@@ -262,7 +276,9 @@ export const productService = {
 
     try {
       const response = await apiClient.post(
-        `/app/api/Product/getProducts?start=0&max=1`
+        `/api/Product/getProducts?start=0&max=1`,
+        {},
+        { headers: getAuthHeaders() } // Add this line
       );
 
       const statisticsArray = response.data.statistics || [];
@@ -277,13 +293,13 @@ export const productService = {
       };
 
       const result = {
-        activeProducts: parseInt(stats.activeProducts),
-        inactiveProducts: parseInt(stats.inactiveProducts),
-        inStockProducts: parseInt(stats.inStockProducts),
-        outOfStockProducts: parseInt(stats.outOfStockProducts),
-        featuredProducts: parseInt(stats.featuredProducts),
-        nonfeaturedProducts: parseInt(stats.nonfeaturedProducts),
-        totalCategories: parseInt(stats.totalCategories.toString()),
+        activeProducts: parseInt(stats.activeproducts),
+        inactiveProducts: parseInt(stats.inactiveproducts),
+        inStockProducts: parseInt(stats.instockproducts),
+        outOfStockProducts: parseInt(stats.outofstockproducts),
+        featuredProducts: parseInt(stats.featuredproducts),
+        nonfeaturedProducts: parseInt(stats.nonfeaturedproducts),
+        totalCategories: parseInt(stats.totalcategories.toString()),
       };
 
       setToCache(cacheKey, result);
@@ -335,9 +351,9 @@ export const productService = {
       };
 
       const response = await apiClient.put(
-        `/app/api/Product/updateProduct/${id}`,
+        `/api/Product/updateProduct/${id}`,
         payload,
-        { headers: { "Content-Type": "application/json" } }
+        { headers: getAuthHeaders() }
       );
       this.clearCache();
 
@@ -356,7 +372,8 @@ export const productService = {
 
     try {
       const response = await apiClient.get(
-        `/app/api/Product/searchProducts?query=${encodeURIComponent(query)}`
+        `/api/Product/searchProducts?query=${encodeURIComponent(query)}`,
+        { headers: getAuthHeaders() }
       );
 
       const productsArray = response.data.products || [];
@@ -381,8 +398,10 @@ export const productService = {
     if (cachedData) return cachedData;
 
     try {
-      const response = await apiClient.get(`/app/api/Product/getProduct/${id}`);
-
+      const response = await apiClient.get(
+        `/api/Product/getProduct/${id}`,
+        { headers: getAuthHeaders() } // Add this line
+      );
       const product = mapApiResponseToProduct(response.data);
       setToCache(cacheKey, product);
       return product;
