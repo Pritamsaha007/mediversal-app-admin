@@ -11,7 +11,7 @@ export class OrderService {
   }
   static async fetchOrders(): Promise<Order[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/app/api/order`);
+      const response = await axios.get(`${API_BASE_URL}/api/order`);
       console.log("Fetched orders:", response.data);
 
       if (Array.isArray(response.data)) {
@@ -150,7 +150,7 @@ export class OrderService {
     try {
       console.log(`Attempting to delete order: ${orderId}`);
       const response = await axios.delete(
-        `${API_BASE_URL}/app/api/order/${orderId}`,
+        `${API_BASE_URL}/api/order/${orderId}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -291,7 +291,7 @@ export const trackOrders = async (seller_order_id: number, awb: string) => {
 export const cancelOrder = async (orderId: string, reason: string) => {
   try {
     const response = await axios.post(
-      `${API_BASE_URL}/app/api/order/cancel-order`,
+      `${API_BASE_URL}/api/order/cancel-order`,
       {
         orderId: orderId,
         storeName: "DEFAULT",
