@@ -65,6 +65,7 @@ const Doctors: React.FC = () => {
   const [selectedDoctors, setSelectedDoctors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedSlots, setExpandedSlots] = useState<string[]>([]);
+  const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
 
   const statusOptions = [
     "All Status",
@@ -85,7 +86,7 @@ const Doctors: React.FC = () => {
     ).length;
     const avgRating =
       doctors.length > 0
-        ? doctors.reduce((acc, d) => acc + d.rating, 0) / doctors.length
+        ? doctors.reduce((acc, d) => acc + (d.rating ?? 0), 0) / doctors.length
         : 0;
 
     return {
@@ -115,9 +116,9 @@ const Doctors: React.FC = () => {
       filtered = filtered.filter(
         (doctor) =>
           doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          doctor.specializations
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
+          (doctor.specializations?.toLowerCase() || "").includes(
+            searchTerm.toLowerCase()
+          )
       );
     }
 
@@ -184,8 +185,38 @@ const Doctors: React.FC = () => {
     );
   };
 
-  const handleAddDoctor = (doctorData: any) => {
-    console.log("New Doctor Added:", doctorData);
+  const handleAddDoctor = (doctorData: Doctor) => {
+    if (editingDoctor) {
+      // Update existing doctor
+      setDoctors((prev) =>
+        prev.map((d) =>
+          d.id === editingDoctor.id
+            ? { ...doctorData, id: editingDoctor.id }
+            : d
+        )
+      );
+    } else {
+      // Add new doctor
+      const newDoctor = {
+        ...doctorData,
+        id: `doctor-${Date.now()}`, // Generate temp ID
+        rating: 0,
+        created_by: "current-user-id",
+        updated_by: "current-user-id",
+      };
+      setDoctors((prev) => [...prev, newDoctor]);
+    }
+    setEditingDoctor(null);
+  };
+
+  const handleEditDoctor = (doctor: Doctor) => {
+    setEditingDoctor(doctor);
+    setShowAddDoctorModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowAddDoctorModal(false);
+    setEditingDoctor(null);
   };
 
   const renderTimeSlots = (doctor: Doctor) => {
@@ -410,7 +441,10 @@ const Doctors: React.FC = () => {
                           <button className="p-2 text-gray-400 hover:text-blue-500">
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="p-2 text-gray-400 hover:text-blue-500">
+                          <button
+                            className="p-2 text-gray-400 hover:text-blue-500"
+                            onClick={() => handleEditDoctor(doctor)}
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button className="p-2 text-red-400 hover:text-red-500">
@@ -428,8 +462,9 @@ const Doctors: React.FC = () => {
       </div>
       <AddDoctorModal
         isOpen={showAddDoctorModal}
-        onClose={() => setShowAddDoctorModal(false)}
+        onClose={handleCloseModal}
         onAddDoctor={handleAddDoctor}
+        editingDoctor={editingDoctor}
       />
     </div>
   );
