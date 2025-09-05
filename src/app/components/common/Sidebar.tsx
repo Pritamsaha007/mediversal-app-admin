@@ -125,6 +125,28 @@ const Sidebar = () => {
         // },
       ],
     },
+    {
+      name: "Consultations",
+      icon: <LucideComputer size={18} />,
+      subItems: [
+        {
+          name: "Doctors",
+          link: "/admin/dashboard/consultations/doctors",
+        },
+        {
+          name: "Hospitals",
+          link: "/admin/dashboard/consultations/hospitals",
+        },
+        {
+          name: "Consultations",
+          link: "/admin/dashboard/consultations/consultation",
+        },
+        {
+          name: "Orders",
+          link: "/admin/dashboard/consultations/orders",
+        },
+      ],
+    },
   ];
 
   const toggleMenu = (menuName: string) => {
