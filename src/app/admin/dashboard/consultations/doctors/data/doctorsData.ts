@@ -219,3 +219,57 @@ export const generateTimeSlots = () => {
 
   return slots;
 };
+
+export const tabs = [
+  "Basic Information",
+  "Doctor Details",
+  "Availability",
+  "Compliance",
+];
+export const weekDays = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+export const languageOptions = [
+  "English",
+  "Hindi",
+  "Bengali",
+  "Telugu",
+  "Marathi",
+  "Tamil",
+  "Gujarati",
+  "Malayalam",
+  "Punjabi",
+  "Odia",
+  "Assamese",
+  "Urdu",
+];
+
+export const specializationOptions = [
+  "Cardiology",
+  "Dermatology",
+  "Neurology",
+  "Orthopedics",
+  "Pediatrics",
+  "Psychiatry",
+  "Radiology",
+  "Surgery",
+  "Oncology",
+  "Gynecology",
+];
+
+export const departmentOptions = [
+  "Emergency Medicine",
+  "Internal Medicine",
+  "Surgery",
+  "Pediatrics",
+  "Obstetrics & Gynecology",
+  "Radiology",
+  "Pathology",
+  "Anesthesiology",
+];

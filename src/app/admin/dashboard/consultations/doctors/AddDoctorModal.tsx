@@ -1,6 +1,13 @@
 "use client";
 import React, { useState } from "react";
 import { X, Upload, Plus, Trash2, ImagePlus } from "lucide-react";
+import {
+  tabs,
+  weekDays,
+  languageOptions,
+  specializationOptions,
+  departmentOptions,
+} from "./data/doctorsData";
 
 // Types
 interface TimeSlot {
@@ -88,62 +95,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     nmc: "",
     state_registration: "",
   });
-
-  const tabs = [
-    "Basic Information",
-    "Doctor Details",
-    "Availability",
-    "Compliance",
-  ];
-
-  const weekDays = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-  ];
-
-  const languageOptions = [
-    "English",
-    "Hindi",
-    "Bengali",
-    "Telugu",
-    "Marathi",
-    "Tamil",
-    "Gujarati",
-    "Malayalam",
-    "Punjabi",
-    "Odia",
-    "Assamese",
-    "Urdu",
-  ];
-
-  const specializationOptions = [
-    "Cardiology",
-    "Dermatology",
-    "Neurology",
-    "Orthopedics",
-    "Pediatrics",
-    "Psychiatry",
-    "Radiology",
-    "Surgery",
-    "Oncology",
-    "Gynecology",
-  ];
-
-  const departmentOptions = [
-    "Emergency Medicine",
-    "Internal Medicine",
-    "Surgery",
-    "Pediatrics",
-    "Obstetrics & Gynecology",
-    "Radiology",
-    "Pathology",
-    "Anesthesiology",
-  ];
 
   const handleInputChange = (field: keyof DoctorFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
