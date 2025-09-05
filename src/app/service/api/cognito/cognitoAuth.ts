@@ -26,6 +26,7 @@ export async function cognitoAdminLogin(
   payload: CognitoLoginPayload
 ): Promise<CognitoLoginResponse> {
   try {
+    await signOut();
     const { isSignedIn } = await signIn({
       username: payload.email,
       password: payload.password,
