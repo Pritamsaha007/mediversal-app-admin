@@ -9,7 +9,7 @@ import {
   departmentOptions,
   TimeSlot,
   Doctor,
-} from "./data/doctorsData";
+} from "../data/doctorsData";
 
 interface AddDoctorModalProps {
   isOpen: boolean;
@@ -83,7 +83,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
 
   useEffect(() => {
     if (editingDoctor) {
-      // Ensure all days have an array, even if empty
       const completeAvailability = {
         Monday: [],
         Tuesday: [],

@@ -17,8 +17,9 @@ import {
   Trash2,
   Star,
 } from "lucide-react";
-import AddDoctorModal from "./AddDoctorModal";
+import AddDoctorModal from "./components/AddDoctorModal";
 import StatsCard from "./components/StatsCards";
+import DoctorDetailsModal from "./components/DoctorDetailsModal";
 
 const StatusBadge: React.FC<{ isOnline: boolean; isInPerson: boolean }> = ({
   isOnline,
@@ -66,6 +67,8 @@ const Doctors: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [expandedSlots, setExpandedSlots] = useState<string[]>([]);
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   const statusOptions = [
     "All Status",
@@ -175,6 +178,15 @@ const Doctors: React.FC = () => {
     } else {
       setSelectedDoctors([]);
     }
+  };
+  const handleViewDoctor = (doctor: Doctor) => {
+    setSelectedDoctor(doctor);
+    setShowDetailsModal(true);
+  };
+
+  const handleCloseDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedDoctor(null);
   };
 
   const toggleSlotExpansion = (doctorId: string) => {
@@ -438,7 +450,10 @@ const Doctors: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center gap-2 justify-end">
-                          <button className="p-2 text-gray-400 hover:text-blue-500">
+                          <button
+                            className="p-2 text-gray-400 hover:text-blue-500"
+                            onClick={() => handleViewDoctor(doctor)}
+                          >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
@@ -465,6 +480,12 @@ const Doctors: React.FC = () => {
         onClose={handleCloseModal}
         onAddDoctor={handleAddDoctor}
         editingDoctor={editingDoctor}
+      />
+      <DoctorDetailsModal
+        isOpen={showDetailsModal}
+        onClose={handleCloseDetailsModal}
+        doctor={selectedDoctor}
+        onEdit={handleEditDoctor}
       />
     </div>
   );
