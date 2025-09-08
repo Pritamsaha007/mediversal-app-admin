@@ -593,7 +593,10 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
 
               <div className="space-y-6 border border-gray-200 rounded-lg p-4">
                 {weekDays.map((day) => (
-                  <div key={day} className="flex items-center justify-between">
+                  <div
+                    key={day}
+                    className="flex items-center justify-start gap-80"
+                  >
                     <div className="w-24">
                       <span className="text-[12px] font-medium text-[#161D1F]">
                         {day}
@@ -611,7 +614,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                             e.target.value
                           )
                         }
-                        className="text-[10px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none text-[#161D1F]"
+                        className="text-[10px] px-3 py-2 border-b border-gray-300  focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none text-[#161D1F]"
                       />
                       <span className="text-[10px] text-gray-500">to</span>
                       <input
@@ -624,7 +627,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                             e.target.value
                           )
                         }
-                        className="text-[10px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none text-[#161D1F]"
+                        className="text-[10px] px-3 py-2 border-b border-gray-300 focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none text-[#161D1F]"
                       />
                     </div>
                   </div>
