@@ -16,6 +16,7 @@ interface AddConsultationModalProps {
   onClose: () => void;
   onAddConsultation: (consultation: ConsultationFormData) => void;
   editingConsultation?: Consultation | null;
+  initialConsultationType: "online" | "hospital";
 }
 
 const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
@@ -23,8 +24,8 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
   onClose,
   onAddConsultation,
   editingConsultation,
+  initialConsultationType,
 }) => {
-  const [activeTab, setActiveTab] = useState<"online" | "hospital">("online");
   const [formData, setFormData] = useState<ConsultationFormData>({
     patientName: "",
     patientContact: "",
@@ -62,19 +63,14 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
         paymentStatus: editingConsultation.paymentStatus,
         symptoms: editingConsultation.symptoms || "",
       });
-      setActiveTab(
-        editingConsultation.consultationType === "online"
-          ? "online"
-          : "hospital"
-      );
     } else {
-      // Reset form for new consultation
       setFormData({
         patientName: "",
         patientContact: "",
         patientEmail: "",
         aadhaarNumber: "",
-        consultationType: "online",
+        consultationType:
+          initialConsultationType === "online" ? "online" : "in-person",
         consultationDate: "",
         consultationTime: "",
         duration: 30,
@@ -85,27 +81,18 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
         paymentStatus: "pending",
         symptoms: "",
       });
-      setActiveTab("online");
     }
-  }, [editingConsultation, isOpen]);
+  }, [editingConsultation, initialConsultationType, isOpen]);
 
   const handleInputChange = (field: keyof ConsultationFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleTabChange = (tab: "online" | "hospital") => {
-    setActiveTab(tab);
-    setFormData((prev) => ({
-      ...prev,
-      consultationType: tab === "online" ? "online" : "in-person",
-    }));
-  };
-
   const handleSubmit = () => {
+    console.log("Form Data:", formData);
+
     const consultationData = {
       ...formData,
-      consultationType:
-        activeTab === "online" ? ("online" as const) : ("in-person" as const),
       status: "scheduled" as const,
       doctorSpecialization: "General Medicine",
     };
@@ -203,38 +190,20 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
         <div className="flex items-center justify-between p-6 border-gray-200">
           <h2 className="text-[16px] font-medium text-[#161d1f]">
             {editingConsultation
-              ? "Edit Consultation"
-              : "Schedule New Consultation"}
+              ? `Edit ${
+                  initialConsultationType === "online" ? "Online" : "In-Person"
+                } Consultation`
+              : `Schedule ${
+                  initialConsultationType === "online"
+                    ? "Online"
+                    : "In-Person / Hospital Visit"
+                } Consultation`}
           </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
           >
             <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex mx-2">
-          <button
-            onClick={() => handleTabChange("online")}
-            className={`flex-1 py-3 px-3 ${
-              activeTab === "online"
-                ? "bg-[#0088B1] text-white rounded-lg text-[10px]"
-                : "bg-gray-100 text-[#161D1F] text-[10px]"
-            }`}
-          >
-            Online Consultation
-          </button>
-          <button
-            onClick={() => handleTabChange("hospital")}
-            className={`flex-1 px-6 py-3 text-sm font-medium ${
-              activeTab === "hospital"
-                ? "bg-[#0088B1] text-white rounded-lg text-[10px]"
-                : "bg-gray-100 text-[#161D1F] text-[10px]"
-            }`}
-          >
-            Hospital Visit
           </button>
         </div>
 
@@ -288,7 +257,7 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
                   className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                 />
               </div>
-              {activeTab === "hospital" && (
+              {formData.consultationType === "in-person" && (
                 <div>
                   <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
                     <span className="text-red-500">*</span> Select Hospital
@@ -302,7 +271,7 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
                   />
                 </div>
               )}
-              {activeTab === "online" && (
+              {formData.consultationType === "online" && (
                 <div>
                   <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
                     Aadhaar Number
@@ -365,34 +334,29 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
                   />
                 </div>
               </div>
-              {activeTab === "online" && (
-                <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
-                    Consultation Duration (minutes)
-                  </label>
-                  <DropdownSelect
-                    value={formData.duration.toString()}
-                    placeholder="Mention Consultation Time Period"
-                    options={durationOptions}
-                    field="duration"
-                  />
-                </div>
-              )}
-              {activeTab === "hospital" && (
-                <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
-                    <span className="text-red-500">*</span> Duration (minutes)
-                  </label>
-                  <DropdownSelect
-                    value={formData.duration.toString()}
-                    placeholder="Consultation Duration"
-                    options={durationOptions}
-                    field="duration"
-                    required
-                  />
-                </div>
-              )}
-              {activeTab === "online" && (
+              <div>
+                <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                  {formData.consultationType === "in-person" ? (
+                    <>
+                      <span className="text-red-500">*</span> Duration (minutes)
+                    </>
+                  ) : (
+                    "Consultation Duration (minutes)"
+                  )}
+                </label>
+                <DropdownSelect
+                  value={formData.duration.toString()}
+                  placeholder={
+                    formData.consultationType === "in-person"
+                      ? "Consultation Duration"
+                      : "Mention Consultation Time Period"
+                  }
+                  options={durationOptions}
+                  field="duration"
+                  required={formData.consultationType === "in-person"}
+                />
+              </div>
+              {formData.consultationType === "online" && (
                 <div>
                   <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
                     <span className="text-red-500">*</span> Consultation
@@ -445,7 +409,7 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
           {/* Specify Symptoms */}
           <div className="mb-6">
             <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
-              {activeTab === "online"
+              {formData.consultationType === "online"
                 ? "Specify Symptoms or The Reason for the Consultation"
                 : "Specify Symptoms"}
             </label>

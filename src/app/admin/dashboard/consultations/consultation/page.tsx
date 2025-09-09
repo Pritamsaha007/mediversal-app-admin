@@ -34,7 +34,7 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
 
   return (
     <span
-      className={`inline-flex items-center justify-center px-2 py-1 rounded-lg text-xs font-medium ${getStatusStyles()}`}
+      className={`inline-flex items-center justify-center px-2 py-1 rounded text-[10px] font-medium ${getStatusStyles()}`}
     >
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
@@ -88,6 +88,9 @@ const Consultations: React.FC = () => {
     "Cancelled",
   ];
   const typeOptions = ["Consultation Type", "Online", "In-Person"];
+  const [activeConsultationType, setActiveConsultationType] = useState<
+    "online" | "hospital"
+  >("online");
 
   // Generate stats
   const generateStats = () => {
@@ -276,15 +279,31 @@ const Consultations: React.FC = () => {
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
             Consultation & Scheduling
           </h1>
-          <button
-            className="flex items-center text-[12px] gap-2 bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 transition-colors"
-            onClick={() => setShowAddConsultationModal(true)}
-          >
-            <Plus className="w-4 h-4" />
-            Schedule Consultation
-          </button>
+          <div className="flex gap-3">
+            <button
+              className="flex items-center text-[12px] gap-2 text-black border border-[#D3D7D8] px-6 py-2 rounded-lg transition-colors"
+              onClick={() => {
+                setEditingConsultation(null);
+                setActiveConsultationType("hospital");
+                setShowAddConsultationModal(true);
+              }}
+            >
+              <Plus className="w-4 h-4" />
+              Schedule In-Person / Hospital Visit
+            </button>
+            <button
+              className="flex items-center text-[12px] gap-2 bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 transition-colors"
+              onClick={() => {
+                setEditingConsultation(null);
+                setActiveConsultationType("online");
+                setShowAddConsultationModal(true);
+              }}
+            >
+              <Plus className="w-4 h-4" />
+              Schedule Online Consultation
+            </button>
+          </div>
         </div>
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <StatsCard
@@ -419,6 +438,9 @@ const Consultations: React.FC = () => {
                     Consultation Schedule
                   </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -470,7 +492,6 @@ const Consultations: React.FC = () => {
                             {consultation.patientContact}
                           </div>
                           <div className="flex items-center gap-4 text-xs">
-                            <StatusBadge status={consultation.status} />
                             <span className="px-2 py-1 text-[8px] text-[#0088B1] rounded border border-[#0088B1] hover:bg-[#0088B1] hover:text-white transition-colors">
                               {consultation.consultationType === "online"
                                 ? "Online"
@@ -500,13 +521,16 @@ const Consultations: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex bg-[#E8F4F7] rounded p-2 justify-center">
-                          <div className="text-sm flex font-medium text-[#161D1F] ">
-                            {consultation.consultationDate}
-                            <p className="text-[#0073A0] ml-2">
+                          <div className="text-[10px] flex font-medium text-[#161D1F]">
+                            {consultation.consultationDate} |
+                            <p className="text-[#0073A0] ml-1">
                               {consultation.consultationTime}
                             </p>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <StatusBadge status={consultation.status} />
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center gap-2 justify-end">
@@ -546,6 +570,7 @@ const Consultations: React.FC = () => {
         onClose={handleCloseModal}
         onAddConsultation={handleAddConsultation}
         editingConsultation={editingConsultation}
+        initialConsultationType={activeConsultationType}
       />
 
       <ViewConsultationModal
