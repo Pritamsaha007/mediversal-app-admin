@@ -43,7 +43,7 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
 
 const ConsultationTypeBadge: React.FC<{ type: string }> = ({ type }) => {
   return (
-    <div className="flex items-center gap-1 text-xs text-[#0088B1]">
+    <div className="flex items-center gap-1 text-[10px] text-[#0088B1]">
       {type === "online" ? (
         <Globe className="w-3 h-3" />
       ) : (
@@ -162,7 +162,6 @@ const Consultations: React.FC = () => {
   // Load consultations data
   useEffect(() => {
     setLoading(true);
-    // Simulate API call
     setTimeout(() => {
       setConsultations(consultationsData);
       setFilteredConsultations(consultationsData);
@@ -229,7 +228,6 @@ const Consultations: React.FC = () => {
     console.log("Consultation Data:", consultationData);
 
     if (editingConsultation) {
-      // Update existing consultation
       setConsultations((prev) =>
         prev.map((c) =>
           c.id === editingConsultation.id
@@ -238,7 +236,6 @@ const Consultations: React.FC = () => {
         )
       );
     } else {
-      // Add new consultation
       const newConsultation = {
         ...consultationData,
         id: `consultation-${Date.now()}`,
@@ -255,8 +252,6 @@ const Consultations: React.FC = () => {
     setShowAddConsultationModal(false);
     setEditingConsultation(null);
   };
-
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -485,13 +480,13 @@ const Consultations: React.FC = () => {
                           <div className="text-sm font-medium text-[#161D1F] mb-1">
                             {consultation.patientName}
                           </div>
-                          <div className="text-xs text-gray-500 mb-2">
+                          <div className="text-[10px] text-gray-500 mb-2">
                             Booking ID: {consultation.bookingId}
                           </div>
-                          <div className="text-xs text-gray-500 mb-2">
+                          <div className="text-[10px] text-gray-500 mb-2">
                             {consultation.patientContact}
                           </div>
-                          <div className="flex items-center gap-4 text-xs">
+                          <div className="flex items-center gap-4 text-[10px]">
                             <span className="px-2 py-1 text-[8px] text-[#0088B1] rounded border border-[#0088B1] hover:bg-[#0088B1] hover:text-white transition-colors">
                               {consultation.consultationType === "online"
                                 ? "Online"
@@ -506,15 +501,15 @@ const Consultations: React.FC = () => {
                             type={consultation.consultationType}
                           />
                           {consultation.consultationType === "in-person" && (
-                            <div className="text-xs text-gray-500 mt-1">
+                            <div className="text-[10px] text-gray-500 mt-1">
                               {consultation.hospitalLocation}
                             </div>
                           )}
-                          <div className="flex items-center gap-1 text-xs text-gray-500 mt-2">
+                          <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-2">
                             <Users className="w-3 h-3" />
                             {consultation.appointedDoctor}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-[10px] text-gray-500">
                             {consultation.doctorSpecialization}
                           </div>
                         </div>
