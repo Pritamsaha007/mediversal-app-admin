@@ -55,14 +55,44 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[70vh]">
           {/* Doctor Name and Specialization */}
+          {/* Available Slots */}
           <div className="mb-6">
-            <h3 className="text-[14px] font-medium text-[#161d1f] mb-2">
-              {doctor.name}
-            </h3>
-            <div className="flex items-center gap-2 text-gray-500">
-              <span className="text-[10px]">{doctor.specialization_id}</span>
-              <span>|</span>
-              <span className="text-[10px]">{doctor.department_id}</span>
+            <h4 className="text-[10px] font-medium text-[#161d1f] mb-4">
+              Availability Status
+            </h4>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium text-[#161d1f]">
+                    Online Consultation:
+                  </span>
+                  <span
+                    className={`px-2 py-1 text-[8px] rounded ${
+                      doctor.is_available_online
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {doctor.is_available_online ? "Available" : "Not Available"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium text-[#161d1f]">
+                    In-Person Consultation:
+                  </span>
+                  <span
+                    className={`px-2 py-1 text-[8px] rounded ${
+                      doctor.is_available_in_person
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {doctor.is_available_in_person
+                      ? "Available"
+                      : "Not Available"}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 

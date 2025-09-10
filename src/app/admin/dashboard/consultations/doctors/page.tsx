@@ -1,10 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import {
-  doctorsData,
-  type Doctor,
-  generateTimeSlots,
-} from "./data/doctorsData";
+import { type Doctor, generateTimeSlots } from "./data/doctorsData";
 import {
   Search,
   ChevronDown,
@@ -20,6 +16,9 @@ import {
 import AddDoctorModal from "./components/AddDoctorModal";
 import StatsCard from "./components/StatsCards";
 import DoctorDetailsModal from "./components/DoctorDetailsModal";
+import { getDoctors } from "./services/doctorService";
+import { convertAPIDoctor } from "./data/doctorsData";
+import { useAdminStore } from "@/app/store/adminStore";
 
 const StatusBadge: React.FC<{ isOnline: boolean; isInPerson: boolean }> = ({
   isOnline,
@@ -69,6 +68,7 @@ const Doctors: React.FC = () => {
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const { token } = useAdminStore();
 
   const statusOptions = [
     "All Status",
@@ -150,14 +150,25 @@ const Doctors: React.FC = () => {
 
   // Load doctors data
   useEffect(() => {
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setDoctors(doctorsData);
-      setFilteredDoctors(doctorsData);
-      setLoading(false);
-    }, 500);
-  }, []);
+    const loadDoctors = async () => {
+      if (!token) return;
+
+      setLoading(true);
+      try {
+        const response = await getDoctors({}, token);
+        const convertedDoctors = response.doctors.map(convertAPIDoctor);
+        setDoctors(convertedDoctors);
+        setFilteredDoctors(convertedDoctors);
+      } catch (error) {
+        console.error("Error loading doctors:", error);
+        // Handle error appropriately
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDoctors();
+  }, [token]); //
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -431,6 +442,14 @@ const Doctors: React.FC = () => {
                           <div className="text-xs text-gray-500 mb-2">
                             {doctor.specializations}
                           </div>
+                          {/* Add this block for hospitals */}
+                          {doctor.hospitalNames &&
+                            doctor.hospitalNames.length > 0 && (
+                              <div className="text-xs text-gray-500 mb-2">
+                                <span className="font-medium">Hospitals: </span>
+                                {doctor.hospitalNames.join(", ")}
+                              </div>
+                            )}
                           <div className="flex items-center gap-4 text-xs text-gray-500">
                             <span className="px-2 py-1 text-[8px] text-[#0088B1] rounded border border-[#0088B1] hover:bg-[#0088B1] hover:text-white transition-colors">
                               {doctor.experience_in_yrs} Years Exp.
