@@ -36,10 +36,7 @@ const StaffManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const handleAddStaff = async (newStaff: Staff) => {
-    // Add to local state immediately for UI feedback
     setStaffList((prev) => [...prev, newStaff]);
-
-    // Refresh the list from API to get the actual ID
     try {
       const response = await fetchStaff();
       if (response.success) {
