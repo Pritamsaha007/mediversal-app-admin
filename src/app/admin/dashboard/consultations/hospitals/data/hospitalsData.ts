@@ -1,6 +1,6 @@
 export interface OperatingHours {
   [key: string]: {
-    id?: string; // Add this for edit mode
+    id?: string;
     startTime: string;
     endTime: string;
   };
@@ -39,12 +39,11 @@ export const tabs = [
   "Operating Hours",
 ];
 
-// Add this function to convert API response to local format
 export const convertAPIToLocalHospital = (apiHospital: any): Hospital => {
   const operatingHours: OperatingHours = {};
   apiHospital.operating_hours?.forEach((hour: any) => {
     operatingHours[hour.day] = {
-      id: hour.id, // Store the operating hours ID
+      id: hour.id,
       startTime: hour.start_time,
       endTime: hour.end_time,
     };

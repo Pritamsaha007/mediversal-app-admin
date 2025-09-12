@@ -65,7 +65,7 @@ export interface HospitalFormData {
   website?: string;
   departments: string[];
   operating_hrs: {
-    id?: string; // Add this for edit mode
+    id?: string;
     day_id: string;
     start_time: string;
     end_time: string;
