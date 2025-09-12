@@ -211,9 +211,6 @@ export async function createOrUpdateOffering(
 
   return await response.json();
 }
-
-// Add this interface and function to your service/api/homecareServices.js file
-
 export interface GetOfferingsParams {
   status?: string | null;
   service_id?: string | null;
@@ -274,8 +271,6 @@ export async function getHomecareOfferings(
   console.log("Offerings API response:", responseData);
   return responseData;
 }
-
-// Add this function to your service/api/homecareServices.js file
 
 export async function deleteHomecareOffering(
   offeringId: string,

@@ -1,13 +1,15 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { X, ImagePlus } from "lucide-react";
+import { tabs, Hospital } from "../data/hospitalsData";
 import {
-  tabs,
-  weekDays,
-  departmentOptions,
-  stateOptions,
-  Hospital,
-} from "../data/hospitalsData";
+  getEnumValues,
+  addOrUpdateHospital,
+  EnumItem,
+  HospitalFormData,
+} from "../services/hospitalService";
+import { useAdminStore } from "@/app/store/adminStore";
+import toast from "react-hot-toast";
 
 interface AddHospitalModalProps {
   isOpen: boolean;
@@ -55,6 +57,12 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
     image: null,
   });
 
+  const [enumDays, setEnumDays] = useState<EnumItem[]>([]);
+  const [enumDepartments, setEnumDepartments] = useState<EnumItem[]>([]);
+  const [enumStates, setEnumStates] = useState<EnumItem[]>([]);
+  const [enumLoading, setEnumLoading] = useState(true);
+  const { token } = useAdminStore();
+
   const [contactInputs, setContactInputs] = useState({
     phone: "",
     email: "",
@@ -63,8 +71,17 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
 
   useEffect(() => {
     if (editingHospital) {
+      // Find the state ID from the enum
+      const stateEnum = enumStates.find(
+        (s) => s.value === editingHospital.address.state
+      );
+
       setFormData({
         ...editingHospital,
+        address: {
+          ...editingHospital.address,
+          state: stateEnum?.id || editingHospital.address.state, // Use ID if found, fallback to original
+        },
         image: editingHospital.image || null,
       });
       setContactInputs({
@@ -75,7 +92,52 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
     } else {
       resetForm();
     }
-  }, [editingHospital, isOpen]);
+  }, [editingHospital, isOpen, enumStates]);
+
+  useEffect(() => {
+    const loadEnumData = async () => {
+      if (!token) return;
+      setEnumLoading(true);
+      try {
+        const [days, departments, states] = await Promise.all([
+          getEnumValues("DAYS_IN_WEEK", token),
+          getEnumValues("DOC_DEPARTMENT", token),
+          getEnumValues("INDIAN_STATES", token),
+        ]);
+
+        setEnumDays(days);
+        setEnumDepartments(departments);
+        setEnumStates(states);
+      } catch (error) {
+        console.error("Error loading enum data:", error);
+        setEnumDays([]);
+        setEnumDepartments([]);
+        setEnumStates([]);
+      } finally {
+        setEnumLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      loadEnumData();
+    }
+  }, [isOpen, token]);
+
+  // In AddHospitalModal.tsx, update the departments mapping logic:
+  useEffect(() => {
+    if (editingHospital && enumDepartments.length > 0) {
+      // Map department names to IDs for editing
+      const departmentIds = editingHospital.departments.map((deptName) => {
+        const deptEnum = enumDepartments.find((d) => d.value === deptName);
+        return deptEnum?.id || deptName;
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        departments: departmentIds,
+      }));
+    }
+  }, [editingHospital, enumDepartments]);
 
   const handleInputChange = (field: string, value: any, nested?: string) => {
     if (nested) {
@@ -145,10 +207,80 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
     }));
   };
 
-  const handleSubmit = () => {
-    onAddHospital(formData);
-    onClose();
-    resetForm();
+  const handleSubmit = async () => {
+    if (!token) return;
+
+    try {
+      const allDaysOperatingHours = enumDays.map((dayEnum) => {
+        const existingHours = formData.operatingHours[dayEnum.value];
+        const operatingHour: any = {
+          day_id: dayEnum.id,
+          start_time: existingHours?.startTime || "00:00",
+          end_time: existingHours?.endTime || "00:00",
+        };
+
+        // For edit mode, include the operating hours ID if it exists
+        if (editingHospital && existingHours?.id) {
+          operatingHour.id = existingHours.id;
+        } else if (editingHospital) {
+          // For edit mode, include hospital_id for new operating hours
+          operatingHour.hospital_id = editingHospital.id;
+        }
+
+        return operatingHour;
+      });
+      const apiData: HospitalFormData = {
+        ...(editingHospital?.id && { id: editingHospital.id }),
+        name: formData.name,
+        description: formData.description,
+        display_pic:
+          typeof formData.image === "string" ? formData.image : undefined,
+        address_line1: formData.address.line1,
+        address_line2: formData.address.line2,
+        city: formData.address.city,
+        landmark: formData.address.landmark,
+        state_id: formData.address.state,
+        pincode: formData.address.pinCode,
+        country: formData.address.country,
+        is_available_24_7: formData.emergencyServices,
+        contact: formData.contact.phone[0] || "",
+        email: formData.contact.email[0] || "",
+        website: formData.contact.website,
+        departments: formData.departments,
+        operating_hrs: Object.entries(formData.operatingHours).map(
+          ([dayName, hours]) => {
+            const dayEnum = enumDays.find((d) => d.value === dayName);
+            return {
+              day_id: dayEnum?.id || "",
+              start_time: hours.startTime,
+              end_time: hours.endTime,
+              ...(editingHospital?.id && { hospital_id: editingHospital.id }),
+            };
+          }
+        ),
+      };
+
+      await addOrUpdateHospital(apiData, token);
+
+      // Show success toast
+      toast.success(
+        editingHospital
+          ? "Hospital updated successfully!"
+          : "Hospital added successfully!"
+      );
+
+      // Call refresh callback instead of local state update
+      onAddHospital(formData); // This should trigger refresh in parent
+      onClose();
+      resetForm();
+    } catch (error) {
+      console.error("Error saving hospital:", error);
+      toast.error(
+        editingHospital
+          ? "Failed to update hospital. Please try again."
+          : "Failed to add hospital. Please try again."
+      );
+    }
   };
 
   const resetForm = () => {
@@ -371,9 +503,9 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     >
                       <option value="">Select State</option>
-                      {stateOptions.map((state) => (
-                        <option key={state} value={state}>
-                          {state}
+                      {enumStates.map((state) => (
+                        <option key={state.id} value={state.id}>
+                          {state.value}
                         </option>
                       ))}
                     </select>
@@ -568,19 +700,30 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                 <span className="text-red-500">*</span> Available Departments
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {departmentOptions.map((dept) => (
-                  <label key={dept} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.departments.includes(dept)}
-                      onChange={() => handleArrayToggle("departments", dept)}
-                      className="w-3 h-3 text-[#1BA3C7] border-gray-300 rounded focus:ring-[#1BA3C7]"
-                    />
-                    <span className="text-[12px] text-gray-700">{dept}</span>
-                  </label>
-                ))}
-              </div>
+              {enumLoading ? (
+                <div className="text-center py-4">Loading departments...</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {enumDepartments.map((dept) => (
+                    <label
+                      key={dept.id}
+                      className="flex items-center space-x-2"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.departments.includes(dept.id)}
+                        onChange={() =>
+                          handleArrayToggle("departments", dept.id)
+                        }
+                        className="w-3 h-3 text-[#1BA3C7] border-gray-300 rounded focus:ring-[#1BA3C7]"
+                      />
+                      <span className="text-[12px] text-gray-700">
+                        {dept.value}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -590,26 +733,28 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
               <h3 className="text-[10px] font-semibold text-[#161d1f] mb-6">
                 <span className="text-red-500">*</span> Set Operating Hours
               </h3>
-
               <div className="space-y-6 border border-gray-200 rounded-lg p-4">
-                {weekDays.map((day) => (
+                {enumDays.map((dayEnum) => (
                   <div
-                    key={day}
+                    key={dayEnum.id}
                     className="flex items-center justify-start gap-80"
                   >
                     <div className="w-24">
                       <span className="text-[12px] font-medium text-[#161D1F]">
-                        {day}
+                        {dayEnum.value}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-4">
                       <input
                         type="time"
-                        value={formData.operatingHours[day].startTime}
+                        value={
+                          formData.operatingHours[dayEnum.value]?.startTime ||
+                          "09:00"
+                        }
                         onChange={(e) =>
                           handleOperatingHoursChange(
-                            day,
+                            dayEnum.value,
                             "startTime",
                             e.target.value
                           )
@@ -619,10 +764,13 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       <span className="text-[10px] text-gray-500">to</span>
                       <input
                         type="time"
-                        value={formData.operatingHours[day].endTime}
+                        value={
+                          formData.operatingHours[dayEnum.value]?.endTime ||
+                          "17:00"
+                        }
                         onChange={(e) =>
                           handleOperatingHoursChange(
-                            day,
+                            dayEnum.value,
                             "endTime",
                             e.target.value
                           )

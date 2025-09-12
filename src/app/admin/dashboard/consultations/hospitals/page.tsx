@@ -1,10 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import {
-  hospitalsData,
-  type Hospital,
-  departmentOptions,
-} from "./data/hospitalsData";
+import { type Hospital, convertAPIToLocalHospital } from "./data/hospitalsData";
+import { getHospitals, getEnumValues } from "./services/hospitalService";
 import {
   Search,
   ChevronDown,
@@ -17,6 +14,8 @@ import {
 } from "lucide-react";
 import AddHospitalModal from "./components/AddHospitalModal";
 import HospitalDetailsModal from "./components/HospitalDetailsModal";
+import { useAdminStore } from "@/app/store/adminStore";
+import toast from "react-hot-toast";
 
 const Hospitals: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,6 +38,9 @@ const Hospitals: React.FC = () => {
     null
   );
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [departmentOptions, setDepartmentOptions] = useState<string[]>([]);
+
+  const { token } = useAdminStore();
 
   const operatingHoursOptions = [
     "All Operating Hours",
@@ -46,49 +48,82 @@ const Hospitals: React.FC = () => {
     "Regular Hours",
   ];
 
-  // Filter hospitals based on search and filters
   useEffect(() => {
-    let filtered = [...hospitals];
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (hospital) =>
-          hospital.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          hospital.departments.some((dept) =>
-            dept.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-      );
-    }
-
-    // Filter by department
-    if (selectedDepartment !== "All Departments") {
-      filtered = filtered.filter((hospital) =>
-        hospital.departments.includes(selectedDepartment)
-      );
-    }
-
-    // Filter by operating hours
-    if (selectedOperatingHours !== "All Operating Hours") {
-      if (selectedOperatingHours === "24/7 Emergency") {
-        filtered = filtered.filter((hospital) => hospital.emergencyServices);
-      } else if (selectedOperatingHours === "Regular Hours") {
-        filtered = filtered.filter((hospital) => !hospital.emergencyServices);
+    const loadDepartmentOptions = async () => {
+      if (!token) return;
+      try {
+        const departments = await getEnumValues("DOC_DEPARTMENT", token);
+        setDepartmentOptions(departments.map((dept) => dept.value));
+      } catch (error) {
+        console.error("Error loading department options:", error);
+        setDepartmentOptions([]);
       }
-    }
+    };
 
-    setFilteredHospitals(filtered);
-  }, [searchTerm, selectedDepartment, selectedOperatingHours, hospitals]);
+    loadDepartmentOptions();
+  }, [token]);
 
-  // Load hospitals data
-  useEffect(() => {
+  const loadHospitals = async () => {
+    if (!token) return;
     setLoading(true);
-    setTimeout(() => {
-      setHospitals(hospitalsData);
-      setFilteredHospitals(hospitalsData);
+    try {
+      const params = {
+        search_text: searchTerm || null,
+        filter_department:
+          selectedDepartment !== "All Departments"
+            ? [selectedDepartment]
+            : null,
+        sort_by: "name",
+        sort_order: "DESC",
+      };
+
+      const response = await getHospitals(params, token);
+      let convertedHospitals = response.hospitals.map(
+        convertAPIToLocalHospital
+      );
+
+      if (selectedOperatingHours !== "All Operating Hours") {
+        if (selectedOperatingHours === "24/7 Emergency") {
+          convertedHospitals = convertedHospitals.filter(
+            (hospital) => hospital.emergencyServices
+          );
+        } else if (selectedOperatingHours === "Regular Hours") {
+          convertedHospitals = convertedHospitals.filter(
+            (hospital) => !hospital.emergencyServices
+          );
+        }
+      }
+
+      setHospitals(convertedHospitals);
+      setFilteredHospitals(convertedHospitals);
+    } catch (error) {
+      console.error("Error loading hospitals:", error);
+      toast.error("Failed to load hospitals. Please refresh the page.");
+    } finally {
       setLoading(false);
-    }, 500);
-  }, []);
+    }
+  };
+
+  useEffect(() => {
+    loadHospitals();
+  }, [searchTerm, selectedDepartment, selectedOperatingHours, token]);
+
+  useEffect(() => {
+    const loadDepartmentOptions = async () => {
+      if (!token) return;
+      try {
+        const departments = await getEnumValues("DOC_DEPARTMENT", token);
+        if (Array.isArray(departments)) {
+          setDepartmentOptions(departments.map((dept) => dept.value));
+        }
+      } catch (error) {
+        console.error("Error loading department options:", error);
+        setDepartmentOptions([]);
+      }
+    };
+
+    loadDepartmentOptions();
+  }, [token]);
 
   const handleDepartmentChange = (department: string) => {
     setSelectedDepartment(department);
@@ -124,7 +159,8 @@ const Hospitals: React.FC = () => {
     );
   };
 
-  const handleAddHospital = (hospitalData: Hospital) => {
+  const handleAddHospital = async (hospitalData: Hospital) => {
+    await loadHospitals(); // Refresh the data from API
     if (editingHospital) {
       setHospitals((prev) =>
         prev.map((h) =>
@@ -204,30 +240,44 @@ const Hospitals: React.FC = () => {
   };
 
   const renderOperatingHours = (hospital: Hospital) => {
-    const mondayHours = hospital.operatingHours.Monday;
-    const tuesdayHours = hospital.operatingHours.Tuesday;
-    const wednesdayHours = hospital.operatingHours.Wednesday;
+    const mondayHours = hospital.operatingHours?.Monday;
+    const tuesdayHours = hospital.operatingHours?.Tuesday;
+    const wednesdayHours = hospital.operatingHours?.Wednesday;
+
+    const formatTime = (time: string) => {
+      if (!time) return "N/A";
+      return time;
+    };
 
     return (
       <div className="space-y-1">
-        <div className="flex items-center justify-between text-[10px] ">
-          <span className="text-[#161D1F]">Mon.</span>
-          <span className="text-[#161d1f] bg-[#E8F4F7] p-0.5 rounded">
-            {mondayHours.startTime} AM - {mondayHours.endTime} PM
-          </span>
-        </div>
-        <div className="flex items-center justify-between text-[10px]">
-          <span className="text-[#161D1F]">Tue.</span>
-          <span className="text-[#161d1f] bg-[#E8F4F7] p-0.5 rounded">
-            {tuesdayHours.startTime} AM - {tuesdayHours.endTime} PM
-          </span>
-        </div>
-        <div className="flex items-center justify-between text-[10px]">
-          <span className="text-[#161D1F]">Wed.</span>
-          <span className="text-[#161d1f] bg-[#E8F4F7] p-0.5 rounded">
-            {wednesdayHours.startTime} AM - {wednesdayHours.endTime} PM
-          </span>
-        </div>
+        {mondayHours && (
+          <div className="flex items-center justify-between text-[10px]">
+            <span className="text-[#161D1F]">Mon.</span>
+            <span className="text-[#161d1f] bg-[#E8F4F7] p-0.5 rounded">
+              {formatTime(mondayHours.startTime)} -{" "}
+              {formatTime(mondayHours.endTime)}
+            </span>
+          </div>
+        )}
+        {tuesdayHours && (
+          <div className="flex items-center justify-between text-[10px]">
+            <span className="text-[#161D1F]">Tue.</span>
+            <span className="text-[#161d1f] bg-[#E8F4F7] p-0.5 rounded">
+              {formatTime(tuesdayHours.startTime)} -{" "}
+              {formatTime(tuesdayHours.endTime)}
+            </span>
+          </div>
+        )}
+        {wednesdayHours && (
+          <div className="flex items-center justify-between text-[10px]">
+            <span className="text-[#161D1F]">Wed.</span>
+            <span className="text-[#161d1f] bg-[#E8F4F7] p-0.5 rounded">
+              {formatTime(wednesdayHours.startTime)} -{" "}
+              {formatTime(wednesdayHours.endTime)}
+            </span>
+          </div>
+        )}
       </div>
     );
   };
@@ -422,12 +472,13 @@ const Hospitals: React.FC = () => {
                           <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
                             <MapPin className="w-3 h-3" />
                             <span>
-                              {hospital.address.line1}, {hospital.address.city}
+                              {hospital.address?.line1},{" "}
+                              {hospital.address?.city}
                             </span>
                           </div>
                           <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
                             <Phone className="w-3 h-3" />
-                            <span>{hospital.contact.phone[0]}</span>
+                            <span>{hospital.contact?.phone?.[0] || "N/A"}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             {hospital.emergencyServices && (
