@@ -39,9 +39,7 @@ const Hospitals: React.FC = () => {
   );
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [departmentOptions, setDepartmentOptions] = useState<string[]>([]);
-
   const { token } = useAdminStore();
-
   const operatingHoursOptions = [
     "All Operating Hours",
     "24/7 Emergency",
@@ -97,7 +95,6 @@ const Hospitals: React.FC = () => {
       setHospitals(convertedHospitals);
       setFilteredHospitals(convertedHospitals);
     } catch (error) {
-      console.error("Error loading hospitals:", error);
       toast.error("Failed to load hospitals. Please refresh the page.");
     } finally {
       setLoading(false);
@@ -160,7 +157,7 @@ const Hospitals: React.FC = () => {
   };
 
   const handleAddHospital = async (hospitalData: Hospital) => {
-    await loadHospitals(); // Refresh the data from API
+    await loadHospitals();
     if (editingHospital) {
       setHospitals((prev) =>
         prev.map((h) =>
@@ -282,7 +279,6 @@ const Hospitals: React.FC = () => {
     );
   };
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;

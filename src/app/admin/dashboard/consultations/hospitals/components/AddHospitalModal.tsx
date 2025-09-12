@@ -219,11 +219,9 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
           end_time: existingHours?.endTime || "00:00",
         };
 
-        // For edit mode, include the operating hours ID if it exists
         if (editingHospital && existingHours?.id) {
           operatingHour.id = existingHours.id;
         } else if (editingHospital) {
-          // For edit mode, include hospital_id for new operating hours
           operatingHour.hospital_id = editingHospital.id;
         }
 
@@ -261,16 +259,13 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
       };
 
       await addOrUpdateHospital(apiData, token);
-
-      // Show success toast
       toast.success(
         editingHospital
           ? "Hospital updated successfully!"
           : "Hospital added successfully!"
       );
 
-      // Call refresh callback instead of local state update
-      onAddHospital(formData); // This should trigger refresh in parent
+      onAddHospital(formData);
       onClose();
       resetForm();
     } catch (error) {
