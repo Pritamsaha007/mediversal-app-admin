@@ -69,7 +69,6 @@ export interface HospitalFormData {
     day_id: string;
     start_time: string;
     end_time: string;
-    hospital_id?: string;
   }[];
 }
 

@@ -248,11 +248,15 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
         operating_hrs: Object.entries(formData.operatingHours).map(
           ([dayName, hours]) => {
             const dayEnum = enumDays.find((d) => d.value === dayName);
+            const originalOperatingHour =
+              editingHospital?.operatingHours[dayName];
             return {
               day_id: dayEnum?.id || "",
               start_time: hours.startTime,
               end_time: hours.endTime,
-              ...(editingHospital?.id && { hospital_id: editingHospital.id }),
+              ...(originalOperatingHour?.id && {
+                id: originalOperatingHour.id,
+              }),
             };
           }
         ),
