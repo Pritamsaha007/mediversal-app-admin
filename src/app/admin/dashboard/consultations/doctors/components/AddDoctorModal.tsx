@@ -1,49 +1,53 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { X, Upload, Plus, Trash2, ImagePlus } from "lucide-react";
-import {
-  tabs,
-  weekDays,
-  languageOptions,
-  specializationOptions,
-  departmentOptions,
-  TimeSlot,
-  Doctor,
-} from "../data/doctorsData";
+import { X, Upload, Plus, Trash2, ImagePlus, Edit } from "lucide-react";
+import { tabs, Doctor, convertAvailabilityToSlots } from "../data/doctorsData";
+import { EnumItem } from "../services/doctorService";
+import HospitalSearchInput from "./HospitalSearchInput";
+import { useAdminStore } from "@/app/store/adminStore";
 
 interface AddDoctorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddDoctor: (doctorData: Doctor) => void;
   editingDoctor?: Doctor | null;
+  enumData: {
+    departments: EnumItem[];
+    specializations: EnumItem[];
+    languages: EnumItem[];
+    days: EnumItem[];
+  };
 }
-
 const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
   isOpen,
   onClose,
   onAddDoctor,
   editingDoctor,
+  enumData,
 }) => {
   const [activeTab, setActiveTab] = useState(0);
+  const [editingSlot, setEditingSlot] = useState<{
+    day: string;
+    index: number;
+  } | null>(null);
+  const { token } = useAdminStore();
+
   const [formData, setFormData] = useState<Doctor>({
     id: "",
+    profile_image_url: null,
     name: "",
-    mobile_number: "",
     specialization_id: "",
     department_id: "",
     experience_in_yrs: 0,
-    consultation_price: 0,
+    mobile_number: "",
     about: "",
     qualifications: "",
-    languages_known: [],
+    consultation_price: 0,
     hospitals_id: [],
     is_available_online: true,
     is_available_in_person: false,
-    mci: "",
-    nmc: "",
-    state_registration: "",
     is_available: true,
-    profile_image_url: null,
+    languages_known: [],
     availability: {
       Monday: [],
       Tuesday: [],
@@ -53,6 +57,16 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       Saturday: [],
       Sunday: [],
     },
+    mci: "",
+    nmc: "",
+    state_registration: "",
+  });
+
+  const [selectedDay, setSelectedDay] = useState<string>("");
+  const [newSlot, setNewSlot] = useState({
+    startTime: "",
+    endTime: "",
+    maxPatientsPerSlot: "1",
   });
 
   const handleInputChange = (field: keyof Doctor, value: any) => {
@@ -78,6 +92,51 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
         (newEndTime > existingStart && newEndTime <= existingEnd) ||
         (newStartTime <= existingStart && newEndTime >= existingEnd)
       );
+    });
+  };
+
+  const handleAddTimeSlot = () => {
+    if (!selectedDay || !newSlot.startTime || !newSlot.endTime) {
+      alert("Please select day and fill all time slot fields");
+      return;
+    }
+
+    if (newSlot.startTime >= newSlot.endTime) {
+      alert("Start time must be before end time");
+      return;
+    }
+
+    // Check for overlapping slots
+    if (
+      isTimeSlotOverlapping(selectedDay, newSlot.startTime, newSlot.endTime)
+    ) {
+      alert(
+        "Time slot overlaps with existing slot. Please choose different times."
+      );
+      return;
+    }
+
+    // Add the new slot directly without calling addTimeSlot
+    setFormData((prev) => ({
+      ...prev,
+      availability: {
+        ...prev.availability,
+        [selectedDay]: [
+          ...prev.availability[selectedDay],
+          {
+            startTime: newSlot.startTime,
+            endTime: newSlot.endTime,
+            maxPatientsPerSlot: newSlot.maxPatientsPerSlot,
+          },
+        ],
+      },
+    }));
+
+    // Reset the form
+    setNewSlot({
+      startTime: "",
+      endTime: "",
+      maxPatientsPerSlot: "1",
     });
   };
 
@@ -116,20 +175,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
   const handleFileUpload = (field: keyof Doctor, file: File | null) => {
     setFormData((prev) => ({ ...prev, [field]: file }));
   };
-  type TimeSlotField = keyof TimeSlot;
-
-  const addTimeSlot = (day: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      availability: {
-        ...prev.availability,
-        [day]: [
-          ...prev.availability[day],
-          { startTime: "", endTime: "", maxPatientsPerSlot: "" },
-        ],
-      },
-    }));
-  };
 
   const removeTimeSlot = (day: string, index: number) => {
     setFormData((prev) => ({
@@ -141,51 +186,104 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     }));
   };
 
-  const updateTimeSlot = (
-    day: string,
-    index: number,
-    field: TimeSlotField,
-    value: string
-  ) => {
-    const currentSlot = formData.availability[day][index];
-    const updatedSlot = { ...currentSlot, [field]: value };
+  const handleEditSlot = (day: string, index: number) => {
+    const slot = formData.availability[day][index];
+    setNewSlot({
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      maxPatientsPerSlot: slot.maxPatientsPerSlot,
+    });
+    setEditingSlot({ day, index });
+  };
 
-    // Check for overlapping only if both start and end times are set
-    if (updatedSlot.startTime && updatedSlot.endTime) {
-      if (
-        isTimeSlotOverlapping(
-          day,
-          updatedSlot.startTime,
-          updatedSlot.endTime,
-          index
-        )
-      ) {
-        alert(
-          "Time slot overlaps with existing slot. Please choose different times."
-        );
-        return;
-      }
-
-      // Validate that start time is before end time
-      if (updatedSlot.startTime >= updatedSlot.endTime) {
-        alert("Start time must be before end time.");
-        return;
-      }
+  const handleUpdateSlot = () => {
+    if (!editingSlot || !newSlot.startTime || !newSlot.endTime) {
+      alert("Please fill all time slot fields");
+      return;
     }
 
+    if (newSlot.startTime >= newSlot.endTime) {
+      alert("Start time must be before end time");
+      return;
+    }
+
+    // Check for overlapping slots (excluding the current slot being edited)
+    if (
+      isTimeSlotOverlapping(
+        editingSlot.day,
+        newSlot.startTime,
+        newSlot.endTime,
+        editingSlot.index
+      )
+    ) {
+      alert(
+        "Time slot overlaps with existing slot. Please choose different times."
+      );
+      return;
+    }
+
+    // Update the slot
     setFormData((prev) => ({
       ...prev,
       availability: {
         ...prev.availability,
-        [day]: prev.availability[day].map((slot, i) =>
-          i === index ? { ...slot, [field]: value } : slot
+        [editingSlot.day]: prev.availability[editingSlot.day].map(
+          (slot, index) =>
+            index === editingSlot.index
+              ? {
+                  ...slot,
+                  startTime: newSlot.startTime,
+                  endTime: newSlot.endTime,
+                  maxPatientsPerSlot: newSlot.maxPatientsPerSlot,
+                }
+              : slot
         ),
       },
     }));
+
+    // Reset form and editing state
+    setNewSlot({
+      startTime: "",
+      endTime: "",
+      maxPatientsPerSlot: "1",
+    });
+    setEditingSlot(null);
   };
+
+  const handleCancelEdit = () => {
+    setNewSlot({
+      startTime: "",
+      endTime: "",
+      maxPatientsPerSlot: "1",
+    });
+    setEditingSlot(null);
+  };
+
   const handleSubmit = () => {
-    console.log("Doctor Data:", formData);
-    onAddDoctor(formData); // Remove the processedData conversion
+    if (!enumData.days || enumData.days.length === 0) {
+      alert("Day data not loaded. Please try again.");
+      return;
+    }
+
+    const daysMapping: Record<string, string> = {};
+    enumData.days.forEach((day) => {
+      daysMapping[day.value] = day.id;
+    });
+
+    const doctorSlots = convertAvailabilityToSlots(
+      formData.availability,
+      daysMapping
+    );
+
+    console.log("Converted doctor slots:", doctorSlots);
+
+    const submitData = {
+      ...formData,
+      doctor_slots: doctorSlots,
+    };
+
+    console.log("Doctor Data:", submitData);
+    onAddDoctor(submitData);
     onClose();
     resetForm();
   };
@@ -222,6 +320,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       state_registration: "",
     });
     setActiveTab(0);
+    setEditingSlot(null);
   };
 
   if (!isOpen) return null;
@@ -345,19 +444,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   />
                 </div>
 
-                {/* <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
-                    <span className="text-red-500">*</span> Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
-                    placeholder="doctor@hospital.com"
-                  />
-                </div> */}
-
                 <div>
                   <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
                     <span className="text-red-500">*</span> Specialization
@@ -371,9 +457,9 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                   >
                     <option value="">Select Specialization</option>
-                    {specializationOptions.map((spec) => (
-                      <option key={spec} value={spec}>
-                        {spec}
+                    {enumData.specializations.map((spec) => (
+                      <option key={spec.id} value={spec.id}>
+                        {spec.value}
                       </option>
                     ))}
                   </select>
@@ -391,9 +477,9 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                   >
                     <option value="">Select a Department</option>
-                    {departmentOptions.map((dept) => (
-                      <option key={dept} value={dept}>
-                        {dept}
+                    {enumData.departments.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.value}
                       </option>
                     ))}
                   </select>
@@ -469,14 +555,13 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
                     <span className="text-red-500">*</span> Assign Hospital
                   </label>
-                  <input
-                    type="text"
-                    value={formData.hospitals_id}
-                    onChange={(e) =>
-                      handleInputChange("hospitals_id", e.target.value)
+                  <HospitalSearchInput
+                    selectedHospitals={formData.hospitals_id}
+                    onHospitalChange={(hospitalIds) =>
+                      handleInputChange("hospitals_id", hospitalIds)
                     }
-                    className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
-                    placeholder="Hospital Name"
+                    token={token}
+                    initialHospitalNames={editingDoctor?.hospitalNamesMap || {}}
                   />
                 </div>
               </div>
@@ -526,17 +611,22 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   <span className="text-red-500">*</span> Languages Known
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {languageOptions.map((lang) => (
-                    <label key={lang} className="flex items-center space-x-2">
+                  {enumData.languages.map((lang) => (
+                    <label
+                      key={lang.id}
+                      className="flex items-center space-x-2"
+                    >
                       <input
                         type="checkbox"
-                        checked={formData.languages_known.includes(lang)}
+                        checked={formData.languages_known.includes(lang.id)}
                         onChange={() =>
-                          handleArrayToggle("languages_known", lang)
+                          handleArrayToggle("languages_known", lang.id)
                         }
                         className="w-3 h-3 text-[#1BA3C7] border-gray-300 rounded focus:ring-[#1BA3C7]"
                       />
-                      <span className="text-[10px] text-gray-700">{lang}</span>
+                      <span className="text-[10px] text-gray-700">
+                        {lang.value}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -548,178 +638,186 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           {activeTab === 2 && (
             <div className="space-y-6">
               <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-6 rounded-xl border border-blue-100">
-                <h3 className="text-[10px] font-medium text-[#161D1F] mb-2 flex items-center gap-2">
+                <h3 className="text-[12px] font-medium text-[#161D1F] mb-2 flex items-center gap-2">
                   <div className="w-2 h-2 bg-[#1BA3C7] rounded-full"></div>
-                  Availability (Set slots for each day)
+                  Doctor Availability Schedule
                 </h3>
                 <p className="text-[10px] text-gray-500">
-                  Configure your consultation time slots for each day of the
-                  week
+                  Set up consultation time slots for each day of the week
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {weekDays.map((day) => (
-                  <div
-                    key={day}
-                    className="bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 h-96 flex flex-col"
+              {/* Days Selection */}
+              <div className="grid grid-cols-7 gap-2 mb-6">
+                {enumData.days.map((day) => (
+                  <button
+                    key={day.id}
+                    onClick={() => setSelectedDay(day.value)}
+                    className={`p-3 rounded-lg text-[10px] font-medium transition-all ${
+                      selectedDay === day.value
+                        ? "bg-[#1BA3C7] text-white shadow-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                   >
-                    {/* Day Header */}
-                    <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-t-xl border-b border-gray-100 flex-shrink-0">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-[#1BA3C7] rounded-lg flex items-center justify-center">
-                            <span className="text-white text-[10px] font-medium">
-                              {day.substring(0, 2)}
-                            </span>
-                          </div>
-                          <div>
-                            <h4 className="text-[10px] font-medium text-[#161D1F]">
-                              {day}
-                            </h4>
-                            <p className="text-[10px] text-gray-500">
-                              {(formData.availability[day] || []).length} slot
-                              {(formData.availability[day] || []).length !== 1
-                                ? "s"
-                                : ""}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => addTimeSlot(day)}
-                          className="flex items-center gap-2 px-3 py-2 text-[10px] bg-[#1BA3C7] text-white rounded-lg hover:bg-[#1591B8] transition-colors shadow-sm hover:shadow-md"
-                        >
-                          <Plus className="w-3 h-3" />
-                          Add Slot
-                        </button>
+                    <div className="text-center">
+                      <div className="font-semibold">
+                        {day.value.substring(0, 3)}
+                      </div>
+                      <div className="text-[8px] mt-1">
+                        {(formData.availability[day.value] || []).length} slots
                       </div>
                     </div>
+                  </button>
+                ))}
+              </div>
 
-                    {/* Time Slots - Scrollable */}
-                    <div className="flex-1 overflow-y-auto p-4">
-                      {(formData.availability[day] || []).length > 0 ? (
-                        <div className="space-y-3">
-                          {(formData.availability[day] || []).map(
-                            (slot, index) => (
-                              <div
-                                key={index}
-                                className="group bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-all duration-200"
-                              >
-                                <div className="flex items-center gap-3">
-                                  {/* Time Inputs Container */}
-                                  <div className="flex items-center gap-2 bg-white rounded-lg p-2 border border-gray-200 shadow-sm">
-                                    <div className="flex flex-col">
-                                      <label className="text-[10px] text-gray-500 mb-1">
-                                        Start Time
-                                      </label>
-                                      <input
-                                        type="time"
-                                        value={slot.startTime}
-                                        onChange={(e) =>
-                                          updateTimeSlot(
-                                            day,
-                                            index,
-                                            "startTime",
-                                            e.target.value
-                                          )
-                                        }
-                                        className="text-[10px] px-2 py-1 border border-gray-200 rounded focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none text-[#161D1F] font-medium"
-                                        style={{ colorScheme: "light" }}
-                                      />
-                                    </div>
+              {selectedDay && (
+                <div className="bg-white border border-gray-200 rounded-xl p-6">
+                  <h4 className="text-[12px] font-medium text-[#161D1F] mb-4">
+                    {editingSlot
+                      ? `Edit Time Slot for ${selectedDay}`
+                      : `Add Time Slot for ${selectedDay}`}
+                  </h4>
 
-                                    <div className="flex items-center justify-center px-2">
-                                      <div className="w-3 h-0.5 bg-gray-300"></div>
-                                    </div>
+                  {/* Time Slot Input Form */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                      <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                        Start Time
+                      </label>
+                      <input
+                        type="time"
+                        value={newSlot.startTime}
+                        onChange={(e) =>
+                          setNewSlot((prev) => ({
+                            ...prev,
+                            startTime: e.target.value,
+                          }))
+                        }
+                        className="w-full text-[10px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
+                      />
+                    </div>
 
-                                    <div className="flex flex-col">
-                                      <label className="text-[10px] text-gray-500 mb-1">
-                                        End Time
-                                      </label>
-                                      <input
-                                        type="time"
-                                        value={slot.endTime}
-                                        onChange={(e) =>
-                                          updateTimeSlot(
-                                            day,
-                                            index,
-                                            "endTime",
-                                            e.target.value
-                                          )
-                                        }
-                                        className="text-[10px] px-2 py-1 border border-gray-200 rounded focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none text-[#161D1F] font-medium"
-                                        style={{ colorScheme: "light" }}
-                                      />
-                                    </div>
-                                  </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                        End Time
+                      </label>
+                      <input
+                        type="time"
+                        value={newSlot.endTime}
+                        onChange={(e) =>
+                          setNewSlot((prev) => ({
+                            ...prev,
+                            endTime: e.target.value,
+                          }))
+                        }
+                        className="w-full text-[10px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
+                      />
+                    </div>
 
-                                  {/* Max Patients Input */}
-                                  <div className="flex flex-col bg-white rounded-lg p-2 border border-gray-200 shadow-sm">
-                                    <label className="text-[10px] text-gray-500 mb-1">
-                                      Patients
-                                    </label>
-                                    <input
-                                      type="number"
-                                      value={slot.maxPatientsPerSlot}
-                                      onChange={(e) =>
-                                        updateTimeSlot(
-                                          day,
-                                          index,
-                                          "maxPatientsPerSlot",
-                                          e.target.value
-                                        )
-                                      }
-                                      placeholder="Max"
-                                      min="1"
-                                      className="w-16 text-[10px] px-2 py-1 border border-gray-200 rounded focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none text-center text-[#161D1F] font-medium"
-                                    />
-                                  </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                        Max Patients
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={newSlot.maxPatientsPerSlot}
+                        onChange={(e) =>
+                          setNewSlot((prev) => ({
+                            ...prev,
+                            maxPatientsPerSlot: e.target.value,
+                          }))
+                        }
+                        placeholder="1"
+                        className="w-full text-[10px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
+                      />
+                    </div>
 
-                                  {/* Delete Button */}
-                                  <button
-                                    type="button"
-                                    onClick={() => removeTimeSlot(day, index)}
-                                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-
-                                {/* Time Display */}
-                                {/* {slot.startTime && slot.endTime && (
-                                <div className="mt-2 flex items-center gap-2">
-                                  <div className="px-2 py-1 bg-[#1BA3C7] bg-opacity-10 text-[#1BA3C7] rounded text-[10px] font-medium">
-                                    {slot.startTime} - {slot.endTime}
-                                  </div>
-                                  {slot.maxPatientsPerSlot && (
-                                    <div className="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-medium">
-                                      Max {slot.maxPatientsPerSlot} patients
-                                    </div>
-                                  )}
-                                </div>
-                              )} */}
-                              </div>
-                            )
-                          )}
-                        </div>
+                    <div className="flex items-end gap-2">
+                      {editingSlot ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleUpdateSlot}
+                            className="flex-1 px-4 py-2 bg-green-600 text-white text-[10px] font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                          >
+                            Update
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            className="px-4 py-2 bg-gray-500 text-white text-[10px] font-medium rounded-lg hover:bg-gray-600 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </>
                       ) : (
-                        <div className="text-center py-8 flex-1 flex flex-col justify-center">
-                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <Plus className="w-6 h-6 text-gray-400" />
-                          </div>
-                          <p className="text-[10px] text-gray-500 mb-2">
-                            No slots added for {day}
-                          </p>
-                          <p className="text-[10px] text-gray-400">
-                            Click "Add Slot" to create your first time slot
-                          </p>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={handleAddTimeSlot}
+                          className="w-full px-4 py-2 bg-[#1BA3C7] text-white text-[10px] font-medium rounded-lg hover:bg-[#1591B8] transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add Slot
+                        </button>
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  {/* Created Slots List */}
+                  <div className="space-y-3">
+                    <h5 className="text-[10px] font-medium text-gray-600 border-b border-gray-200 pb-2">
+                      Created Slots (
+                      {(formData.availability[selectedDay] || []).length})
+                    </h5>
+
+                    {(formData.availability[selectedDay] || []).length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Plus className="w-6 h-6 text-gray-400" />
+                        </div>
+                        <p className="text-[10px]">
+                          No slots added for {selectedDay}
+                        </p>
+                        <p className="text-[8px] text-gray-400 mt-1">
+                          Add your first time slot above
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="max-h-60 overflow-y-auto space-y-2">
+                        {(formData.availability[selectedDay] || []).map(
+                          (slot, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border"
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className="text-[10px] font-medium text-[#1BA3C7]">
+                                  {slot.startTime} - {slot.endTime}
+                                </div>
+                                <div className="text-[8px] text-gray-600 bg-white px-2 py-1 rounded border">
+                                  Max {slot.maxPatientsPerSlot} patients
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleEditSlot(selectedDay, index)
+                                }
+                                className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                title="Edit slot"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

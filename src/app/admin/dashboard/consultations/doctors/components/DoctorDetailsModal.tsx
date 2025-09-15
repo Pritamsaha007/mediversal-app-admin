@@ -1,13 +1,20 @@
 "use client";
 import React, { useState } from "react";
 import { X } from "lucide-react";
-import { Doctor, weekDays } from "../data/doctorsData";
+import { Doctor } from "../data/doctorsData";
+import { EnumItem } from "../services/doctorService";
 
 interface DoctorDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   doctor: Doctor | null;
   onEdit?: (doctor: Doctor) => void;
+  enumData: {
+    departments: EnumItem[];
+    specializations: EnumItem[];
+    languages: EnumItem[];
+    days: EnumItem[];
+  };
 }
 
 const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
@@ -15,6 +22,7 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
   onClose,
   doctor,
   onEdit,
+  enumData,
 }) => {
   const [selectedDay, setSelectedDay] = useState("Monday");
 
@@ -32,13 +40,16 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
     if (daySlots.length === 0) return [];
 
     return daySlots
-      .map((slot) => `${slot.startTime} - ${slot.endTime}`)
-      .filter((slot) => slot !== " - ");
+      .filter((slot) => slot.startTime && slot.endTime) // Filter out empty slots
+      .map((slot) => ({
+        time: `${slot.startTime} - ${slot.endTime}`,
+        capacity: slot.maxPatientsPerSlot || "0",
+      }));
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[80vh] overflow-hidden">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-[16px] font-medium text-[#161d1f]">
@@ -54,48 +65,6 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[70vh]">
-          {/* Doctor Name and Specialization */}
-          {/* Available Slots */}
-          <div className="mb-6">
-            <h4 className="text-[10px] font-medium text-[#161d1f] mb-4">
-              Availability Status
-            </h4>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-medium text-[#161d1f]">
-                    Online Consultation:
-                  </span>
-                  <span
-                    className={`px-2 py-1 text-[8px] rounded ${
-                      doctor.is_available_online
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {doctor.is_available_online ? "Available" : "Not Available"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-medium text-[#161d1f]">
-                    In-Person Consultation:
-                  </span>
-                  <span
-                    className={`px-2 py-1 text-[8px] rounded ${
-                      doctor.is_available_in_person
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {doctor.is_available_in_person
-                      ? "Available"
-                      : "Not Available"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Tags */}
           <div className="mb-6">
             <span className="text-[12px] font-medium text-[#161d1f] mr-3">
@@ -189,45 +158,89 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
 
           {/* Available Slots */}
           <div className="mb-6">
-            <h4 className="text-[10px] font-medium text-[#161d1f] mb-4">
-              Available Slots
+            <h4 className="text-[12px] font-medium text-[#161d1f] mb-4">
+              Weekly Schedule
             </h4>
+            <div className="mb-6">
+              <h4 className="text-[12px] font-medium text-[#161d1f] mb-4">
+                Weekly Schedule
+              </h4>
 
-            {/* Day Tabs */}
-            <div className="flex gap-2 mb-4 overflow-x-auto">
-              {weekDays.map((day) => (
-                <button
-                  key={day}
-                  onClick={() => setSelectedDay(day)}
-                  className={`px-4 py-2 text-[10px] rounded-lg whitespace-nowrap ${
-                    selectedDay === day
-                      ? "bg-[#0088B1] text-white"
-                      : "bg-gray-100 text-[#161D1F] hover:bg-gray-200"
-                  }`}
-                >
-                  {day}
-                </button>
-              ))}
-            </div>
+              <div className="space-y-4">
+                {[
+                  "Monday",
+                  "Tuesday",
+                  "Wednesday",
+                  "Thursday",
+                  "Friday",
+                  "Saturday",
+                  "Sunday",
+                ].map((dayName) => {
+                  // Get slots from availability if available
+                  let daySlots = doctor.availability?.[dayName] || [];
 
-            {/* Time Slots for Selected Day */}
-            <div className="bg-gray-50 rounded-lg p-4 min-h-[100px]">
-              {formatTimeSlots(selectedDay).length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {formatTimeSlots(selectedDay).map((timeSlot, index) => (
+                  // If no slots in availability, get from doctor_slots
+                  if (daySlots.length === 0 && doctor.doctor_slots) {
+                    daySlots = doctor.doctor_slots
+                      .filter((slot) => slot.day === dayName)
+                      .map((slot) => ({
+                        id: slot.id,
+                        startTime: slot.start_time.substring(0, 5),
+                        endTime: slot.end_time.substring(0, 5),
+                        maxPatientsPerSlot: slot.slot_capacity.toString(),
+                      }));
+                  }
+
+                  const hasSlots =
+                    daySlots.length > 0 &&
+                    daySlots.some((slot) => slot.startTime && slot.endTime);
+
+                  return (
                     <div
-                      key={index}
-                      className="bg-white px-3 py-2 rounded-lg text-[10px] text-center text-gray-700 border"
+                      key={dayName}
+                      className="border border-gray-200 rounded-lg p-4"
                     >
-                      {timeSlot}
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="text-[11px] font-medium text-[#161d1f]">
+                          {dayName}
+                        </h5>
+                        <span className="text-[9px] text-gray-500">
+                          {
+                            daySlots.filter(
+                              (slot) => slot.startTime && slot.endTime
+                            ).length
+                          }{" "}
+                          slots
+                        </span>
+                      </div>
+
+                      {hasSlots ? (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {daySlots
+                            .filter((slot) => slot.startTime && slot.endTime)
+                            .map((slot, index) => (
+                              <div
+                                key={index}
+                                className="bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg text-center"
+                              >
+                                <div className="text-[10px] font-medium text-blue-800">
+                                  {slot.startTime} - {slot.endTime}
+                                </div>
+                                <div className="text-[8px] text-blue-600 mt-1">
+                                  Max {slot.maxPatientsPerSlot || 0} patients
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-3 text-[10px] text-gray-400 bg-gray-50 rounded-lg">
+                          No slots available
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-[10px] text-gray-500 py-8">
-                  No slots available for {selectedDay}
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

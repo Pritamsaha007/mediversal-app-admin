@@ -16,8 +16,18 @@ import {
 import AddDoctorModal from "./components/AddDoctorModal";
 import StatsCard from "./components/StatsCards";
 import DoctorDetailsModal from "./components/DoctorDetailsModal";
-import { getDoctors } from "./services/doctorService";
-import { convertAPIDoctor } from "./data/doctorsData";
+import {
+  getDoctors,
+  GetDoctorsParams,
+  createOrUpdateDoctor,
+  getAllEnumData,
+  EnumItem,
+} from "./services/doctorService";
+import {
+  convertAPIDoctor,
+  convertAvailabilityToSlots,
+  convertSlotsToAvailability,
+} from "./data/doctorsData";
 import { useAdminStore } from "@/app/store/adminStore";
 
 const StatusBadge: React.FC<{ isOnline: boolean; isInPerson: boolean }> = ({
@@ -80,7 +90,72 @@ const Doctors: React.FC = () => {
   const timeSlots = generateTimeSlots();
   const [showAddDoctorModal, setShowAddDoctorModal] = useState(false);
 
-  // Generate stats
+  const loadDoctors = async () => {
+    if (!token || enumData.days.length === 0) return;
+
+    setLoading(true);
+    try {
+      const params: GetDoctorsParams = {
+        search: searchTerm,
+        status: selectedStatus,
+      };
+
+      const response = await getDoctors(params, token);
+      const convertedDoctors = response.doctors.map((apiDoctor) => {
+        const doctor = convertAPIDoctor(apiDoctor);
+
+        // Map specialization and department names to IDs
+        const specialization = enumData.specializations.find(
+          (s) => s.value === apiDoctor.specializations
+        );
+        const department = enumData.departments.find(
+          (d) => d.value === apiDoctor.departments
+        );
+
+        doctor.specialization_id = specialization?.id || "";
+        doctor.department_id = department?.id || "";
+
+        const hospitalNamesMap: Record<string, string> = {};
+        apiDoctor.hospital.forEach((h) => {
+          hospitalNamesMap[h.id] = h.name;
+        });
+        doctor.hospitalNamesMap = hospitalNamesMap;
+
+        doctor.hospitalNames = apiDoctor.hospital.map((h) => h.name);
+
+        // Map language names to IDs
+        doctor.languages_known = apiDoctor.languages_known
+          .map((langName) => {
+            const lang = enumData.languages.find((l) => l.value === langName);
+            return lang?.id || "";
+          })
+          .filter(Boolean);
+
+        // Convert doctor_slots to availability format
+        if (apiDoctor.doctor_slots && apiDoctor.doctor_slots.length > 0) {
+          const dayNameToName: Record<string, string> = {};
+          enumData.days.forEach((day) => {
+            dayNameToName[day.value] = day.value;
+          });
+
+          doctor.availability = convertSlotsToAvailability(
+            apiDoctor.doctor_slots.map((slot) => ({
+              ...slot,
+              day_id: slot.day_id || "",
+            })),
+            dayNameToName
+          );
+        }
+
+        return doctor;
+      });
+      setDoctors(convertedDoctors);
+    } catch (error) {
+      console.error("Error loading doctors:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   const generateStats = () => {
     const totalDoctors = doctors.length;
     const availableOnline = doctors.filter((d) => d.is_available_online).length;
@@ -109,12 +184,8 @@ const Doctors: React.FC = () => {
   };
 
   const stats = generateStats();
-
-  // Filter doctors based on search and status
   useEffect(() => {
     let filtered = [...doctors];
-
-    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(
         (doctor) =>
@@ -124,8 +195,6 @@ const Doctors: React.FC = () => {
           )
       );
     }
-
-    // Filter by status
     if (selectedStatus !== "All Status") {
       filtered = filtered.filter((doctor) => {
         switch (selectedStatus) {
@@ -148,28 +217,87 @@ const Doctors: React.FC = () => {
     setFilteredDoctors(filtered);
   }, [searchTerm, selectedStatus, doctors]);
 
-  // Load doctors data
   useEffect(() => {
-    const loadDoctors = async () => {
+    const loadEnumData = async () => {
       if (!token) return;
 
-      setLoading(true);
       try {
-        const response = await getDoctors({}, token);
-        const convertedDoctors = response.doctors.map(convertAPIDoctor);
-        setDoctors(convertedDoctors);
-        setFilteredDoctors(convertedDoctors);
+        const data = await getAllEnumData(token);
+        setEnumData(data);
       } catch (error) {
-        console.error("Error loading doctors:", error);
-        // Handle error appropriately
-      } finally {
-        setLoading(false);
+        console.error("Error loading enum data:", error);
       }
     };
 
-    loadDoctors();
-  }, [token]); //
+    loadEnumData();
+  }, [token]);
 
+  const [enumData, setEnumData] = useState<{
+    departments: EnumItem[];
+    specializations: EnumItem[];
+    languages: EnumItem[];
+    days: EnumItem[];
+  }>({
+    departments: [],
+    specializations: [],
+    languages: [],
+    days: [],
+  });
+
+  useEffect(() => {
+    if (
+      enumData.days.length > 0 &&
+      enumData.specializations.length > 0 &&
+      enumData.languages.length > 0
+    ) {
+      loadDoctors();
+    }
+  }, [
+    token,
+    searchTerm,
+    selectedStatus,
+    enumData.days,
+    enumData.specializations,
+    enumData.languages,
+  ]);
+
+  const renderTimeSlots = (doctor: Doctor) => {
+    const slots: string[] = [];
+
+    // Convert availability to display format
+    Object.entries(doctor.availability || {}).forEach(([day, timeSlots]) => {
+      timeSlots.forEach((slot) => {
+        if (slot.startTime && slot.endTime) {
+          slots.push(`${slot.startTime}-${slot.endTime}`);
+        }
+      });
+    });
+
+    const isExpanded = expandedSlots.includes(doctor.id);
+    const slotsToShow = isExpanded ? slots : slots.slice(0, 6);
+
+    return (
+      <div className="flex flex-wrap gap-2">
+        {slotsToShow.map((slot, index) => (
+          <span
+            key={index}
+            className="px-2 py-1 text-xs text-gray-700 rounded border"
+          >
+            {slot}
+          </span>
+        ))}
+        {slots.length > 6 && (
+          <button
+            onClick={() => toggleSlotExpansion(doctor.id)}
+            className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded border flex items-center gap-1"
+          >
+            {isExpanded ? "view less" : "view more"}
+            <ChevronDown className="w-3 h-3" />
+          </button>
+        )}
+      </div>
+    );
+  };
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
     setOpenDropdown(null);
@@ -208,27 +336,70 @@ const Doctors: React.FC = () => {
     );
   };
 
-  const handleAddDoctor = (doctorData: Doctor) => {
-    if (editingDoctor) {
-      // Update existing doctor
-      setDoctors((prev) =>
-        prev.map((d) =>
-          d.id === editingDoctor.id
-            ? { ...doctorData, id: editingDoctor.id }
-            : d
-        )
+  const handleAddDoctor = async (doctorData: Doctor) => {
+    try {
+      // Create mapping from day names to IDs
+      const dayNameToId: Record<string, string> = {};
+      enumData.days.forEach((day) => {
+        dayNameToId[day.value] = day.id;
+      });
+
+      // Validate that all days have mappings
+      const hasInvalidDays = Object.keys(doctorData.availability).some(
+        (dayName) =>
+          doctorData.availability[dayName].length > 0 && !dayNameToId[dayName]
       );
-    } else {
-      // Add new doctor
-      const newDoctor = {
-        ...doctorData,
-        id: `doctor-${Date.now()}`, // Generate temp ID
-        rating: 0,
-        created_by: "current-user-id",
-        updated_by: "current-user-id",
+
+      if (hasInvalidDays) {
+        console.error("Invalid day mappings found");
+        alert("Error: Invalid day configuration. Please try again.");
+        return;
+      }
+
+      // Convert availability to doctor_slots format
+      const doctorSlots = convertAvailabilityToSlots(
+        doctorData.availability,
+        dayNameToId
+      );
+
+      const requestData = {
+        id: editingDoctor ? editingDoctor.id : undefined,
+        name: doctorData.name,
+        mobile_number: doctorData.mobile_number,
+        specialization_id: doctorData.specialization_id,
+        department_id: doctorData.department_id,
+        experience_in_yrs: doctorData.experience_in_yrs,
+        consultation_price: doctorData.consultation_price,
+        about: doctorData.about,
+        qualifications: doctorData.qualifications,
+        languages_known: doctorData.languages_known,
+        hospitals_id: doctorData.hospitals_id,
+        is_available_online: doctorData.is_available_online,
+        is_available_in_person: doctorData.is_available_in_person,
+        mci: doctorData.mci,
+        nmc: doctorData.nmc,
+        state_registration: doctorData.state_registration,
+        is_available: doctorData.is_available,
+        doctor_slots: doctorSlots,
       };
-      setDoctors((prev) => [...prev, newDoctor]);
+
+      console.log("Submitting doctor data:", requestData);
+
+      await createOrUpdateDoctor(requestData, token!);
+
+      await loadDoctors();
+
+      // Close modal
+      setShowAddDoctorModal(false);
+    } catch (error) {
+      console.error("Error saving doctor:", error);
+      alert(
+        `Error saving doctor: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
+
     setEditingDoctor(null);
   };
 
@@ -242,34 +413,6 @@ const Doctors: React.FC = () => {
     setEditingDoctor(null);
   };
 
-  const renderTimeSlots = (doctor: Doctor) => {
-    const isExpanded = expandedSlots.includes(doctor.id);
-    const slotsToShow = isExpanded ? timeSlots : timeSlots.slice(0, 6);
-
-    return (
-      <div className="flex flex-wrap gap-2">
-        {slotsToShow.map((slot, index) => (
-          <span
-            key={index}
-            className="px-2 py-1 text-xs  text-gray-700 rounded border"
-          >
-            {slot}
-          </span>
-        ))}
-        {timeSlots.length > 6 && (
-          <button
-            onClick={() => toggleSlotExpansion(doctor.id)}
-            className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded border flex items-center gap-1"
-          >
-            {isExpanded ? "view less" : "view more"}
-            <ChevronDown className="w-3 h-3" />
-          </button>
-        )}
-      </div>
-    );
-  };
-
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -499,12 +642,19 @@ const Doctors: React.FC = () => {
         onClose={handleCloseModal}
         onAddDoctor={handleAddDoctor}
         editingDoctor={editingDoctor}
+        enumData={enumData}
       />
       <DoctorDetailsModal
         isOpen={showDetailsModal}
         onClose={handleCloseDetailsModal}
         doctor={selectedDoctor}
         onEdit={handleEditDoctor}
+        enumData={{
+          departments: [],
+          specializations: [],
+          languages: [],
+          days: [],
+        }}
       />
     </div>
   );
