@@ -287,3 +287,33 @@ export async function getAllEnumData(token: string) {
     throw error;
   }
 }
+
+export async function deleteDoctor(
+  doctorId: string,
+  token: string
+): Promise<{ success: boolean; message?: string }> {
+  const url = new URL(
+    `${HOMECARE_API_BASE_URL}/api/clinic/doctors/${doctorId}`
+  );
+
+  console.log("Deleting doctor with ID:", doctorId);
+
+  const response = await fetch(url.toString(), {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  const responseData = await response.json();
+  console.log("Delete doctor API response:", responseData);
+  return responseData;
+}

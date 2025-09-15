@@ -22,6 +22,7 @@ import {
   createOrUpdateDoctor,
   getAllEnumData,
   EnumItem,
+  deleteDoctor,
 } from "./services/doctorService";
 import {
   convertAPIDoctor,
@@ -104,7 +105,6 @@ const Doctors: React.FC = () => {
       const convertedDoctors = response.doctors.map((apiDoctor) => {
         const doctor = convertAPIDoctor(apiDoctor);
 
-        // Map specialization and department names to IDs
         const specialization = enumData.specializations.find(
           (s) => s.value === apiDoctor.specializations
         );
@@ -261,6 +261,37 @@ const Doctors: React.FC = () => {
     enumData.languages,
   ]);
 
+  const handleDeleteDoctor = async (doctor: Doctor) => {
+    if (!token) return;
+
+    // Show confirmation dialog
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete Dr. ${doctor.name}? This action cannot be undone.`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      setLoading(true);
+      await deleteDoctor(doctor.id, token);
+
+      // Refresh the doctors list
+      await loadDoctors();
+
+      // Show success message (optional)
+      alert(`Dr. ${doctor.name} has been successfully deleted.`);
+    } catch (error) {
+      console.error("Error deleting doctor:", error);
+      alert(
+        `Error deleting doctor: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderTimeSlots = (doctor: Doctor) => {
     const slots: string[] = [];
 
@@ -281,7 +312,7 @@ const Doctors: React.FC = () => {
         {slotsToShow.map((slot, index) => (
           <span
             key={index}
-            className="px-2 py-1 text-xs text-gray-700 rounded border"
+            className="text-[#161d1f] bg-[#E8F4F7] p-0.5 rounded text-[10px]"
           >
             {slot}
           </span>
@@ -624,7 +655,11 @@ const Doctors: React.FC = () => {
                           >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="p-2 text-red-400 hover:text-red-500">
+                          <button
+                            className="p-2 text-red-400 hover:text-red-500"
+                            onClick={() => handleDeleteDoctor(doctor)}
+                            disabled={loading}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>

@@ -449,10 +449,9 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     <span className="text-red-500">*</span> Specialization
                   </label>
                   <select
-                    value={formData.specialization_id} // Change from specializations to specialization_id
-                    onChange={
-                      (e) =>
-                        handleInputChange("specialization_id", e.target.value) // Change field name
+                    value={formData.specialization_id}
+                    onChange={(e) =>
+                      handleInputChange("specialization_id", e.target.value)
                     }
                     className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                   >
