@@ -1,15 +1,15 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { X, Search, Calendar, Clock } from "lucide-react";
+import { X, Search } from "lucide-react";
 import {
-  doctorsList,
-  hospitalsList,
-  languagesList,
-  paymentMethods,
-  durationOptions,
-  type Consultation,
-  type ConsultationFormData,
-} from "../data/consultation";
+  searchHospitals,
+  EnumItem,
+  searchDoctors,
+  createOrUpdateConsultation,
+  getConsultationEnumData,
+} from "../service/consultationService";
+import { useAdminStore } from "@/app/store/adminStore";
+import { Consultation } from "../data/consultation";
 
 interface AddConsultationModalProps {
   isOpen: boolean;
@@ -17,6 +17,27 @@ interface AddConsultationModalProps {
   onAddConsultation: (consultation: ConsultationFormData) => void;
   editingConsultation?: Consultation | null;
   initialConsultationType: "online" | "hospital";
+}
+interface ConsultationFormData {
+  patientName: string;
+  patientContact: string;
+  patientEmail: string;
+  aadhaarNumber?: string;
+  consultationType: "online" | "in-person";
+  consultationDate: string;
+  consultationTime: string;
+  duration: number;
+  appointedDoctor: string;
+  doctorId: string;
+  hospital: string;
+  hospitalId: string;
+  consultationLanguage: string;
+  languageId: string;
+  paymentMethod: string;
+  paymentModeId: string;
+  paymentStatus: string;
+  paymentStatusId: string;
+  symptoms?: string;
 }
 
 const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
@@ -36,14 +57,73 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
     consultationTime: "",
     duration: 30,
     appointedDoctor: "",
+    doctorId: "",
     hospital: "",
+    hospitalId: "",
     consultationLanguage: "",
+    languageId: "",
     paymentMethod: "",
+    paymentModeId: "",
     paymentStatus: "pending",
+    paymentStatusId: "",
     symptoms: "",
   });
-
+  const { token } = useAdminStore();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  const [enumData, setEnumData] = useState<{
+    paymentModes: EnumItem[];
+    paymentStatuses: EnumItem[];
+    languages: EnumItem[];
+  }>({
+    paymentModes: [],
+    paymentStatuses: [],
+    languages: [],
+  });
+
+  const [hospitals, setHospitals] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [doctors, setDoctors] = useState<
+    Array<{ id: string; name: string; specializations: string }>
+  >([]);
+  const [hospitalSearchTerm, setHospitalSearchTerm] = useState("");
+  const [doctorSearchTerm, setDoctorSearchTerm] = useState("");
+
+  useEffect(() => {
+    const loadEnumData = async () => {
+      if (!token) return;
+      try {
+        const data = await getConsultationEnumData(token);
+        setEnumData({
+          paymentModes: data.paymentModes,
+          paymentStatuses: data.paymentStatuses,
+          languages: data.languages,
+        });
+      } catch (error) {
+        console.error("Error loading enum data:", error);
+      }
+    };
+    loadEnumData();
+  }, [token]);
+
+  useEffect(() => {
+    const searchHospitalData = async () => {
+      if (!token || formData.consultationType !== "in-person") return;
+      try {
+        const response = await searchHospitals(
+          hospitalSearchTerm || null,
+          token
+        );
+        setHospitals(response.hospitals);
+      } catch (error) {
+        console.error("Error searching hospitals:", error);
+      }
+    };
+
+    const debounceTimer = setTimeout(searchHospitalData, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [hospitalSearchTerm, token, formData.consultationType]);
 
   useEffect(() => {
     if (editingConsultation) {
@@ -57,10 +137,15 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
         consultationTime: editingConsultation.consultationTime,
         duration: editingConsultation.duration,
         appointedDoctor: editingConsultation.appointedDoctor,
+        doctorId: editingConsultation.doctorId || "",
         hospital: editingConsultation.hospital || "",
+        hospitalId: editingConsultation.hospitalId || "",
         consultationLanguage: editingConsultation.consultationLanguage,
+        languageId: editingConsultation.languageId || "",
         paymentMethod: editingConsultation.paymentMethod,
+        paymentModeId: editingConsultation.paymentModeId || "",
         paymentStatus: editingConsultation.paymentStatus,
+        paymentStatusId: editingConsultation.statusId || "",
         symptoms: editingConsultation.symptoms || "",
       });
     } else {
@@ -75,30 +160,111 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
         consultationTime: "",
         duration: 30,
         appointedDoctor: "",
+        doctorId: "",
         hospital: "",
+        hospitalId: "",
         consultationLanguage: "",
+        languageId: "",
         paymentMethod: "",
+        paymentModeId: "",
         paymentStatus: "pending",
+        paymentStatusId: "",
         symptoms: "",
       });
     }
   }, [editingConsultation, initialConsultationType, isOpen]);
 
-  const handleInputChange = (field: keyof ConsultationFormData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = () => {
-    console.log("Form Data:", formData);
-
-    const consultationData = {
-      ...formData,
-      status: "scheduled" as const,
-      doctorSpecialization: "General Medicine",
+  useEffect(() => {
+    const searchDoctorData = async () => {
+      if (!token) return;
+      try {
+        const response = await searchDoctors(doctorSearchTerm || null, token);
+        setDoctors(response.doctors);
+      } catch (error) {
+        console.error("Error searching doctors:", error);
+      }
     };
 
-    onAddConsultation(consultationData);
-    onClose();
+    const debounceTimer = setTimeout(searchDoctorData, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [doctorSearchTerm, token]);
+
+  const handleInputChange = (field: keyof ConsultationFormData, value: any) => {
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+
+      // When payment method changes, also update the ID
+      if (field === "paymentMethod") {
+        const selectedMode = enumData.paymentModes.find(
+          (mode) => mode.id === value
+        );
+        if (selectedMode) {
+          newData.paymentModeId = selectedMode.id;
+          newData.paymentMethod = selectedMode.value; // Store display value
+        }
+      }
+
+      // When language changes, also update the ID
+      if (field === "consultationLanguage") {
+        const selectedLang = enumData.languages.find(
+          (lang) => lang.id === value
+        );
+        if (selectedLang) {
+          newData.languageId = selectedLang.id;
+          newData.consultationLanguage = selectedLang.value; // Store display value
+        }
+      }
+
+      // When payment status changes, also update the ID
+      if (field === "paymentStatus") {
+        const selectedStatus = enumData.paymentStatuses.find(
+          (status) => status.value === value
+        );
+        if (selectedStatus) {
+          newData.paymentStatusId = selectedStatus.id;
+        }
+      }
+
+      return newData;
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (!token) return;
+
+    try {
+      const consultationData = {
+        ...(editingConsultation?.id && { id: editingConsultation.id }),
+        date: formData.consultationDate,
+        time: formData.consultationTime,
+        session_duration_in_mins: formData.duration,
+        customer_id: null,
+        patient_name: formData.patientName,
+        phone: formData.patientContact,
+        email: formData.patientEmail,
+        date_of_birth: "1990-01-01", // You might want to add this field to the form
+        hospital_id:
+          formData.consultationType === "in-person"
+            ? formData.hospitalId
+            : undefined,
+        symptoms_desc: formData.symptoms || "",
+        payment_mode: formData.paymentModeId || "",
+        total_amount: 500, // Default amount, you might want to calculate this
+        service_fee_tax_amount: 50,
+        paid_amount: 500,
+        applied_coupons: null,
+        status: formData.paymentStatusId || "",
+        aadhar_id: formData.aadhaarNumber,
+        consultation_language_id: formData.languageId || "",
+        staff_id: formData.doctorId || "",
+      };
+
+      await createOrUpdateConsultation(consultationData, token);
+      onAddConsultation(formData); // This will trigger a refresh in parent component
+      onClose();
+    } catch (error) {
+      console.error("Error saving consultation:", error);
+    }
   };
 
   const handleReset = () => {
@@ -112,10 +278,15 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
       consultationTime: "",
       duration: 30,
       appointedDoctor: "",
+      doctorId: "",
       hospital: "",
+      hospitalId: "",
       consultationLanguage: "",
+      languageId: "",
       paymentMethod: "",
+      paymentModeId: "",
       paymentStatus: "pending",
+      paymentStatusId: "",
       symptoms: "",
     });
   };
@@ -166,7 +337,14 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
                   key={index}
                   type="button"
                   onClick={() => {
-                    handleInputChange(field, optionValue);
+                    if (
+                      field === "paymentMethod" ||
+                      field === "consultationLanguage"
+                    ) {
+                      handleInputChange(field, optionValue); // This will be the ID
+                    } else {
+                      handleInputChange(field, optionValue);
+                    }
                     setOpenDropdown(null);
                   }}
                   className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 text-[#161D1F]"
@@ -262,13 +440,42 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
                   <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
                     <span className="text-red-500">*</span> Select Hospital
                   </label>
-                  <DropdownSelect
-                    value={formData.hospital ?? ""}
-                    placeholder="e.g., Mediversal Health Studio"
-                    options={hospitalsList}
-                    field="hospital"
-                    required
-                  />
+                  <div className="relative">
+                    <Search className="w-3 h-3 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search hospitals..."
+                      value={formData.hospital || hospitalSearchTerm}
+                      onChange={(e) => {
+                        setHospitalSearchTerm(e.target.value);
+                        if (!e.target.value) {
+                          handleInputChange("hospital", "");
+                          handleInputChange("hospitalId", "");
+                        }
+                      }}
+                      className="w-full text-[10px] pl-10 px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                    />
+                    {hospitals.length > 0 &&
+                      hospitalSearchTerm &&
+                      !formData.hospital && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {hospitals.map((hospital) => (
+                            <button
+                              key={hospital.id}
+                              type="button"
+                              onClick={() => {
+                                handleInputChange("hospital", hospital.name);
+                                handleInputChange("hospitalId", hospital.id);
+                                setHospitalSearchTerm("");
+                              }}
+                              className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 text-[#161D1F]"
+                            >
+                              {hospital.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                  </div>
                 </div>
               )}
               {formData.consultationType === "online" && (
@@ -296,12 +503,36 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
                   <input
                     type="text"
                     placeholder="Search for Doctor name"
-                    value={formData.appointedDoctor}
-                    onChange={(e) =>
-                      handleInputChange("appointedDoctor", e.target.value)
-                    }
+                    value={formData.appointedDoctor || doctorSearchTerm}
+                    onChange={(e) => {
+                      setDoctorSearchTerm(e.target.value);
+                      if (!e.target.value) {
+                        handleInputChange("appointedDoctor", "");
+                        handleInputChange("doctorId", "");
+                      }
+                    }}
                     className="w-full text-[10px] pl-10 px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                   />
+                  {doctors.length > 0 &&
+                    doctorSearchTerm &&
+                    !formData.appointedDoctor && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {doctors.map((doctor) => (
+                          <button
+                            key={doctor.id}
+                            type="button"
+                            onClick={() => {
+                              handleInputChange("appointedDoctor", doctor.name);
+                              handleInputChange("doctorId", doctor.id);
+                              setDoctorSearchTerm("");
+                            }}
+                            className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 text-[#161D1F]"
+                          >
+                            {doctor.name} - {doctor.specializations}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                 </div>
               </div>
               <div>
@@ -336,41 +567,36 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
               </div>
               <div>
                 <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
-                  {formData.consultationType === "in-person" ? (
-                    <>
-                      <span className="text-red-500">*</span> Duration (minutes)
-                    </>
-                  ) : (
-                    "Consultation Duration (minutes)"
-                  )}
+                  <span className="text-red-500">*</span> Duration (minutes)
                 </label>
                 <DropdownSelect
                   value={formData.duration.toString()}
-                  placeholder={
-                    formData.consultationType === "in-person"
-                      ? "Consultation Duration"
-                      : "Mention Consultation Time Period"
-                  }
-                  options={durationOptions}
+                  placeholder="Select Duration"
+                  options={[
+                    { label: "15 minutes", value: 15 },
+                    { label: "30 minutes", value: 30 },
+                    { label: "45 minutes", value: 45 },
+                    { label: "60 minutes", value: 60 },
+                  ]}
                   field="duration"
-                  required={formData.consultationType === "in-person"}
+                  required
                 />
               </div>
-              {formData.consultationType === "online" && (
-                <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
-                    <span className="text-red-500">*</span> Consultation
-                    Language
-                  </label>
-                  <DropdownSelect
-                    value={formData.consultationLanguage}
-                    placeholder="Select Language"
-                    options={languagesList}
-                    field="consultationLanguage"
-                    required
-                  />
-                </div>
-              )}
+              <div>
+                <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                  <span className="text-red-500">*</span> Consultation Language
+                </label>
+                <DropdownSelect
+                  value={formData.consultationLanguage}
+                  placeholder="Select Language"
+                  options={enumData.languages.map((lang) => ({
+                    label: lang.value,
+                    value: lang.id,
+                  }))}
+                  field="consultationLanguage"
+                  required
+                />
+              </div>
             </div>
           </div>
 
@@ -387,7 +613,9 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
                 <DropdownSelect
                   value={formData.paymentStatus}
                   placeholder="Choose Payment Status"
-                  options={["pending", "paid", "cancelled", "refunded"]}
+                  options={enumData.paymentStatuses.map(
+                    (status) => status.value
+                  )}
                   field="paymentStatus"
                 />
               </div>
@@ -398,7 +626,10 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
                 <DropdownSelect
                   value={formData.paymentMethod}
                   placeholder="Select Payment Method"
-                  options={paymentMethods}
+                  options={enumData.paymentModes.map((mode) => ({
+                    label: mode.value,
+                    value: mode.id,
+                  }))}
                   field="paymentMethod"
                   required
                 />

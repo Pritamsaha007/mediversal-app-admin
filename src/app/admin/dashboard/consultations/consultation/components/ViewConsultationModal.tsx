@@ -18,7 +18,15 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
 }) => {
   if (!isOpen || !consultation) return null;
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status?: string | null) => {
+    if (!status) {
+      return (
+        <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-medium bg-gray-100 text-gray-800">
+          Unknown
+        </span>
+      );
+    }
+
     const statusStyles = {
       completed: "bg-[#34C759] text-white",
       scheduled: "bg-[#2F80ED] text-white",

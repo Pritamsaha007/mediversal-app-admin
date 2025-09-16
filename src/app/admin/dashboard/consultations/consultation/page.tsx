@@ -1,6 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { consultationsData, type Consultation } from "./data/consultation";
+import {
+  getConsultations,
+  getConsultationEnumData,
+} from "./service/consultationService";
+
 import {
   Search,
   ChevronDown,
@@ -15,10 +19,20 @@ import {
 import AddConsultationModal from "./components/AddConsultationModal";
 import ViewConsultationModal from "./components/ViewConsultationModal";
 import StatsCard from "./components/StatsCard";
+import { useAdminStore } from "@/app/store/adminStore";
+import { Consultation, transformAPIToConsultation } from "./data/consultation";
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  if (!status) {
+    return (
+      <span className="inline-flex items-center justify-center px-2 py-1 rounded text-[10px] font-medium bg-gray-100 text-gray-800">
+        Unknown
+      </span>
+    );
+  }
+
   const getStatusStyles = () => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "completed":
         return "bg-[#34C759] text-white";
       case "scheduled":
@@ -58,6 +72,7 @@ const ConsultationTypeBadge: React.FC<{ type: string }> = ({ type }) => {
 
 const Consultations: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const { token } = useAdminStore();
   const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [selectedConsultationType, setSelectedConsultationType] =
     useState("Consultation Type");
@@ -121,53 +136,41 @@ const Consultations: React.FC = () => {
 
   const stats = generateStats();
 
-  useEffect(() => {
-    let filtered = [...consultations];
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (consultation) =>
-          consultation.patientName
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          consultation.appointedDoctor
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filter by status
-    if (selectedStatus !== "All Status") {
-      filtered = filtered.filter((consultation) => {
-        return (
-          consultation.status.toLowerCase() === selectedStatus.toLowerCase()
-        );
-      });
-    }
-
-    // Filter by consultation type
-    if (selectedConsultationType !== "Consultation Type") {
-      filtered = filtered.filter((consultation) => {
-        return (
-          consultation.consultationType.toLowerCase() ===
-          selectedConsultationType.toLowerCase().replace("-", "")
-        );
-      });
-    }
-
-    setFilteredConsultations(filtered);
-  }, [searchTerm, selectedStatus, selectedConsultationType, consultations]);
-
   // Load consultations data
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setConsultations(consultationsData);
-      setFilteredConsultations(consultationsData);
-      setLoading(false);
-    }, 500);
-  }, []);
+    const loadConsultations = async () => {
+      if (!token) return;
+
+      setLoading(true);
+      try {
+        const params = {
+          search_text: searchTerm || null,
+          filter_status:
+            selectedStatus !== "All Status" ? selectedStatus : null,
+          is_online_consultation:
+            selectedConsultationType === "Online"
+              ? true
+              : selectedConsultationType === "In-Person"
+              ? false
+              : null,
+        };
+
+        const response = await getConsultations(params, token);
+        const transformedData = response.consultations.map(
+          transformAPIToConsultation
+        );
+
+        setConsultations(transformedData);
+        setFilteredConsultations(transformedData);
+      } catch (error) {
+        console.error("Error loading consultations:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadConsultations();
+  }, [token, searchTerm, selectedStatus, selectedConsultationType]);
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -481,7 +484,7 @@ const Consultations: React.FC = () => {
                             {consultation.patientName}
                           </div>
                           <div className="text-[10px] text-gray-500 mb-2">
-                            Booking ID: {consultation.bookingId}
+                            Booking ID: {consultation.id}
                           </div>
                           <div className="text-[10px] text-gray-500 mb-2">
                             {consultation.patientContact}
@@ -540,14 +543,6 @@ const Consultations: React.FC = () => {
                             onClick={() => handleEditConsultation(consultation)}
                           >
                             <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            className="p-2 text-red-400 hover:text-red-500"
-                            onClick={() =>
-                              handleCancelConsultation(consultation.id)
-                            }
-                          >
-                            <X className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
