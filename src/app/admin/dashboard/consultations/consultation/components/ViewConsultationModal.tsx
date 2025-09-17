@@ -88,7 +88,12 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
               {consultation.patientName}
             </h3>
             <div className="flex items-center gap-2 text-[10px] text-gray-500 mb-4">
-              <span>Booking ID: {consultation.bookingId}</span>
+              <span>
+                Booking ID:
+                <span className="cursor-help" title={consultation.bookingId}>
+                  {consultation.bookingId}
+                </span>
+              </span>
               <span>|</span>
               <span>{consultation.consultationLanguage}</span>
             </div>
@@ -131,7 +136,7 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
                 {consultation.aadhaarNumber && (
                   <div className="md:col-span-2">
                     <span className="text-[10px] font-medium text-[#161D1F]">
-                      Aadhaar Number:{" "}
+                      Aadhaar Number:
                     </span>
                     <span className="text-[10px] text-gray-600">
                       {consultation.aadhaarNumber}
@@ -141,8 +146,6 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
               </div>
             </div>
           </div>
-
-          {/* Consultation & Payment Details */}
           <div className="mb-6">
             <h4 className="text-[10px] font-medium text-[#161D1F] mb-4">
               Consultation & Payment Details

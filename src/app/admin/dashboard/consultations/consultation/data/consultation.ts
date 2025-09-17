@@ -67,8 +67,8 @@ export function transformAPIToConsultation(
     aadhaarNumber: apiData.aadhar_id,
     consultationType:
       apiData.consultation_type === "OFFLINE" ? "in-person" : "online",
-    consultationDate: apiData.consultation_date,
-    consultationTime: apiData.consultation_time, // Show actual time from API
+    consultationDate: apiData.consultation_date.split("T")[0],
+    consultationTime: apiData.consultation_time,
     duration: apiData.session_duration_in_mins,
     appointedDoctor: apiData.doc_name,
     doctorSpecialization: "General Medicine",

@@ -15,6 +15,7 @@ import {
   Eye,
   Edit,
   X,
+  HeartPlus,
 } from "lucide-react";
 import AddConsultationModal from "./components/AddConsultationModal";
 import ViewConsultationModal from "./components/ViewConsultationModal";
@@ -538,7 +539,13 @@ const Consultations: React.FC = () => {
                             {consultation.patientName}
                           </div>
                           <div className="text-[10px] text-gray-500 mb-2">
-                            Booking ID: {consultation.id}
+                            Booking ID:
+                            <span
+                              className="ml-1 cursor-help"
+                              title={consultation.bookingId}
+                            >
+                              {consultation.bookingId.slice(-5)}{" "}
+                            </span>
                           </div>
                           <div className="text-[10px] text-gray-500 mb-2">
                             {consultation.patientContact}
@@ -563,12 +570,12 @@ const Consultations: React.FC = () => {
                             </div>
                           )}
                           <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-2">
-                            <Users className="w-3 h-3" />
+                            <HeartPlus className="w-3 h-3" />
                             {consultation.appointedDoctor}
                           </div>
-                          <div className="text-[10px] text-gray-500">
+                          {/* <div className="text-[10px] text-gray-500">
                             {consultation.doctorSpecialization}
-                          </div>
+                          </div> */}
                         </div>
                       </td>
                       <td className="px-6 py-4">
