@@ -46,8 +46,8 @@ const Sidebar = () => {
       icon: <LucideComputer size={18} />,
       subItems: [
         {
-          name: "Order Management",
-          link: "/admin/dashboard/order-management",
+          name: "Overview",
+          link: "/admin/dashboard/overview",
         },
       ],
     },
@@ -60,14 +60,14 @@ const Sidebar = () => {
           link: "/admin/dashboard/pharmacy/product",
         },
         { name: "Order", link: "/admin/dashboard/pharmacy/order" },
-        {
-          name: "Inventory",
-          link: "/admin/dashboard/pharmacy/inventory",
-        },
-        {
-          name: "Prescription",
-          link: "/admin/dashboard/pharmacy/prescription",
-        },
+        // {
+        //   name: "Inventory",
+        //   link: "/admin/dashboard/pharmacy/inventory",
+        // },
+        // {
+        //   name: "Prescription",
+        //   link: "/admin/dashboard/pharmacy/prescription",
+        // },
       ],
     },
 
@@ -122,6 +122,28 @@ const Sidebar = () => {
         // {
         //   name: "Care Plan",
         //   link: "/admin/dashboard/home-care/care-plan",
+        // },
+      ],
+    },
+    {
+      name: "Consultations",
+      icon: <LucideComputer size={18} />,
+      subItems: [
+        {
+          name: "Doctors",
+          link: "/admin/dashboard/consultations/doctors",
+        },
+        {
+          name: "Hospitals",
+          link: "/admin/dashboard/consultations/hospitals",
+        },
+        {
+          name: "Consultations",
+          link: "/admin/dashboard/consultations/consultation",
+        },
+        // {
+        //   name: "Orders",
+        //   link: "/admin/dashboard/consultations/orders",
         // },
       ],
     },

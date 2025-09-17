@@ -8,7 +8,6 @@ import {
   Edit,
   Trash2,
   Star,
-  X,
 } from "lucide-react";
 import AddStaffModal from "./components/AddStaffModal";
 import ViewStaffModal from "./components/ViewStaffModal";
@@ -37,10 +36,7 @@ const StaffManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const handleAddStaff = async (newStaff: Staff) => {
-    // Add to local state immediately for UI feedback
     setStaffList((prev) => [...prev, newStaff]);
-
-    // Refresh the list from API to get the actual ID
     try {
       const response = await fetchStaff();
       if (response.success) {
@@ -483,13 +479,13 @@ const StaffManagement: React.FC = () => {
                               {staff.name}
                             </div>
                             {/* Department Chips */}
-                            <div className="flex flex-wrap">
+                            {/* <div className="flex flex-wrap">
                               {staff.departments.map((department, index) => (
                                 <span key={index}>
                                   {getDepartmentChip(department)}
                                 </span>
                               ))}
-                            </div>
+                            </div> */}
                           </div>
                         </div>
                       </td>
@@ -552,8 +548,6 @@ const StaffManagement: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Add Staff Modal */}
       <AddStaffModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
