@@ -1,4 +1,5 @@
 const HOMECARE_API_BASE_URL = process.env.NEXT_PUBLIC_HOMECARE_API_BASE_URL;
+const API_TIMEOUT = 10000; // 10 seconds
 
 export interface ConsultationAPI {
   id: string;
@@ -135,6 +136,17 @@ export interface EnumItem {
 export interface EnumResponse {
   roles: EnumItem[];
 }
+
+const createFetchWithTimeout = (timeout: number) => {
+  return (url: string, options: RequestInit) => {
+    return Promise.race([
+      fetch(url, options),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Request timeout")), timeout)
+      ),
+    ]);
+  };
+};
 
 // Get consultations
 export async function getConsultations(

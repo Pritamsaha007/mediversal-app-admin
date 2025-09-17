@@ -10,6 +10,7 @@ import {
 } from "../service/consultationService";
 import { useAdminStore } from "@/app/store/adminStore";
 import { Consultation } from "../data/consultation";
+import toast from "react-hot-toast";
 
 interface AddConsultationModalProps {
   isOpen: boolean;
@@ -89,6 +90,44 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
   >([]);
   const [hospitalSearchTerm, setHospitalSearchTerm] = useState("");
   const [doctorSearchTerm, setDoctorSearchTerm] = useState("");
+  const validateForm = (): boolean => {
+    const errors: string[] = [];
+
+    if (!formData.patientName.trim()) errors.push("Patient name is required");
+    if (!formData.patientContact.trim())
+      errors.push("Patient contact is required");
+    if (!formData.patientEmail.trim()) errors.push("Patient email is required");
+    if (!formData.consultationDate)
+      errors.push("Consultation date is required");
+    if (!formData.consultationTime)
+      errors.push("Consultation time is required");
+    if (!formData.appointedDoctor) errors.push("Doctor selection is required");
+    if (!formData.paymentMethod) errors.push("Payment method is required");
+
+    if (formData.consultationType === "in-person" && !formData.hospital) {
+      errors.push("Hospital selection is required for in-person consultations");
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.patientEmail)) {
+      errors.push("Please enter a valid email address");
+    }
+
+    // Validate phone number (10 digits)
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(formData.patientContact.replace(/\D/g, ""))) {
+      errors.push("Please enter a valid 10-digit phone number");
+    }
+
+    if (errors.length > 0) {
+      toast.error(errors[0]); // Show first error
+      return false;
+    }
+
+    return true;
+  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const loadEnumData = async () => {
@@ -215,7 +254,6 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
         }
       }
 
-      // When payment status changes, also update the ID
       if (field === "paymentStatus") {
         const selectedStatus = enumData.paymentStatuses.find(
           (status) => status.value === value
@@ -230,7 +268,18 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!token) return;
+    if (!validateForm()) return;
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const loadingToast = toast.loading(
+      editingConsultation
+        ? "Updating consultation..."
+        : "Scheduling consultation..."
+    );
 
     try {
       const consultationData = {
@@ -239,31 +288,47 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
         time: formData.consultationTime,
         session_duration_in_mins: formData.duration,
         customer_id: null,
-        patient_name: formData.patientName,
-        phone: formData.patientContact,
-        email: formData.patientEmail,
-        date_of_birth: "1990-01-01", // You might want to add this field to the form
+        patient_name: formData.patientName.trim(),
+        phone: formData.patientContact.replace(/\D/g, ""), // Clean phone number
+        email: formData.patientEmail.trim().toLowerCase(),
+        date_of_birth: "1990-01-01",
         hospital_id:
           formData.consultationType === "in-person"
             ? formData.hospitalId
             : undefined,
-        symptoms_desc: formData.symptoms || "",
+        symptoms_desc: formData.symptoms?.trim() || "",
         payment_mode: formData.paymentModeId || "",
-        total_amount: 500, // Default amount, you might want to calculate this
+        total_amount: 500,
         service_fee_tax_amount: 50,
         paid_amount: 500,
         applied_coupons: null,
         status: formData.paymentStatusId || "",
-        aadhar_id: formData.aadhaarNumber,
+        aadhar_id: formData.aadhaarNumber?.replace(/\D/g, "") || undefined, // Clean Aadhaar
         consultation_language_id: formData.languageId || "",
         staff_id: formData.doctorId || "",
       };
 
       await createOrUpdateConsultation(consultationData, token);
-      onAddConsultation(formData); // This will trigger a refresh in parent component
+
+      toast.dismiss(loadingToast);
+      toast.success(
+        editingConsultation
+          ? "Consultation updated successfully!"
+          : "Consultation scheduled successfully!"
+      );
+
+      onAddConsultation(formData);
       onClose();
     } catch (error) {
       console.error("Error saving consultation:", error);
+      toast.dismiss(loadingToast);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to save consultation. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -654,22 +719,23 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
-            <button
-              onClick={handleReset}
-              className="px-6 py-2 text-sm text-[#161D1F] border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Reset
-            </button>
-            <button
-              onClick={handleSubmit}
-              className="px-6 py-2 text-sm bg-[#0088B1] text-white rounded-lg hover:bg-[#007299]"
-            >
-              {editingConsultation
-                ? "Update Consultation"
-                : "Schedule Consultation"}
-            </button>
-          </div>
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className={`px-6 py-2 text-sm rounded-lg transition-all ${
+              isSubmitting
+                ? "bg-gray-400 text-white cursor-not-allowed"
+                : "bg-[#0088B1] text-white hover:bg-[#007299]"
+            }`}
+          >
+            {isSubmitting
+              ? editingConsultation
+                ? "Updating..."
+                : "Scheduling..."
+              : editingConsultation
+              ? "Update Consultation"
+              : "Schedule Consultation"}
+          </button>
         </div>
       </div>
     </div>

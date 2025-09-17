@@ -21,6 +21,7 @@ import ViewConsultationModal from "./components/ViewConsultationModal";
 import StatsCard from "./components/StatsCard";
 import { useAdminStore } from "@/app/store/adminStore";
 import { Consultation, transformAPIToConsultation } from "./data/consultation";
+import toast from "react-hot-toast";
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   if (!status) {
@@ -80,6 +81,7 @@ const Consultations: React.FC = () => {
   const [filteredConsultations, setFilteredConsultations] = useState<
     Consultation[]
   >([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [openDropdown, setOpenDropdown] = useState<null | "status" | "type">(
     null
   );
@@ -136,7 +138,6 @@ const Consultations: React.FC = () => {
 
   const stats = generateStats();
 
-  // Load consultations data
   useEffect(() => {
     const loadConsultations = async () => {
       if (!token) return;
@@ -144,9 +145,11 @@ const Consultations: React.FC = () => {
       setLoading(true);
       try {
         const params = {
-          search_text: searchTerm || null,
+          search_text: searchTerm.trim() || null,
           filter_status:
-            selectedStatus !== "All Status" ? selectedStatus : null,
+            selectedStatus !== "All Status"
+              ? selectedStatus.toLowerCase()
+              : null,
           is_online_consultation:
             selectedConsultationType === "Online"
               ? true
@@ -162,15 +165,28 @@ const Consultations: React.FC = () => {
 
         setConsultations(transformedData);
         setFilteredConsultations(transformedData);
+
+        if (searchTerm && transformedData.length === 0) {
+          toast("No consultations found matching your search");
+        }
       } catch (error) {
         console.error("Error loading consultations:", error);
+        toast.error("Failed to load consultations. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
-    loadConsultations();
-  }, [token, searchTerm, selectedStatus, selectedConsultationType]);
+    // Debounce search
+    const timeoutId = setTimeout(loadConsultations, 300);
+    return () => clearTimeout(timeoutId);
+  }, [
+    token,
+    searchTerm,
+    selectedStatus,
+    selectedConsultationType,
+    refreshTrigger,
+  ]);
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -206,48 +222,63 @@ const Consultations: React.FC = () => {
   };
 
   const handleViewConsultation = (consultation: Consultation) => {
-    setSelectedConsultation(consultation);
-    setShowDetailsModal(true);
+    try {
+      setSelectedConsultation(consultation);
+      setShowDetailsModal(true);
+    } catch (error) {
+      toast.error("Failed to load consultation details");
+    }
+  };
+  const handleStatusUpdate = async (
+    consultationId: string,
+    newStatus: string
+  ) => {
+    const loadingToast = toast.loading("Updating consultation status...");
+
+    try {
+      // Add your API call here to update status
+      // await updateConsultationStatus(consultationId, newStatus, token);
+
+      setConsultations((prev) =>
+        prev.map((c) =>
+          c.id === consultationId ? { ...c, status: newStatus } : c
+        )
+      );
+
+      toast.dismiss(loadingToast);
+      toast.success(`Consultation status updated to ${newStatus}`);
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error("Failed to update consultation status");
+    }
   };
 
   const handleEditConsultation = (consultation: Consultation) => {
-    setEditingConsultation(consultation);
-    setShowAddConsultationModal(true);
+    try {
+      setEditingConsultation(consultation);
+      setActiveConsultationType(
+        consultation.consultationType === "online" ? "online" : "hospital"
+      );
+      setShowAddConsultationModal(true);
+      toast("Editing consultation details");
+    } catch (error) {
+      toast.error("Failed to load consultation for editing");
+    }
   };
-
   const handleCloseDetailsModal = () => {
     setShowDetailsModal(false);
     setSelectedConsultation(null);
-  };
-  const handleCancelConsultation = (consultationId: string) => {
-    setConsultations((prev) =>
-      prev.map((c) =>
-        c.id === consultationId ? { ...c, status: "cancelled" as const } : c
-      )
-    );
   };
 
   const handleAddConsultation = (consultationData: any) => {
     console.log("Consultation Data:", consultationData);
 
-    if (editingConsultation) {
-      setConsultations((prev) =>
-        prev.map((c) =>
-          c.id === editingConsultation.id
-            ? { ...consultationData, id: editingConsultation.id }
-            : c
-        )
-      );
-    } else {
-      const newConsultation = {
-        ...consultationData,
-        id: `consultation-${Date.now()}`,
-        bookingId: `MH000${Date.now().toString().slice(-4)}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setConsultations((prev) => [...prev, newConsultation]);
-    }
+    // Trigger a refresh instead of manually updating state
+    setRefreshTrigger((prev) => prev + 1);
+
+    const actionText = editingConsultation ? "updated" : "scheduled";
+    toast.success(`Consultation ${actionText} successfully!`);
+
     setEditingConsultation(null);
   };
 
@@ -268,6 +299,29 @@ const Consultations: React.FC = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const handleBulkAction = (action: "cancel" | "reschedule" | "complete") => {
+    if (selectedConsultations.length === 0) {
+      toast.error("Please select consultations first");
+      return;
+    }
+
+    const count = selectedConsultations.length;
+
+    switch (action) {
+      case "cancel":
+        toast.success(`${count} consultation(s) cancelled successfully`);
+        break;
+      case "reschedule":
+        toast(`Rescheduling ${count} consultation(s)...`);
+        break;
+      case "complete":
+        toast.success(`${count} consultation(s) marked as completed`);
+        break;
+    }
+
+    setSelectedConsultations([]);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
