@@ -44,12 +44,12 @@ const Sidebar = () => {
     {
       name: "Dashboard",
       icon: <LucideComputer size={18} />,
-      subItems: [
-        {
-          name: "Order Management",
-          link: "/admin/dashboard/order-management",
-        },
-      ],
+      // subItems: [
+      //   {
+      //     name: "Order Management",
+      //     link: "/admin/dashboard/order-management",
+      //   },
+      // ],
     },
     {
       name: "Pharmacy",
