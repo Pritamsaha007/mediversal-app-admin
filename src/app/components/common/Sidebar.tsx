@@ -60,10 +60,10 @@ const Sidebar = () => {
           link: "/admin/dashboard/pharmacy/product",
         },
         { name: "Order", link: "/admin/dashboard/pharmacy/order" },
-        {
-          name: "Inventory",
-          link: "/admin/dashboard/pharmacy/inventory",
-        },
+        // {
+        //   name: "Inventory",
+        //   link: "/admin/dashboard/pharmacy/inventory",
+        // },
         {
           name: "Prescription",
           link: "/admin/dashboard/pharmacy/prescription",
@@ -141,10 +141,10 @@ const Sidebar = () => {
           name: "Consultations",
           link: "/admin/dashboard/consultations/consultation",
         },
-        {
-          name: "Orders",
-          link: "/admin/dashboard/consultations/orders",
-        },
+        // {
+        //   name: "Orders",
+        //   link: "/admin/dashboard/consultations/orders",
+        // },
       ],
     },
   ];

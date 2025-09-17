@@ -14,12 +14,10 @@ interface FilterData {
 export default function HomePage() {
   const handleFilterChange = (filters: FilterData) => {
     console.log("Filters changed:", filters);
-    // Handle filter changes here - update your data, make API calls, etc.
   };
 
   const handleNewProduct = () => {
     console.log("New product clicked");
-    // Handle new product creation
   };
 
   const customStatusOptions = [
