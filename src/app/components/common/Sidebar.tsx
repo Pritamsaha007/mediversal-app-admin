@@ -64,10 +64,10 @@ const Sidebar = () => {
         //   name: "Inventory",
         //   link: "/admin/dashboard/pharmacy/inventory",
         // },
-        {
-          name: "Prescription",
-          link: "/admin/dashboard/pharmacy/prescription",
-        },
+        // {
+        //   name: "Prescription",
+        //   link: "/admin/dashboard/pharmacy/prescription",
+        // },
       ],
     },
 
