@@ -199,7 +199,10 @@ export async function getDoctors(
 
   const responseData = await response.json();
   console.log("Doctors API response:", responseData);
-  return responseData;
+  return {
+    ...responseData,
+    doctors: Array.isArray(responseData.doctors) ? responseData.doctors : [],
+  };
 }
 
 // New function to create or update doctor
