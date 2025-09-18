@@ -1,10 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { X, Upload, Plus, Trash2, ImagePlus, Edit } from "lucide-react";
+import { X, Plus, ImagePlus, Edit } from "lucide-react";
 import { tabs, Doctor, convertAvailabilityToSlots } from "../data/doctorsData";
 import { EnumItem } from "../services/doctorService";
 import HospitalSearchInput from "./HospitalSearchInput";
 import { useAdminStore } from "@/app/store/adminStore";
+import toast from "react-hot-toast";
 
 interface AddDoctorModalProps {
   isOpen: boolean;
@@ -97,12 +98,12 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
 
   const handleAddTimeSlot = () => {
     if (!selectedDay || !newSlot.startTime || !newSlot.endTime) {
-      alert("Please select day and fill all time slot fields");
+      toast.error("Please select day and fill all time slot fields");
       return;
     }
 
     if (newSlot.startTime >= newSlot.endTime) {
-      alert("Start time must be before end time");
+      toast.error("Start time must be before end time");
       return;
     }
 
@@ -110,7 +111,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     if (
       isTimeSlotOverlapping(selectedDay, newSlot.startTime, newSlot.endTime)
     ) {
-      alert(
+      toast.error(
         "Time slot overlaps with existing slot. Please choose different times."
       );
       return;
@@ -198,12 +199,12 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
 
   const handleUpdateSlot = () => {
     if (!editingSlot || !newSlot.startTime || !newSlot.endTime) {
-      alert("Please fill all time slot fields");
+      toast.error("Please fill all time slot fields");
       return;
     }
 
     if (newSlot.startTime >= newSlot.endTime) {
-      alert("Start time must be before end time");
+      toast.error("Start time must be before end time");
       return;
     }
 
@@ -216,7 +217,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
         editingSlot.index
       )
     ) {
-      alert(
+      toast.error(
         "Time slot overlaps with existing slot. Please choose different times."
       );
       return;
@@ -259,9 +260,9 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     setEditingSlot(null);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!enumData.days || enumData.days.length === 0) {
-      alert("Day data not loaded. Please try again.");
+      toast.error("Day data not loaded. Please try again.");
       return;
     }
 
@@ -283,9 +284,21 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     };
 
     console.log("Doctor Data:", submitData);
-    onAddDoctor(submitData);
-    onClose();
-    resetForm();
+
+    try {
+      await onAddDoctor(submitData);
+      toast.success(
+        editingDoctor
+          ? "Doctor updated successfully!"
+          : "Doctor created successfully!"
+      );
+      onClose();
+      resetForm();
+    } catch (error) {
+      toast.error(
+        editingDoctor ? "Failed to update doctor" : "Failed to create doctor"
+      );
+    }
   };
 
   const resetForm = () => {
@@ -693,7 +706,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                             startTime: e.target.value,
                           }))
                         }
-                        className="w-full text-[10px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
+                        className="w-full text-black text-[10px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
                       />
                     </div>
 
@@ -710,7 +723,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                             endTime: e.target.value,
                           }))
                         }
-                        className="w-full text-[10px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
+                        className="w-full text-black text-[10px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
                       />
                     </div>
 
@@ -729,7 +742,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                           }))
                         }
                         placeholder="1"
-                        className="w-full text-[10px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
+                        className="w-full text-black text-[10px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
                       />
                     </div>
 

@@ -30,6 +30,7 @@ import {
   convertSlotsToAvailability,
 } from "./data/doctorsData";
 import { useAdminStore } from "@/app/store/adminStore";
+import toast from "react-hot-toast";
 
 const StatusBadge: React.FC<{ isOnline: boolean; isInPerson: boolean }> = ({
   isOnline,
@@ -274,6 +275,7 @@ const Doctors: React.FC = () => {
     try {
       setLoading(true);
       await deleteDoctor(doctor.id, token);
+      toast.success("Doctor deleted successfully!");
 
       // Refresh the doctors list
       await loadDoctors();
