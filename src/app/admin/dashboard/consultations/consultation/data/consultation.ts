@@ -60,13 +60,15 @@ export function transformAPIToConsultation(
 ): Consultation {
   return {
     id: apiData.id,
-    bookingId: `MH${apiData.id.slice(-6).toUpperCase()}`, // Show actual ID
+    bookingId: apiData.id.substring(0, 6).toUpperCase(),
     patientName: apiData.patient_name,
     patientContact: apiData.phone,
     patientEmail: apiData.email,
     aadhaarNumber: apiData.aadhar_id,
     consultationType:
-      apiData.consultation_type === "OFFLINE" ? "in-person" : "online",
+      apiData.consultation_type?.toLowerCase() === "online"
+        ? "online"
+        : "in-person",
     consultationDate: apiData.consultation_date.split("T")[0],
     consultationTime: apiData.consultation_time,
     duration: apiData.session_duration_in_mins,
