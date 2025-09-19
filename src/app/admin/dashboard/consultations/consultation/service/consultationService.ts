@@ -135,6 +135,14 @@ export interface EnumItem {
 export interface EnumResponse {
   roles: EnumItem[];
 }
+export interface RTCTokenResponse {
+  success: boolean;
+  data: {
+    token: string;
+    channelName: string;
+    expireAt: number;
+  };
+}
 
 const createFetchWithTimeout = (timeout: number) => {
   return (url: string, options: RequestInit) => {
@@ -327,4 +335,35 @@ export async function getConsultationEnumData(token: string) {
     console.error("Error fetching consultation enum data:", error);
     throw error;
   }
+}
+export async function getRTCToken(
+  consultationId: string,
+  token: string
+): Promise<RTCTokenResponse> {
+  // Extract first 6 digits from consultation ID
+  const channelId = consultationId.substring(0, 6).toUpperCase();
+  const url = new URL(
+    `${HOMECARE_API_BASE_URL}/api/clinic/consultation/rtc-token/${channelId}`
+  );
+
+  console.log("Fetching RTC token for channel:", channelId);
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  const responseData = await response.json();
+  console.log("RTC Token API response:", responseData);
+  return responseData;
 }

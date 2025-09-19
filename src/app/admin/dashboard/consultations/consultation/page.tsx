@@ -14,6 +14,7 @@ import {
   MapPin,
   Eye,
   Edit,
+  Video,
   X,
   HeartPlus,
 } from "lucide-react";
@@ -23,6 +24,7 @@ import StatsCard from "./components/StatsCard";
 import { useAdminStore } from "@/app/store/adminStore";
 import { Consultation, transformAPIToConsultation } from "./data/consultation";
 import toast from "react-hot-toast";
+import VideoCallModal from "./components/VideoCallModal";
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   if (!status) {
@@ -89,6 +91,10 @@ const Consultations: React.FC = () => {
   const [selectedConsultations, setSelectedConsultations] = useState<string[]>(
     []
   );
+  const [showVideoCallModal, setShowVideoCallModal] = useState(false);
+  const [selectedConsultationForCall, setSelectedConsultationForCall] =
+    useState<Consultation | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [editingConsultation, setEditingConsultation] =
     useState<Consultation | null>(null);
@@ -135,6 +141,42 @@ const Consultations: React.FC = () => {
           ? Math.round((inPersonConsultations / totalConsultations) * 100)
           : 0,
     };
+  };
+  const handleVideoCall = (consultation: Consultation) => {
+    console.log("Video call clicked for consultation:", consultation);
+    console.log("Consultation ID:", consultation.id);
+    console.log("First 6 digits:", consultation.id.substring(0, 6));
+    console.log("Patient Name:", consultation.patientName);
+    console.log("Doctor Name:", consultation.appointedDoctor);
+    console.log("Consultation Type:", consultation.consultationType);
+    console.log("Status:", consultation.status);
+    try {
+      if (consultation.consultationType !== "online") {
+        toast.error("Video calls are only available for online consultations");
+        return;
+      }
+
+      if (
+        consultation.status?.toLowerCase() !== "scheduled" &&
+        consultation.status?.toLowerCase() !== "in-progress"
+      ) {
+        toast.error(
+          "Video calls are only available for scheduled or in-progress consultations"
+        );
+        return;
+      }
+
+      setSelectedConsultationForCall(consultation);
+      setShowVideoCallModal(true);
+      toast("Initializing video call...");
+    } catch (error) {
+      toast.error("Failed to start video call");
+    }
+  };
+
+  const handleCloseVideoCall = () => {
+    setShowVideoCallModal(false);
+    setSelectedConsultationForCall(null);
   };
 
   const stats = generateStats();
@@ -544,7 +586,7 @@ const Consultations: React.FC = () => {
                               className="ml-1 cursor-help"
                               title={consultation.bookingId}
                             >
-                              {consultation.bookingId.slice(-5)}{" "}
+                              {consultation.bookingId}
                             </span>
                           </div>
                           <div className="text-[10px] text-gray-500 mb-2">
@@ -593,15 +635,27 @@ const Consultations: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center gap-2 justify-end">
+                          {consultation.consultationType === "online" && (
+                            <button
+                              className="p-2 text-gray-400 hover:text-green-500"
+                              onClick={() => handleVideoCall(consultation)}
+                              title="Start Video Call"
+                            >
+                              <Video className="w-4 h-4" />
+                            </button>
+                          )}
+
                           <button
                             className="p-2 text-gray-400 hover:text-blue-500"
                             onClick={() => handleViewConsultation(consultation)}
+                            title="View Details"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             className="p-2 text-gray-400 hover:text-blue-500"
                             onClick={() => handleEditConsultation(consultation)}
+                            title="Edit Consultation"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
@@ -629,6 +683,13 @@ const Consultations: React.FC = () => {
         onClose={handleCloseDetailsModal}
         consultation={selectedConsultation}
         onEdit={handleEditConsultation}
+      />
+      <VideoCallModal
+        isOpen={showVideoCallModal}
+        onClose={handleCloseVideoCall}
+        consultationId={selectedConsultationForCall?.id || ""}
+        patientName={selectedConsultationForCall?.patientName || ""}
+        doctorName={selectedConsultationForCall?.appointedDoctor || ""}
       />
     </div>
   );
