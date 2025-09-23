@@ -107,6 +107,16 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       return;
     }
 
+    const startTime = new Date(`1970-01-01T${newSlot.startTime}:00`);
+    const endTime = new Date(`1970-01-01T${newSlot.endTime}:00`);
+    const durationInMinutes =
+      (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+
+    if (durationInMinutes < 60) {
+      toast.error("Time slot must be at least 1 hour long");
+      return;
+    }
+
     // Check for overlapping slots
     if (
       isTimeSlotOverlapping(selectedDay, newSlot.startTime, newSlot.endTime)
@@ -205,6 +215,16 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
 
     if (newSlot.startTime >= newSlot.endTime) {
       toast.error("Start time must be before end time");
+      return;
+    }
+
+    const startTime = new Date(`1970-01-01T${newSlot.startTime}:00`);
+    const endTime = new Date(`1970-01-01T${newSlot.endTime}:00`);
+    const durationInMinutes =
+      (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+
+    if (durationInMinutes < 60) {
+      toast.error("Time slot must be at least 1 hour long");
       return;
     }
 
