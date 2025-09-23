@@ -9,6 +9,12 @@ export interface HomecareService {
   display_sections: string[];
   custom_medical_info: any;
   status: "Active" | "Inactive";
+  consents?: Array<{
+    id: string;
+    consent: string;
+    is_active: boolean;
+    consent_category_id: string;
+  }>;
 }
 
 export interface GetServicesResponse {
@@ -62,6 +68,10 @@ export interface CreateUpdateServicePayload {
   service_tags: string[];
   display_sections: string[];
   custom_medical_info?: any;
+  consents?: Array<{
+    id: string | null;
+    consent: string;
+  }>;
 }
 
 export async function createOrUpdateHomecareService(
