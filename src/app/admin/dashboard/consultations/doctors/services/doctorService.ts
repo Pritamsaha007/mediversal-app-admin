@@ -67,6 +67,7 @@ export interface CreateDoctorRequest {
   mci: string;
   nmc: string;
   state_registration: string;
+  profile_image_url: string | null;
   is_available: boolean;
   doctor_slots: DoctorSlot[];
 }

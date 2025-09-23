@@ -297,9 +297,21 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     );
 
     console.log("Converted doctor slots:", doctorSlots);
+    let profileImageUrl = null;
+    if (formData.profile_image_url) {
+      if (
+        typeof formData.profile_image_url === "object" &&
+        "name" in formData.profile_image_url
+      ) {
+        profileImageUrl = null;
+      } else {
+        profileImageUrl = formData.profile_image_url;
+      }
+    }
 
     const submitData = {
       ...formData,
+      profile_image_url: profileImageUrl,
       doctor_slots: doctorSlots,
     };
 
