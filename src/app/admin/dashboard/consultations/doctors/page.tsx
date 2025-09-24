@@ -414,6 +414,7 @@ const Doctors: React.FC = () => {
         state_registration: doctorData.state_registration,
         is_available: doctorData.is_available,
         doctor_slots: doctorSlots,
+        profile_image_url: doctorData.profile_image_url || null,
       };
 
       console.log("Submitting doctor data:", requestData);
