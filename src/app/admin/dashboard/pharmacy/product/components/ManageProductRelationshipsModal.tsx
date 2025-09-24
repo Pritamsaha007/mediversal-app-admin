@@ -6,6 +6,7 @@ import {
   removeProductRelationship,
   updateProductRelationships,
 } from "@/app/admin/dashboard/pharmacy/product/services/productRelationship";
+import { useAdminStore } from "@/app/store/adminStore";
 
 interface RelatedProduct {
   id: string;
@@ -77,6 +78,16 @@ export const ProductRelationshipsModal: React.FC<
     loading: false,
   });
 
+  const getAuthHeaders = () => {
+    const { token } = useAdminStore.getState();
+    return {
+      "Content-Type": "application/json",
+      ...(token && {
+        Authorization: `Bearer ${token}`,
+      }),
+    };
+  };
+
   const convertToRelatedProduct = (product: any): RelatedProduct => {
     return {
       id: product.productId?.toString() || "",
@@ -96,20 +107,18 @@ export const ProductRelationshipsModal: React.FC<
       const currentPage = loadMore ? pagination.currentPage + 1 : 0;
       const start = currentPage * 20;
 
-      // Build filters object - only add searchTerm if query is not empty
-      const filters: any = {};
-      if (query.trim()) {
-        filters.searchTerm = query.trim();
-      }
+      // Fix: Send proper JSON body with search parameters
+      const filters = {
+        searchCategory: null,
+        searchTerm: query.trim() || null, // Send null if empty, otherwise send the search term
+      };
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/app/api/Product/getProducts?start=${start}&max=20`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/Product/getProducts?start=${start}&max=20`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(filters),
+          headers: getAuthHeaders(),
+          body: JSON.stringify(filters), // Add this line - you were missing the body
         }
       );
 
@@ -258,13 +267,12 @@ export const ProductRelationshipsModal: React.FC<
       setError(null);
 
       const relationshipsData = {
-        substitutes: substitutes.map((p) => Number(p.id)),
-        similarProducts: similarProducts.map((p) => Number(p.id)),
+        substitutes: substitutes.map((p) => p.id),
+        similarProducts: similarProducts.map((p) => p.id),
       };
 
-      await updateProductRelationships(Number(productId), relationshipsData);
+      await updateProductRelationships(productId, relationshipsData);
 
-      // Clear the newly added tracking after successful save
       setNewlyAddedSubstitutes([]);
       setNewlyAddedSimilarProducts([]);
 
