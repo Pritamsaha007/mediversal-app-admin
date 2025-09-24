@@ -107,7 +107,7 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
               Specializations
             </h3>
             <div className="flex flex-wrap gap-2">
-              {staff.departments.map((dep, i) => (
+              {staff.departments?.map((dep, i) => (
                 <span
                   key={i}
                   className="px-3 py-1 bg-[#0088B1] text-xs rounded-md"
@@ -125,7 +125,7 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
                 Certifications
               </h3>
               <div className="flex flex-wrap gap-2">
-                {staff.certifications.map((cert, i) => (
+                {staff.certifications?.map((cert, i) => (
                   <span
                     key={i}
                     className="px-3 py-1 bg-[#0088B1] text-xs rounded-md"

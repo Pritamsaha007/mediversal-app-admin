@@ -31,13 +31,18 @@ export const CouponModal: React.FC<CouponModalProps> = ({
     generateRandomCode,
   } = useCouponStore();
 
-  // Sample categories
   const categories = [
-    "Antibiotics",
-    "Ambulance",
-    "Cardiology",
-    "Dermatology",
-    "Neurology",
+    "OTC",
+    "Prescription",
+    "Supplements",
+    "Devices",
+    "Surgical Care",
+    "Vaccines",
+    "Personal Care",
+    "Sexual Wellness",
+    "Mother & Baby",
+    "Senior Care",
+    "Seasonal Needs",
   ];
 
   useEffect(() => {
@@ -114,7 +119,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
       className="fixed inset-0 flex items-center justify-center z-50 p-4"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+      <div className="bg-white rounded-lg w-full max-w-6xl max-h-[80vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 sticky top-0 bg-white z-10">
           <h2 className="text-[16px] font-semibold text-[#161D1F]">

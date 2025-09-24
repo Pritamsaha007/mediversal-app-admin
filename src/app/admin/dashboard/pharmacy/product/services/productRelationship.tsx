@@ -1,8 +1,9 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { useAdminStore } from "@/app/store/adminStore";
 
 export interface ProductRelationships {
-  similarProducts: number[];
-  substitutes: number[];
+  similarProducts: string[]; // Changed from number[] to string[]
+  substitutes: string[]; // Changed from number[] to string[]
 }
 
 interface ProductData {
@@ -14,12 +15,27 @@ interface ProductData {
   substitutes: any[];
 }
 
+const getAuthHeaders = () => {
+  const { token } = useAdminStore.getState();
+  return {
+    "Content-Type": "application/json",
+    ...(token && {
+      Authorization: `Bearer ${token}`,
+    }),
+  };
+};
+
 export const updateProductRelationships = async (
-  productId: number,
+  productId: string, // Changed from number to string
   relationships: Partial<ProductRelationships>
 ): Promise<ProductRelationships> => {
   try {
-    if (!productId || isNaN(productId)) {
+    if (
+      !productId ||
+      typeof productId !== "string" ||
+      productId.trim() === ""
+    ) {
+      // Updated validation
       throw new Error("Invalid product ID");
     }
 
@@ -29,20 +45,19 @@ export const updateProductRelationships = async (
 
     const payload = {
       similarProducts: Array.isArray(relationships.similarProducts)
-        ? relationships.similarProducts.filter((id) => !isNaN(id) && id > 0)
+        ? relationships.similarProducts.filter((id) => id && id.trim() !== "") // Filter for valid strings
         : [],
       substitutes: Array.isArray(relationships.substitutes)
-        ? relationships.substitutes.filter((id) => !isNaN(id) && id > 0)
+        ? relationships.substitutes.filter((id) => id && id.trim() !== "") // Filter for valid strings
         : [],
     };
 
+    // Fix: Update the API endpoint to match your requirement
     const response = await fetch(
-      `${API_BASE_URL}/app/api/Product/relationships/${productId}`,
+      `${API_BASE_URL}/api/Product/relationships/${productId}`, // Use productId directly as string
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload),
       }
     );
@@ -82,9 +97,7 @@ export const getProductsById = async (
       `${API_BASE_URL}/app/api/Product/getProductById/${productId}`,
       {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
       }
     );
 
@@ -119,9 +132,7 @@ export const removeProductRelationship = async (
 
     const response = await fetch(url, {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
