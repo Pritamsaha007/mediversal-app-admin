@@ -46,6 +46,7 @@ const transformHomecareServiceToService = (
     })),
     rating: 4.5,
     reviewCount: 10,
+    consents: homecareService.consents || [],
   };
 };
 
@@ -70,6 +71,12 @@ interface Service {
   offerings: Offering[];
   rating?: number;
   reviewCount?: number;
+  consents?: Array<{
+    id: string;
+    consent: string;
+    is_active: boolean;
+    consent_category_id: string;
+  }>;
 }
 
 interface ServiceStats {

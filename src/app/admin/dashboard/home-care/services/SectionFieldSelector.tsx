@@ -14,6 +14,12 @@ interface Service {
   offerings: any[];
   rating?: number;
   reviewCount?: number;
+  consents?: Array<{
+    id: string;
+    consent: string;
+    is_active: boolean;
+    consent_category_id: string;
+  }>;
 }
 
 interface SectionFieldData {
@@ -145,6 +151,24 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
         displaySections.push(...mappedSections);
       }
 
+      const consentsPayload = serviceData.consents.map((consent) => {
+        if (editService) {
+          // Find existing consent to get the ID
+          const existingConsent = editService.consents?.find(
+            (c) => c.consent === consent
+          );
+          return {
+            id: existingConsent?.id || null,
+            consent: consent,
+          };
+        } else {
+          return {
+            id: null,
+            consent: consent,
+          };
+        }
+      });
+
       const customMedicalInfo: { [key: string]: string } = {};
       if (selectedMedicalFields.length > 0) {
         selectedMedicalFields.forEach((field) => {
@@ -154,7 +178,6 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
           }
         });
       }
-
       if (Object.keys(customMedicalInfo).length === 0) {
         customMedicalInfo.medicalhistory = "textbox";
       }
@@ -168,6 +191,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
         service_tags: serviceData.tags,
         display_sections: displaySections,
         custom_medical_info: customMedicalInfo,
+        consents: consentsPayload, // Add this line
       };
 
       const response = await createOrUpdateHomecareService(payload, token);

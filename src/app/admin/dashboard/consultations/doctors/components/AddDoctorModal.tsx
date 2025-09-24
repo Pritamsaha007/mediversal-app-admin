@@ -107,6 +107,16 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       return;
     }
 
+    const startTime = new Date(`1970-01-01T${newSlot.startTime}:00`);
+    const endTime = new Date(`1970-01-01T${newSlot.endTime}:00`);
+    const durationInMinutes =
+      (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+
+    if (durationInMinutes < 60) {
+      toast.error("Time slot must be at least 1 hour long");
+      return;
+    }
+
     // Check for overlapping slots
     if (
       isTimeSlotOverlapping(selectedDay, newSlot.startTime, newSlot.endTime)
@@ -208,6 +218,16 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       return;
     }
 
+    const startTime = new Date(`1970-01-01T${newSlot.startTime}:00`);
+    const endTime = new Date(`1970-01-01T${newSlot.endTime}:00`);
+    const durationInMinutes =
+      (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+
+    if (durationInMinutes < 60) {
+      toast.error("Time slot must be at least 1 hour long");
+      return;
+    }
+
     // Check for overlapping slots (excluding the current slot being edited)
     if (
       isTimeSlotOverlapping(
@@ -277,9 +297,21 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     );
 
     console.log("Converted doctor slots:", doctorSlots);
+    let profileImageUrl = null;
+    if (formData.profile_image_url) {
+      if (
+        typeof formData.profile_image_url === "object" &&
+        "name" in formData.profile_image_url
+      ) {
+        profileImageUrl = null;
+      } else {
+        profileImageUrl = formData.profile_image_url;
+      }
+    }
 
     const submitData = {
       ...formData,
+      profile_image_url: profileImageUrl,
       doctor_slots: doctorSlots,
     };
 

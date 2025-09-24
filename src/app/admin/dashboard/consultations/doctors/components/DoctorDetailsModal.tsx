@@ -162,10 +162,6 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
               Weekly Schedule
             </h4>
             <div className="mb-6">
-              <h4 className="text-[12px] font-medium text-[#161d1f] mb-4">
-                Weekly Schedule
-              </h4>
-
               <div className="space-y-4">
                 {[
                   "Monday",

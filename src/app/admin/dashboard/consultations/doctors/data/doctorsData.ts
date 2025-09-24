@@ -37,8 +37,6 @@ export interface Doctor {
   state_registration: string;
   is_available: boolean;
   profile_image_url: string | File | null;
-  created_by?: string;
-  updated_by?: string;
   hospitalNames?: string[];
   rating?: number;
   specializations?: string;

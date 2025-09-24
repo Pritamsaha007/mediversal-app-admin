@@ -11,7 +11,6 @@ import {
   Eye,
   Edit,
   Trash2,
-  Star,
 } from "lucide-react";
 import AddDoctorModal from "./components/AddDoctorModal";
 import StatsCard from "./components/StatsCards";
@@ -414,6 +413,10 @@ const Doctors: React.FC = () => {
         state_registration: doctorData.state_registration,
         is_available: doctorData.is_available,
         doctor_slots: doctorSlots,
+        profile_image_url:
+          doctorData.profile_image_url instanceof File
+            ? null
+            : doctorData.profile_image_url || null,
       };
 
       console.log("Submitting doctor data:", requestData);

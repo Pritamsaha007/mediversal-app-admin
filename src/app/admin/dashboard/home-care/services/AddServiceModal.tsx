@@ -13,6 +13,12 @@ interface Service {
   offerings: Offering[];
   rating?: number;
   reviewCount?: number;
+  consents?: Array<{
+    id: string;
+    consent: string;
+    is_active: boolean;
+    consent_category_id: string;
+  }>;
 }
 
 interface Offering {
@@ -67,7 +73,8 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
       setServiceDescription(editService.description);
       setServiceStatus(editService.status);
       setServiceTags(editService.offerings.map((offering) => offering.name));
-      setConsents([]);
+      setConsents(editService.consents?.map((c) => c.consent) || []);
+      setConsents(editService.consents?.map((c) => c.consent) || []);
     } else if (isOpen) {
       handleReset();
     }
