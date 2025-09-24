@@ -11,7 +11,6 @@ import {
   Eye,
   Edit,
   Trash2,
-  Star,
 } from "lucide-react";
 import AddDoctorModal from "./components/AddDoctorModal";
 import StatsCard from "./components/StatsCards";
