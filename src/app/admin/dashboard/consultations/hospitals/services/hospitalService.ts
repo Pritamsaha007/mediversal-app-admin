@@ -178,3 +178,26 @@ export async function addOrUpdateHospital(
   console.log("API Success Response:", responseData);
   return responseData;
 }
+
+export async function deleteHospital(
+  hospitalId: string,
+  token: string
+): Promise<any> {
+  const response = await fetch(
+    `${HOMECARE_API_BASE_URL}/api/clinic/${hospitalId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData?.message || "Failed to delete hospital");
+  }
+
+  return await response.json();
+}

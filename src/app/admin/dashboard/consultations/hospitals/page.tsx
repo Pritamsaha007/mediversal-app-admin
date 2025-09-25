@@ -1,7 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { type Hospital, convertAPIToLocalHospital } from "./data/hospitalsData";
-import { getHospitals, getEnumValues } from "./services/hospitalService";
+import {
+  getHospitals,
+  getEnumValues,
+  deleteHospital,
+} from "./services/hospitalService";
 import {
   Search,
   ChevronDown,
@@ -15,6 +19,7 @@ import {
 import AddHospitalModal from "./components/AddHospitalModal";
 import HospitalDetailsModal from "./components/HospitalDetailsModal";
 import { useAdminStore } from "@/app/store/adminStore";
+import ConfirmationModal from "./components/ConfirmationModal";
 import toast from "react-hot-toast";
 
 const Hospitals: React.FC = () => {
@@ -39,6 +44,10 @@ const Hospitals: React.FC = () => {
   );
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [departmentOptions, setDepartmentOptions] = useState<string[]>([]);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [hospitalToDelete, setHospitalToDelete] = useState<Hospital | null>(
+    null
+  );
   const { token } = useAdminStore();
   const operatingHoursOptions = [
     "All Operating Hours",
@@ -279,6 +288,52 @@ const Hospitals: React.FC = () => {
     );
   };
 
+  const confirmDelete = async () => {
+    if (!hospitalToDelete) {
+      console.log("No hospital to delete");
+      return;
+    }
+
+    console.log("Deleting hospital:", hospitalToDelete.name);
+
+    try {
+      await deleteHospital(hospitalToDelete.id, token);
+      toast.success(`${hospitalToDelete.name} has been deleted successfully`);
+      await loadHospitals();
+      setShowConfirmModal(false);
+      setHospitalToDelete(null);
+    } catch (error: any) {
+      console.error("Delete error:", error);
+
+      if (
+        error.message &&
+        error.message.includes("active staff members associated")
+      ) {
+        const staffCount =
+          error.message.match(/(\d+) active staff members?/)?.[1] || "some";
+        toast.error(
+          `Cannot delete ${
+            hospitalToDelete.name
+          } because it has ${staffCount} active staff member${
+            staffCount === "1" ? "" : "s"
+          }. Please remove or transfer the staff first.`
+        );
+      } else {
+        toast.error(
+          "Sorry, we couldn't delete the hospital. Please try again."
+        );
+      }
+      setShowConfirmModal(false);
+      setHospitalToDelete(null);
+    }
+  };
+
+  const handleDeleteHospital = (hospital: Hospital) => {
+    console.log("Setting hospital to delete:", hospital.name);
+    setHospitalToDelete(hospital);
+    setShowConfirmModal(true);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -505,7 +560,10 @@ const Hospitals: React.FC = () => {
                           >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="p-2 text-red-400 hover:text-red-500">
+                          <button
+                            className="p-2 text-red-400 hover:text-red-500"
+                            onClick={() => handleDeleteHospital(hospital)}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -531,6 +589,27 @@ const Hospitals: React.FC = () => {
         onClose={handleCloseDetailsModal}
         hospital={selectedHospital}
         onEdit={handleEditHospital}
+      />
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={() => {
+          console.log("Modal closed");
+          setShowConfirmModal(false);
+          setHospitalToDelete(null);
+        }}
+        onConfirm={() => {
+          console.log("Confirm button clicked");
+          confirmDelete();
+        }}
+        title="Delete Hospital"
+        message={
+          hospitalToDelete
+            ? `Are you sure you want to delete "${hospitalToDelete.name}"? This action cannot be undone and will permanently remove all hospital data.`
+            : ""
+        }
+        confirmText="Delete Hospital"
+        cancelText="Cancel"
+        type="danger"
       />
     </div>
   );
