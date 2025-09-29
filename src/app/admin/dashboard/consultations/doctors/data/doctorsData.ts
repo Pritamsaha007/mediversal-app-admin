@@ -150,14 +150,14 @@ export const convertAPIDoctor = (apiDoctor: DoctorAPI): Doctor => {
     id: apiDoctor.id,
     name: apiDoctor.name,
     mobile_number: apiDoctor.mobile_number,
-    specialization_id: "", // Will be populated from enum mapping
-    department_id: "", // Will be populated from enum mapping
+    specialization_id: "",
+    department_id: "",
     experience_in_yrs: apiDoctor.experience_in_yrs,
     consultation_price: parseFloat(apiDoctor.consultation_price),
     about: apiDoctor.about,
     qualifications: apiDoctor.qualifications,
-    languages_known: [], // Will be populated from enum mapping
-    hospitals_id: apiDoctor.hospital.map((h) => h.id),
+    languages_known: [],
+    hospitals_id: apiDoctor.hospital ? apiDoctor.hospital.map((h) => h.id) : [],
     is_available_online: apiDoctor.is_available_online ?? false,
     is_available_in_person: apiDoctor.is_available_in_person ?? false,
     mci: apiDoctor.mci,
@@ -166,9 +166,11 @@ export const convertAPIDoctor = (apiDoctor: DoctorAPI): Doctor => {
     is_available: apiDoctor.is_available,
     profile_image_url: apiDoctor.profile_image_url,
     rating: parseFloat(apiDoctor.rating),
-    specializations: apiDoctor.specializations, // Display name
-    availability: {}, // Will be populated from doctor_slots
-    hospitalNames: apiDoctor.hospital.map((h) => h.name),
+    specializations: apiDoctor.specializations,
+    availability: {},
+    hospitalNames: apiDoctor.hospital
+      ? apiDoctor.hospital.map((h) => h.name)
+      : [],
     doctor_slots: apiDoctor.doctor_slots,
   };
 };
