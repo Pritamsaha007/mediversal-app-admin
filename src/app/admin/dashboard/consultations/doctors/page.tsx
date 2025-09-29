@@ -117,7 +117,7 @@ const Doctors: React.FC = () => {
 
         const hospitalNamesMap: Record<string, string> = {};
         const hospitals =
-          Array.isArray(apiDoctor.hospital) && apiDoctor.hospital !== null
+          apiDoctor.hospital && Array.isArray(apiDoctor.hospital)
             ? apiDoctor.hospital
             : [];
         hospitals.forEach((h) => {

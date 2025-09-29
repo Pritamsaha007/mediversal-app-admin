@@ -157,7 +157,10 @@ export const convertAPIDoctor = (apiDoctor: DoctorAPI): Doctor => {
     about: apiDoctor.about,
     qualifications: apiDoctor.qualifications,
     languages_known: [],
-    hospitals_id: apiDoctor.hospital ? apiDoctor.hospital.map((h) => h.id) : [],
+    hospitals_id:
+      apiDoctor.hospital && Array.isArray(apiDoctor.hospital)
+        ? apiDoctor.hospital.map((h) => h.id)
+        : [],
     is_available_online: apiDoctor.is_available_online ?? false,
     is_available_in_person: apiDoctor.is_available_in_person ?? false,
     mci: apiDoctor.mci,
@@ -168,9 +171,10 @@ export const convertAPIDoctor = (apiDoctor: DoctorAPI): Doctor => {
     rating: parseFloat(apiDoctor.rating),
     specializations: apiDoctor.specializations,
     availability: {},
-    hospitalNames: apiDoctor.hospital
-      ? apiDoctor.hospital.map((h) => h.name)
-      : [],
+    hospitalNames:
+      apiDoctor.hospital && Array.isArray(apiDoctor.hospital)
+        ? apiDoctor.hospital.map((h) => h.name)
+        : [],
     doctor_slots: apiDoctor.doctor_slots,
   };
 };
