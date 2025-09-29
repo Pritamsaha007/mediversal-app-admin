@@ -13,6 +13,7 @@ export interface DoctorSlot {
   end_time: string;
   slot_capacity: number;
 }
+
 export const formatTimeForDisplay = (time: string): string => {
   if (!time) return "";
   return time.substring(0, 5);

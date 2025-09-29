@@ -7,6 +7,7 @@ export interface Hospital {
 
 export interface DoctorSlot {
   id?: string;
+  day?: string;
   day_id: string;
   start_time: string;
   end_time: string;
