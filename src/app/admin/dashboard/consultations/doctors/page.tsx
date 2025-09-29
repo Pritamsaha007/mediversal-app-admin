@@ -130,7 +130,7 @@ const Doctors: React.FC = () => {
         doctor.hospitalNames = hospitals.map((h) => h.name).filter(Boolean);
 
         // Map language names to IDs
-        doctor.languages_known = apiDoctor.languages_known
+        doctor.languages_known = (apiDoctor.languages_known || [])
           .map((langName) => {
             const lang = enumData.languages.find((l) => l.value === langName);
             return lang?.id || "";
@@ -138,7 +138,11 @@ const Doctors: React.FC = () => {
           .filter(Boolean);
 
         // Convert doctor_slots to availability format
-        if (apiDoctor.doctor_slots && apiDoctor.doctor_slots.length > 0) {
+        if (
+          apiDoctor.doctor_slots &&
+          Array.isArray(apiDoctor.doctor_slots) &&
+          apiDoctor.doctor_slots.length > 0
+        ) {
           const dayNameToName: Record<string, string> = {};
           enumData.days.forEach((day) => {
             dayNameToName[day.value] = day.value;
@@ -147,6 +151,7 @@ const Doctors: React.FC = () => {
           doctor.availability = convertSlotsToAvailability(
             apiDoctor.doctor_slots.map((slot) => ({
               ...slot,
+              day: slot.day || "", // Use day field from API
               day_id: slot.day_id || "",
             })),
             dayNameToName
