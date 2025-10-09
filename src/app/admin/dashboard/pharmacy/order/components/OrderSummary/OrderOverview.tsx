@@ -17,19 +17,24 @@ const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
           </h3>
 
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center  text-gray-600 text-sm">
-              {order.customerName
-                .split(" ")
-                .map((name: any) => name[0])
-                .join("")
-                .toUpperCase()}
+            {/* Avatar initials or fallback */}
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 text-gray-700 font-bold">
+              {order?.customerName
+                ? order.customerName
+                    .split(" ")
+                    .map((name: string) => name[0])
+                    .join("")
+                    .toUpperCase()
+                : "GU"}
             </div>
+
+            {/* Customer info */}
             <div>
               <div className="font-semibold text-gray-800 text-xs">
-                {order.customerName}
+                {order?.customerName || "Guest User"}
               </div>
               <div className="text-[10px] text-gray-500">
-                ID: {order.customerId}
+                ID: {order?.customerId || "N/A"}
               </div>
             </div>
           </div>

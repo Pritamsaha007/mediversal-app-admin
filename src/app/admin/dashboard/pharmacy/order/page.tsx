@@ -99,6 +99,7 @@ const Orders: React.FC = () => {
       setLoading(true);
       setError(null);
       const fetchedOrders = await OrderService.fetchOrders();
+      console.log(fetchOrders, "fecthedorders");
       setOrders(fetchedOrders);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch orders");
@@ -293,7 +294,7 @@ const Orders: React.FC = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
+  console.log(filteredOrders, "orders");
   return (
     <div className="min-h-screen bg-gray-50 p-2">
       <div className="max-w-7xl mx-auto">
@@ -603,8 +604,9 @@ const Orders: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-[#161D1F]">
                           <div className="font-medium">
-                            {order.customerName}
+                            {order?.customerName || "Guest User"}
                           </div>
+
                           {/* <div className="text-xs text-gray-500">
                             {order.customerEmail}
                           </div> */}
