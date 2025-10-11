@@ -367,3 +367,38 @@ export async function getRTCToken(
   console.log("RTC Token API response:", responseData);
   return responseData;
 }
+// Add this to your consultationService.ts
+export const updateConsultationStatus = async (
+  order_id: string,
+  customer_id: string | null,
+  status: string,
+
+  token: string
+): Promise<any> => {
+  try {
+    const response = await fetch(
+      `${HOMECARE_API_BASE_URL}/api/clinic/consultation/`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: order_id,
+          customer_id: customer_id,
+          status: status,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to update consultation status");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating consultation status:", error);
+    throw error;
+  }
+};

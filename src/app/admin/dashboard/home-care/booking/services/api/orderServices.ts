@@ -85,6 +85,34 @@ export async function createOrder(
   return await response.json();
 }
 
+export interface updateOrderPayload {
+  id: string;
+  customer_id: string;
+  order_status: string;
+}
+
+export async function updateOrder(
+  payload: updateOrderPayload,
+  token: string
+): Promise<{ success: boolean; order?: any; message?: string }> {
+  const response = await fetch(`${HOMECARE_API_BASE_URL}/api/homecare/order`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return await response.json();
+}
 export interface OfferingResponse {
   id: string;
   homecare_service_id: string;

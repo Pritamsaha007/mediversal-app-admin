@@ -5,6 +5,7 @@ export interface DetailedBooking {
   date: string;
   customer: {
     name: string;
+    customer_id: string;
     location: string;
     age: number;
     gender: string;
@@ -12,7 +13,7 @@ export interface DetailedBooking {
     email: string;
     address: string;
   };
-  status: "Pending Assignment" | "In Progress" | "Completed" | "Cancelled";
+  status: "Pending" | "In Progress" | "Completed" | "Cancelled";
   payment: "Partial Payment" | "Paid" | "Refunded";
   service: string;
   serviceDetails: {
