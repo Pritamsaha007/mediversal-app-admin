@@ -11,7 +11,11 @@ import OrderPayment from "./OrderSummary/OrderPayment";
 import OrderHistory from "./OrderSummary/OrderHistory";
 import { Order } from "../types/types";
 import OrderPrescriptions from "./OrderSummary/OrderPrescriptions";
-import { cancelOrder } from "../services/orderServices";
+import {
+  cancelOrder,
+  CancelOrderRequest,
+  cancelShiprocketOrder,
+} from "../services/orderServices";
 
 interface OrderDetailsModalProps {
   isOpen: boolean;
@@ -26,37 +30,29 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isCanceling, setIsCanceling] = useState(false);
-
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   if (!isOpen || !order) return null;
 
-  const handleCancelOrder = async () => {
-    if (!order) return;
-
-    setIsCanceling(true);
+  const handleCancel = async () => {
     try {
-      const cancellationReason = "Order canceled by admin";
+      setIsSubmitting(true);
 
-      const response = await cancelOrder(
-        order.id.toString(),
-        cancellationReason
-      );
+      const cancellationReason = "Order Cancelled by admin";
 
-      console.log(response, "cancellation res");
-      console.log(response, "cancellation res");
-      if (response.success) {
-        console.log("try");
-        if (response.data?.message !== "Endpoint request timed out") {
-          toast.success("Order cancellation  completed");
-        }
-      } else {
-        throw new Error(response.message || "Failed to cancel order");
-      }
+      const cancelData: CancelOrderRequest = {
+        orderId: order.id,
+        orderStatus: "Cancelled",
+        reason: cancellationReason,
+      };
+
+      const response = await cancelShiprocketOrder(cancelData);
+      console.log("ShipRocket cancellation response:", response);
     } catch (error) {
+      console.error("Cancellation error:", error);
+
       onClose();
-      console.log(error);
-      toast.success("Order cancellation  completed");
     } finally {
-      setIsCanceling(false);
+      setIsSubmitting(false);
     }
   };
   const renderTabContent = () => {
@@ -119,9 +115,9 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
         {/* Modal Footer */}
         <div className="flex justify-end items-center p-6 border-t border-gray-200 bg-gray-50 mt-2">
           <div className="flex gap-2">
-            {order.deliverystatus != "Order cancelled successfully." && (
+            {order.deliverystatus != "Cancelled" && (
               <button
-                onClick={handleCancelOrder}
+                onClick={handleCancel}
                 disabled={isCanceling}
                 className="px-4 py-2 text-white border border-gray-300 rounded-lg bg-[#EB5757]  transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
               >

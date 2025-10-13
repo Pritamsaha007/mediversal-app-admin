@@ -7,6 +7,7 @@ import {
   updateProductRelationships,
 } from "@/app/admin/dashboard/pharmacy/product/services/productRelationship";
 import { useAdminStore } from "@/app/store/adminStore";
+import { Product } from "../types/product";
 
 interface RelatedProduct {
   id: string;
@@ -88,12 +89,12 @@ export const ProductRelationshipsModal: React.FC<
     };
   };
 
-  const convertToRelatedProduct = (product: any): RelatedProduct => {
+  const convertToRelatedProduct = (product: Product): RelatedProduct => {
     return {
-      id: product.productId?.toString() || "",
-      name: product.ProductName || "",
-      code: product.Type || product.SKU || "",
-      manufacturer: product.ManufacturerName || "",
+      id: product.id,
+      name: product.name || "",
+      code: product.Type || product.sku || "",
+      manufacturer: product.manufacturer,
     };
   };
 
@@ -124,11 +125,11 @@ export const ProductRelationshipsModal: React.FC<
 
       const data = await response.json();
       const products = data.products || [];
-
-      const convertedProducts = products.map((product: any) =>
+      console.log(products, "abcd");
+      const convertedProducts = products.map((product: Product) =>
         convertToRelatedProduct(product)
       );
-
+      console.log(convertedProducts, "jndf");
       if (loadMore) {
         setAvailableProductsList((prev) => [...prev, ...convertedProducts]);
       } else {
@@ -297,6 +298,7 @@ export const ProductRelationshipsModal: React.FC<
   const currentList =
     activeTab === "substitutes" ? substitutes : similarProducts;
   const filteredAvailableProducts = getFilteredAvailableProducts();
+  console.log(currentList, "currentList");
 
   return (
     <div
