@@ -1,5 +1,11 @@
 import axios from "axios";
-import { Order, ApiResponse, FilterOptions, SortOption } from "../types/types";
+import {
+  Order,
+  ApiResponse,
+  FilterOptions,
+  SortOption,
+  TrackingData,
+} from "../types/types";
 import { useAdminStore } from "@/app/store/adminStore";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -326,5 +332,69 @@ export const cancelOrder = async (orderId: string, reason: string) => {
       console.error("Unexpected error:", error);
     }
     throw error;
+  }
+};
+export interface CancelOrderRequest {
+  orderId: string;
+  orderStatus: "Return Requested" | "Cancelled";
+  reason: string;
+}
+
+export interface CancelOrderResponse {
+  messageResData: {
+    $metadata: {
+      httpStatusCode: number;
+      requestId: string;
+      attempts: number;
+      totalRetryDelay: number;
+    };
+    MD5OfMessageBody: string;
+    MessageId: string;
+    SequenceNumber: string;
+  };
+}
+
+export const cancelShiprocketOrder = async (
+  requestData: CancelOrderRequest
+): Promise<CancelOrderResponse> => {
+  try {
+    const response = await axios.patch(
+      `${API_BASE_URL}/api/v1/shiprocket/order`,
+      requestData,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error in cancelling Shiprocket order:", error);
+
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        console.error("API Error Status:", error.response.status);
+        console.error("API Error Data:", error.response.data);
+      }
+    }
+
+    throw error;
+  }
+};
+
+export interface TrackingResponse {
+  tracking_data: TrackingData;
+}
+
+export const getTracking = async (awb: string): Promise<TrackingResponse> => {
+  try {
+    const response = await axios.get<TrackingResponse>(
+      `${API_BASE_URL}/api/v1/shiprocket/order/tracking?awb=${awb}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(`Failed to fetch tracking data: ${error}`);
   }
 };

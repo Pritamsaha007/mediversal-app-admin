@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import {
   getConsultations,
   getConsultationEnumData,
+  updateConsultationStatus,
+  getEnumData,
 } from "./service/consultationService";
 
 import {
@@ -74,6 +76,15 @@ const ConsultationTypeBadge: React.FC<{ type: string }> = ({ type }) => {
   );
 };
 
+interface ConsultationStatusEnum {
+  id: string;
+  slno: number;
+  code: string;
+  value: string;
+  description: string | null;
+  metadata: any | null;
+}
+
 const Consultations: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { token } = useAdminStore();
@@ -116,6 +127,15 @@ const Consultations: React.FC = () => {
     "online" | "hospital"
   >("online");
 
+  // New state for status management
+  const [consultationStatuses, setConsultationStatuses] = useState<
+    ConsultationStatusEnum[]
+  >([]);
+  const [openStatusDropdown, setOpenStatusDropdown] = useState<string | null>(
+    null
+  );
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+
   // Generate stats
   const generateStats = () => {
     const totalConsultations = consultations.length;
@@ -142,6 +162,7 @@ const Consultations: React.FC = () => {
           : 0,
     };
   };
+
   const handleVideoCall = (consultation: Consultation) => {
     console.log("Video call clicked for consultation:", consultation);
     console.log("Consultation ID:", consultation.id);
@@ -181,6 +202,26 @@ const Consultations: React.FC = () => {
 
   const stats = generateStats();
 
+  // Fetch consultation statuses
+  const fetchConsultationStatuses = async () => {
+    try {
+      const response = await getEnumData("ORDER_STATUS", token);
+      if (response) {
+        // Filter to show only relevant statuses in dropdown
+        const relevantStatuses = response.roles.filter(
+          (status: ConsultationStatusEnum) =>
+            ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(
+              status.value
+            )
+        );
+        setConsultationStatuses(relevantStatuses);
+      }
+    } catch (err) {
+      console.error("Failed to fetch consultation statuses:", err);
+      toast.error("Failed to load consultation statuses");
+    }
+  };
+
   useEffect(() => {
     const loadConsultations = async () => {
       if (!token) return;
@@ -202,6 +243,7 @@ const Consultations: React.FC = () => {
         };
 
         const response = await getConsultations(params, token);
+        console.log(response, "abcd");
         const transformedData = response.consultations.map(
           transformAPIToConsultation
         );
@@ -220,6 +262,9 @@ const Consultations: React.FC = () => {
       }
     };
 
+    // Load consultation statuses
+    fetchConsultationStatuses();
+
     // Debounce search
     const timeoutId = setTimeout(loadConsultations, 300);
     return () => clearTimeout(timeoutId);
@@ -230,8 +275,135 @@ const Consultations: React.FC = () => {
     selectedConsultationType,
     refreshTrigger,
   ]);
+  console.log(filteredConsultations, "filetred");
+  // Handle status change for consultation
+  // Handle status change for consultation
+  const handleStatusChange = async (
+    consultationId: string,
+    customer_id: string | null,
+    statusId: string,
+    statusValue: string
+  ) => {
+    try {
+      setUpdatingStatus(consultationId);
 
-  const handleStatusChange = (status: string) => {
+      // Store the current status for rollback in case of error
+      const currentConsultation = consultations.find(
+        (c) => c.id === consultationId
+      );
+      const currentStatus = currentConsultation?.status;
+
+      // Update local state IMMEDIATELY for instant UI update
+      setConsultations((prev) =>
+        prev.map((consultation) =>
+          consultation.id === consultationId
+            ? {
+                ...consultation,
+                status: formatStatusDisplay(statusValue),
+              }
+            : consultation
+        )
+      );
+
+      // Also update filteredConsultations for instant UI update
+      setFilteredConsultations((prev) =>
+        prev.map((consultation) =>
+          consultation.id === consultationId
+            ? {
+                ...consultation,
+                status: formatStatusDisplay(statusValue),
+              }
+            : consultation
+        )
+      );
+
+      console.log(consultationId, customer_id, statusId, "jnds");
+
+      // Call the update consultation status API
+      const response = await updateConsultationStatus(
+        consultationId,
+        customer_id,
+        statusId,
+        token
+      );
+
+      if (response.success) {
+        // Close dropdown
+        setOpenStatusDropdown(null);
+
+        // Show success message
+        toast.success(
+          `Consultation status updated to ${formatStatusDisplay(statusValue)}`
+        );
+      } else {
+        // If API call fails, revert the local state
+        setConsultations((prev) =>
+          prev.map((consultation) =>
+            consultation.id === consultationId
+              ? {
+                  ...consultation,
+                  status: currentStatus || "Scheduled", // Fallback to original status
+                }
+              : consultation
+          )
+        );
+
+        setFilteredConsultations((prev) =>
+          prev.map((consultation) =>
+            consultation.id === consultationId
+              ? {
+                  ...consultation,
+                  status: currentStatus || "Scheduled", // Fallback to original status
+                }
+              : consultation
+          )
+        );
+
+        throw new Error("Failed to update status");
+      }
+    } catch (err) {
+      console.error("Error updating status:", err);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Failed to update consultation status"
+      );
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+  const formatStatusDisplay = (statusValue: string): string => {
+    switch (statusValue.toUpperCase()) {
+      case "SCHEDULED":
+        return "Scheduled";
+      case "IN_PROGRESS":
+      case "IN-PROGRESS":
+        return "In-Progress";
+      case "COMPLETED":
+        return "Completed";
+      case "CANCELLED":
+        return "Cancelled";
+      default:
+        return statusValue;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "scheduled":
+        return "bg-[#2F80ED] text-white";
+      case "in-progress":
+        return "bg-[#FF9500] text-white";
+      case "completed":
+        return "bg-[#34C759] text-white";
+      case "cancelled":
+        return "bg-[#FF3B30] text-white";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const handleStatusFilterChange = (status: string) => {
     setSelectedStatus(status);
     setOpenDropdown(null);
   };
@@ -272,29 +444,6 @@ const Consultations: React.FC = () => {
       toast.error("Failed to load consultation details");
     }
   };
-  const handleStatusUpdate = async (
-    consultationId: string,
-    newStatus: string
-  ) => {
-    const loadingToast = toast.loading("Updating consultation status...");
-
-    try {
-      // Add your API call here to update status
-      // await updateConsultationStatus(consultationId, newStatus, token);
-
-      setConsultations((prev) =>
-        prev.map((c) =>
-          c.id === consultationId ? { ...c, status: newStatus } : c
-        )
-      );
-
-      toast.dismiss(loadingToast);
-      toast.success(`Consultation status updated to ${newStatus}`);
-    } catch (error) {
-      toast.dismiss(loadingToast);
-      toast.error("Failed to update consultation status");
-    }
-  };
 
   const handleEditConsultation = (consultation: Consultation) => {
     try {
@@ -308,6 +457,7 @@ const Consultations: React.FC = () => {
       toast.error("Failed to load consultation for editing");
     }
   };
+
   const handleCloseDetailsModal = () => {
     setShowDetailsModal(false);
     setSelectedConsultation(null);
@@ -329,6 +479,7 @@ const Consultations: React.FC = () => {
     setShowAddConsultationModal(false);
     setEditingConsultation(null);
   };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -399,6 +550,7 @@ const Consultations: React.FC = () => {
             </button>
           </div>
         </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <StatsCard
@@ -480,7 +632,7 @@ const Consultations: React.FC = () => {
                   {statusOptions.map((status) => (
                     <button
                       key={status}
-                      onClick={() => handleStatusChange(status)}
+                      onClick={() => handleStatusFilterChange(status)}
                       className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
                         selectedStatus === status
                           ? "bg-blue-50 text-blue-600"
@@ -543,7 +695,7 @@ const Consultations: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
+                    <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="text-gray-500">
                         Loading consultations...
                       </div>
@@ -551,7 +703,7 @@ const Consultations: React.FC = () => {
                   </tr>
                 ) : filteredConsultations.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
+                    <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="text-gray-500">
                         No consultations found.
                       </div>
@@ -615,9 +767,6 @@ const Consultations: React.FC = () => {
                             <HeartPlus className="w-3 h-3" />
                             {consultation.appointedDoctor}
                           </div>
-                          {/* <div className="text-[10px] text-gray-500">
-                            {consultation.doctorSpecialization}
-                          </div> */}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -631,7 +780,55 @@ const Consultations: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <StatusBadge status={consultation.status} />
+                        <div className="relative">
+                          <button
+                            onClick={() =>
+                              setOpenStatusDropdown(
+                                openStatusDropdown === consultation.id
+                                  ? null
+                                  : consultation.id
+                              )
+                            }
+                            disabled={updatingStatus === consultation.id}
+                            className={`px-3 py-1 rounded-full text-[10px] font-medium ${getStatusColor(
+                              consultation.status
+                            )} flex items-center gap-1 hover:opacity-80 transition-opacity disabled:opacity-50`}
+                          >
+                            {updatingStatus === consultation.id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                                Updating...
+                              </>
+                            ) : (
+                              <>
+                                {consultation.status}
+                                <ChevronDown className="w-3 h-3" />
+                              </>
+                            )}
+                          </button>
+                          {openStatusDropdown === consultation.id && (
+                            <div className="absolute left-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+                              <div className="py-1">
+                                {consultationStatuses.map((status) => (
+                                  <button
+                                    key={status.id}
+                                    onClick={() =>
+                                      handleStatusChange(
+                                        consultation.id,
+                                        consultation.customer_id,
+                                        status.id,
+                                        status.value
+                                      )
+                                    }
+                                    className="w-full px-3 py-2 text-left text-[10px] text-[#161D1F] hover:bg-gray-50 transition-colors"
+                                  >
+                                    {formatStatusDisplay(status.value)}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center gap-2 justify-end">

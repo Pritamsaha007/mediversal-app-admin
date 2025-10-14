@@ -34,6 +34,7 @@ export interface Consultation {
   patientContact: string;
   patientEmail: string;
   aadhaarNumber?: string;
+  customer_id: string | null;
   consultationType: "online" | "in-person";
   consultationDate: string;
   consultationTime: string;
@@ -64,7 +65,9 @@ export function transformAPIToConsultation(
     patientName: apiData.patient_name,
     patientContact: apiData.phone,
     patientEmail: apiData.email,
+    customer_id: apiData.customer_id ?? "",
     aadhaarNumber: apiData.aadhar_id,
+
     consultationType:
       apiData.consultation_type?.toLowerCase() === "online"
         ? "online"

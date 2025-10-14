@@ -1,13 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { Timeline, TimelineEvent } from "react-event-timeline";
 import { Order } from "../../types/types";
-import { trackOrders } from "../../services/orderServices";
+import { getTracking } from "../../services/orderServices"; // Import the new API
 
-interface TrackScan {
-  scan: string;
-  scan_datetime: string;
-  scan_location?: string;
-  rapidshyp_status_code?: string;
+interface ShipmentTrackActivity {
+  date: string;
+  status: string;
+  activity: string;
+  location: string;
+  "sr-status": string | number;
+  "sr-status-label": string;
+}
+
+interface TrackingResponse {
+  tracking_data: {
+    track_status: number;
+    shipment_status: number;
+    shipment_track: any[];
+    shipment_track_activities: ShipmentTrackActivity[];
+    track_url: string;
+    etd: string;
+    qc_response: string;
+    is_return: boolean;
+    order_tag: string;
+  };
 }
 
 interface OrderHistoryProps {
@@ -15,7 +31,7 @@ interface OrderHistoryProps {
 }
 
 const OrderHistory: React.FC<OrderHistoryProps> = ({ order }) => {
-  const [trackingData, setTrackingData] = useState<TrackScan[]>([]);
+  const [trackingData, setTrackingData] = useState<ShipmentTrackActivity[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,14 +41,22 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ order }) => {
         setLoading(true);
         setError(null);
 
-        if (!order.rapidshypAwb) {
+        if (!order.Awb) {
           throw new Error("Tracking number (AWB) is required");
         }
 
-        const data = await trackOrders(Number(order.id), order.rapidshypAwb);
+        // Use the new ShipRocket API
+        const data: TrackingResponse = await getTracking(order.Awb);
 
-        if (data?.records?.[0]?.shipment_details?.[0]?.track_scans) {
-          setTrackingData(data.records[0].shipment_details[0].track_scans);
+        if (data?.tracking_data?.shipment_track_activities) {
+          // Sort activities by date (newest first) for timeline
+          const sortedActivities = [
+            ...data.tracking_data.shipment_track_activities,
+          ].sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+
+          setTrackingData(sortedActivities);
         } else {
           throw new Error("No tracking information available");
         }
@@ -48,19 +72,33 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ order }) => {
     fetchTrackingDetails();
   }, [order]);
 
-  const parseCustomDate = (dateString: string) => {
-    const parts = dateString.split(" ");
-    const dateParts = parts[0].split("-");
-    const timeParts = parts[1].split(":");
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        throw new Error("Invalid date");
+      }
 
-    return new Date(
-      parseInt(dateParts[2]), // year
-      parseInt(dateParts[1]) - 1, // month
-      parseInt(dateParts[0]), // day
-      parseInt(timeParts[0]), // hours
-      parseInt(timeParts[1]), // minutes
-      parseInt(timeParts[2]) // seconds
-    );
+      const formattedDate = date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+
+      const formattedTime = date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+
+      return { formattedDate, formattedTime };
+    } catch (err) {
+      console.error("Invalid date format:", dateString);
+      return {
+        formattedDate: "Invalid Date",
+        formattedTime: "Invalid Time",
+      };
+    }
   };
 
   if (loading) {
@@ -88,6 +126,14 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ order }) => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="bg-white p-4 rounded-lg border h-80 border-gray-300 flex flex-col items-center justify-center">
+        <p className="text-xs text-red-600">{error}</p>
+      </div>
+    );
+  }
+
   if (trackingData.length === 0) {
     return (
       <div className="bg-white p-4 rounded-lg border h-80 border-gray-300 flex flex-col items-center justify-center">
@@ -102,34 +148,18 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ order }) => {
         <h2 className="text-sm text-black mb-4">Order Timeline</h2>
 
         <Timeline>
-          {trackingData.map((scan, index) => {
-            let date: Date;
-            try {
-              date = parseCustomDate(scan.scan_datetime);
-              if (isNaN(date.getTime())) {
-                throw new Error("Invalid date");
-              }
-            } catch (err) {
-              console.error("Invalid date format:", scan.scan_datetime);
-              date = new Date();
-            }
-
-            const formattedDate = date.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            });
-
-            const formattedTime = date.toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            });
+          {trackingData.map((activity, index) => {
+            const { formattedDate, formattedTime } = formatDate(activity.date);
 
             return (
               <TimelineEvent
                 key={index}
                 title={
-                  <span className="text-gray-900 font-medium">{scan.scan}</span>
+                  <span className="text-gray-900 font-medium">
+                    {activity["sr-status-label"] ||
+                      activity.activity ||
+                      activity.status}
+                  </span>
                 }
                 createdAt={
                   <span className="text-gray-700">{`${formattedDate}, ${formattedTime}`}</span>
@@ -143,10 +173,28 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ order }) => {
                 }}
               >
                 <div className="space-y-1 mt-1">
-                  {scan.scan_location && (
+                  {activity.location && (
                     <div className="text-sm text-gray-800">
                       <span className="font-semibold">Location:</span>{" "}
-                      {scan.scan_location}
+                      {activity.location}
+                    </div>
+                  )}
+                  {activity.status && activity.status !== activity.activity && (
+                    <div className="text-sm text-gray-800">
+                      <span className="font-semibold">Status:</span>{" "}
+                      {activity.status}
+                    </div>
+                  )}
+                  {activity.activity && (
+                    <div className="text-sm text-gray-800">
+                      <span className="font-semibold">Activity:</span>{" "}
+                      {activity.activity}
+                    </div>
+                  )}
+                  {activity["sr-status"] && (
+                    <div className="text-sm text-gray-800">
+                      <span className="font-semibold">SR Status:</span>{" "}
+                      {activity["sr-status"]}
                     </div>
                   )}
                 </div>
