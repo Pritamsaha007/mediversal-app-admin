@@ -86,15 +86,15 @@ export const updateProductRelationships = async (
 };
 
 export const getProductsById = async (
-  productId: number
+  productId: string
 ): Promise<ProductData> => {
   try {
-    if (!productId || isNaN(productId)) {
+    if (!productId) {
       throw new Error("Invalid product ID");
     }
 
     const response = await fetch(
-      `${API_BASE_URL}/app/api/Product/getProductById/${productId}`,
+      `${API_BASE_URL}/api/Product/getProductById/${productId}`,
       {
         method: "GET",
         headers: getAuthHeaders(),
@@ -114,20 +114,20 @@ export const getProductsById = async (
 };
 
 export const removeProductRelationship = async (
-  productId: number,
+  productId: string,
   relationshipType: "similar-products" | "substitutes",
-  itemIdToRemove: number
+  itemIdToRemove: string
 ): Promise<{ success: boolean }> => {
   try {
-    if (!productId || isNaN(productId)) {
+    if (!productId) {
       throw new Error("Invalid product ID");
     }
 
-    if (!itemIdToRemove || isNaN(itemIdToRemove)) {
+    if (!itemIdToRemove) {
       throw new Error("Invalid item ID to remove");
     }
 
-    const url = `${API_BASE_URL}/app/api/Product/${productId}/${relationshipType}/${itemIdToRemove}`;
+    const url = `${API_BASE_URL}/api/Product/${productId}/${relationshipType}/${itemIdToRemove}`;
     console.log("Attempting to call DELETE endpoint:", url);
 
     const response = await fetch(url, {

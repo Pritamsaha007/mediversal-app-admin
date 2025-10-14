@@ -53,6 +53,7 @@ export const ProductRelationshipsModal: React.FC<
   const [activeTab, setActiveTab] = useState<"substitutes" | "similar">(
     "substitutes"
   );
+  console.log(productId, "main id");
   const [substitutes, setSubstitutes] =
     useState<RelatedProduct[]>(currentSubstitutes);
   const [similarProducts, setSimilarProducts] = useState<RelatedProduct[]>(
@@ -89,8 +90,16 @@ export const ProductRelationshipsModal: React.FC<
   };
 
   const convertToRelatedProduct = (product: any): RelatedProduct => {
+    // Ensure we always have a valid ID
+    const productId =
+      product.id?.toString() || product.productId?.toString() || "";
+
+    if (!productId) {
+      console.warn("Product missing ID:", product);
+    }
+
     return {
-      id: product.productId?.toString() || "",
+      id: productId,
       name: product.ProductName || "",
       code: product.Type || product.SKU || "",
       manufacturer: product.ManufacturerName || "",
@@ -156,7 +165,7 @@ export const ProductRelationshipsModal: React.FC<
       setError(null);
 
       console.log("Fetching product data for ID:", productId);
-      const response = await getProductsById(Number(productId));
+      const response = await getProductsById(productId);
       console.log("Product data received:", response);
 
       setProductData(response);
@@ -188,9 +197,10 @@ export const ProductRelationshipsModal: React.FC<
 
   useEffect(() => {
     if (isOpen) {
-      searchAvailableProducts(""); // Load initial products with empty search
+      fetchProductData();
+      searchAvailableProducts("");
     }
-  }, [isOpen]);
+  }, [isOpen, productId]);
 
   const getFilteredAvailableProducts = () => {
     const currentList =
@@ -228,15 +238,16 @@ export const ProductRelationshipsModal: React.FC<
         // Only call API for existing relationships
         const relationshipType =
           activeTab === "substitutes" ? "substitutes" : "similar-products";
-
+        console.log(productId, relationshipType, itemIdToRemove, "payload");
         await removeProductRelationship(
-          Number(productId),
+          productId,
           relationshipType,
-          Number(itemIdToRemove)
+          itemIdToRemove
         );
       }
 
       if (activeTab === "substitutes") {
+        console.log(itemIdToRemove, "remove");
         setSubstitutes((prev) => prev.filter((p) => p.id !== itemIdToRemove));
         setNewlyAddedSubstitutes((prev) =>
           prev.filter((id) => id !== itemIdToRemove)
@@ -298,6 +309,10 @@ export const ProductRelationshipsModal: React.FC<
     activeTab === "substitutes" ? substitutes : similarProducts;
   const filteredAvailableProducts = getFilteredAvailableProducts();
 
+  console.log(filteredAvailableProducts);
+
+  console.log(currentList, "current List");
+
   return (
     <div
       className="fixed inset-0 flex items-center justify-center z-50 p-4"
@@ -320,7 +335,7 @@ export const ProductRelationshipsModal: React.FC<
         </div>
 
         {/* Error Display */}
-        {error && (
+        {/* {error && (
           <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm text-red-600">{error}</p>
             <button
@@ -330,7 +345,7 @@ export const ProductRelationshipsModal: React.FC<
               Dismiss
             </button>
           </div>
-        )}
+        )} */}
 
         {/* Tabs */}
         <div className="flex bg-gray-200 rounded mx-6 mt-4">
