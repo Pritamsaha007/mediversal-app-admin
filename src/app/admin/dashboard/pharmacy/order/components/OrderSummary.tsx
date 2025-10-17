@@ -12,7 +12,6 @@ import OrderHistory from "./OrderSummary/OrderHistory";
 import { Order } from "../types/types";
 import OrderPrescriptions from "./OrderSummary/OrderPrescriptions";
 import {
-  cancelOrder,
   CancelOrderRequest,
   cancelShiprocketOrder,
 } from "../services/orderServices";
@@ -29,7 +28,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   order,
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
-  const [isCanceling, setIsCanceling] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   if (!isOpen || !order) return null;
 
@@ -118,10 +117,10 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             {order.deliverystatus != "Cancelled" && (
               <button
                 onClick={handleCancel}
-                disabled={isCanceling}
+                disabled={isSubmitting}
                 className="px-4 py-2 text-white border border-gray-300 rounded-lg bg-[#EB5757]  transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
               >
-                {isCanceling ? (
+                {isSubmitting ? (
                   <span className="text-[10px]">Canceling...</span>
                 ) : (
                   <>
