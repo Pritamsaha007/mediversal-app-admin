@@ -44,7 +44,7 @@ export type Order = {
   paymentMethod: string;
   paymentStatus: string;
   paymentTime: string;
-  prescriptions: any[];
+  prescriptions: prescription[];
   rapidshypAwb: string | null;
   rapidshypShipmentId: number | null;
   shipping_charges: string;
@@ -66,7 +66,7 @@ export interface OrderItem {
   Category: string;
 }
 
-export interface Prescription {
+export interface prescription {
   prescription_id: string;
   prescriptionURL: string;
 }

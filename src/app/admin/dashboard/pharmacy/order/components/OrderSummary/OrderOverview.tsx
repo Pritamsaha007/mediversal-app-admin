@@ -25,7 +25,7 @@ const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
                     .map((name: string) => name[0])
                     .join("")
                     .toUpperCase()
-                : "GU"}
+                : "M"}
             </div>
 
             {/* Customer info */}
