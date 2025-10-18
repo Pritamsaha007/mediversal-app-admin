@@ -45,6 +45,9 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
       };
 
       const response = await cancelShiprocketOrder(cancelData);
+      order.deliverystatus = "Cancelled";
+      toast.success("Order cancelled successfully");
+      onClose();
       console.log("ShipRocket cancellation response:", response);
     } catch (error) {
       console.error("Cancellation error:", error);
