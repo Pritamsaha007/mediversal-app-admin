@@ -24,8 +24,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     description: "",
     code: "",
     category_id: "",
-    sample_type_ids: [] as string[],
-    test_params: [] as string[],
     report_time_hrs: 0,
     cost_price: 0,
     selling_price: 0,
@@ -42,35 +40,46 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     related_lab_test_ids: [] as string[],
   });
   const [newInstruction, setNewInstruction] = useState("");
+  const [newPrecaution, setNewPrecaution] = useState("");
   const [activeSection, setActiveSection] = useState<"basic" | "settings">(
     "basic"
   );
 
   // Dropdown states
-  const [showTestParamsDropdown, setShowTestParamsDropdown] = useState(false);
   const [showReportTimeDropdown, setShowReportTimeDropdown] = useState(false);
-  const [showSampleTypeDropdown, setShowSampleTypeDropdown] = useState(false);
+  const [showModalityDropdown, setShowModalityDropdown] = useState(false);
+  const [showInspectionPartsDropdown, setShowInspectionPartsDropdown] =
+    useState(false);
 
   // Dropdown options
-  const testParameterOptions = [
-    "Red Blood Cell Count (RBC)",
-    "White Blood Cell Count (WBC)",
-    "Haemoglobin (Hb)",
-    "Hematocrit (Hct)",
-    "Platelet Count",
-    "Mean Corpuscular Volume (MCV)",
-    "Mean Corpuscular Haemoglobin (MCH)",
-    "Mean Corpuscular Hemoglobin Concentration (MCHC)",
+  const reportTimeOptions = [6, 12, 16, 32, 48, 64, 72];
+
+  const modalityOptions = [
+    "X-Ray",
+    "CT Scan",
+    "MRI",
+    "Ultrasound",
+    "Mammography",
+    "Fluoroscopy",
+    "PET Scan",
+    "Nuclear Medicine",
+    "DEXA Scan",
+    "Interventional Radiology",
   ];
 
-  const reportTimeOptions = [6, 12, 16, 32, 48, 64, 72];
-  const sampleTypeOptions = [
-    "Blood",
-    "Urine",
-    "Serum",
-    "Plasma",
-    "Saliva",
-    "Tissue",
+  const inspectionPartsOptions = [
+    "Head",
+    "Neck",
+    "Chest",
+    "Abdomen",
+    "Pelvis",
+    "Spine",
+    "Upper Extremities",
+    "Lower Extremities",
+    "Cardiac",
+    "Neurological",
+    "Musculoskeletal",
+    "Vascular",
   ];
 
   const commonInstructions = [
@@ -88,8 +97,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         description: editTest.description,
         code: editTest.code,
         category_id: editTest.category_id,
-        sample_type_ids: editTest.sample_type_ids || [],
-        test_params: editTest.test_params || [],
         report_time_hrs: editTest.report_time_hrs,
         cost_price: editTest.cost_price,
         selling_price: editTest.selling_price,
@@ -111,8 +118,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         description: "",
         code: "",
         category_id: "",
-        sample_type_ids: [],
-        test_params: [],
         report_time_hrs: 0,
         cost_price: 0,
         selling_price: 0,
@@ -156,37 +161,23 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     });
   };
 
-  const handleAddTestParameter = (parameter: string) => {
-    if (!formData.test_params.includes(parameter)) {
+  const handleAddPrecaution = () => {
+    if (
+      newPrecaution.trim() &&
+      !formData.precautions.includes(newPrecaution.trim())
+    ) {
       setFormData({
         ...formData,
-        test_params: [...formData.test_params, parameter],
+        precautions: [...formData.precautions, newPrecaution.trim()],
       });
+      setNewPrecaution("");
     }
-    setShowTestParamsDropdown(false);
   };
 
-  const handleRemoveParameter = (param: string) => {
+  const handleRemovePrecaution = (precaution: string) => {
     setFormData({
       ...formData,
-      test_params: formData.test_params.filter((p) => p !== param),
-    });
-  };
-
-  const handleAddSampleType = (sampleType: string) => {
-    if (!formData.sample_type_ids.includes(sampleType)) {
-      setFormData({
-        ...formData,
-        sample_type_ids: [...formData.sample_type_ids, sampleType],
-      });
-    }
-    setShowSampleTypeDropdown(false);
-  };
-
-  const handleRemoveSampleType = (sampleType: string) => {
-    setFormData({
-      ...formData,
-      sample_type_ids: formData.sample_type_ids.filter((s) => s !== sampleType),
+      precautions: formData.precautions.filter((p) => p !== precaution),
     });
   };
 
@@ -196,6 +187,33 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       report_time_hrs: hours,
     });
     setShowReportTimeDropdown(false);
+  };
+
+  const handleSelectModality = (modality: string) => {
+    setFormData({
+      ...formData,
+      modality_type_id: modality,
+    });
+    setShowModalityDropdown(false);
+  };
+
+  const handleAddInspectionPart = (part: string) => {
+    if (!formData.inspection_parts_ids.includes(part)) {
+      setFormData({
+        ...formData,
+        inspection_parts_ids: [...formData.inspection_parts_ids, part],
+      });
+    }
+    setShowInspectionPartsDropdown(false);
+  };
+
+  const handleRemoveInspectionPart = (part: string) => {
+    setFormData({
+      ...formData,
+      inspection_parts_ids: formData.inspection_parts_ids.filter(
+        (p) => p !== part
+      ),
+    });
   };
 
   const handleAddCommonInstruction = (instruction: string) => {
@@ -231,6 +249,9 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         is_deleted: editTest.is_deleted || false,
         created_by: editTest.created_by,
         updated_by: editTest.updated_by,
+
+        sample_type_ids: editTest.sample_type_ids || [],
+        test_params: editTest.test_params || [],
       });
     } else {
       onAddTest({
@@ -238,6 +259,9 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         is_deleted: false,
         created_by: "current-user-id",
         updated_by: "current-user-id",
+
+        sample_type_ids: [],
+        test_params: [],
       });
     }
     onClose();
@@ -249,8 +273,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       description: "",
       code: "",
       category_id: "",
-      sample_type_ids: [],
-      test_params: [],
       report_time_hrs: 0,
       cost_price: 0,
       selling_price: 0,
@@ -273,9 +295,9 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest(".dropdown-container")) {
-        setShowTestParamsDropdown(false);
         setShowReportTimeDropdown(false);
-        setShowSampleTypeDropdown(false);
+        setShowModalityDropdown(false);
+        setShowInspectionPartsDropdown(false);
       }
     };
 
@@ -291,7 +313,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     <div className="space-y-6">
       <div>
         <h4 className="text-xs font-medium text-[#161D1F] mb-3">
-          Upload Lab Test Image
+          Upload Test Image
         </h4>
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
           <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
@@ -320,7 +342,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
-            * Lab Test Name
+            * Test Name
           </label>
           <input
             type="text"
@@ -344,59 +366,44 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         </div>
       </div>
 
-      {/* Sample Type, Report Time, and Preparation in same row */}
+      {/* Modality, Report Time, and Inspection Parts in same row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Sample Type */}
+        {/* Modality */}
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
-            Sample Type
+            Modality Type
           </label>
           <div className="dropdown-container relative">
             <button
               type="button"
-              onClick={() => setShowSampleTypeDropdown(!showSampleTypeDropdown)}
+              onClick={() => setShowModalityDropdown(!showModalityDropdown)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-left bg-white flex items-center justify-between"
             >
-              <span className="text-gray-600">Select sample type</span>
+              <span
+                className={
+                  formData.modality_type_id ? "text-black" : "text-gray-600"
+                }
+              >
+                {formData.modality_type_id || "Select modality"}
+              </span>
               <ChevronDown className="w-4 h-4 text-gray-400" />
             </button>
 
-            {showSampleTypeDropdown && (
+            {showModalityDropdown && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {sampleTypeOptions.map((sampleType) => (
+                {modalityOptions.map((modality) => (
                   <button
-                    key={sampleType}
+                    key={modality}
                     type="button"
-                    onClick={() => handleAddSampleType(sampleType)}
+                    onClick={() => handleSelectModality(modality)}
                     className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-400"
                   >
-                    {sampleType}
+                    {modality}
                   </button>
                 ))}
               </div>
             )}
           </div>
-
-          {/* Selected Sample Types */}
-          {formData.sample_type_ids.length > 0 && (
-            <div className="mt-2 space-y-1">
-              {formData.sample_type_ids.map((sampleType, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2 bg-[#0088B1] rounded-xl"
-                >
-                  <span className="text-xs text-[#FFF]">{sampleType}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSampleType(sampleType)}
-                    className="text-[#FFF]"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Report Time */}
@@ -439,49 +446,51 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
-        {/* Test Parameters Section */}
+        {/* Inspection Parts Section */}
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
-            Test Parameters
+            Inspection Parts
           </label>
           <div className="dropdown-container relative">
             <button
               type="button"
-              onClick={() => setShowTestParamsDropdown(!showTestParamsDropdown)}
+              onClick={() =>
+                setShowInspectionPartsDropdown(!showInspectionPartsDropdown)
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-left bg-white flex items-center justify-between"
             >
-              <span className="text-gray-600">Select test parameters</span>
+              <span className="text-gray-600">Select inspection parts</span>
               <ChevronDown className="w-4 h-4 text-gray-400" />
             </button>
 
-            {showTestParamsDropdown && (
+            {showInspectionPartsDropdown && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {testParameterOptions.map((parameter) => (
+                {inspectionPartsOptions.map((part) => (
                   <button
-                    key={parameter}
+                    key={part}
                     type="button"
-                    onClick={() => handleAddTestParameter(parameter)}
+                    onClick={() => handleAddInspectionPart(part)}
                     className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-400"
                   >
-                    {parameter}
+                    {part}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Selected Parameters */}
-          {formData.test_params.length > 0 && (
+          {/* Selected Inspection Parts */}
+          {formData.inspection_parts_ids.length > 0 && (
             <div className="mt-2 space-y-1">
-              {formData.test_params.map((parameter, index) => (
+              {formData.inspection_parts_ids.map((part, index) => (
                 <div
                   key={index}
                   className="flex items-center justify-between p-2 bg-[#0088B1] rounded-xl"
                 >
-                  <span className="text-xs text[#FFF]">{parameter}</span>
+                  <span className="text-xs text-[#FFF]">{part}</span>
                   <button
                     type="button"
-                    onClick={() => handleRemoveParameter(parameter)}
+                    onClick={() => handleRemoveInspectionPart(part)}
                     className="text-[#FFF]"
                   >
                     <X className="w-4 h-4" />
@@ -497,7 +506,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
   const renderSettings = () => (
     <div className="space-y-6">
-      {/* Pricing and Description sections remain the same */}
+      {/* Pricing and Description sections */}
       <div className="p-4 rounded-lg">
         <h4 className="text-xs font-medium text-[#161D1F] mb-4">
           Pricing Details
@@ -552,17 +561,71 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           placeholder="Briefly describe test details"
         />
       </div>
+
+      {/* Precautions Section */}
       <div>
-        <label className="block text-xs font-medium text-[#161D1F]">
+        <label className="block text-xs font-medium text-[#161D1F] mb-2">
+          Precautions
+        </label>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newPrecaution}
+              onChange={(e) => setNewPrecaution(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-600 text-black"
+              placeholder="Add precaution"
+              onKeyPress={(e) => e.key === "Enter" && handleAddPrecaution()}
+            />
+            <button
+              type="button"
+              onClick={handleAddPrecaution}
+              className="px-3 py-2 bg-[#0088B1] text-white rounded-lg text-xs hover:bg-[#00729A]"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Selected Precautions */}
+      {formData.precautions.length > 0 && (
+        <div>
+          <label className="block text-xs font-medium text-[#161D1F] mb-2">
+            Selected Precautions:
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {formData.precautions.map((precaution, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-1 bg-[#0088B1] text-white px-3 py-1.5 rounded-full"
+              >
+                <span className="text-xs font-medium">{precaution}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemovePrecaution(precaution)}
+                  className="text-white hover:text-gray-200"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Preparation Instructions */}
+      <div>
+        <label className="block text-xs font-medium text-[#161D1F] mb-2">
           Preparation Instructions
         </label>
         <div className="space-y-2">
           <div className="flex gap-2">
             <input
-              type="textarea"
+              type="text"
               value={newInstruction}
               onChange={(e) => setNewInstruction(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-600 text-black"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-600 text-black"
               placeholder="Add custom instruction"
               onKeyPress={(e) => e.key === "Enter" && handleAddInstruction()}
             />
@@ -576,9 +639,13 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
       </div>
+
       {/* Selected Preparation Instructions */}
       {formData.preparation_instructions.length > 0 && (
         <div>
+          <label className="block text-xs font-medium text-[#161D1F] mb-2">
+            Selected Instructions:
+          </label>
           <div className="flex flex-wrap gap-2">
             {formData.preparation_instructions.map((instruction, index) => (
               <div
@@ -599,7 +666,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         </div>
       )}
 
-      {/* Toggle Settings remain the same */}
+      {/* Toggle Settings */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Home Collection */}
         <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">

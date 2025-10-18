@@ -159,7 +159,7 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
                   <h3 className="text-[14px] font-semibold text-[#161D1F] mb-3 ">
                     Precautions:
                   </h3>
-                  <div className="rounded-lg border border-[#D3D7D8] p-2">
+                  <div className="rounded-lg border border-[#D3D7D8] p-2 bg-[#FFEAEA]">
                     <ul className="space-y-2">
                       {test.precautions.map((precaution, index) => (
                         <li key={index} className="flex items-start gap-2">

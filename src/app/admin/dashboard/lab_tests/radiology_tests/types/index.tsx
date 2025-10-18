@@ -10,6 +10,7 @@ export interface RadiologyTest {
   cost_price: number;
   selling_price: number;
   preparation_instructions: string[];
+
   precautions: string[];
   is_fasting_reqd: boolean;
   in_person_visit_reqd: boolean;

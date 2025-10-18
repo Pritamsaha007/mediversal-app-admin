@@ -553,7 +553,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-[#161D1F]">
+        <label className="block text-xs font-medium text-[#161D1F] mb-2">
           Preparation Instructions
         </label>
         <div className="space-y-2">
