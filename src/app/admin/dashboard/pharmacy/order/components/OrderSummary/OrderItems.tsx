@@ -9,7 +9,7 @@ interface OrderItemsProps {
 const OrderItems: React.FC<OrderItemsProps> = ({ order }) => {
   const formatCurrency = (amount: number) => `₹${amount.toFixed(2)}`;
   const { products } = useProductStore();
-  console.log(products);
+
   const isPrescriptionRequired = (productId: Number) => {
     const product = products.find((p) => Number(p.id) === productId);
     console.log(product);
@@ -28,7 +28,7 @@ const OrderItems: React.FC<OrderItemsProps> = ({ order }) => {
             <div className="text-right text-xs">Price</div>
             <div className="text-center text-xs">Quantity</div>
             <div className="text-right text-xs">Total</div>
-            <div className="text-center text-xs">Prescription</div>
+            {/* <div className="text-center text-xs">Prescription</div> */}
           </div>
           {order.items.map((item) => {
             const requiresPrescription = isPrescriptionRequired(
@@ -61,7 +61,7 @@ const OrderItems: React.FC<OrderItemsProps> = ({ order }) => {
                     parseFloat(item.sellingPrice) * item.quantity
                   )}
                 </div>
-                <div className="text-center">
+                {/* <div className="text-center">
                   <span
                     className={`px-2 py-1 rounded text-[10px] ${
                       requiresPrescription
@@ -71,7 +71,7 @@ const OrderItems: React.FC<OrderItemsProps> = ({ order }) => {
                   >
                     {requiresPrescription ? "Rx Required" : "Not Required"}
                   </span>
-                </div>
+                </div> */}
               </div>
             );
           })}
