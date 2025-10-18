@@ -141,10 +141,25 @@ const Sidebar = () => {
           name: "Consultations",
           link: "/admin/dashboard/consultations/consultation",
         },
+
         // {
         //   name: "Orders",
         //   link: "/admin/dashboard/consultations/orders",
         // },
+      ],
+    },
+    {
+      name: "Lab Tests",
+      icon: <LucideComputer size={18} />,
+      subItems: [
+        {
+          name: "Pathology Tests",
+          link: "/admin/dashboard/lab_tests/pathology_tests",
+        },
+        {
+          name: "Radiology Tests",
+          link: "/admin/dashboard/lab_tests/radiology_tests",
+        },
       ],
     },
   ];
