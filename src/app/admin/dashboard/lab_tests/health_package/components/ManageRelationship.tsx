@@ -2,19 +2,19 @@
 import React, { useState } from "react";
 import { X, Search, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { PathologyTest } from "../types";
+import { HealthPackagesType } from "../types";
 
 interface ManageRelationshipsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  test: PathologyTest | null;
+  test: HealthPackagesType | null;
 }
 
 export const ManageRelationshipsModal: React.FC<
   ManageRelationshipsModalProps
 > = ({ isOpen, onClose, test }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [relatedTests, setRelatedTests] = useState<PathologyTest[]>([
+  const [relatedTests, setRelatedTests] = useState<HealthPackagesType[]>([
     {
       id: "1",
       name: "Thyroid Function Test",
@@ -22,7 +22,7 @@ export const ManageRelationshipsModal: React.FC<
       code: "CBC0004456",
       category_id: "thyroid-category",
       sample_type_ids: ["blood", "urine"],
-      test_params: ["TSH", "T3", "T4"],
+      test_includes: ["TSH", "T3", "T4"],
       report_time_hrs: 24,
       cost_price: 120,
       selling_price: 180,
@@ -43,7 +43,7 @@ export const ManageRelationshipsModal: React.FC<
     },
   ]);
 
-  const availableTests: PathologyTest[] = [
+  const availableTests: HealthPackagesType[] = [
     {
       id: "2",
       name: "Liver Function Test",
@@ -51,7 +51,7 @@ export const ManageRelationshipsModal: React.FC<
       code: "LFT0007890",
       category_id: "liver-category",
       sample_type_ids: ["serum", "plasma"],
-      test_params: ["ALT", "AST", "Bilirubin"],
+      test_includes: ["ALT", "AST", "Bilirubin"],
       report_time_hrs: 24,
       cost_price: 150,
       selling_price: 200,
@@ -77,7 +77,7 @@ export const ManageRelationshipsModal: React.FC<
       code: "CBC0004567",
       category_id: "hematology-category",
       sample_type_ids: ["blood"],
-      test_params: ["Hemoglobin", "WBC", "RBC"],
+      test_includes: ["Hemoglobin", "WBC", "RBC"],
       report_time_hrs: 12,
       cost_price: 80,
       selling_price: 120,
@@ -103,7 +103,7 @@ export const ManageRelationshipsModal: React.FC<
       code: "LIP0001234",
       category_id: "cardiology-category",
       sample_type_ids: ["serum"],
-      test_params: ["Cholesterol", "Triglycerides", "HDL", "LDL"],
+      test_includes: ["Cholesterol", "Triglycerides", "HDL", "LDL"],
       report_time_hrs: 24,
       cost_price: 100,
       selling_price: 150,
@@ -129,7 +129,7 @@ export const ManageRelationshipsModal: React.FC<
       code: "BMP0009876",
       category_id: "metabolic-category",
       sample_type_ids: ["serum"],
-      test_params: ["Glucose", "Sodium", "Potassium", "Creatinine"],
+      test_includes: ["Glucose", "Sodium", "Potassium", "Creatinine"],
       report_time_hrs: 18,
       cost_price: 90,
       selling_price: 140,
@@ -184,7 +184,7 @@ export const ManageRelationshipsModal: React.FC<
       );
     }
 
-    toast.success("Lab test relationships updated successfully!");
+    toast.success("Health package relationships updated successfully!");
     onClose();
   };
 
@@ -196,9 +196,11 @@ export const ManageRelationshipsModal: React.FC<
         <div className="flex items-center justify-between px-6 py-4 text-black">
           <div>
             <h3 className="text-[15px] font-semibold">
-              Manage Lab Test Relationships: {test.name}
+              Manage Health Package Relationships: {test.name}
             </h3>
-            <p className="text-xs text-gray-500 mt-1">Test Code: {test.code}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Package Code: {test.code}
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -210,7 +212,7 @@ export const ManageRelationshipsModal: React.FC<
 
         <div className="w-full bg-gray-100 border-b border-gray-200 flex justify-center py-4 shadow-sm">
           <button className="px-4 py-2 text-[13px] font-medium text-black">
-            Related Lab Tests
+            Related Health Packages
           </button>
         </div>
 
@@ -218,12 +220,12 @@ export const ManageRelationshipsModal: React.FC<
           <div className="space-y-6">
             <div>
               <h4 className="text-[14px] font-semibold text-[#161D1F] mb-4">
-                Current Related Lab Tests
+                Current Related Health Packages
               </h4>
               <div className="space-y-3">
                 {relatedTests.length === 0 ? (
                   <div className="text-center py-8 text-gray-500 text-[13px] bg-gray-50 rounded-lg">
-                    No related lab tests added yet
+                    No related health packages added yet
                   </div>
                 ) : (
                   relatedTests.map((relTest) => (
@@ -236,7 +238,7 @@ export const ManageRelationshipsModal: React.FC<
                           {relTest.name}
                         </h5>
                         <div className="flex items-center gap-3 text-[12px] text-gray-500">
-                          <span>Test Code: {relTest.code}</span>
+                          <span>Package Code: {relTest.code}</span>
                           <span>|</span>
                           <span className="flex items-center gap-1">
                             <svg
@@ -276,17 +278,17 @@ export const ManageRelationshipsModal: React.FC<
 
             <div>
               <h4 className="text-[14px] font-semibold text-[#161D1F] mb-4">
-                Add Related Lab Tests
+                Add Related Health Packages
               </h4>
 
               <div className="relative mb-4">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search lab tests by name or code..."
+                  placeholder="Search health packages by name or code..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 placeholder:text-gray-500 rounded-lg text-[13px] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300  placeholder:text-gray-500 rounded-lg text-[13px] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
                 />
               </div>
 
@@ -294,8 +296,8 @@ export const ManageRelationshipsModal: React.FC<
                 {filteredTests.length === 0 ? (
                   <div className="text-center py-8 text-gray-500 text-[13px] bg-gray-50 rounded-lg">
                     {searchTerm
-                      ? "No lab tests found matching your search"
-                      : "All available tests have been added"}
+                      ? "No health packages found matching your search"
+                      : "All available packages have been added"}
                   </div>
                 ) : (
                   filteredTests.map((availTest) => (
@@ -308,7 +310,7 @@ export const ManageRelationshipsModal: React.FC<
                           {availTest.name}
                         </h5>
                         <div className="flex items-center gap-3 text-[12px] text-gray-500">
-                          <span>Test Code: {availTest.code}</span>
+                          <span>Package Code: {availTest.code}</span>
                           <span>|</span>
                           <span className="flex items-center gap-1">
                             <svg
@@ -328,7 +330,7 @@ export const ManageRelationshipsModal: React.FC<
                             {availTest.sample_type_ids?.join(", ") || "N/A"}
                           </span>
                           <span>|</span>
-                          <span>Price: ₹{availTest.selling_price}</span>
+                          <span>Price: €{availTest.selling_price}</span>
                         </div>
                       </div>
                       <button

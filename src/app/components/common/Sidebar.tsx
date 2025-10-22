@@ -160,6 +160,18 @@ const Sidebar = () => {
           name: "Radiology Tests",
           link: "/admin/dashboard/lab_tests/radiology_tests",
         },
+        {
+          name: "Health Packages",
+          link: "/admin/dashboard/lab_tests/health_package",
+        },
+        {
+          name: "Bookings",
+          link: "/admin/dashboard/lab_tests/bookings",
+        },
+        {
+          name: "Phlebotomists",
+          link: "/admin/dashboard/lab_tests/phlebotomists",
+        },
       ],
     },
   ];

@@ -599,10 +599,66 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         </div>
       )}
 
-      {/* Toggle Settings remain the same */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Home Collection */}
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Active Health Package */}
+        <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
+          <input
+            type="checkbox"
+            checked={formData.is_active}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                is_active: e.target.checked,
+              })
+            }
+            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+          />
+          <div>
+            <h4 className="text-xs font-medium text-[#161D1F]">
+              Active Health Package
+            </h4>
+            <p className="text-[12px] text-gray-500">
+              Inactive packages are not displayed on the app
+            </p>
+          </div>
+        </div>
+
+        {/* Popular Health Package */}
+        <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
+          <input
+            type="checkbox"
+            checked={formData.is_featured_lab_test}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                is_featured_lab_test: e.target.checked,
+              })
+            }
+            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+          />
+          <div>
+            <h4 className="text-xs font-medium text-[#161D1F]">
+              Popular Health Package
+            </h4>
+            <p className="text-[12px] text-gray-500">
+              Popular packages are displayed prominently on the app
+            </p>
+          </div>
+        </div>
+
+        {/* Home Collection Available */}
+        <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
+          <input
+            type="checkbox"
+            checked={formData.is_home_collection_available}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                is_home_collection_available: e.target.checked,
+              })
+            }
+            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+          />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
               Home Collection Available
@@ -611,122 +667,52 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
               Enable if sample can be collected at patient's home
             </p>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.is_home_collection_available}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  is_home_collection_available: e.target.checked,
-                })
-              }
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-200 rounded-full peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0088B1]"></div>
-          </label>
         </div>
 
-        {/* Active Lab Test */}
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-          <div>
-            <h4 className="text-xs font-medium text-[#161D1F]">
-              Active Lab Test
-            </h4>
-            <p className="text-[12px] text-gray-500">
-              Inactive tests are not displayed on the app
-            </p>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.is_active}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  is_active: e.target.checked,
-                })
-              }
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-200 rounded-full peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0088B1]"></div>
-          </label>
-        </div>
-
-        {/* Fasting Required */}
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-          <div>
-            <h4 className="text-xs font-medium text-[#161D1F]">
-              Fasting Required
-            </h4>
-            <p className="text-[12px] text-gray-500">
-              Enable if this test requires patients to fast before sample
-              collection
-            </p>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.is_fasting_reqd}
-              onChange={(e) =>
-                setFormData({ ...formData, is_fasting_reqd: e.target.checked })
-              }
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-200 rounded-full peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0088B1]"></div>
-          </label>
-        </div>
-
-        {/* Lab Visit Required */}
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+        {/* Lab/Hospital Visit Required */}
+        <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
+          <input
+            type="checkbox"
+            checked={formData.in_person_visit_reqd}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                in_person_visit_reqd: e.target.checked,
+              })
+            }
+            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+          />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
               Lab/Hospital Visit Required
             </h4>
             <p className="text-[12px] text-gray-500">
-              Enable if patient must visit lab/hospital for this test
+              Enable if patient must visit lab/hospital for this health package
             </p>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.in_person_visit_reqd}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  in_person_visit_reqd: e.target.checked,
-                })
-              }
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-200 rounded-full peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0088B1]"></div>
-          </label>
         </div>
 
-        {/* Featured Lab Test */}
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg sm:col-span-2">
+        {/* Fasting Requirement */}
+        <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
+          <input
+            type="checkbox"
+            checked={formData.is_fasting_reqd}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                is_fasting_reqd: e.target.checked,
+              })
+            }
+            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+          />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
-              Featured Lab Test
+              Fasting Requirement
             </h4>
             <p className="text-[12px] text-gray-500">
-              Featured tests are displayed prominently on the app
+              Enable if this package requires fasting
             </p>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.is_featured_lab_test}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  is_featured_lab_test: e.target.checked,
-                })
-              }
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-200 rounded-full peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0088B1]"></div>
-          </label>
         </div>
       </div>
     </div>

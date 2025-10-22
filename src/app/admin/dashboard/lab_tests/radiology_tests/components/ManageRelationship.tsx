@@ -286,7 +286,7 @@ export const ManageRelationshipsModal: React.FC<
                   placeholder="Search lab tests by name or code..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-[13px] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
+                  className="w-full pl-10 pr-4 py-2.5 border placeholder:text-gray-500 border-gray-300 rounded-lg text-[13px] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
                 />
               </div>
 

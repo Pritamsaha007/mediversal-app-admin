@@ -430,9 +430,7 @@ const PathologyTests: React.FC = () => {
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Test Details
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
-                    Test Code
-                  </th>
+
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Cost Price
                   </th>
@@ -489,9 +487,7 @@ const PathologyTests: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-[#161D1F]">
-                        {test.code}
-                      </td>
+
                       <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-[#161D1F]">
                         ₹{test.cost_price}
                       </td>

@@ -18,19 +18,19 @@ import {
 import toast from "react-hot-toast";
 import { AddTestModal } from "./components/AddTest";
 import { ViewTestModal } from "./components/ViewTest";
-import { RadiologyTest } from "./types";
+import { HealthPackagesType } from "./types";
 
-interface RadiologyStats {
+interface HealthPackagesStats {
   totalTests: number;
   activeTests: number;
   totalCategories: number;
 }
 
-const RadiologyTests: React.FC = () => {
+const HealthPackages: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
-  const [tests, setTests] = useState<RadiologyTest[]>([]);
-  const [filteredTests, setFilteredTests] = useState<RadiologyTest[]>([]);
+  const [tests, setTests] = useState<HealthPackagesType[]>([]);
+  const [filteredTests, setFilteredTests] = useState<HealthPackagesType[]>([]);
   const [openDropdown, setOpenDropdown] = useState<null | "status">(null);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
   const [testActionDropdown, setTestActionDropdown] = useState<number | null>(
@@ -39,29 +39,42 @@ const RadiologyTests: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showAddTestModal, setShowAddTestModal] = useState(false);
   const [showViewTestModal, setShowViewTestModal] = useState(false);
-  const [selectedTest, setSelectedTest] = useState<RadiologyTest | null>(null);
-  const [editingTest, setEditingTest] = useState<RadiologyTest | null>(null);
+  const [selectedTest, setSelectedTest] = useState<HealthPackagesType | null>(
+    null
+  );
+  const [editingTest, setEditingTest] = useState<HealthPackagesType | null>(
+    null
+  );
 
-  const dummyRadiologyTests: RadiologyTest[] = [
+  const dummyHealthPackages: HealthPackagesType[] = [
     {
       id: "60a12942-a71a-405c-af1c-caf474bd954a",
-      name: "MRI Lumbo-Sacral Spine (LS)",
-      description: "Measures overall health and detects disorders.",
-      code: "CBC001",
+      name: "Complete Health Checkup",
+      description: "Comprehensive health screening package",
+      code: "HCP001",
       category_id: "1652e599-4880-461c-840c-15f3ea00de1d",
       sample_type_ids: ["f240088b-7ece-421d-b874-8c0562432fdc"],
-      test_params: ["Hemoglobin", "WBC"],
-      report_time_hrs: 24,
-      cost_price: 100,
-      selling_price: 150,
-      preparation_instructions: ["Fast for 8 hours before test"],
-      precautions: ["Avoid medication X before test"],
+      test_includes: [
+        "Blood Test",
+        "Urine Test",
+        "Liver Function",
+        "Kidney Function",
+        "Thyroid Test",
+        "Diabetes Screening",
+        "Cholesterol",
+        "Vitamin D",
+      ],
+      report_time_hrs: 48,
+      cost_price: 1200,
+      selling_price: 1500,
+      preparation_instructions: ["Fast for 10-12 hours before test"],
+      precautions: ["Avoid alcohol for 24 hours"],
       is_fasting_reqd: true,
-      in_person_visit_reqd: false,
+      in_person_visit_reqd: true,
       is_featured_lab_test: true,
       is_home_collection_available: true,
       is_active: true,
-      image_url: "https://example.com/images/cbc_test.png",
+      image_url: "https://example.com/images/health_checkup.png",
       is_deleted: false,
       created_by: "3fc901f2-45f4-4ee6-a351-e05721be6522",
       updated_by: "3fc901f2-45f4-4ee6-a351-e05721be6522",
@@ -74,9 +87,36 @@ const RadiologyTests: React.FC = () => {
     },
   ];
 
+  // Function to display tests with +X more chips
+  const renderTestsIncluded = (
+    testParams: string[],
+    maxVisible: number = 3
+  ) => {
+    const visibleTests = testParams.slice(0, maxVisible);
+    const remainingCount = testParams.length - maxVisible;
+
+    return (
+      <div className="flex flex-wrap gap-1">
+        {visibleTests.map((test, index) => (
+          <span
+            key={index}
+            className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-[#E8F4F7] text-black "
+          >
+            {test}
+          </span>
+        ))}
+        {remainingCount > 0 && (
+          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-[#E8F4F7] text-black">
+            +{remainingCount} more
+          </span>
+        )}
+      </div>
+    );
+  };
+
   const statusOptions = ["All Status", "Active", "Inactive"];
 
-  const generateStats = (): RadiologyStats => {
+  const generateStats = (): HealthPackagesStats => {
     const totalTests = tests.length;
     const activeTests = tests.filter((t) => t.is_active).length;
     const totalCategories = new Set(tests.map((test) => test.category_id)).size;
@@ -92,14 +132,14 @@ const RadiologyTests: React.FC = () => {
   useEffect(() => {
     setLoading(true);
     setTimeout(() => {
-      setTests(dummyRadiologyTests);
-      setFilteredTests(dummyRadiologyTests);
+      setTests(dummyHealthPackages);
+      setFilteredTests(dummyHealthPackages);
       setLoading(false);
     }, 1000);
   }, []);
 
   useEffect(() => {
-    let filtered = dummyRadiologyTests;
+    let filtered = dummyHealthPackages;
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -201,8 +241,8 @@ const RadiologyTests: React.FC = () => {
     }
   };
 
-  const handleAddTest = (newTestData: Omit<RadiologyTest, "id">) => {
-    const newTest: RadiologyTest = {
+  const handleAddTest = (newTestData: Omit<HealthPackagesType, "id">) => {
+    const newTest: HealthPackagesType = {
       ...newTestData,
       id: Date.now().toString(),
     };
@@ -211,7 +251,7 @@ const RadiologyTests: React.FC = () => {
     toast.success("Test added successfully!");
   };
 
-  const handleUpdateTest = (updatedTest: RadiologyTest) => {
+  const handleUpdateTest = (updatedTest: HealthPackagesType) => {
     const updatedTests = tests.map((test) =>
       test.id === updatedTest.id ? updatedTest : test
     );
@@ -220,7 +260,7 @@ const RadiologyTests: React.FC = () => {
     toast.success("Test updated successfully!");
   };
 
-  const handleTestAction = async (action: string, test: RadiologyTest) => {
+  const handleTestAction = async (action: string, test: HealthPackagesType) => {
     setTestActionDropdown(null);
 
     switch (action) {
@@ -306,7 +346,7 @@ const RadiologyTests: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
-            Radiology Tests Management
+            Health Packages Tests Management
           </h1>
           <div className="flex gap-3">
             <button
@@ -364,7 +404,7 @@ const RadiologyTests: React.FC = () => {
             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
             <input
               type="text"
-              placeholder="Search by test name, code..."
+              placeholder="Search by test name, included tests..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
@@ -405,7 +445,7 @@ const RadiologyTests: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
-              All Radiology Tests
+              All HealthPackages Tests
               <span className="text-[8px] text-[#899193] font-normal ml-2">
                 {filteredTests.length} Tests
               </span>
@@ -430,7 +470,9 @@ const RadiologyTests: React.FC = () => {
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Test Details
                   </th>
-
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                    Tests Included
+                  </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Cost Price
                   </th>
@@ -480,14 +522,16 @@ const RadiologyTests: React.FC = () => {
                             {test.name}
                           </div>
                           <div className="flex items-center gap-1">
-                            <Activity className="text-gray-500 w-4 h-4" />
+                            <Droplets className="text-gray-500 w-4 h-4" />
                             <span className="text-xs text-gray-500">
                               {test.description}
                             </span>
                           </div>
                         </div>
                       </td>
-
+                      <td className="px-6 py-4">
+                        {renderTestsIncluded(test.test_includes || [])}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-[#161D1F]">
                         ₹{test.cost_price}
                       </td>
@@ -556,4 +600,4 @@ const RadiologyTests: React.FC = () => {
   );
 };
 
-export default RadiologyTests;
+export default HealthPackages;
