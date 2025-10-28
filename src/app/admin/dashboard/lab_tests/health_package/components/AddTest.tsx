@@ -2,21 +2,24 @@
 import React, { useEffect, useState } from "react";
 import { X, Upload, Plus, ChevronDown, Search } from "lucide-react";
 import toast from "react-hot-toast";
-import { HealthPackagesType } from "../types";
+
+import { useAdminStore } from "@/app/store/adminStore";
+import {
+  createHealthPackage,
+  updateHealthPackage,
+  uploadFile,
+  searchPathologyTests,
+  fetchCategories,
+} from "../../services/index";
+import { PathologyTest } from "../../pathology_tests/types";
+import { HealthPackage } from "../types";
 
 interface AddTestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddTest: (test: Omit<HealthPackagesType, "id">) => void;
-  onUpdateTest?: (test: HealthPackagesType) => void;
-  editTest?: HealthPackagesType | null;
-}
-
-interface TestItem {
-  id: string;
-  name: string;
-  category: string;
-  sampleType: string;
+  onAddTest: (test: HealthPackage) => void;
+  onUpdateTest?: (test: HealthPackage) => void;
+  editTest?: HealthPackage | null;
 }
 
 export const AddTestModal: React.FC<AddTestModalProps> = ({
@@ -29,217 +32,309 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    code: "",
-    category_id: "",
-    sample_type_ids: [] as string[],
-    test_includes: [] as string[],
-    report_time_hrs: 0,
+    image_url: "",
+    linked_test_ids: [] as string[],
     cost_price: 0,
     selling_price: 0,
-    discounted_price: 0,
     preparation_instructions: [] as string[],
-    precautions: [] as string[],
+    is_active: true,
+    is_popular: false,
+    is_deleted: false,
+    related_health_package_ids: [] as string[],
     is_fasting_reqd: false,
     in_person_visit_reqd: false,
-    is_featured_lab_test: false,
-    is_home_collection_available: false,
-    is_active: true,
-    image_url: "",
-    modality_type_id: "",
-    inspection_parts_ids: [] as string[],
-    related_lab_test_ids: [] as string[],
+    is_home_collection_available: true,
   });
 
   const [activeSection, setActiveSection] = useState<"basic" | "settings">(
     "basic"
   );
-  const [showReportTimeDropdown, setShowReportTimeDropdown] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTests, setSelectedTests] = useState<TestItem[]>([]);
+  const [selectedTests, setSelectedTests] = useState<PathologyTest[]>([]);
+  const [availableTests, setAvailableTests] = useState<PathologyTest[]>([]);
+  const [allAvailableTests, setAllAvailableTests] = useState<PathologyTest[]>(
+    []
+  );
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [activeCategory, setActiveCategory] = useState("Pathology");
+  const { token } = useAdminStore();
 
-  // Mock data for available tests
-  const availableTests: TestItem[] = [
-    {
-      id: "LFT0007890",
-      name: "Complete Blood Count (CBC)",
-      category: "Pathology",
-      sampleType: "Serum, Plasma",
-    },
-    {
-      id: "KFT0012345",
-      name: "Kidney Function Test",
-      category: "Pathology",
-      sampleType: "Serum, Urine",
-    },
-    {
-      id: "BGT0023456",
-      name: "Blood Glucose Test",
-      category: "Pathology",
-      sampleType: "Plasma, Capillary",
-    },
-    {
-      id: "LFT0034567",
-      name: "Liver Function Test",
-      category: "Pathology",
-      sampleType: "Serum",
-    },
-    {
-      id: "TFT0045678",
-      name: "Thyroid Function Test",
-      category: "Pathology",
-      sampleType: "Serum",
-    },
-    {
-      id: "LIP0056789",
-      name: "Lipid Profile",
-      category: "Pathology",
-      sampleType: "Serum",
-    },
-    {
-      id: "XRAY001234",
-      name: "Chest X-Ray",
-      category: "Radiology",
-      sampleType: "N/A",
-    },
-    {
-      id: "USG002345",
-      name: "Abdominal Ultrasound",
-      category: "Radiology",
-      sampleType: "N/A",
-    },
-    { id: "ECG003456", name: "ECG", category: "Cardiology", sampleType: "N/A" },
-    {
-      id: "ECHO004567",
-      name: "Echocardiogram",
-      category: "Cardiology",
-      sampleType: "N/A",
-    },
-    {
-      id: "STRESS005678",
-      name: "Stress Test",
-      category: "Cardiology",
-      sampleType: "N/A",
-    },
-    {
-      id: "MRI006789",
-      name: "MRI Scan",
-      category: "Radiology",
-      sampleType: "N/A",
-    },
-    {
-      id: "CT007890",
-      name: "CT Scan",
-      category: "Radiology",
-      sampleType: "N/A",
-    },
-  ];
+  const fetchAllAvailableTests = async () => {
+    if (!token) return;
 
-  const reportTimeOptions = [6, 12, 16, 24, 32, 48, 64, 72];
-  const categories = ["Pathology", "Radiology"];
+    setLoading(true);
+    try {
+      const categoryData = await fetchCategories(token);
+      const pathologyId = categoryData.roles[2]?.id || "";
+      const radiologyId = categoryData.roles[11]?.id || "";
+
+      const pathologyPayload = {
+        start: 0,
+        max: 100,
+        search_category: pathologyId,
+        search: searchTerm || null,
+        filter_sample_type_ids: null,
+        filter_active: true,
+        filter_featured: null,
+        sort_by: "name",
+        sort_order: "ASC" as const,
+      };
+
+      const radiologyPayload = {
+        start: 0,
+        max: 100,
+        search_category: radiologyId,
+        search: searchTerm || null,
+        filter_sample_type_ids: null,
+        filter_active: true,
+        filter_featured: null,
+        sort_by: "name",
+        sort_order: "ASC" as const,
+      };
+
+      const [pathologyResponse, radiologyResponse] = await Promise.all([
+        searchPathologyTests(pathologyPayload, token),
+        searchPathologyTests(radiologyPayload, token),
+      ]);
+
+      const allTests = [
+        ...(pathologyResponse.labTests || []),
+        ...(radiologyResponse.labTests || []),
+      ];
+
+      setAllAvailableTests(allTests);
+
+      const filteredTests = allTests.filter((test) =>
+        activeCategory === "Pathology"
+          ? test.category_id === pathologyId
+          : test.category_id === radiologyId
+      );
+
+      setAvailableTests(filteredTests);
+    } catch (error) {
+      console.error("Error fetching lab tests:", error);
+      toast.error("Failed to load lab tests");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterAvailableTestsByCategory = () => {
+    if (!token || allAvailableTests.length === 0) return;
+
+    const categoryData = fetchCategories(token).then((categoryData) => {
+      const pathologyId = categoryData.roles[2]?.id || "";
+      const radiologyId = categoryData.roles[11]?.id || "";
+
+      const filteredTests = allAvailableTests.filter((test) =>
+        activeCategory === "Pathology"
+          ? test.category_id === pathologyId
+          : test.category_id === radiologyId
+      );
+
+      setAvailableTests(filteredTests);
+    });
+  };
 
   useEffect(() => {
-    if (editTest && isOpen) {
+    if (isOpen && token) {
+      fetchAllAvailableTests();
+    }
+  }, [isOpen, token]);
+
+  useEffect(() => {
+    if (searchTerm) {
+      const delaySearch = setTimeout(() => {
+        fetchAllAvailableTests();
+      }, 500);
+
+      return () => clearTimeout(delaySearch);
+    } else if (isOpen && token) {
+      fetchAllAvailableTests();
+    }
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (activeCategory && allAvailableTests.length > 0) {
+      filterAvailableTestsByCategory();
+    }
+  }, [activeCategory]);
+
+  useEffect(() => {
+    if (editTest && isOpen && allAvailableTests.length > 0) {
       setFormData({
-        name: editTest.name,
-        description: editTest.description,
-        code: editTest.code,
-        category_id: editTest.category_id,
-        sample_type_ids: editTest.sample_type_ids || [],
-        test_includes: editTest.test_includes || [],
-        report_time_hrs: editTest.report_time_hrs,
-        cost_price: editTest.cost_price,
-        selling_price: editTest.selling_price,
-        discounted_price: editTest.selling_price * 0.9,
-        preparation_instructions: editTest.preparation_instructions,
-        precautions: editTest.precautions || [],
-        is_fasting_reqd: editTest.is_fasting_reqd,
-        in_person_visit_reqd: editTest.in_person_visit_reqd,
-        is_featured_lab_test: editTest.is_featured_lab_test,
-        is_home_collection_available: editTest.is_home_collection_available,
-        is_active: editTest.is_active,
+        name: editTest.name || "",
+        description: editTest.description || "",
         image_url: editTest.image_url || "",
-        modality_type_id: editTest.modality_type_id || "",
-        inspection_parts_ids: editTest.inspection_parts_ids || [],
-        related_lab_test_ids: editTest.related_lab_test_ids || [],
+        linked_test_ids: editTest.linked_test_ids || [],
+        cost_price: editTest.cost_price || 0,
+        selling_price: editTest.selling_price || 0,
+        preparation_instructions: editTest.prepare_instructions || [],
+        is_active: editTest.is_active !== undefined ? editTest.is_active : true,
+        is_popular: editTest.is_popular || false,
+        is_deleted: editTest.is_deleted || false,
+
+        related_health_package_ids: editTest.related_health_package_ids || [],
+        is_fasting_reqd: editTest.is_fasting_reqd || false,
+        in_person_visit_reqd: editTest.in_person_visit_reqd || false,
+        is_home_collection_available:
+          editTest.is_home_collection_available !== undefined
+            ? editTest.is_home_collection_available
+            : true,
       });
 
-      // Set selected tests based on edit data
-      const selected = availableTests.filter((test) =>
-        editTest.test_includes?.some((includedTest) =>
-          includedTest.toLowerCase().includes(test.name.toLowerCase())
-        )
-      );
-      setSelectedTests(selected);
+      if (editTest.linked_test_ids && editTest.linked_test_ids.length > 0) {
+        const selected = allAvailableTests.filter((test) =>
+          editTest.linked_test_ids?.includes(test.id)
+        );
+        setSelectedTests(selected);
+      }
     } else if (isOpen) {
       setFormData({
         name: "",
         description: "",
-        code: "",
-        category_id: "",
-        sample_type_ids: [],
-        test_includes: [],
-        report_time_hrs: 0,
+        image_url: "",
+        linked_test_ids: [],
         cost_price: 0,
         selling_price: 0,
-        discounted_price: 0,
         preparation_instructions: [],
-        precautions: [],
+        is_active: true,
+        is_popular: false,
+        is_deleted: false,
+        // New fields
+        related_health_package_ids: [],
         is_fasting_reqd: false,
         in_person_visit_reqd: false,
-        is_featured_lab_test: false,
-        is_home_collection_available: false,
-        is_active: true,
-        image_url: "",
-        modality_type_id: "",
-        inspection_parts_ids: [],
-        related_lab_test_ids: [],
+        is_home_collection_available: true,
       });
       setSelectedTests([]);
+      setSearchTerm("");
     }
-  }, [editTest, isOpen]);
+  }, [editTest, isOpen, allAvailableTests]);
 
-  const handleSelectReportTime = (hours: number) => {
-    setFormData({
-      ...formData,
-      report_time_hrs: hours,
-    });
-    setShowReportTimeDropdown(false);
-  };
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // Handle image upload logic here
-      const imageUrl = URL.createObjectURL(file);
-      setFormData({
-        ...formData,
-        image_url: imageUrl,
-      });
-      toast.success("Image uploaded successfully");
+    if (!file) return;
+
+    try {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please upload a valid image file.");
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size should be less than 5MB.");
+        return;
+      }
+
+      setLoading(true);
+
+      const fileContent = await fileToBase64(file);
+
+      const bucketName =
+        process.env.NODE_ENV === "development"
+          ? process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_DEV
+          : process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_PROD;
+
+      if (!bucketName) {
+        throw new Error("S3 bucket name is not configured properly.");
+      }
+
+      const uploadRequest = {
+        bucketName,
+        folderPath: "healthPackages",
+        fileName: file.name,
+        fileContent,
+      };
+
+      const uploadRes = await uploadFile(token!, uploadRequest);
+
+      setFormData((prev) => ({
+        ...prev,
+        image_url: uploadRes.result,
+      }));
+
+      toast.success("Image uploaded successfully!");
+    } catch (error: any) {
+      console.error("Image upload failed:", error);
+      toast.error(error.message || "Failed to upload image");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAddTest = (test: TestItem) => {
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+
+  const handleAddTest = (test: PathologyTest) => {
     if (!selectedTests.some((t) => t.id === test.id)) {
       setSelectedTests([...selectedTests, test]);
+      setFormData((prev) => ({
+        ...prev,
+        linked_test_ids: [...prev.linked_test_ids, test.id],
+      }));
     }
   };
 
   const handleRemoveTest = (testId: string) => {
     setSelectedTests(selectedTests.filter((test) => test.id !== testId));
+    setFormData((prev) => ({
+      ...prev,
+      linked_test_ids: prev.linked_test_ids.filter((id) => id !== testId),
+    }));
   };
 
-  const filteredTests = availableTests.filter(
-    (test) =>
-      (activeCategory === "All" || test.category === activeCategory) &&
-      (test.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        test.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        test.id.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const isTestSelected = (testId: string) => {
+    return selectedTests.some((test) => test.id === testId);
+  };
 
-  const handleSubmit = () => {
-    if (!formData.name || !formData.report_time_hrs) {
+  const handleAddInstruction = () => {
+    const instruction = document.getElementById(
+      "instruction-input"
+    ) as HTMLInputElement;
+    if (instruction?.value.trim()) {
+      setFormData({
+        ...formData,
+        preparation_instructions: [
+          ...formData.preparation_instructions,
+          instruction.value.trim(),
+        ],
+      });
+      instruction.value = "";
+    }
+  };
+
+  const handleRemoveInstruction = (instruction: string) => {
+    setFormData({
+      ...formData,
+      preparation_instructions: formData.preparation_instructions.filter(
+        (inst) => inst !== instruction
+      ),
+    });
+  };
+
+  const handleAddCommonInstruction = (instruction: string) => {
+    if (!formData.preparation_instructions.includes(instruction)) {
+      setFormData({
+        ...formData,
+        preparation_instructions: [
+          ...formData.preparation_instructions,
+          instruction,
+        ],
+      });
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.description) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -249,74 +344,89 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       return;
     }
 
-    // Convert selected tests to test_includes format
-    const testIncludes = selectedTests.map((test) => test.name);
+    setSubmitting(true);
+    try {
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        image_url: formData.image_url,
+        linked_test_ids: formData.linked_test_ids,
+        cost_price: formData.cost_price,
+        selling_price: formData.selling_price,
+        preparation_instructions: formData.preparation_instructions,
+        is_active: Boolean(formData.is_active),
+        is_popular: Boolean(formData.is_popular),
+        is_deleted: Boolean(formData.is_deleted),
+        // New fields
+        related_health_package_ids: formData.related_health_package_ids,
+        is_fasting_reqd: Boolean(formData.is_fasting_reqd),
+        in_person_visit_reqd: Boolean(formData.in_person_visit_reqd),
+        is_home_collection_available: Boolean(
+          formData.is_home_collection_available
+        ),
+      };
 
-    const submitData = {
-      ...formData,
-      test_includes: testIncludes,
-    };
+      console.log("Submitting health package:", payload);
 
-    if (editTest && onUpdateTest) {
-      onUpdateTest({
-        ...submitData,
-        id: editTest.id,
-        is_deleted: editTest.is_deleted || false,
-        created_by: editTest.created_by,
-        updated_by: editTest.updated_by,
-      });
-    } else {
-      onAddTest({
-        ...submitData,
-        is_deleted: false,
-        created_by: "current-user-id",
-        updated_by: "current-user-id",
-      });
+      if (editTest && onUpdateTest) {
+        const updatePayload = {
+          id: editTest.id,
+          ...payload,
+          prepare_instructions: payload.preparation_instructions,
+        };
+
+        const response = await updateHealthPackage(updatePayload, token);
+        onUpdateTest(updatePayload as HealthPackage);
+        toast.success("Health package updated successfully!");
+      } else {
+        const response = await createHealthPackage(
+          {
+            ...payload,
+            prepare_instructions: payload.preparation_instructions,
+          },
+          token
+        );
+
+        const newPackage: HealthPackage = {
+          id: response.healthPackageId,
+          ...payload,
+          prepare_instructions: payload.preparation_instructions,
+        };
+        onAddTest(newPackage);
+        toast.success("Health package created successfully!");
+      }
+      onClose();
+    } catch (error: any) {
+      console.error("Error saving health package:", error);
+      toast.error(error.message || "Failed to save health package");
+    } finally {
+      setSubmitting(false);
     }
-    onClose();
   };
 
   const handleReset = () => {
     setFormData({
       name: "",
       description: "",
-      code: "",
-      category_id: "",
-      sample_type_ids: [],
-      test_includes: [],
-      report_time_hrs: 0,
+      image_url: "",
+      linked_test_ids: [],
       cost_price: 0,
       selling_price: 0,
-      discounted_price: 0,
       preparation_instructions: [],
-      precautions: [],
+      is_active: true,
+      is_popular: false,
+      is_deleted: false,
+      // New fields
+      related_health_package_ids: [],
       is_fasting_reqd: false,
       in_person_visit_reqd: false,
-      is_featured_lab_test: false,
-      is_home_collection_available: false,
-      is_active: true,
-      image_url: "",
-      modality_type_id: "",
-      inspection_parts_ids: [],
-      related_lab_test_ids: [],
+      is_home_collection_available: true,
     });
     setSelectedTests([]);
+    setSearchTerm("");
   };
 
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".dropdown-container")) {
-        setShowReportTimeDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+  const categories = ["Pathology", "Radiology"];
 
   if (!isOpen) return null;
 
@@ -351,61 +461,18 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         </div>
       </div>
 
-      {/* Health Package Name and Report Preparation Time in same row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Health Package Name */}
-        <div>
-          <label className="block text-xs font-medium text-[#161D1F] mb-2">
-            * Health Package Name
-          </label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-600"
-            placeholder="Please enter Package Name"
-          />
-        </div>
-
-        {/* Report Preparation Time */}
-        <div>
-          <label className="block text-xs font-medium text-[#161D1F] mb-2">
-            * Report Preparation Time (Hrs.)
-          </label>
-          <div className="dropdown-container relative">
-            <button
-              type="button"
-              onClick={() => setShowReportTimeDropdown(!showReportTimeDropdown)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-left bg-white flex items-center justify-between"
-            >
-              <span
-                className={
-                  formData.report_time_hrs ? "text-black" : "text-gray-600"
-                }
-              >
-                {formData.report_time_hrs
-                  ? `${formData.report_time_hrs} hours`
-                  : "e.g., 6, 12, 32"}
-              </span>
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            </button>
-
-            {showReportTimeDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {reportTimeOptions.map((hours) => (
-                  <button
-                    key={hours}
-                    type="button"
-                    onClick={() => handleSelectReportTime(hours)}
-                    className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-400"
-                  >
-                    {hours} hours
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+      {/* Health Package Name */}
+      <div>
+        <label className="block text-xs font-medium text-[#161D1F] mb-2">
+          * Health Package Name
+        </label>
+        <input
+          type="text"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-600"
+          placeholder="Please enter Package Name"
+        />
       </div>
 
       {/* Select Tests Section */}
@@ -413,8 +480,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         <h4 className="text-xs font-medium text-[#161D1F] mb-3">
           Select tests to include
         </h4>
-
-        {/* Search Bar */}
 
         {/* Category Tabs */}
         <div className="flex border-b border-gray-200 mb-4">
@@ -432,6 +497,8 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             </button>
           ))}
         </div>
+
+        {/* Search Bar */}
         <div className="relative mb-4">
           <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
@@ -446,36 +513,53 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         {/* Tests Table */}
         <div className="border border-gray-200 rounded-lg overflow-hidden">
           <div className="max-h-60 overflow-y-auto">
-            {filteredTests.map((test) => (
-              <div
-                key={test.id}
-                className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
-              >
-                <div className="p-3 flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="text-xs font-medium text-[#161D1F]">
-                      {test.name}
-                    </div>
-                    <div className="text-[10px] text-gray-500 mt-1">
-                      Test ID: {test.id} | {test.sampleType}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleAddTest(test)}
-                    disabled={selectedTests.some((t) => t.id === test.id)}
-                    className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs ${
-                      selectedTests.some((t) => t.id === test.id)
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "text-[#0088B1] hover:bg-[#00729A]"
-                    }`}
-                  >
-                    <Plus className="w-3 h-3" />
-                    Add
-                  </button>
-                </div>
+            {loading ? (
+              <div className="p-4 text-center text-xs text-gray-500">
+                Loading tests...
               </div>
-            ))}
+            ) : availableTests.length > 0 ? (
+              availableTests.map((test) => (
+                <div
+                  key={test.id}
+                  className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+                >
+                  <div className="p-3 flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="text-xs font-medium text-[#161D1F]">
+                        {test.name}
+                      </div>
+                      <div className="text-[10px] text-gray-500 mt-1">
+                        Code: {test.code} | Report Time: {test.report_time_hrs}{" "}
+                        hrs
+                      </div>
+                      {test.sample_type_ids &&
+                        test.sample_type_ids.length > 0 && (
+                          <div className="text-[10px] text-gray-500">
+                            Sample: {test.sample_type_ids.join(", ")}
+                          </div>
+                        )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAddTest(test)}
+                      disabled={isTestSelected(test.id)}
+                      className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs ${
+                        isTestSelected(test.id)
+                          ? "text-gray-300  cursor-not-allowed"
+                          : "text-[#0088B1] "
+                      }`}
+                    >
+                      <Plus className="w-3 h-3" />
+                      Add
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-4 text-center text-xs text-gray-500">
+                No tests found
+              </div>
+            )}
           </div>
         </div>
 
@@ -496,7 +580,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                       {test.name}
                     </div>
                     <div className="text-[10px] text-gray-500">
-                      Test ID: {test.id} | {test.category}
+                      Code: {test.code} | Price: ₹{test.selling_price}
                     </div>
                   </div>
                   <button
@@ -517,7 +601,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
   const renderSettings = () => (
     <div className="space-y-6">
-      {/* Pricing Details */}
       <div className="p-4 rounded-lg border border-gray-200">
         <h4 className="text-xs font-medium text-[#161D1F] mb-4">
           Pricing Details
@@ -525,16 +608,15 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-medium text-[#161D1F] mb-2">
-              Selling Price (€)
+              Cost Price
             </label>
             <input
               type="number"
-              value={formData.selling_price}
+              value={formData.cost_price === 0 ? "" : formData.cost_price}
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  selling_price: parseFloat(e.target.value) || 0,
-                  discounted_price: parseFloat(e.target.value) * 0.9, // Auto-calculate 10% discount
+                  cost_price: parseFloat(e.target.value) || 0,
                 })
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-600"
@@ -543,15 +625,15 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
           <div>
             <label className="block text-xs font-medium text-[#161D1F] mb-2">
-              Discounted Price (€)
+              Selling Price
             </label>
             <input
               type="number"
-              value={formData.discounted_price}
+              value={formData.selling_price === 0 ? "" : formData.selling_price}
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  discounted_price: parseFloat(e.target.value) || 0,
+                  selling_price: parseFloat(e.target.value) || 0,
                 })
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-600"
@@ -561,10 +643,9 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         </div>
       </div>
 
-      {/* Package Description */}
       <div>
         <label className="block text-xs font-medium text-[#161D1F] mb-2">
-          Package Description
+          * Package Description
         </label>
         <textarea
           value={formData.description}
@@ -573,34 +654,82 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           }
           rows={4}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-600 text-black"
-          placeholder="Briefly describe package details"
+          placeholder="Briefly describe package details and benefits"
         />
       </div>
 
-      {/* Preparation Instructions */}
       <div>
         <label className="block text-xs font-medium text-[#161D1F] mb-2">
           Preparation Instructions
         </label>
-        <textarea
-          value={formData.preparation_instructions.join("\n")}
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              preparation_instructions: e.target.value
-                .split("\n")
-                .filter((line) => line.trim()),
-            })
-          }
-          rows={3}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-600 text-black"
-          placeholder="Specify some health package preparation instructions/notes"
-        />
+
+        <div className="mb-3">
+          <p className="text-xs text-gray-600 mb-2">
+            Quick add common instructions:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              "Fast for 8-12 hours before the test",
+              "Avoid alcohol for 24 hours before the test",
+              "No strenuous exercise before the test",
+              "Drink plenty of water before the test",
+              "Continue prescribed medications unless instructed otherwise",
+            ].map((instruction) => (
+              <button
+                key={instruction}
+                type="button"
+                onClick={() => handleAddCommonInstruction(instruction)}
+                className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs hover:bg-gray-200"
+              >
+                + {instruction}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <input
+              id="instruction-input"
+              type="text"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-600 text-black"
+              placeholder="Add custom instruction"
+              onKeyPress={(e) => e.key === "Enter" && handleAddInstruction()}
+            />
+            <button
+              type="button"
+              onClick={handleAddInstruction}
+              className="px-3 py-2 bg-[#0088B1] text-white rounded-lg text-xs hover:bg-[#00729A]"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {formData.preparation_instructions.length > 0 && (
+          <div className="mt-3">
+            <div className="flex flex-wrap gap-2">
+              {formData.preparation_instructions.map((instruction, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-1 bg-[#0088B1] text-white px-3 py-1.5 rounded-full"
+                >
+                  <span className="text-xs font-medium">{instruction}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveInstruction(instruction)}
+                    className="text-white hover:text-gray-200 ml-1"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Toggle Settings - Checkbox Style */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Active Health Package */}
         <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
           <input
             type="checkbox"
@@ -623,15 +752,14 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
-        {/* Popular Health Package */}
         <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
           <input
             type="checkbox"
-            checked={formData.is_featured_lab_test}
+            checked={formData.is_popular}
             onChange={(e) =>
               setFormData({
                 ...formData,
-                is_featured_lab_test: e.target.checked,
+                is_popular: e.target.checked,
               })
             }
             className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -645,9 +773,51 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             </p>
           </div>
         </div>
+        <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
+          <input
+            type="checkbox"
+            checked={formData.is_fasting_reqd}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                is_fasting_reqd: e.target.checked,
+              })
+            }
+            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+          />
+          <div>
+            <h4 className="text-xs font-medium text-[#161D1F]">
+              Fasting Required
+            </h4>
+            <p className="text-[10px] text-gray-500">
+              Patient needs to fast before test
+            </p>
+          </div>
+        </div>
 
-        {/* Home Collection Available */}
-        <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
+        <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
+          <input
+            type="checkbox"
+            checked={formData.in_person_visit_reqd}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                in_person_visit_reqd: e.target.checked,
+              })
+            }
+            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+          />
+          <div>
+            <h4 className="text-xs font-medium text-[#161D1F]">
+              In-person Visit Required
+            </h4>
+            <p className="text-[10px] text-gray-500">
+              Patient must visit facility
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
           <input
             type="checkbox"
             checked={formData.is_home_collection_available}
@@ -663,54 +833,8 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             <h4 className="text-xs font-medium text-[#161D1F]">
               Home Collection Available
             </h4>
-            <p className="text-[12px] text-gray-500">
-              Enable if sample can be collected at patient's home
-            </p>
-          </div>
-        </div>
-
-        {/* Lab/Hospital Visit Required */}
-        <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
-          <input
-            type="checkbox"
-            checked={formData.in_person_visit_reqd}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                in_person_visit_reqd: e.target.checked,
-              })
-            }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-          />
-          <div>
-            <h4 className="text-xs font-medium text-[#161D1F]">
-              Lab/Hospital Visit Required
-            </h4>
-            <p className="text-[12px] text-gray-500">
-              Enable if patient must visit lab/hospital for this health package
-            </p>
-          </div>
-        </div>
-
-        {/* Fasting Requirement */}
-        <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
-          <input
-            type="checkbox"
-            checked={formData.is_fasting_reqd}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                is_fasting_reqd: e.target.checked,
-              })
-            }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-          />
-          <div>
-            <h4 className="text-xs font-medium text-[#161D1F]">
-              Fasting Requirement
-            </h4>
-            <p className="text-[12px] text-gray-500">
-              Enable if this package requires fasting
+            <p className="text-[10px] text-gray-500">
+              Sample collection at home
             </p>
           </div>
         </div>
@@ -733,7 +857,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </button>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="flex border-b border-gray-200">
           <button
             onClick={() => setActiveSection("basic")}
@@ -790,9 +913,16 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             ) : (
               <button
                 onClick={handleSubmit}
-                className="px-6 py-2 bg-[#0088B1] text-white rounded-lg text-xs hover:bg-[#00729A]"
+                disabled={submitting}
+                className={`px-6 py-2 bg-[#0088B1] text-white rounded-lg text-xs hover:bg-[#00729A] ${
+                  submitting ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
-                {editTest ? "Update Package" : "Add Package"}
+                {submitting
+                  ? "Saving..."
+                  : editTest
+                  ? "Update Package"
+                  : "Add Package"}
               </button>
             )}
           </div>

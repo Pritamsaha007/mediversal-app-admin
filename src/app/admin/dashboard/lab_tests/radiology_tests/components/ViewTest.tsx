@@ -10,6 +10,7 @@ interface ViewTestModalProps {
   onClose: () => void;
   test: RadiologyTest | null;
   onEdit?: (test: RadiologyTest) => void;
+  onUpdateTest?: (test: RadiologyTest) => void;
 }
 
 export const ViewTestModal: React.FC<ViewTestModalProps> = ({
@@ -17,6 +18,7 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
   onClose,
   test,
   onEdit,
+  onUpdateTest,
 }) => {
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
 
@@ -38,14 +40,23 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
         <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h3 className="text-[16px] font-semibold text-[#161D1F]">
-              Lab Test Details
+              Radiology Test Details
             </h3>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              <X className="w-5 h-5 text-[#899193]" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleEdit}
+                className="p-2 text-gray-500 hover:text-blue-500 hover:bg-gray-100 rounded-lg"
+                title="Edit Test"
+              >
+                <Edit className="w-5 h-5" />
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="w-5 h-5 text-[#899193]" />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-6">
@@ -56,7 +67,7 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
                 </h1>
                 <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
                   <span>Test Code: {test.code}</span>
-                  <span>|</span>
+                  {/* <span>|</span>
                   <span className="flex items-center gap-1">
                     <svg
                       className="w-4 h-4"
@@ -71,8 +82,8 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
                         d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
                       />
                     </svg>
-                    Sample Types: {test.sample_type_ids.join(", ")}
-                  </span>
+                    Modality: {test.modality_type_id || "Not specified"}
+                  </span> */}
                 </div>
 
                 <div className="mb-4">
@@ -89,6 +100,16 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
                     {test.is_home_collection_available && (
                       <span className="px-3 py-1 bg-blue-50 text-blue-700 text-[12px] rounded border border-blue-200">
                         Home Collection
+                      </span>
+                    )}
+                    {test.is_fasting_reqd && (
+                      <span className="px-3 py-1 bg-yellow-50 text-yellow-700 text-[12px] rounded border border-yellow-200">
+                        Fasting Required
+                      </span>
+                    )}
+                    {test.in_person_visit_reqd && (
+                      <span className="px-3 py-1 bg-red-50 text-red-700 text-[12px] rounded border border-red-200">
+                        In-person Visit Required
                       </span>
                     )}
                     <span className="px-3 py-1 bg-purple-50 text-purple-700 text-[12px] rounded border border-purple-200">
@@ -108,10 +129,12 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
                   </div>
                   <div>
                     <p className="text-xs text-gray-600 mb-1">
-                      Test Parameters:
+                      Inspection Parts:
                     </p>
                     <p className="text-xs text-[#161D1F]">
-                      {test.test_params?.join(", ")}
+                      {test.inspection_parts_ids?.length > 0
+                        ? `${test.inspection_parts_ids.length} parts`
+                        : "Not specified"}
                     </p>
                   </div>
                 </div>
@@ -124,39 +147,40 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
                   Test Description:
                 </h3>
                 <p className="text-xs text-gray-600 leading-relaxed">
-                  {test.description}
+                  {test.description || "No description available"}
                 </p>
               </div>
 
               <div className="border-t border-gray-200"></div>
 
-              {test.preparation_instructions.length > 0 && (
-                <div>
-                  <h3 className="text-[14px] font-semibold text-[#161D1F] mb-3 ">
-                    Preparation Instructions:
-                  </h3>
-                  <div className="rounded-lg border border-[#D3D7D8] p-2">
-                    <ul className="space-y-2">
-                      {test.preparation_instructions.map(
-                        (instruction, index) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <span className="text-xs text-gray-600 mt-0.5">
-                              •
-                            </span>
-                            <span className="text-xs text-gray-600 flex-1">
-                              {instruction}
-                            </span>
-                          </li>
-                        )
-                      )}
-                    </ul>
+              {test.preparation_instructions &&
+                test.preparation_instructions.length > 0 && (
+                  <div>
+                    <h3 className="text-[14px] font-semibold text-[#161D1F] mb-3">
+                      Preparation Instructions:
+                    </h3>
+                    <div className="rounded-lg border border-[#D3D7D8] p-2">
+                      <ul className="space-y-2">
+                        {test.preparation_instructions.map(
+                          (instruction, index) => (
+                            <li key={index} className="flex items-start gap-2">
+                              <span className="text-xs text-gray-600 mt-0.5">
+                                •
+                              </span>
+                              <span className="text-xs text-gray-600 flex-1">
+                                {instruction}
+                              </span>
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {test.precautions && test.precautions.length > 0 && (
                 <div>
-                  <h3 className="text-[14px] font-semibold text-[#161D1F] mb-3 ">
+                  <h3 className="text-[14px] font-semibold text-[#161D1F] mb-3">
                     Precautions:
                   </h3>
                   <div className="rounded-lg border border-[#D3D7D8] p-2 bg-[#FFEAEA]">
@@ -186,13 +210,13 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
                   <div>
                     <p className="text-xs text-gray-600 mb-1">Cost Price:</p>
                     <p className="text-[15px] font-semibold text-[#161D1F]">
-                      ₹ {test.cost_price.toFixed(2)}
+                      ₹ {test.cost_price}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-600 mb-1">Selling Price:</p>
                     <p className="text-[15px] font-semibold text-[#161D1F]">
-                      ₹ {test.selling_price.toFixed(2)}
+                      ₹ {test.selling_price}
                     </p>
                   </div>
                 </div>
@@ -215,6 +239,7 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
         isOpen={isManageModalOpen}
         onClose={() => setIsManageModalOpen(false)}
         test={test}
+        onUpdateTest={onUpdateTest}
       />
     </>
   );

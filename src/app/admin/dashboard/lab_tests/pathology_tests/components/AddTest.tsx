@@ -3,11 +3,19 @@ import React, { useEffect, useState } from "react";
 import { X, Upload, Plus, ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 import { PathologyTest } from "../types";
+import {
+  EnumItem,
+  fetchCategories,
+  fetchSampleTypes,
+  uploadFile,
+} from "../../services";
+import { useAdminStore } from "@/app/store/adminStore";
+import { createPathologyTest, updatePathologyTest } from "../../services/index";
 
 interface AddTestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddTest: (test: Omit<PathologyTest, "id">) => void;
+  onAddTest: (test: PathologyTest) => void;
   onUpdateTest?: (test: PathologyTest) => void;
   editTest?: PathologyTest | null;
 }
@@ -45,13 +53,17 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   const [activeSection, setActiveSection] = useState<"basic" | "settings">(
     "basic"
   );
+  const { token } = useAdminStore();
 
   // Dropdown states
   const [showTestParamsDropdown, setShowTestParamsDropdown] = useState(false);
   const [showReportTimeDropdown, setShowReportTimeDropdown] = useState(false);
   const [showSampleTypeDropdown, setShowSampleTypeDropdown] = useState(false);
+  const [category_id, setCategory_id] = useState<string>("");
+  const [sampleTypeOptions, setSampleTypeOptions] = useState<EnumItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Dropdown options
   const testParameterOptions = [
     "Red Blood Cell Count (RBC)",
     "White Blood Cell Count (WBC)",
@@ -62,44 +74,50 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     "Mean Corpuscular Haemoglobin (MCH)",
     "Mean Corpuscular Hemoglobin Concentration (MCHC)",
   ];
-
   const reportTimeOptions = [6, 12, 16, 32, 48, 64, 72];
-  const sampleTypeOptions = [
-    "Blood",
-    "Urine",
-    "Serum",
-    "Plasma",
-    "Saliva",
-    "Tissue",
-  ];
 
-  const commonInstructions = [
-    "Fast for 8 hours before test",
-    "Avoid alcohol for 24 hours before test",
-    "No strenuous exercise before test",
-    "Drink plenty of water before test",
-    "Avoid specific medications before test",
-  ];
+  const fetchDropdownData = async () => {
+    setLoading(true);
+    try {
+      const sampleTypes = await fetchSampleTypes(token);
+      setSampleTypeOptions(sampleTypes.roles || []);
+
+      const categoryData = await fetchCategories(token);
+      const defaultCategoryId = categoryData.roles[2]?.id || "";
+      console.log(defaultCategoryId);
+      setCategory_id(defaultCategoryId);
+    } catch (error) {
+      console.error("Error fetching dropdown data:", error);
+      toast.error("Failed to load dropdown options");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDropdownData();
+  }, []);
 
   useEffect(() => {
     if (editTest && isOpen) {
       setFormData({
-        name: editTest.name,
-        description: editTest.description,
-        code: editTest.code,
-        category_id: editTest.category_id,
+        name: editTest.name || "",
+        description: editTest.description || "",
+        code: editTest.code || "",
+        category_id: category_id || "",
         sample_type_ids: editTest.sample_type_ids || [],
         test_params: editTest.test_params || [],
-        report_time_hrs: editTest.report_time_hrs,
-        cost_price: editTest.cost_price,
-        selling_price: editTest.selling_price,
-        preparation_instructions: editTest.preparation_instructions,
+        report_time_hrs: editTest.report_time_hrs || 0,
+        cost_price: editTest.cost_price || 0,
+        selling_price: editTest.selling_price || 0,
+        preparation_instructions: editTest.preparation_instructions || [],
         precautions: editTest.precautions || [],
-        is_fasting_reqd: editTest.is_fasting_reqd,
-        in_person_visit_reqd: editTest.in_person_visit_reqd,
-        is_featured_lab_test: editTest.is_featured_lab_test,
-        is_home_collection_available: editTest.is_home_collection_available,
-        is_active: editTest.is_active,
+        is_fasting_reqd: editTest.is_fasting_reqd || false,
+        in_person_visit_reqd: editTest.in_person_visit_reqd || false,
+        is_featured_lab_test: editTest.is_featured_lab_test || false,
+        is_home_collection_available:
+          editTest.is_home_collection_available || false,
+        is_active: editTest.is_active !== undefined ? editTest.is_active : true,
         image_url: editTest.image_url || "",
         modality_type_id: editTest.modality_type_id || "",
         inspection_parts_ids: editTest.inspection_parts_ids || [],
@@ -110,7 +128,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         name: "",
         description: "",
         code: "",
-        category_id: "",
+        category_id: category_id,
         sample_type_ids: [],
         test_params: [],
         report_time_hrs: 0,
@@ -132,10 +150,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   }, [editTest, isOpen]);
 
   const handleAddInstruction = () => {
-    if (
-      newInstruction.trim() &&
-      !formData.preparation_instructions.includes(newInstruction.trim())
-    ) {
+    if (newInstruction.trim()) {
       setFormData({
         ...formData,
         preparation_instructions: [
@@ -156,6 +171,18 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     });
   };
 
+  // Add this function to handle common instructions if needed
+  const handleAddCommonInstruction = (instruction: string) => {
+    if (!formData.preparation_instructions.includes(instruction)) {
+      setFormData({
+        ...formData,
+        preparation_instructions: [
+          ...formData.preparation_instructions,
+          instruction,
+        ],
+      });
+    }
+  };
   const handleAddTestParameter = (parameter: string) => {
     if (!formData.test_params.includes(parameter)) {
       setFormData({
@@ -173,22 +200,33 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     });
   };
 
-  const handleAddSampleType = (sampleType: string) => {
-    if (!formData.sample_type_ids.includes(sampleType)) {
+  const handleAddSampleType = (sampleTypeValue: string) => {
+    // Find the sample type object to get both value and ID
+    const sampleTypeObj = sampleTypeOptions.find(
+      (st) => st.value === sampleTypeValue
+    );
+    if (
+      sampleTypeObj &&
+      !formData.sample_type_ids.includes(sampleTypeObj.value)
+    ) {
       setFormData({
         ...formData,
-        sample_type_ids: [...formData.sample_type_ids, sampleType],
+        sample_type_ids: [...formData.sample_type_ids, sampleTypeObj.value],
       });
     }
     setShowSampleTypeDropdown(false);
   };
 
-  const handleRemoveSampleType = (sampleType: string) => {
+  const handleRemoveSampleType = (sampleTypeValue: string) => {
     setFormData({
       ...formData,
-      sample_type_ids: formData.sample_type_ids.filter((s) => s !== sampleType),
+      sample_type_ids: formData.sample_type_ids.filter(
+        (s) => s !== sampleTypeValue
+      ),
     });
   };
+
+  // In the submit handler, convert values back to IDs:
 
   const handleSelectReportTime = (hours: number) => {
     setFormData({
@@ -198,73 +236,181 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     setShowReportTimeDropdown(false);
   };
 
-  const handleAddCommonInstruction = (instruction: string) => {
-    if (!formData.preparation_instructions.includes(instruction)) {
-      setFormData({
-        ...formData,
-        preparation_instructions: [
-          ...formData.preparation_instructions,
-          instruction,
-        ],
-      });
-    }
-  };
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // Handle image upload logic here
-      toast.success("Image uploaded successfully");
+    if (!file) return;
+
+    try {
+      // ✅ Validate file type and size
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please upload a valid image file.");
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size should be less than 5MB.");
+        return;
+      }
+
+      setLoading(true);
+
+      const fileContent = await fileToBase64(file);
+
+      const bucketName =
+        process.env.NODE_ENV === "development"
+          ? process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_DEV
+          : process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_PROD;
+
+      if (!bucketName) {
+        throw new Error("S3 bucket name is not configured properly.");
+      }
+
+      const uploadRequest = {
+        bucketName,
+        folderPath: "pathologyTest",
+        fileName: file.name,
+        fileContent,
+      };
+
+      const uploadRes = await uploadFile(token!, uploadRequest);
+
+      setFormData((prev) => ({
+        ...prev,
+        image_url: uploadRes.result,
+      }));
+
+      toast.success("Image uploaded successfully!");
+    } catch (error: any) {
+      console.error("Image upload failed:", error);
+      toast.error(error.message || "Failed to upload image");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSubmit = () => {
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+
+  const getSafeValue = (value: any, defaultValue: any = "") => {
+    return value !== undefined && value !== null ? value : defaultValue;
+  };
+
+  const handleSubmit = async () => {
     if (!formData.name || !formData.code || !formData.report_time_hrs) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    if (editTest && onUpdateTest) {
-      onUpdateTest({
-        ...formData,
-        id: editTest.id,
-        is_deleted: editTest.is_deleted || false,
-        created_by: editTest.created_by,
-        updated_by: editTest.updated_by,
+    setSubmitting(true);
+    try {
+      // Prepare sample_type_ids
+      const sampleTypeIds = formData.sample_type_ids.map((sampleType) => {
+        const sampleTypeObj = sampleTypeOptions.find(
+          (st) => st.value === sampleType
+        );
+        return sampleTypeObj ? sampleTypeObj.id : sampleType;
       });
-    } else {
-      onAddTest({
-        ...formData,
-        is_deleted: false,
-        created_by: "current-user-id",
-        updated_by: "current-user-id",
-      });
+
+      // Prepare payload - EXPLICITLY include all boolean values
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        code: formData.code,
+        category_id: category_id, // Now will have default value
+        sample_type_ids: sampleTypeIds,
+        test_params: formData.test_params || [],
+        report_time_hrs: formData.report_time_hrs,
+        cost_price: formData.cost_price,
+        selling_price: formData.selling_price,
+        preparation_instructions: formData.preparation_instructions,
+        precautions: formData.precautions || [],
+        // EXPLICITLY set boolean values (don't rely on API defaults)
+        is_fasting_reqd: Boolean(formData.is_fasting_reqd),
+        in_person_visit_reqd: Boolean(formData.in_person_visit_reqd),
+        is_featured_lab_test: Boolean(formData.is_featured_lab_test),
+        is_home_collection_available: Boolean(
+          formData.is_home_collection_available
+        ),
+        is_active: Boolean(formData.is_active),
+        image_url: formData.image_url || "",
+        modality_type_id: formData.modality_type_id || "",
+        inspection_parts_ids: formData.inspection_parts_ids || [],
+        related_lab_test_ids: formData.related_lab_test_ids || [],
+      };
+
+      console.log("Submitting payload:", payload);
+
+      if (editTest && onUpdateTest) {
+        const updatePayload = {
+          ...payload,
+          id: editTest.id,
+        };
+
+        await updatePathologyTest(updatePayload, token);
+
+        // Update local state with the exact values we sent
+        onUpdateTest({
+          ...payload,
+          id: editTest.id,
+          is_deleted: editTest.is_deleted || false,
+          created_by: editTest.created_by,
+          updated_by: editTest.updated_by,
+        });
+        toast.success("Test updated successfully!");
+      } else {
+        const response = await createPathologyTest(payload, token);
+
+        const newTest: PathologyTest = {
+          ...payload,
+          id: response.labTestId,
+          is_deleted: false,
+          created_by: "current-user-id",
+          updated_by: "current-user-id",
+        };
+        onAddTest(newTest);
+        toast.success("Test created successfully!");
+      }
+      onClose();
+    } catch (error: any) {
+      console.error("Error saving test:", error);
+      toast.error(error.message || "Failed to save test");
+    } finally {
+      setSubmitting(false);
     }
-    onClose();
   };
 
   const handleReset = () => {
-    setFormData({
-      name: "",
-      description: "",
-      code: "",
-      category_id: "",
-      sample_type_ids: [],
-      test_params: [],
-      report_time_hrs: 0,
-      cost_price: 0,
-      selling_price: 0,
-      preparation_instructions: [],
-      precautions: [],
-      is_fasting_reqd: false,
-      in_person_visit_reqd: false,
-      is_featured_lab_test: false,
-      is_home_collection_available: false,
-      is_active: true,
-      image_url: "",
-      modality_type_id: "",
-      inspection_parts_ids: [],
-      related_lab_test_ids: [],
+    // Fetch the default category ID again
+    fetchDropdownData().then(() => {
+      setFormData((prev) => ({
+        name: "",
+        description: "",
+        code: "",
+        category_id: prev.category_id, // Keep the fetched category_id
+        sample_type_ids: [],
+        test_params: [],
+        report_time_hrs: 0,
+        cost_price: 0,
+        selling_price: 0,
+        preparation_instructions: [],
+        precautions: [],
+        is_fasting_reqd: false,
+        in_person_visit_reqd: false,
+        is_featured_lab_test: false,
+        is_home_collection_available: false,
+        is_active: true,
+        image_url: "",
+        modality_type_id: "",
+        inspection_parts_ids: [],
+        related_lab_test_ids: [],
+      }));
     });
   };
 
@@ -324,7 +470,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </label>
           <input
             type="text"
-            value={formData.name}
+            value={getSafeValue(formData.name)}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-600"
             placeholder="Please enter Test Name"
@@ -336,7 +482,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </label>
           <input
             type="text"
-            value={formData.code}
+            value={getSafeValue(formData.code)}
             onChange={(e) => setFormData({ ...formData, code: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-600 text-black"
             placeholder="e.g., CBC00003456"
@@ -356,27 +502,35 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
               type="button"
               onClick={() => setShowSampleTypeDropdown(!showSampleTypeDropdown)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-left bg-white flex items-center justify-between"
+              disabled={loading}
             >
-              <span className="text-gray-600">Select sample type</span>
+              <span className="text-gray-600">
+                {loading ? "Loading..." : "Select sample type"}
+              </span>
               <ChevronDown className="w-4 h-4 text-gray-400" />
             </button>
 
-            {showSampleTypeDropdown && (
+            {showSampleTypeDropdown && !loading && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {sampleTypeOptions.map((sampleType) => (
-                  <button
-                    key={sampleType}
-                    type="button"
-                    onClick={() => handleAddSampleType(sampleType)}
-                    className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-400"
-                  >
-                    {sampleType}
-                  </button>
-                ))}
+                {sampleTypeOptions.length > 0 ? (
+                  sampleTypeOptions.map((sampleType) => (
+                    <button
+                      key={sampleType.id}
+                      type="button"
+                      onClick={() => handleAddSampleType(sampleType.value)}
+                      className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-700"
+                    >
+                      {sampleType.value}
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-3 py-2 text-xs text-gray-500 text-center">
+                    No sample types available
+                  </div>
+                )}
               </div>
             )}
           </div>
-
           {/* Selected Sample Types */}
           {formData.sample_type_ids.length > 0 && (
             <div className="mt-2 space-y-1">
@@ -497,19 +651,18 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
   const renderSettings = () => (
     <div className="space-y-6">
-      {/* Pricing and Description sections remain the same */}
-      <div className="p-4 rounded-lg">
+      <div className="p-4 rounded-lg border border-gray-200">
         <h4 className="text-xs font-medium text-[#161D1F] mb-4">
           Pricing Details
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-medium text-[#161D1F] mb-2">
-              Cost Price ($)
+              Cost Price
             </label>
             <input
               type="number"
-              value={formData.cost_price}
+              value={formData.cost_price === 0 ? "" : formData.cost_price}
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -517,15 +670,16 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 })
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-600"
+              placeholder="0"
             />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#161D1F] mb-2">
-              Selling Price ($)
+              Selling Price
             </label>
             <input
               type="number"
-              value={formData.selling_price}
+              value={formData.selling_price === 0 ? "" : formData.selling_price}
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -533,6 +687,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 })
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-600"
+              placeholder="0"
             />
           </div>
         </div>
@@ -543,7 +698,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           * Test Description
         </label>
         <textarea
-          value={formData.description}
+          value={getSafeValue(formData.description)}
           onChange={(e) =>
             setFormData({ ...formData, description: e.target.value })
           }
@@ -556,66 +711,87 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         <label className="block text-xs font-medium text-[#161D1F] mb-2">
           Preparation Instructions
         </label>
+
+        <div className="mb-3">
+          <p className="text-xs text-gray-600 mb-2">
+            Quick add common instructions:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              "Fast for 8 hours before test",
+              "Avoid alcohol for 24 hours before test",
+              "No strenuous exercise before test",
+              "Drink plenty of water before test",
+              "Avoid specific medications before test",
+            ].map((instruction) => (
+              <button
+                key={instruction}
+                type="button"
+                onClick={() => handleAddCommonInstruction(instruction)}
+                className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs hover:bg-gray-200"
+              >
+                + {instruction}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="space-y-2">
           <div className="flex gap-2">
             <input
-              type="textarea"
+              type="text"
               value={newInstruction}
               onChange={(e) => setNewInstruction(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-600 text-black"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-600 text-black"
               placeholder="Add custom instruction"
               onKeyPress={(e) => e.key === "Enter" && handleAddInstruction()}
             />
             <button
               type="button"
               onClick={handleAddInstruction}
-              className="px-3 py-2 bg-[#0088B1] text-white rounded-lg text-xs hover:bg-[#00729A]"
+              disabled={!newInstruction.trim()}
+              className="px-3 py-2 bg-[#0088B1] text-white rounded-lg text-xs hover:bg-[#00729A] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="w-4 h-4" />
             </button>
           </div>
         </div>
-      </div>
-      {/* Selected Preparation Instructions */}
-      {formData.preparation_instructions.length > 0 && (
-        <div>
-          <div className="flex flex-wrap gap-2">
-            {formData.preparation_instructions.map((instruction, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-1 bg-[#0088B1] text-white px-3 py-1.5 rounded-full"
-              >
-                <span className="text-xs font-medium">{instruction}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveInstruction(instruction)}
-                  className="text-white hover:text-gray-200"
+        {formData.preparation_instructions.length > 0 && (
+          <div className="mt-3">
+            <div className="flex flex-wrap gap-2">
+              {formData.preparation_instructions.map((instruction, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-1 bg-[#0088B1] text-white px-3 py-1.5 rounded-full"
                 >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
+                  <span className="text-xs font-medium">{instruction}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveInstruction(instruction)}
+                    className="text-white hover:text-gray-200 ml-1"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Active Health Package */}
         <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
           <input
             type="checkbox"
-            checked={formData.is_active}
+            checked={getSafeValue(formData.is_active, true)}
             onChange={(e) =>
-              setFormData({
-                ...formData,
-                is_active: e.target.checked,
-              })
+              setFormData((prev) => ({ ...prev, is_active: e.target.checked }))
             }
             className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
-              Active Health Package
+              Active Lab Test
             </h4>
             <p className="text-[12px] text-gray-500">
               Inactive packages are not displayed on the app
@@ -623,39 +799,37 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
-        {/* Popular Health Package */}
         <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
           <input
             type="checkbox"
-            checked={formData.is_featured_lab_test}
+            checked={getSafeValue(formData.is_featured_lab_test, false)}
             onChange={(e) =>
-              setFormData({
-                ...formData,
+              setFormData((prev) => ({
+                ...prev,
                 is_featured_lab_test: e.target.checked,
-              })
+              }))
             }
             className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
-              Popular Health Package
+              Featured Lab Test
             </h4>
             <p className="text-[12px] text-gray-500">
-              Popular packages are displayed prominently on the app
+              Enable to feature this test on the app's homepage
             </p>
           </div>
         </div>
 
-        {/* Home Collection Available */}
         <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
           <input
             type="checkbox"
-            checked={formData.is_home_collection_available}
+            checked={getSafeValue(formData.is_home_collection_available, false)}
             onChange={(e) =>
-              setFormData({
-                ...formData,
+              setFormData((prev) => ({
+                ...prev,
                 is_home_collection_available: e.target.checked,
-              })
+              }))
             }
             className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
@@ -669,16 +843,15 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
-        {/* Lab/Hospital Visit Required */}
         <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
           <input
             type="checkbox"
-            checked={formData.in_person_visit_reqd}
+            checked={getSafeValue(formData.in_person_visit_reqd, false)}
             onChange={(e) =>
-              setFormData({
-                ...formData,
+              setFormData((prev) => ({
+                ...prev,
                 in_person_visit_reqd: e.target.checked,
-              })
+              }))
             }
             className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
@@ -692,16 +865,15 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
-        {/* Fasting Requirement */}
         <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
           <input
             type="checkbox"
-            checked={formData.is_fasting_reqd}
+            checked={getSafeValue(formData.is_fasting_reqd, false)}
             onChange={(e) =>
-              setFormData({
-                ...formData,
+              setFormData((prev) => ({
+                ...prev,
                 is_fasting_reqd: e.target.checked,
-              })
+              }))
             }
             className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
@@ -733,7 +905,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </button>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="flex border-b border-gray-200">
           <button
             onClick={() => setActiveSection("basic")}
@@ -790,9 +961,16 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             ) : (
               <button
                 onClick={handleSubmit}
-                className="px-6 py-2 bg-[#0088B1] text-white rounded-lg text-xs hover:bg-[#00729A]"
+                disabled={submitting}
+                className={`px-6 py-2 bg-[#0088B1] text-white rounded-lg text-xs hover:bg-[#00729A] ${
+                  submitting ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
-                {editTest ? "Update Test" : "Add Test"}
+                {submitting
+                  ? "Saving..."
+                  : editTest
+                  ? "Update Test"
+                  : "Add Test"}
               </button>
             )}
           </div>

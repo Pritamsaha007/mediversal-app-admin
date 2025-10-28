@@ -18,7 +18,11 @@ import {
 import toast from "react-hot-toast";
 import { AddTestModal } from "./components/AddTest";
 import { ViewTestModal } from "./components/ViewTest";
-import { HealthPackagesType } from "./types";
+
+import { useAdminStore } from "@/app/store/adminStore";
+import { searchHeathPackages, searchPathologyTests } from "../services/index";
+import { HealthPackage } from "./types";
+import { PathologyTest } from "../pathology_tests/types";
 
 interface HealthPackagesStats {
   totalTests: number;
@@ -29,8 +33,8 @@ interface HealthPackagesStats {
 const HealthPackages: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
-  const [tests, setTests] = useState<HealthPackagesType[]>([]);
-  const [filteredTests, setFilteredTests] = useState<HealthPackagesType[]>([]);
+  const [tests, setTests] = useState<HealthPackage[]>([]);
+  const [filteredTests, setFilteredTests] = useState<HealthPackage[]>([]);
   const [openDropdown, setOpenDropdown] = useState<null | "status">(null);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
   const [testActionDropdown, setTestActionDropdown] = useState<number | null>(
@@ -39,70 +43,26 @@ const HealthPackages: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showAddTestModal, setShowAddTestModal] = useState(false);
   const [showViewTestModal, setShowViewTestModal] = useState(false);
-  const [selectedTest, setSelectedTest] = useState<HealthPackagesType | null>(
-    null
-  );
-  const [editingTest, setEditingTest] = useState<HealthPackagesType | null>(
-    null
+  const [selectedTest, setSelectedTest] = useState<HealthPackage | null>(null);
+  const [editingTest, setEditingTest] = useState<HealthPackage | null>(null);
+  const [testNamesMap, setTestNamesMap] = useState<Map<string, string>>(
+    new Map()
   );
 
-  const dummyHealthPackages: HealthPackagesType[] = [
-    {
-      id: "60a12942-a71a-405c-af1c-caf474bd954a",
-      name: "Complete Health Checkup",
-      description: "Comprehensive health screening package",
-      code: "HCP001",
-      category_id: "1652e599-4880-461c-840c-15f3ea00de1d",
-      sample_type_ids: ["f240088b-7ece-421d-b874-8c0562432fdc"],
-      test_includes: [
-        "Blood Test",
-        "Urine Test",
-        "Liver Function",
-        "Kidney Function",
-        "Thyroid Test",
-        "Diabetes Screening",
-        "Cholesterol",
-        "Vitamin D",
-      ],
-      report_time_hrs: 48,
-      cost_price: 1200,
-      selling_price: 1500,
-      preparation_instructions: ["Fast for 10-12 hours before test"],
-      precautions: ["Avoid alcohol for 24 hours"],
-      is_fasting_reqd: true,
-      in_person_visit_reqd: true,
-      is_featured_lab_test: true,
-      is_home_collection_available: true,
-      is_active: true,
-      image_url: "https://example.com/images/health_checkup.png",
-      is_deleted: false,
-      created_by: "3fc901f2-45f4-4ee6-a351-e05721be6522",
-      updated_by: "3fc901f2-45f4-4ee6-a351-e05721be6522",
-      modality_type_id: "81961494-7bcf-4f8d-88ed-9ffb70dcdf44",
-      inspection_parts_ids: [
-        "c562704c-4d1f-464d-8f2c-13f8dc813eb6",
-        "e660835e-921f-45c0-ba88-7e7cb83edd05",
-      ],
-      related_lab_test_ids: ["b931a31d-6a03-4eff-ae60-8523b07df079"],
-    },
-  ];
+  const { token } = useAdminStore();
 
-  // Function to display tests with +X more chips
-  const renderTestsIncluded = (
-    testParams: string[],
-    maxVisible: number = 3
-  ) => {
-    const visibleTests = testParams.slice(0, maxVisible);
-    const remainingCount = testParams.length - maxVisible;
+  const renderTestsIncluded = (testIds: string[], maxVisible: number = 3) => {
+    const visibleTests = testIds.slice(0, maxVisible);
+    const remainingCount = testIds.length - maxVisible;
 
     return (
       <div className="flex flex-wrap gap-1">
-        {visibleTests.map((test, index) => (
+        {visibleTests.map((testId, index) => (
           <span
-            key={index}
-            className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-[#E8F4F7] text-black "
+            key={testId}
+            className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-[#E8F4F7] text-black"
           >
-            {test}
+            {testNamesMap.get(testId) || `Test ${index + 1}`}
           </span>
         ))}
         {remainingCount > 0 && (
@@ -119,7 +79,9 @@ const HealthPackages: React.FC = () => {
   const generateStats = (): HealthPackagesStats => {
     const totalTests = tests.length;
     const activeTests = tests.filter((t) => t.is_active).length;
-    const totalCategories = new Set(tests.map((test) => test.category_id)).size;
+    const totalCategories = new Set(
+      tests.map((test) => test.linked_test_ids?.length || 0)
+    ).size;
 
     return {
       totalTests,
@@ -127,26 +89,93 @@ const HealthPackages: React.FC = () => {
       totalCategories,
     };
   };
+
   const stats = generateStats();
 
-  useEffect(() => {
+  const fetchTestNames = async (testIds: string[]) => {
+    if (!token || testIds.length === 0) return;
+
+    try {
+      const payload = {
+        start: 0,
+        max: 100,
+        search_category: null,
+        search: null,
+        filter_sample_type_ids: null,
+        filter_active: true,
+        filter_featured: null,
+        sort_by: "name",
+        sort_order: "ASC" as const,
+      };
+
+      const response = await searchPathologyTests(payload, token);
+      const newMap = new Map(testNamesMap);
+
+      response.labTests.forEach((test: PathologyTest) => {
+        if (testIds.includes(test.id)) {
+          newMap.set(test.id, test.name);
+        }
+      });
+
+      setTestNamesMap(newMap);
+    } catch (error) {
+      console.error("Error fetching test names:", error);
+    }
+  };
+
+  const fetchHealthPackages = async () => {
+    if (!token) return;
+
     setLoading(true);
-    setTimeout(() => {
-      setTests(dummyHealthPackages);
-      setFilteredTests(dummyHealthPackages);
+    try {
+      const payload = {
+        start: 0,
+        max: 100,
+        filter_linked_test_ids: null,
+        search: searchTerm || null,
+        filter_featured: null,
+        sort_by: "name",
+        sort_order: "ASC" as const,
+      };
+
+      const response = await searchHeathPackages(payload, token);
+      const healthPackages = response.healthpackages || [];
+      console.log(healthPackages, "healthpackages");
+      setTests(healthPackages);
+      setFilteredTests(healthPackages);
+
+      const allTestIds = new Set<string>();
+      healthPackages.forEach((pkg: HealthPackage) => {
+        if (pkg.linked_test_ids) {
+          pkg.linked_test_ids.forEach((id) => allTestIds.add(id));
+        }
+      });
+
+      if (allTestIds.size > 0) {
+        fetchTestNames(Array.from(allTestIds));
+      }
+    } catch (error) {
+      console.error("Error fetching health packages:", error);
+      toast.error("Failed to load health packages");
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  };
 
   useEffect(() => {
-    let filtered = dummyHealthPackages;
+    if (token) {
+      fetchHealthPackages();
+    }
+  }, [token]);
+
+  useEffect(() => {
+    let filtered = tests;
 
     if (searchTerm) {
       filtered = filtered.filter(
         (test) =>
           test.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          test.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          test.code.toLowerCase().includes(searchTerm.toLowerCase())
+          test.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -157,7 +186,7 @@ const HealthPackages: React.FC = () => {
     }
 
     setFilteredTests(filtered);
-  }, [searchTerm, selectedStatus]);
+  }, [searchTerm, selectedStatus, tests]);
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -173,7 +202,7 @@ const HealthPackages: React.FC = () => {
           <div className="flex flex-col gap-2">
             <span>
               Are you sure you want to delete {selectedTests.length} selected
-              tests?
+              health packages?
             </span>
             <div className="flex gap-2">
               <button
@@ -206,19 +235,19 @@ const HealthPackages: React.FC = () => {
     if (confirmed) {
       setLoading(true);
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
         const updatedTests = tests.filter(
           (test) => !selectedTests.includes(test.id)
         );
         setTests(updatedTests);
         setFilteredTests(updatedTests);
 
-        toast.success(`${selectedTests.length} tests deleted successfully!`);
+        toast.success(
+          `${selectedTests.length} health packages deleted successfully!`
+        );
         setSelectedTests([]);
       } catch (error: any) {
-        console.error("Error deleting tests:", error);
-        toast.error(error.message || "Failed to delete some tests");
+        console.error("Error deleting health packages:", error);
+        toast.error(error.message || "Failed to delete some health packages");
       } finally {
         setLoading(false);
       }
@@ -241,26 +270,37 @@ const HealthPackages: React.FC = () => {
     }
   };
 
-  const handleAddTest = (newTestData: Omit<HealthPackagesType, "id">) => {
-    const newTest: HealthPackagesType = {
-      ...newTestData,
-      id: Date.now().toString(),
-    };
+  const handleAddTest = (newTest: HealthPackage) => {
     setTests([...tests, newTest]);
     setFilteredTests([...tests, newTest]);
-    toast.success("Test added successfully!");
+
+    if (newTest.linked_test_ids && newTest.linked_test_ids.length > 0) {
+      fetchTestNames(newTest.linked_test_ids);
+    }
+
+    toast.success("Health package added successfully!");
   };
 
-  const handleUpdateTest = (updatedTest: HealthPackagesType) => {
+  const handleUpdateTest = (updatedTest: HealthPackage) => {
     const updatedTests = tests.map((test) =>
       test.id === updatedTest.id ? updatedTest : test
     );
     setTests(updatedTests);
     setFilteredTests(updatedTests);
-    toast.success("Test updated successfully!");
+
+    if (updatedTest.linked_test_ids && updatedTest.linked_test_ids.length > 0) {
+      const newTestIds = updatedTest.linked_test_ids.filter(
+        (id) => !testNamesMap.has(id)
+      );
+      if (newTestIds.length > 0) {
+        fetchTestNames(newTestIds);
+      }
+    }
+
+    toast.success("Health package updated successfully!");
   };
 
-  const handleTestAction = async (action: string, test: HealthPackagesType) => {
+  const handleTestAction = async (action: string, test: HealthPackage) => {
     setTestActionDropdown(null);
 
     switch (action) {
@@ -276,7 +316,7 @@ const HealthPackages: React.FC = () => {
         const confirmed = await new Promise<boolean>((resolve) => {
           const toastId = toast(
             (t) => (
-              <div className="flex flex-col gap-2 ">
+              <div className="flex flex-col gap-2">
                 <span>Are you sure you want to delete "{test.name}"?</span>
                 <div className="flex gap-2">
                   <button
@@ -308,16 +348,14 @@ const HealthPackages: React.FC = () => {
 
         if (confirmed) {
           try {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
             const updatedTests = tests.filter((t) => t.id !== test.id);
             setTests(updatedTests);
             setFilteredTests(updatedTests);
 
-            toast.success("Test deleted successfully!");
+            toast.success("Health package deleted successfully!");
           } catch (error: any) {
-            console.error("Error deleting test:", error);
-            toast.error(error.message || "Failed to delete test");
+            console.error("Error deleting health package:", error);
+            toast.error(error.message || "Failed to delete health package");
           }
         }
         break;
@@ -346,7 +384,7 @@ const HealthPackages: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
-            Health Packages Tests Management
+            Health Packages Management
           </h1>
           <div className="flex gap-3">
             <button
@@ -359,11 +397,11 @@ const HealthPackages: React.FC = () => {
               } text-[#F8F8F8]`}
             >
               <Plus className="w-3 h-3" />
-              {loading ? "Loading..." : "New Test"}
+              {loading ? "Loading..." : "New Package"}
             </button>
             {selectedTests.length > 0 && (
               <button
-                onClick={() => handleBulkDelete()}
+                onClick={handleBulkDelete}
                 disabled={loading}
                 className={`flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg ${
                   loading
@@ -380,13 +418,13 @@ const HealthPackages: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
           <StatsCard
-            title="Total Tests"
+            title="Total Packages"
             stats={stats.totalTests}
             icon={<Settings className="w-5 h-5" />}
             color="text-blue-500"
           />
           <StatsCard
-            title="Active Tests"
+            title="Active Packages"
             stats={stats.activeTests}
             icon={<Activity className="w-5 h-5" />}
             color="text-green-500"
@@ -404,7 +442,7 @@ const HealthPackages: React.FC = () => {
             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
             <input
               type="text"
-              placeholder="Search by test name, included tests..."
+              placeholder="Search by package name, description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
@@ -445,9 +483,9 @@ const HealthPackages: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
-              All HealthPackages Tests
+              All Health Packages
               <span className="text-[8px] text-[#899193] font-normal ml-2">
-                {filteredTests.length} Tests
+                {filteredTests.length} Packages
               </span>
             </h3>
           </div>
@@ -468,7 +506,7 @@ const HealthPackages: React.FC = () => {
                     />
                   </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
-                    Test Details
+                    Package Details
                   </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Tests Included
@@ -478,9 +516,6 @@ const HealthPackages: React.FC = () => {
                   </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Selling Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
-                    Report Time
                   </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Status
@@ -493,14 +528,14 @@ const HealthPackages: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">Loading tests...</div>
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <div className="text-gray-500">Loading packages...</div>
                     </td>
                   </tr>
                 ) : filteredTests.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">No tests found.</div>
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <div className="text-gray-500">No packages found.</div>
                     </td>
                   </tr>
                 ) : (
@@ -530,16 +565,20 @@ const HealthPackages: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        {renderTestsIncluded(test.test_includes || [])}
+                        {test.linked_test_ids &&
+                        test.linked_test_ids.length > 0 ? (
+                          renderTestsIncluded(test.linked_test_ids, 3)
+                        ) : (
+                          <span className="text-xs text-gray-500">
+                            No tests included
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-[#161D1F]">
                         ₹{test.cost_price}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-[#161D1F]">
                         ₹{test.selling_price}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-[#161D1F]">
-                        {test.report_time_hrs} hrs
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <StatusBadge
@@ -595,6 +634,7 @@ const HealthPackages: React.FC = () => {
           setSelectedTest(null);
         }}
         test={selectedTest}
+        onEdit={handleUpdateTest}
       />
     </div>
   );

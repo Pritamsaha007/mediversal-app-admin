@@ -1,21 +1,54 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { X, Upload, ChevronDown, Plus, Calendar, Trash2 } from "lucide-react";
+import { X, ChevronDown, Plus, Calendar, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { PhlebotomistType, Schedule } from "../type/index";
+import { useAdminStore } from "@/app/store/adminStore";
+import {
+  createPhlebotomist,
+  updatePhlebotomist,
+  fetchDays,
+  fetchPhleboSpecializations,
+  fetchServiceCities,
+  fetchServiceAreas,
+  EnumItem,
+} from "../../services";
+import {
+  CreatePhlebotomistPayload,
+  Phlebotomist,
+  PhlebotomistAvailability,
+  UpdatePhlebotomistPayload,
+} from "../type";
+
+interface PhlebotomistFormData {
+  name: string;
+  email: string;
+  phone: string;
+  experience: string;
+  serviceArea: string;
+  licenseNo: string;
+  specialization: string;
+  rating: string;
+  serviceCityTown: string;
+  joiningDate: string;
+  isActivePhlebo: boolean;
+  isHomeCertified: boolean;
+}
 
 interface TimeRange {
   day: string;
+  day_id: string;
   startTime: string;
   endTime: string;
+  slot_capacity: number;
+  id?: string;
 }
 
 interface AddPhlebotomistModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddPhlebotomist: (phlebotomist: Omit<PhlebotomistType, "id">) => void;
-  onUpdatePhlebotomist?: (phlebotomist: PhlebotomistType) => void;
-  editPhlebotomist?: PhlebotomistType | null;
+  onAddPhlebotomist: (phlebotomist: Phlebotomist) => void;
+  onUpdatePhlebotomist?: (phlebotomist: Phlebotomist) => void;
+  editPhlebotomist?: Phlebotomist | null;
 }
 
 export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
@@ -25,7 +58,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
   onUpdatePhlebotomist,
   editPhlebotomist,
 }) => {
-  const [formData, setFormData] = useState<Omit<PhlebotomistType, "id">>({
+  const [formData, setFormData] = useState<PhlebotomistFormData>({
     name: "",
     email: "",
     phone: "",
@@ -33,17 +66,9 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
     serviceArea: "",
     licenseNo: "",
     specialization: "",
-    targetGroup: "",
     rating: "",
     serviceCityTown: "",
     joiningDate: "",
-    certifications: [],
-    schedules: [],
-    samplesCollected: 0,
-    status: "Active",
-    location: "",
-    activeOrders: 0,
-    completedOrders: 0,
     isActivePhlebo: true,
     isHomeCertified: false,
   });
@@ -53,163 +78,256 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
   const [activeSection, setActiveSection] = useState<
     "Basic Details" | "Availability"
   >("Basic Details");
-  const [newCertification, setNewCertification] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(false);
+  const [enumDataLoaded, setEnumDataLoaded] = useState(false);
 
   // Dropdown states
   const [showServiceCityDropdown, setShowServiceCityDropdown] = useState(false);
   const [showServiceAreaDropdown, setShowServiceAreaDropdown] = useState(false);
 
-  // Dropdown options
-  const specializationOptions = [
-    "General Collection",
-    "Paediatric Collection",
-    "Geriatric Collection",
-    "Specialized Collection",
-  ];
+  // Enum data states
+  const [daysData, setDaysData] = useState<EnumItem[]>([]);
+  const [specializationsData, setSpecializationsData] = useState<EnumItem[]>(
+    []
+  );
+  const [serviceCitiesData, setServiceCitiesData] = useState<EnumItem[]>([]);
+  const [serviceAreasData, setServiceAreasData] = useState<EnumItem[]>([]);
 
-  const targetGroupOptions = [
-    "Senior Citizens",
-    "Paediatric",
-    "General",
-    "Critical Care",
-  ];
+  const { token, admin } = useAdminStore();
 
-  const serviceCityOptions = [
-    "Patna",
-    "Begusarai",
-    "Sasaram",
-    "Gaya",
-    "Muzaffarpur",
-    "Bhagalpur",
-    "Arrah",
-    "Purnia",
-    "Darbhanga",
-  ];
-
-  const serviceAreaOptions: { [key: string]: string[] } = {
-    Patna: [
-      "Zero Mile",
-      "Kankarbagh",
-      "Hanuman Nagar",
-      "Krishna Kunj",
-      "Raza Bazaar",
-      "Lodipur",
-      "Bakerganj",
-      "Punatchak",
-      "Rajendra Nagar",
-      "Kadamkuan",
-    ],
-    Begusarai: ["Town Area", "Station Road", "Barauni", "Teghra", "Ballia"],
-    Sasaram: ["City Center", "Station Road", "NH-2 Area"],
-    Gaya: ["Bodh Gaya", "City Area", "Station Road"],
-    Muzaffarpur: ["Club Road", "Ramna Road", "Kalyani Nagar"],
-    Bhagalpur: ["Nathnagar", "Sabour", "City Area"],
-    Arrah: ["City Center", "Jagdishpur"],
-    Purnia: ["City Area", "Krityanand Nagar"],
-    Darbhanga: ["Laheriasarai", "Town Area"],
-  };
-
-  const locationOptions = [
-    "North Zone",
-    "South Zone",
-    "East Zone",
-    "West Zone",
-    "Central Zone",
-  ];
-
-  const certificationOptions = [
-    "Home Collection Certified",
-    "Paediatric Specialist",
-    "Geriatric Specialist",
-    "Advanced Phlebotomy",
-    "Infection Control Certified",
-  ];
-
-  const days = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-  ];
+  const specializationOptions = specializationsData.map((item) => item.value);
+  const serviceCityOptions = serviceCitiesData.map((item) => item.value);
+  const serviceAreaOptions = serviceAreasData.map((item) => item.value);
+  const days = daysData.map((item) => item.value);
 
   const timeOptions = [
     "06:00 AM",
-    "06:30 AM",
+    "06:45 AM",
     "07:00 AM",
-    "07:30 AM",
+    "07:45 AM",
     "08:00 AM",
-    "08:30 AM",
+    "08:45 AM",
     "09:00 AM",
-    "09:30 AM",
+    "09:45 AM",
     "10:00 AM",
-    "10:30 AM",
+    "10:45 AM",
     "11:00 AM",
-    "11:30 AM",
+    "11:45 AM",
     "12:00 PM",
-    "12:30 PM",
+    "12:45 PM",
     "01:00 PM",
-    "01:30 PM",
+    "01:45 PM",
     "02:00 PM",
-    "02:30 PM",
+    "02:45 PM",
     "03:00 PM",
-    "03:30 PM",
+    "03:45 PM",
     "04:00 PM",
-    "04:30 PM",
+    "04:45 PM",
     "05:00 PM",
-    "05:30 PM",
+    "05:45 PM",
     "06:00 PM",
-    "06:30 PM",
+    "06:45 PM",
     "07:00 PM",
-    "07:30 PM",
+    "07:45 PM",
     "08:00 PM",
-    "08:30 PM",
+    "08:45 PM",
   ];
 
-  // Availability Functions
   const [sameAsPrevious, setSameAsPrevious] = useState(false);
-  const [maxPatientsPerSlot, setMaxPatientsPerSlot] = useState<{
-    [key: string]: number;
-  }>({});
 
   useEffect(() => {
-    if (editPhlebotomist && isOpen) {
+    const fetchEnumData = async () => {
+      if (!isOpen || !token) return;
+
+      setFetchingData(true);
+      setEnumDataLoaded(false);
+      try {
+        const [
+          daysResponse,
+          specializationsResponse,
+          citiesResponse,
+          areasResponse,
+        ] = await Promise.all([
+          fetchDays(token),
+          fetchPhleboSpecializations(token),
+          fetchServiceCities(token),
+          fetchServiceAreas(token),
+        ]);
+
+        console.log("Enum data fetched:", {
+          days: daysResponse.roles,
+          specializations: specializationsResponse.roles,
+          cities: citiesResponse.roles,
+          areas: areasResponse.roles,
+        });
+
+        setDaysData(daysResponse.roles || []);
+        setSpecializationsData(specializationsResponse.roles || []);
+        setServiceCitiesData(citiesResponse.roles || []);
+        setServiceAreasData(areasResponse.roles || []);
+        setEnumDataLoaded(true);
+      } catch (error: any) {
+        console.error("Error fetching enum data:", error);
+        toast.error("Failed to load form data");
+      } finally {
+        setFetchingData(false);
+      }
+    };
+
+    fetchEnumData();
+  }, [isOpen, token]);
+
+  const convertTo24Hour = (timeStr: string): string => {
+    if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeStr)) {
+      return timeStr;
+    }
+
+    const [time, modifier] = timeStr.split(" ");
+    let [hours, minutes] = time.split(":");
+
+    if (modifier === "PM" && hours !== "12") {
+      hours = String(parseInt(hours, 10) + 12);
+    }
+    if (modifier === "AM" && hours === "12") {
+      hours = "00";
+    }
+
+    return `${hours.padStart(2, "0")}:${minutes}`;
+  };
+
+  const convertTo12Hour = (time24: string): string => {
+    if (time24.includes("AM") || time24.includes("PM")) {
+      return time24;
+    }
+
+    const [hours, minutes] = time24.split(":");
+    const hour = parseInt(hours);
+    const period = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+
+    return `${hour12.toString().padStart(2, "0")}:${minutes} ${period}`;
+  };
+
+  const findMatchingTimeOption = (time: string): string => {
+    const matched = timeOptions.find((option) => option === time);
+    if (!matched) {
+      console.warn(
+        `Time "${time}" not found in timeOptions. Available options:`,
+        timeOptions
+      );
+    }
+    return matched || timeOptions[0] || "09:00 AM";
+  };
+  const getDayId = (dayName: string): string => {
+    const day = daysData.find((item) => item.value === dayName);
+    if (!day) {
+      console.warn(`Day not found: ${dayName}`);
+    }
+    return day?.id || "";
+  };
+
+  const getDayName = (dayId: string): string => {
+    const day = daysData.find((item) => item.id === dayId);
+    return day?.value || "";
+  };
+
+  const getCityId = (cityName: string): string => {
+    const city = serviceCitiesData.find((item) => item.value === cityName);
+    return city?.id || "";
+  };
+
+  const getAreaId = (areaName: string): string => {
+    const area = serviceAreasData.find((item) => item.value === areaName);
+    return area?.id || "";
+  };
+
+  const getSpecializationId = (specializationName: string): string => {
+    const specialization = specializationsData.find(
+      (item) => item.value === specializationName
+    );
+    return specialization?.id || "";
+  };
+
+  useEffect(() => {
+    if (editPhlebotomist && isOpen && enumDataLoaded && daysData.length > 0) {
+      console.log(
+        "Initializing edit form with phlebotomist:",
+        editPhlebotomist
+      );
+
       setFormData({
-        name: editPhlebotomist.name,
-        email: editPhlebotomist.email,
-        phone: editPhlebotomist.phone,
-        experience: editPhlebotomist.experience,
-        serviceArea: editPhlebotomist.serviceArea,
-        licenseNo: editPhlebotomist.licenseNo,
-        specialization: editPhlebotomist.specialization,
-        targetGroup: editPhlebotomist.targetGroup,
-        rating: editPhlebotomist.rating || "",
-        serviceCityTown: editPhlebotomist.serviceCityTown || "",
-        joiningDate: editPhlebotomist.joiningDate || "",
-        certifications: editPhlebotomist.certifications,
-        schedules: editPhlebotomist.schedules,
-        samplesCollected: editPhlebotomist.samplesCollected,
-        status: editPhlebotomist.status,
-        location: editPhlebotomist.location || "",
-        activeOrders: editPhlebotomist.activeOrders || 0,
-        completedOrders: editPhlebotomist.completedOrders || 0,
-        isActivePhlebo: editPhlebotomist.isActivePhlebo ?? true,
-        isHomeCertified: editPhlebotomist.isHomeCertified ?? false,
+        name: editPhlebotomist.name || "",
+        email: editPhlebotomist.email || "",
+        phone: editPhlebotomist.mobile_number || "",
+        experience: editPhlebotomist.experience_in_yrs?.toString() || "",
+        serviceArea: editPhlebotomist.service_area || "",
+        licenseNo: editPhlebotomist.license_no || "",
+        specialization: editPhlebotomist.specialization_id || "",
+        rating: editPhlebotomist.rating?.toString() || "",
+        serviceCityTown: editPhlebotomist.service_city || "",
+        joiningDate: editPhlebotomist.joining_date || "",
+        isActivePhlebo: editPhlebotomist.is_available ?? true,
+        isHomeCertified: editPhlebotomist.is_home_collection_certified ?? false,
       });
 
-      // Convert schedules to timeRanges for availability section
-      const initialTimeRanges: TimeRange[] = [];
-      editPhlebotomist.schedules.forEach((schedule) => {
-        initialTimeRanges.push({
-          day: "Monday", // Default day, you might want to store day info in Schedule
-          startTime: schedule.startTime,
-          endTime: schedule.endTime,
+      if (
+        editPhlebotomist.availability &&
+        editPhlebotomist.availability.length > 0
+      ) {
+        console.log("Processing availability:", editPhlebotomist.availability);
+
+        const initialTimeRanges: TimeRange[] = [];
+        const uniqueDays: string[] = [];
+
+        editPhlebotomist.availability.forEach((schedule) => {
+          const dayName = getDayName(schedule.day_id);
+          console.log(
+            `Converting schedule: day_id=${schedule.day_id}, dayName=${dayName}`
+          );
+
+          if (dayName) {
+            let startTime = schedule.start_time;
+            let endTime = schedule.end_time;
+
+            if (!startTime.includes("AM") && !startTime.includes("PM")) {
+              startTime = convertTo12Hour(startTime);
+            }
+            if (!endTime.includes("AM") && !endTime.includes("PM")) {
+              endTime = convertTo12Hour(endTime);
+            }
+
+            const timeRange: TimeRange = {
+              day: dayName,
+              day_id: schedule.day_id,
+              startTime: startTime,
+              endTime: endTime,
+              slot_capacity: schedule.slot_capacity || 0,
+              id: schedule.id,
+            };
+
+            initialTimeRanges.push(timeRange);
+
+            if (!uniqueDays.includes(dayName)) {
+              uniqueDays.push(dayName);
+            }
+          }
         });
-      });
-      setTimeRanges(initialTimeRanges);
-    } else if (isOpen) {
+
+        console.log("Converted time ranges:", initialTimeRanges);
+        console.log("Selected days:", uniqueDays);
+
+        setTimeRanges(initialTimeRanges);
+        setSelectedDays(uniqueDays);
+      } else {
+        console.log("No availability data found");
+        setTimeRanges([]);
+        setSelectedDays([]);
+      }
+
+      setActiveSection("Basic Details");
+    } else if (isOpen && !editPhlebotomist) {
       setFormData({
         name: "",
         email: "",
@@ -218,140 +336,100 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
         serviceArea: "",
         licenseNo: "",
         specialization: "",
-        targetGroup: "",
         rating: "",
         serviceCityTown: "",
         joiningDate: "",
-        certifications: [],
-        schedules: [],
-        samplesCollected: 0,
-        status: "Active",
-        location: "",
-        activeOrders: 0,
-        completedOrders: 0,
         isActivePhlebo: true,
         isHomeCertified: false,
       });
       setTimeRanges([]);
       setSelectedDays([]);
+      setActiveSection("Basic Details");
     }
-  }, [editPhlebotomist, isOpen]);
-
-  const handleAddCertification = () => {
-    if (
-      newCertification.trim() &&
-      !formData.certifications.includes(newCertification.trim())
-    ) {
-      setFormData({
-        ...formData,
-        certifications: [...formData.certifications, newCertification.trim()],
-      });
-      setNewCertification("");
-    }
-  };
-
-  const handleRemoveCertification = (certification: string) => {
-    setFormData({
-      ...formData,
-      certifications: formData.certifications.filter(
-        (cert) => cert !== certification
-      ),
-    });
-  };
-
-  const handleAddCertificationFromOption = (certification: string) => {
-    if (!formData.certifications.includes(certification)) {
-      setFormData({
-        ...formData,
-        certifications: [...formData.certifications, certification],
-      });
-    }
-  };
-
-  // Add this useEffect to handle "same as previous day" functionality
+  }, [editPhlebotomist, isOpen, enumDataLoaded, daysData.length]);
   useEffect(() => {
-    if (sameAsPrevious && selectedDays.length > 1) {
-      const updatedRanges = [...timeRanges];
+    if (sameAsPrevious && selectedDays.length > 1 && timeRanges.length > 0) {
       const firstDayRanges = timeRanges.filter(
         (range) => range.day === selectedDays[0]
       );
 
-      selectedDays.slice(1).forEach((day) => {
-        // Remove existing ranges for this day
+      if (firstDayRanges.length > 0) {
+        const updatedRanges = [...timeRanges];
+
         const filteredRanges = updatedRanges.filter(
-          (range) => range.day !== day
+          (range) => range.day === selectedDays[0]
         );
-        // Add copies of first day's ranges
-        firstDayRanges.forEach((range) => {
-          filteredRanges.push({ ...range, day });
+
+        selectedDays.slice(1).forEach((day) => {
+          firstDayRanges.forEach((range) => {
+            filteredRanges.push({
+              ...range,
+              day,
+              day_id: getDayId(day),
+              id: undefined,
+            });
+          });
         });
+
         setTimeRanges(filteredRanges);
-      });
+      }
     }
   }, [sameAsPrevious, selectedDays]);
 
-  // Add this function to handle max patients change
-  const handleMaxPatientsChange = (day: string, value: number) => {
-    setMaxPatientsPerSlot((prev) => ({
-      ...prev,
-      [day]: value,
-    }));
-  };
-
-  // Update the addTimeRangeForDay function to include max patients default
   const addTimeRangeForDay = (day: string) => {
-    if (timeRanges.filter((range) => range.day === day).length < 4) {
-      setTimeRanges([
-        ...timeRanges,
-        { day, startTime: "09:00 AM", endTime: "05:00 PM" },
-      ]);
+    const dayTimeRanges = timeRanges.filter((range) => range.day === day);
 
-      // Set default max patients if not set
-      if (!maxPatientsPerSlot[day]) {
-        setMaxPatientsPerSlot((prev) => ({
-          ...prev,
-          [day]: 0,
-        }));
-      }
+    if (dayTimeRanges.length < 4) {
+      const newTimeRange: TimeRange = {
+        day,
+        day_id: getDayId(day),
+        startTime: "09:00 AM",
+        endTime: "05:00 PM",
+        slot_capacity: 0,
+      };
+
+      setTimeRanges([...timeRanges, newTimeRange]);
     } else {
       toast.error("Maximum 4 time ranges per day allowed");
     }
   };
 
-  // Update the handleDayToggle function to include max patients default
+  const removeTimeRange = (index: number) => {
+    const updatedRanges = timeRanges.filter((_, i) => i !== index);
+    setTimeRanges(updatedRanges);
+  };
+
   const handleDayToggle = (day: string) => {
     if (selectedDays.includes(day)) {
       setSelectedDays(selectedDays.filter((d) => d !== day));
-      // Remove time ranges for the deselected day
       setTimeRanges(timeRanges.filter((range) => range.day !== day));
-      // Remove max patients for deselected day
-      setMaxPatientsPerSlot((prev) => {
-        const newState = { ...prev };
-        delete newState[day];
-        return newState;
-      });
     } else {
       setSelectedDays([...selectedDays, day]);
-      // Add default time range for the new day
-      setTimeRanges([
-        ...timeRanges,
-        { day, startTime: "09:00 AM", endTime: "05:00 PM" },
-      ]);
-      // Set default max patients for new day
-      setMaxPatientsPerSlot((prev) => ({
-        ...prev,
-        [day]: 0,
-      }));
+      const newTimeRange: TimeRange = {
+        day,
+        day_id: getDayId(day),
+        startTime: "09:00 AM",
+        endTime: "05:00 PM",
+        slot_capacity: 0,
+      };
+      setTimeRanges([...timeRanges, newTimeRange]);
     }
   };
 
   const updateTimeRange = (
     index: number,
-    field: "startTime" | "endTime",
-    value: string
+    field: "startTime" | "endTime" | "slot_capacity",
+    value: string | number
   ) => {
     const updatedRanges = [...timeRanges];
-    updatedRanges[index] = { ...updatedRanges[index], [field]: value };
+
+    if (field === "slot_capacity") {
+      const numValue = typeof value === "string" ? parseInt(value) || 0 : value;
+      updatedRanges[index] = { ...updatedRanges[index], [field]: numValue };
+    } else {
+      updatedRanges[index] = { ...updatedRanges[index], [field]: value };
+    }
+
     setTimeRanges(updatedRanges);
   };
 
@@ -359,7 +437,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
     setFormData({
       ...formData,
       serviceCityTown: city,
-      serviceArea: "", // Reset service area when city changes
+      serviceArea: "",
     });
     setShowServiceCityDropdown(false);
   };
@@ -369,40 +447,140 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
     setShowServiceAreaDropdown(false);
   };
 
-  const getAvailableServiceAreas = () => {
-    return serviceAreaOptions[formData.serviceCityTown || ""] || [];
-  };
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name || !formData.licenseNo || !formData.phone) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    // Convert time ranges to schedules
-    const schedules: Schedule[] = timeRanges.map((range) => ({
-      startTime: range.startTime,
-      endTime: range.endTime,
-    }));
-
-    const submitData: Omit<PhlebotomistType, "id"> = {
-      ...formData,
-      schedules,
-      isActivePhlebo: formData.status === "Active",
-      isHomeCertified: formData.certifications.includes(
-        "Home Collection Certified"
-      ),
-    };
-
-    if (editPhlebotomist && onUpdatePhlebotomist) {
-      onUpdatePhlebotomist({
-        ...submitData,
-        id: editPhlebotomist.id,
-      });
-    } else if (onAddPhlebotomist) {
-      onAddPhlebotomist(submitData);
+    if (!token || !admin) {
+      toast.error("Authentication required");
+      return;
     }
-    onClose();
+
+    setLoading(true);
+
+    try {
+      const availability: PhlebotomistAvailability[] = timeRanges.map(
+        (range) => ({
+          id: range.id,
+          day_id: range.day_id,
+          start_time: convertTo24Hour(range.startTime),
+          end_time: convertTo24Hour(range.endTime),
+          slot_capacity: range.slot_capacity || 0,
+        })
+      );
+
+      const serviceCityId = getCityId(formData.serviceCityTown);
+      const serviceAreaId = getAreaId(formData.serviceArea);
+      const specializationId = getSpecializationId(formData.specialization);
+
+      if (!serviceCityId || !serviceAreaId || !specializationId) {
+        toast.error(
+          "Please select valid service city, area, and specialization"
+        );
+        return;
+      }
+
+      let response;
+
+      if (editPhlebotomist && onUpdatePhlebotomist) {
+        const updatePayload: UpdatePhlebotomistPayload = {
+          id: editPhlebotomist.id,
+          name: formData.name,
+          mobile_number: formData.phone,
+          email: formData.email,
+          rating: parseFloat(formData.rating) || 0,
+          experience_in_yrs: parseInt(formData.experience) || 0,
+          service_city: serviceCityId,
+          service_area: serviceAreaId,
+          specialization_id: specializationId,
+          license_no: formData.licenseNo,
+          joining_date: formData.joiningDate,
+          is_home_collection_certified: formData.isHomeCertified,
+          is_available: formData.isActivePhlebo,
+          is_deleted: false,
+          availability: availability,
+        };
+
+        console.log("Update Payload:", updatePayload);
+        response = await updatePhlebotomist(updatePayload, token);
+
+        const updatedPhlebotomist: Phlebotomist = {
+          id: editPhlebotomist.id,
+          name: updatePayload.name,
+          mobile_number: updatePayload.mobile_number,
+          email: updatePayload.email,
+          rating: updatePayload.rating ?? 0,
+          experience_in_yrs: updatePayload.experience_in_yrs ?? 0,
+          service_city: updatePayload.service_city,
+          service_area: updatePayload.service_area,
+          specialization_id: updatePayload.specialization_id,
+          license_no: updatePayload.license_no,
+          joining_date: updatePayload.joining_date,
+          is_home_collection_certified:
+            updatePayload.is_home_collection_certified,
+          is_available: updatePayload.is_available,
+          is_deleted: updatePayload.is_deleted ?? false,
+          availability: updatePayload.availability,
+          created_by: editPhlebotomist.created_by,
+          updated_by: editPhlebotomist.updated_by,
+        };
+
+        onUpdatePhlebotomist(updatedPhlebotomist);
+        toast.success("Phlebotomist updated successfully!");
+      } else {
+        const createPayload: CreatePhlebotomistPayload = {
+          name: formData.name,
+          mobile_number: formData.phone,
+          email: formData.email,
+          rating: parseFloat(formData.rating) || 0,
+          experience_in_yrs: parseInt(formData.experience) || 0,
+          service_city: serviceCityId,
+          service_area: serviceAreaId,
+          specialization_id: specializationId,
+          license_no: formData.licenseNo,
+          joining_date: formData.joiningDate,
+          is_home_collection_certified: formData.isHomeCertified,
+          is_available: formData.isActivePhlebo,
+          is_deleted: false,
+          availability: availability,
+        };
+
+        console.log("Create Payload:", createPayload);
+        response = await createPhlebotomist(createPayload, token);
+
+        const newPhlebotomist: Phlebotomist = {
+          id: response.phleboId,
+          name: createPayload.name,
+          mobile_number: createPayload.mobile_number,
+          email: createPayload.email,
+          rating: createPayload.rating ?? 0,
+          experience_in_yrs: createPayload.experience_in_yrs ?? 0,
+          service_city: createPayload.service_city,
+          service_area: createPayload.service_area,
+          specialization_id: createPayload.specialization_id,
+          license_no: createPayload.license_no,
+          joining_date: createPayload.joining_date,
+          is_home_collection_certified:
+            createPayload.is_home_collection_certified,
+          is_available: createPayload.is_available,
+          is_deleted: createPayload.is_deleted ?? false,
+          availability: createPayload.availability,
+        };
+
+        onAddPhlebotomist(newPhlebotomist);
+        toast.success("Phlebotomist created successfully!");
+      }
+
+      console.log("API Response:", response);
+      onClose();
+    } catch (error: any) {
+      console.error("Error saving phlebotomist:", error);
+      toast.error(error.message || "Failed to save phlebotomist");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleReset = () => {
@@ -414,26 +592,16 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
       serviceArea: "",
       licenseNo: "",
       specialization: "",
-      targetGroup: "",
       rating: "",
       serviceCityTown: "",
       joiningDate: "",
-      certifications: [],
-      schedules: [],
-      samplesCollected: 0,
-      status: "Active",
-      location: "",
-      activeOrders: 0,
-      completedOrders: 0,
       isActivePhlebo: true,
       isHomeCertified: false,
     });
     setSelectedDays([]);
     setTimeRanges([]);
-    setMaxPatientsPerSlot({});
   };
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -449,6 +617,18 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
     };
   }, []);
 
+  if (fetchingData) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+          <div className="flex items-center justify-center p-12">
+            <div className="text-gray-500">Loading form data...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const renderBasicDetails = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -460,7 +640,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
             type="text"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-600"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-500"
             placeholder="Enter full name"
           />
         </div>
@@ -474,7 +654,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
             onChange={(e) =>
               setFormData({ ...formData, phone: e.target.value })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-600"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-500"
             placeholder="+91 00000 00000"
           />
         </div>
@@ -488,7 +668,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
             onChange={(e) =>
               setFormData({ ...formData, email: e.target.value })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-600"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-500"
             placeholder="email@example.com"
           />
         </div>
@@ -502,7 +682,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
             onChange={(e) =>
               setFormData({ ...formData, rating: e.target.value })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-600"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-500"
             placeholder="4.5"
           />
         </div>
@@ -516,12 +696,11 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
             onChange={(e) =>
               setFormData({ ...formData, experience: e.target.value })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-600"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-500"
             placeholder="e.g., 6 Yrs."
           />
         </div>
 
-        {/* Service City Dropdown */}
         <div className="dropdown-container relative">
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
             Service City/Town
@@ -529,16 +708,16 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
           <button
             type="button"
             onClick={() => setShowServiceCityDropdown(!showServiceCityDropdown)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-left bg-white flex items-center justify-between"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-left bg-white flex items-center justify-between text-gray-500"
           >
             <span
               className={
-                formData.serviceCityTown ? "text-black" : "text-gray-600"
+                formData.serviceCityTown ? "text-black" : "text-gray-500"
               }
             >
               {formData.serviceCityTown || "Select service city"}
             </span>
-            <ChevronDown className="w-4 h-4 text-gray-400" />
+            <ChevronDown className="w-4 h-4 text-gray-500" />
           </button>
 
           {showServiceCityDropdown && (
@@ -548,7 +727,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
                   key={city}
                   type="button"
                   onClick={() => handleServiceCitySelect(city)}
-                  className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-600"
+                  className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-500"
                 >
                   {city}
                 </button>
@@ -557,7 +736,6 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
           )}
         </div>
 
-        {/* Service Area Dropdown */}
         <div className="dropdown-container relative">
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
             Service Area
@@ -574,21 +752,21 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
             }`}
           >
             <span
-              className={formData.serviceArea ? "text-black" : "text-gray-600"}
+              className={formData.serviceArea ? "text-black" : "text-gray-500"}
             >
               {formData.serviceArea || "Select service area"}
             </span>
-            <ChevronDown className="w-4 h-4 text-gray-400" />
+            <ChevronDown className="w-4 h-4 text-gray-500" />
           </button>
 
           {showServiceAreaDropdown && formData.serviceCityTown && (
             <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {getAvailableServiceAreas().map((area) => (
+              {serviceAreaOptions.map((area) => (
                 <button
                   key={area}
                   type="button"
                   onClick={() => handleServiceAreaSelect(area)}
-                  className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-600"
+                  className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-500"
                 >
                   {area}
                 </button>
@@ -609,14 +787,16 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black bg-white appearance-none"
             >
-              <option value="">Select specialization</option>
+              <option value="" className="text-gray-500">
+                Select specialization
+              </option>
               {specializationOptions.map((option) => (
-                <option key={option} value={option}>
+                <option key={option} value={option} className="text-gray-500">
                   {option}
                 </option>
               ))}
             </select>
-            <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
           </div>
         </div>
         <div>
@@ -629,7 +809,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
             onChange={(e) =>
               setFormData({ ...formData, licenseNo: e.target.value })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-600"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-500"
             placeholder="e.g., LIC0000347"
           />
         </div>
@@ -646,13 +826,12 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-black"
             />
-            <Calendar className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+            <Calendar className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {/* Active Phlebotomist */}
         <div className="flex items-start gap-2 p-3 border border-gray-200 rounded-lg bg-white">
           <input
             type="checkbox"
@@ -661,7 +840,6 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
               setFormData({
                 ...formData,
                 isActivePhlebo: e.target.checked,
-                status: e.target.checked ? "Active" : "Inactive",
               })
             }
             className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded mt-1"
@@ -676,7 +854,6 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
           </div>
         </div>
 
-        {/* Home Collection Certified */}
         <div className="flex items-start gap-2 p-3 border border-gray-200 rounded-lg bg-white">
           <input
             type="checkbox"
@@ -686,11 +863,6 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
                 ...formData,
                 isHomeCertified: e.target.checked,
               });
-              if (e.target.checked) {
-                handleAddCertificationFromOption("Home Collection Certified");
-              } else {
-                handleRemoveCertification("Home Collection Certified");
-              }
             }}
             className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded mt-1"
           />
@@ -732,7 +904,6 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
         </div>
       </div>
 
-      {/* Time Range Options */}
       <div className="space-y-3 bg-[#F3F8FA] p-4 rounded-lg">
         <div className="flex items-center gap-2">
           <input
@@ -764,7 +935,6 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
           Select time
         </label>
 
-        {/* Time Ranges for Selected Days */}
         {selectedDays.map((day, dayIndex) => {
           const dayTimeRanges = timeRanges.filter((range) => range.day === day);
           const previousDayRanges =
@@ -810,11 +980,18 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
                               e.target.value
                             )
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:border-[#0088B1] focus:outline-none"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:border-[#0088B1] focus:outline-none text-black"
                         >
-                          <option value="">00:00 AM</option>
+                          <option value="" className="text-gray-500">
+                            Select start time
+                          </option>
                           {timeOptions.map((time) => (
-                            <option key={`start-${time}`} value={time}>
+                            <option
+                              key={`start-${time}`}
+                              value={time}
+                              className="text-gray-500"
+                              selected={time === range.startTime} // Ensure selected attribute
+                            >
                               {time}
                             </option>
                           ))}
@@ -831,36 +1008,54 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
                               e.target.value
                             )
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:border-[#0088B1] focus:outline-none"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:border-[#0088B1] focus:outline-none text-black"
                         >
-                          <option value="">00:00 AM</option>
+                          <option value="" className="text-gray-500">
+                            Select end time
+                          </option>
                           {timeOptions.map((time) => (
-                            <option key={`end-${time}`} value={time}>
+                            <option
+                              key={`end-${time}`}
+                              value={time}
+                              className="text-gray-500"
+                            >
                               {time}
                             </option>
                           ))}
                         </select>
                       </div>
                     </div>
+                    <div className="w-24">
+                      <label className="block text-[10px] text-gray-500 mb-1">
+                        Max Patients
+                      </label>
+                      <input
+                        type="number"
+                        value={
+                          range.slot_capacity === 0 ? "" : range.slot_capacity
+                        }
+                        onChange={(e) => {
+                          const value =
+                            e.target.value === ""
+                              ? 0
+                              : parseInt(e.target.value) || 0;
+                          updateTimeRange(globalIndex, "slot_capacity", value);
+                        }}
+                        className="w-full px-2 py-2 border border-gray-300 rounded-lg text-xs focus:border-[#0088B1] focus:outline-none text-black placeholder-gray-500"
+                        min="0"
+                        placeholder="0"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeTimeRange(globalIndex)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 );
               })}
-
-              {/* Max Patients per Slot */}
-              <div className="mb-4">
-                <label className="block text-[10px] text-gray-500 mb-1">
-                  * Max Patients per Slot
-                </label>
-                <input
-                  type="number"
-                  value={maxPatientsPerSlot[day] || 0}
-                  onChange={(e) =>
-                    handleMaxPatientsChange(day, parseInt(e.target.value) || 0)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:border-[#0088B1] focus:outline-none"
-                  min="0"
-                />
-              </div>
 
               <button
                 type="button"
@@ -905,7 +1100,6 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
           </button>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="flex border-b border-gray-200">
           <button
             onClick={() => setActiveSection("Basic Details")}
@@ -962,9 +1156,16 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
             ) : (
               <button
                 onClick={handleSubmit}
-                className="px-6 py-2 bg-[#0088B1] text-white rounded-lg text-xs hover:bg-[#00729A]"
+                disabled={loading}
+                className={`px-6 py-2 bg-[#0088B1] text-white rounded-lg text-xs hover:bg-[#00729A] ${
+                  loading ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
-                {editPhlebotomist ? "Update Phlebotomist" : "Add Phlebotomist"}
+                {loading
+                  ? "Saving..."
+                  : editPhlebotomist
+                  ? "Update Phlebotomist"
+                  : "Add Phlebotomist"}
               </button>
             )}
           </div>

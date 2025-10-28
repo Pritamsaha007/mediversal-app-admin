@@ -1,27 +1,36 @@
-export interface HealthPackagesType {
+export interface HealthPackage {
   id: string;
   name: string;
   description: string;
-  code: string;
-  category_id: string;
-  sample_type_ids: string[];
-  test_params?: string[];
-  report_time_hrs: number;
+  image_url: string;
+  linked_test_ids: string[];
   cost_price: number;
   selling_price: number;
-  preparation_instructions: string[];
-  precautions: string[];
-  test_includes: string[];
-  is_fasting_reqd: boolean;
-  in_person_visit_reqd: boolean;
-  is_featured_lab_test: boolean;
-  is_home_collection_available: boolean;
+  prepare_instructions: string[];
   is_active: boolean;
-  image_url: string;
+  is_popular: boolean;
   is_deleted: boolean;
-  created_by: string;
-  updated_by: string;
-  modality_type_id: string;
-  inspection_parts_ids: string[];
-  related_lab_test_ids: string[];
+  related_health_package_ids?: string[];
+  is_fasting_reqd?: boolean;
+  in_person_visit_reqd?: boolean;
+  is_home_collection_available?: boolean;
+  created_by?: string;
+  updated_by?: string;
+}
+
+export interface CreateHealthPackagePayload extends Omit<HealthPackage, "id"> {
+  id?: string;
+}
+
+export interface UpdateHealthPackagePayload extends Partial<HealthPackage> {
+  id: string;
+}
+export interface SearchHealthPackagesPayload {
+  start: number;
+  max: number;
+  filter_linked_test_ids?: string | null;
+  search: string | null;
+  filter_featured?: boolean | null;
+  sort_by: string;
+  sort_order: "ASC" | "DESC";
 }

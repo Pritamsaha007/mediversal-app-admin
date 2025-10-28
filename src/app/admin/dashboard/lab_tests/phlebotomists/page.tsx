@@ -11,15 +11,21 @@ import {
   Edit,
   Trash2,
   ArrowUpDown,
-  Phone,
-  X,
 } from "lucide-react";
 import StatsCard from "../../home-care/components/StatsCard";
 import StatusBadge from "../../home-care/components/StatusBadge";
 import toast from "react-hot-toast";
 import { AddPhlebotomistModal } from "./components/AddStaff";
-import { PhlebotomistType, Schedule } from "./type/index";
+import { Phlebotomist, PhlebotomistAvailability } from "./type";
 import ViewPhlebotomistModal from "./components/ViewStaff";
+import { useAdminStore } from "@/app/store/adminStore";
+import {
+  EnumItem,
+  fetchDays,
+  searchPhlebotomists,
+  SearchPhlebotomistsPayload,
+} from "../services/index";
+
 interface PhlebotomistStats {
   totalPhlebotomists: number;
   activePhlebotomists: number;
@@ -31,9 +37,9 @@ const PhlebotomistManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All Phlebotomist");
   const [selectedLocation, setSelectedLocation] = useState("All Locations");
-  const [phlebotomists, setPhlebotomists] = useState<PhlebotomistType[]>([]);
+  const [phlebotomists, setPhlebotomists] = useState<Phlebotomist[]>([]);
   const [filteredPhlebotomists, setFilteredPhlebotomists] = useState<
-    PhlebotomistType[]
+    Phlebotomist[]
   >([]);
   const [openDropdown, setOpenDropdown] = useState<
     null | "filter" | "location"
@@ -45,107 +51,165 @@ const PhlebotomistManagement: React.FC = () => {
   const [expandedSchedules, setExpandedSchedules] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPhlebotomist, setEditingPhlebotomist] =
-    useState<PhlebotomistType | null>(null);
+    useState<Phlebotomist | null>(null);
   const [viewingPhlebotomist, setViewingPhlebotomist] =
-    useState<PhlebotomistType | null>(null);
+    useState<Phlebotomist | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [daysData, setDaysData] = useState<EnumItem[]>([]);
+  const [daysDataLoaded, setDaysDataLoaded] = useState(false);
 
-  const dummyPhlebotomists: PhlebotomistType[] = [
-    {
-      id: "1",
-      name: "Rajesh Sharma",
-      email: "rajesh.sharma@example.com",
-      phone: "+91 9876543210",
-      specialization: "General Collection",
-      targetGroup: "Senior Citizens",
-      licenseNo: "LP0006789",
-      experience: "4 yrs. exp.",
-      serviceArea: "North Zone",
-      serviceCityTown: "Delhi",
-      joiningDate: "15/03/2021",
-      rating: "4.5",
-      certifications: ["Home Collection Certified"],
-      schedules: [
-        { startTime: "9:00 AM", endTime: "10:00 AM" },
-        { startTime: "10:00 AM", endTime: "11:00 AM" },
-        { startTime: "11:00 AM", endTime: "12:00 AM" },
-      ],
-      samplesCollected: 76,
-      activeOrders: 5,
-      completedOrders: 120,
-      status: "Active",
-      location: "North Zone",
-      isActivePhlebo: true,
-      isHomeCertified: true,
-    },
-  ];
+  const { token } = useAdminStore();
+
+  useEffect(() => {
+    const fetchEnumData = async () => {
+      if (!token) return;
+
+      try {
+        const daysResponse = await fetchDays(token);
+        setDaysData(daysResponse.roles || []);
+        setDaysDataLoaded(true);
+        console.log("Days data loaded:", daysResponse.roles);
+      } catch (error: any) {
+        console.error("Error fetching days data:", error);
+        toast.error("Failed to load days data");
+      }
+    };
+
+    fetchEnumData();
+  }, [token]);
+
+  const convertSearchResultToPhlebotomist = (apiPhlebo: any): Phlebotomist => {
+    const getDayIdFromName = (dayName: string): string => {
+      const day = daysData.find((item) => item.value === dayName);
+      console.log(`Mapping day: ${dayName} to ID: ${day?.id}`);
+      return day?.id || dayName;
+    };
+
+    return {
+      id: apiPhlebo.id,
+      name: apiPhlebo.name,
+      mobile_number: apiPhlebo.mobile_number,
+      email: apiPhlebo.email,
+      rating: apiPhlebo.rating,
+      experience_in_yrs: apiPhlebo.experience_in_yrs,
+      service_city: apiPhlebo.service_city_name,
+      service_area: apiPhlebo.service_area_name,
+      specialization_id: apiPhlebo.specialization_name,
+      license_no: apiPhlebo.license_no,
+      joining_date: apiPhlebo.joining_date,
+      is_home_collection_certified: apiPhlebo.is_home_collection_certified,
+      is_available: apiPhlebo.is_available,
+      is_deleted: apiPhlebo.is_deleted || false,
+      availability: apiPhlebo.availability.map((avail: any) => ({
+        id: avail.id,
+        day_id: getDayIdFromName(avail.day),
+        start_time: avail.start_time,
+        end_time: avail.end_time,
+        slot_capacity: avail.slot_capacity || 0,
+      })),
+      created_by: apiPhlebo.created_by || "",
+      updated_by: apiPhlebo.updated_by || "",
+    };
+  };
 
   const filterOptions = ["All Phlebotomist", "Active", "Inactive"];
   const locationOptions = [
     "All Locations",
-    "North Zone",
-    "South Zone",
-    "East Zone",
-    "West Zone",
-    "Central Zone",
+    "Patna",
+    "Delhi",
+    "Mumbai",
+    "Kolkata",
+    "Bangalore",
   ];
 
   const generateStats = (): PhlebotomistStats => {
     const totalPhlebotomists = phlebotomists.length;
     const activePhlebotomists = phlebotomists.filter(
-      (p) => p.status === "Active"
+      (p) => p.is_available
     ).length;
-    const averageSamples = Math.round(
-      phlebotomists.reduce((sum, p) => sum + p.samplesCollected, 0) /
-        (totalPhlebotomists || 1)
-    );
     const avgExp =
-      phlebotomists.reduce((sum, p) => {
-        const years = parseInt(p.experience);
-        return sum + (isNaN(years) ? 0 : years);
-      }, 0) / (totalPhlebotomists || 1);
+      phlebotomists.reduce((sum, p) => sum + p.experience_in_yrs, 0) /
+      (totalPhlebotomists || 1);
 
     return {
       totalPhlebotomists,
       activePhlebotomists,
-      averageSamples,
+      averageSamples: 0,
       averageExperience: `${Math.round(avgExp)} Yrs.`,
     };
   };
 
   const stats = generateStats();
 
-  useEffect(() => {
+  const fetchPhlebotomists = async () => {
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    if (!daysDataLoaded) {
+      console.log("Waiting for days data to load...");
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      setPhlebotomists(dummyPhlebotomists);
-      setFilteredPhlebotomists(dummyPhlebotomists);
+    try {
+      const searchPayload: SearchPhlebotomistsPayload = {
+        start: 0,
+        max: 50,
+        search_text: searchTerm || null,
+        filter_specialization:
+          selectedFilter !== "All Phlebotomist" &&
+          selectedFilter !== "Active" &&
+          selectedFilter !== "Inactive"
+            ? selectedFilter
+            : null,
+        filter_service_city:
+          selectedLocation !== "All Locations" ? selectedLocation : null,
+        filter_is_available:
+          selectedFilter === "Active"
+            ? true
+            : selectedFilter === "Inactive"
+            ? false
+            : null,
+        filter_is_home_collection_certified: null,
+        sort_by: "name",
+        sort_order: "ASC",
+      };
+
+      const response = await searchPhlebotomists(searchPayload, token);
+
+      if (response.success) {
+        const phlebotomistData = response.phlebotomists.map(
+          convertSearchResultToPhlebotomist
+        );
+        setPhlebotomists(phlebotomistData);
+        setFilteredPhlebotomists(phlebotomistData);
+        console.log("Phlebotomists data loaded:", phlebotomistData);
+      }
+    } catch (error: any) {
+      console.error("Error fetching phlebotomists:", error);
+      toast.error(error.message || "Failed to load phlebotomists");
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  };
 
   useEffect(() => {
-    let filtered = phlebotomists;
-
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.licenseNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.specialization.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+    if (daysDataLoaded) {
+      fetchPhlebotomists();
     }
+  }, [daysDataLoaded]);
 
-    if (selectedFilter !== "All Phlebotomist") {
-      filtered = filtered.filter((p) => p.status === selectedFilter);
+  useEffect(() => {
+    if (daysDataLoaded) {
+      const timeoutId = setTimeout(() => {
+        fetchPhlebotomists();
+      }, 500);
+
+      return () => clearTimeout(timeoutId);
     }
-
-    if (selectedLocation !== "All Locations") {
-      filtered = filtered.filter((p) => p.location === selectedLocation);
-    }
-
-    setFilteredPhlebotomists(filtered);
-  }, [searchTerm, selectedFilter, selectedLocation, phlebotomists]);
+  }, [searchTerm, selectedFilter, selectedLocation, daysDataLoaded]);
 
   const handleSelectPhlebotomist = (id: string, checked: boolean) => {
     if (checked) {
@@ -173,7 +237,10 @@ const PhlebotomistManagement: React.FC = () => {
     }
   };
 
-  const renderSchedules = (schedules: Schedule[], phlebotomistId: string) => {
+  const renderSchedules = (
+    schedules: PhlebotomistAvailability[],
+    phlebotomistId: string
+  ) => {
     const isExpanded = expandedSchedules.includes(phlebotomistId);
     const visibleSchedules = isExpanded ? schedules : schedules.slice(0, 2);
     const hasMore = schedules.length > 2;
@@ -183,7 +250,7 @@ const PhlebotomistManagement: React.FC = () => {
         {visibleSchedules.map((schedule, index) => (
           <div key={index} className="flex gap-2">
             <span className="px-3 py-1.5 rounded-md text-[10px] bg-[#E8F4F7] text-[#0088B1]">
-              {schedule.startTime} - {schedule.endTime}
+              {schedule.start_time} - {schedule.end_time}
             </span>
           </div>
         ))}
@@ -207,32 +274,22 @@ const PhlebotomistManagement: React.FC = () => {
     );
   };
 
-  const handleAddPhlebotomist = (
-    newPhlebotomist: Omit<PhlebotomistType, "id">
-  ) => {
-    const phlebotomistWithId: PhlebotomistType = {
-      ...newPhlebotomist,
-      id: (phlebotomists.length + 1).toString(),
-    };
-    setPhlebotomists([...phlebotomists, phlebotomistWithId]);
+  const handleAddPhlebotomist = (newPhlebotomist: Phlebotomist) => {
+    fetchPhlebotomists();
     toast.success("Phlebotomist added successfully");
   };
 
-  const handleUpdatePhlebotomist = (updatedPhlebotomist: PhlebotomistType) => {
-    setPhlebotomists(
-      phlebotomists.map((p) =>
-        p.id === updatedPhlebotomist.id ? updatedPhlebotomist : p
-      )
-    );
+  const handleUpdatePhlebotomist = (updatedPhlebotomist: Phlebotomist) => {
+    fetchPhlebotomists();
     toast.success("Phlebotomist updated successfully");
   };
 
-  const handleEdit = (phlebotomist: PhlebotomistType) => {
+  const handleEdit = (phlebotomist: Phlebotomist) => {
     setEditingPhlebotomist(phlebotomist);
     setIsModalOpen(true);
   };
 
-  const handleView = (phlebotomist: PhlebotomistType) => {
+  const handleView = (phlebotomist: Phlebotomist) => {
     setViewingPhlebotomist(phlebotomist);
     setIsViewModalOpen(true);
   };
@@ -268,13 +325,15 @@ const PhlebotomistManagement: React.FC = () => {
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
             Phlebotomist Management
           </h1>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className={`flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg bg-[#0088B1] hover:bg-[#00729A] text-[#F8F8F8]`}
-          >
-            <Plus className="w-3 h-3" />
-            Add New Phlebotomist
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className={`flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg bg-[#0088B1] hover:bg-[#00729A] text-[#F8F8F8]`}
+            >
+              <Plus className="w-3 h-3" />
+              Add New Phlebotomist
+            </button>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
           <StatsCard
@@ -413,9 +472,6 @@ const PhlebotomistManagement: React.FC = () => {
                     Today's Schedule
                   </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
-                    Samples Collected
-                  </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-right text-[12px] font-medium text-[#161D1F] tracking-wider">
@@ -426,7 +482,7 @@ const PhlebotomistManagement: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
+                    <td colSpan={5} className="px-6 py-12 text-center">
                       <div className="text-gray-500">
                         Loading phlebotomists...
                       </div>
@@ -434,7 +490,7 @@ const PhlebotomistManagement: React.FC = () => {
                   </tr>
                 ) : filteredPhlebotomists.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
+                    <td colSpan={5} className="px-6 py-12 text-center">
                       <div className="text-gray-500">
                         No phlebotomists found.
                       </div>
@@ -464,39 +520,35 @@ const PhlebotomistManagement: React.FC = () => {
                             {phlebotomist.name}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {phlebotomist.specialization}
-                            {phlebotomist.targetGroup &&
-                              ` | ${phlebotomist.targetGroup}`}
+                            {phlebotomist.specialization_id}
                           </div>
                           <div className="text-xs text-gray-400">
-                            License No.: {phlebotomist.licenseNo}
+                            License No.: {phlebotomist.license_no}
                           </div>
                           <div className="flex gap-2 mt-1">
                             <span className="px-2 py-0.5 rounded text-xs border border-[#0088B1] text-[#0088B1]">
-                              {phlebotomist.experience}
+                              {phlebotomist.experience_in_yrs} yrs exp.
                             </span>
-                            {phlebotomist.certifications.map((cert, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-0.5 rounded text-xs border border-[#9B51E0] text-[#9B51E0]"
-                              >
-                                {cert}
+                            {phlebotomist.is_home_collection_certified && (
+                              <span className="px-2 py-0.5 rounded text-xs border border-[#9B51E0] text-[#9B51E0]">
+                                Home Collection Certified
                               </span>
-                            ))}
+                            )}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         {renderSchedules(
-                          phlebotomist.schedules,
+                          phlebotomist.availability,
                           phlebotomist.id
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-[#161D1F]">
-                        {phlebotomist.samplesCollected}
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge status={phlebotomist.status} />
+                        <StatusBadge
+                          status={
+                            phlebotomist.is_available ? "Active" : "Inactive"
+                          }
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">
                         <div className="flex items-center gap-2 justify-end">
@@ -526,7 +578,6 @@ const PhlebotomistManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Add/Edit Modal */}
       <AddPhlebotomistModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
@@ -535,7 +586,6 @@ const PhlebotomistManagement: React.FC = () => {
         editPhlebotomist={editingPhlebotomist}
       />
 
-      {/* View Modal */}
       <ViewPhlebotomistModal
         isOpen={isViewModalOpen}
         onClose={handleCloseViewModal}

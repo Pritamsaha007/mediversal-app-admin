@@ -19,7 +19,12 @@ import toast from "react-hot-toast";
 import { AddTestModal } from "./components/AddTest";
 import { ViewTestModal } from "./components/ViewTest";
 import { PathologyTest } from "./types";
-
+import {
+  fetchCategories,
+  searchPathologyTests,
+  type SearchLabTestsPayload,
+} from "../services/index";
+import { useAdminStore } from "@/app/store/adminStore";
 interface PathologyStats {
   totalTests: number;
   activeTests: number;
@@ -41,38 +46,8 @@ const PathologyTests: React.FC = () => {
   const [showViewTestModal, setShowViewTestModal] = useState(false);
   const [selectedTest, setSelectedTest] = useState<PathologyTest | null>(null);
   const [editingTest, setEditingTest] = useState<PathologyTest | null>(null);
-
-  const dummyPathologyTests: PathologyTest[] = [
-    {
-      id: "60a12942-a71a-405c-af1c-caf474bd954a",
-      name: "Complete Blood Count Test",
-      description: "Measures overall health and detects disorders.",
-      code: "CBC001",
-      category_id: "1652e599-4880-461c-840c-15f3ea00de1d",
-      sample_type_ids: ["f240088b-7ece-421d-b874-8c0562432fdc"],
-      test_params: ["Hemoglobin", "WBC"],
-      report_time_hrs: 24,
-      cost_price: 100,
-      selling_price: 150,
-      preparation_instructions: ["Fast for 8 hours before test"],
-      precautions: ["Avoid medication X before test"],
-      is_fasting_reqd: true,
-      in_person_visit_reqd: false,
-      is_featured_lab_test: true,
-      is_home_collection_available: true,
-      is_active: true,
-      image_url: "https://example.com/images/cbc_test.png",
-      is_deleted: false,
-      created_by: "3fc901f2-45f4-4ee6-a351-e05721be6522",
-      updated_by: "3fc901f2-45f4-4ee6-a351-e05721be6522",
-      modality_type_id: "81961494-7bcf-4f8d-88ed-9ffb70dcdf44",
-      inspection_parts_ids: [
-        "c562704c-4d1f-464d-8f2c-13f8dc813eb6",
-        "e660835e-921f-45c0-ba88-7e7cb83edd05",
-      ],
-      related_lab_test_ids: ["b931a31d-6a03-4eff-ae60-8523b07df079"],
-    },
-  ];
+  const [category_id, setCategory_id] = useState<string>("");
+  const { token } = useAdminStore();
 
   const statusOptions = ["All Status", "Active", "Inactive"];
 
@@ -88,18 +63,65 @@ const PathologyTests: React.FC = () => {
     };
   };
   const stats = generateStats();
+  const fetchCategoryData = async () => {
+    setLoading(true);
+    try {
+      const categoryData = await fetchCategories(token);
+      const defaultCategoryId = categoryData.roles[2]?.id || "";
+      console.log(defaultCategoryId);
+      setCategory_id(defaultCategoryId);
+    } catch (error) {
+      console.error("Error fetching dropdown data:", error);
+      toast.error("Failed to load dropdown options");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setTests(dummyPathologyTests);
-      setFilteredTests(dummyPathologyTests);
-      setLoading(false);
-    }, 1000);
+    fetchCategoryData();
   }, []);
 
   useEffect(() => {
-    let filtered = dummyPathologyTests;
+    if (!category_id) return;
+
+    const fetchPathologyTests = async () => {
+      setLoading(true);
+      try {
+        const payload: SearchLabTestsPayload = {
+          start: 0,
+          max: 50,
+          search_category: category_id,
+          search: searchTerm || null,
+          filter_sample_type_ids: null,
+          filter_active:
+            selectedStatus === "All Status"
+              ? null
+              : selectedStatus === "Active"
+              ? true
+              : false,
+          filter_featured: null,
+          sort_by: "name",
+          sort_order: "ASC",
+        };
+
+        const res = await searchPathologyTests(payload, token!);
+        console.log(res.labTests, "pathology tests");
+        setTests(res.labTests);
+        setFilteredTests(res.labTests);
+      } catch (error: any) {
+        console.error("Error fetching pathology tests:", error);
+        toast.error(error.message || "Failed to fetch tests");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPathologyTests();
+  }, [category_id, searchTerm, selectedStatus, token]);
+
+  useEffect(() => {
+    let filtered = tests;
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -117,7 +139,7 @@ const PathologyTests: React.FC = () => {
     }
 
     setFilteredTests(filtered);
-  }, [searchTerm, selectedStatus]);
+  }, [searchTerm, selectedStatus, tests]);
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -201,23 +223,17 @@ const PathologyTests: React.FC = () => {
     }
   };
 
-  const handleAddTest = (newTestData: Omit<PathologyTest, "id">) => {
-    const newTest: PathologyTest = {
-      ...newTestData,
-      id: Date.now().toString(),
-    };
-    setTests([...tests, newTest]);
-    setFilteredTests([...tests, newTest]);
-    toast.success("Test added successfully!");
+  const handleAddTest = async (newTestData: PathologyTest) => {
+    setTests([...tests, newTestData]);
+    setFilteredTests([...tests, newTestData]);
   };
 
-  const handleUpdateTest = (updatedTest: PathologyTest) => {
+  const handleUpdateTest = async (updatedTest: PathologyTest) => {
     const updatedTests = tests.map((test) =>
       test.id === updatedTest.id ? updatedTest : test
     );
     setTests(updatedTests);
     setFilteredTests(updatedTests);
-    toast.success("Test updated successfully!");
   };
 
   const handleTestAction = async (action: string, test: PathologyTest) => {
@@ -551,6 +567,12 @@ const PathologyTests: React.FC = () => {
           setSelectedTest(null);
         }}
         test={selectedTest}
+        onEdit={(test) => {
+          setEditingTest(test);
+          setShowViewTestModal(false);
+          setShowAddTestModal(true);
+        }}
+        onUpdateTest={handleUpdateTest}
       />
     </div>
   );

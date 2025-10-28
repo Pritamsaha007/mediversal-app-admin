@@ -12,13 +12,17 @@ import {
   Eye,
   Edit,
   Trash2,
-  Droplet,
-  Droplets,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { AddTestModal } from "./components/AddTest";
 import { ViewTestModal } from "./components/ViewTest";
 import { RadiologyTest } from "./types";
+import {
+  fetchCategories,
+  SearchLabTestsPayload,
+  searchPathologyTests,
+} from "../services/index";
+import { useAdminStore } from "@/app/store/adminStore";
 
 interface RadiologyStats {
   totalTests: number;
@@ -42,40 +46,10 @@ const RadiologyTests: React.FC = () => {
   const [selectedTest, setSelectedTest] = useState<RadiologyTest | null>(null);
   const [editingTest, setEditingTest] = useState<RadiologyTest | null>(null);
 
-  const dummyRadiologyTests: RadiologyTest[] = [
-    {
-      id: "60a12942-a71a-405c-af1c-caf474bd954a",
-      name: "MRI Lumbo-Sacral Spine (LS)",
-      description: "Measures overall health and detects disorders.",
-      code: "CBC001",
-      category_id: "1652e599-4880-461c-840c-15f3ea00de1d",
-      sample_type_ids: ["f240088b-7ece-421d-b874-8c0562432fdc"],
-      test_params: ["Hemoglobin", "WBC"],
-      report_time_hrs: 24,
-      cost_price: 100,
-      selling_price: 150,
-      preparation_instructions: ["Fast for 8 hours before test"],
-      precautions: ["Avoid medication X before test"],
-      is_fasting_reqd: true,
-      in_person_visit_reqd: false,
-      is_featured_lab_test: true,
-      is_home_collection_available: true,
-      is_active: true,
-      image_url: "https://example.com/images/cbc_test.png",
-      is_deleted: false,
-      created_by: "3fc901f2-45f4-4ee6-a351-e05721be6522",
-      updated_by: "3fc901f2-45f4-4ee6-a351-e05721be6522",
-      modality_type_id: "81961494-7bcf-4f8d-88ed-9ffb70dcdf44",
-      inspection_parts_ids: [
-        "c562704c-4d1f-464d-8f2c-13f8dc813eb6",
-        "e660835e-921f-45c0-ba88-7e7cb83edd05",
-      ],
-      related_lab_test_ids: ["b931a31d-6a03-4eff-ae60-8523b07df079"],
-    },
-  ];
+  const { token } = useAdminStore();
 
   const statusOptions = ["All Status", "Active", "Inactive"];
-
+  const [category_id, setCategory_id] = useState<string>("");
   const generateStats = (): RadiologyStats => {
     const totalTests = tests.length;
     const activeTests = tests.filter((t) => t.is_active).length;
@@ -90,16 +64,47 @@ const RadiologyTests: React.FC = () => {
   const stats = generateStats();
 
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setTests(dummyRadiologyTests);
-      setFilteredTests(dummyRadiologyTests);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    const fetchRadiologyTests = async () => {
+      setLoading(true);
+      try {
+        const categoryData = await fetchCategories(token);
+        const defaultCategoryId = categoryData.roles[11]?.id || "";
+        setCategory_id(defaultCategoryId);
+
+        const payload: SearchLabTestsPayload = {
+          start: 0,
+          max: 50,
+          search_category: defaultCategoryId || null,
+          search: null,
+          filter_sample_type_ids: null,
+          filter_active:
+            selectedStatus === "All Status"
+              ? null
+              : selectedStatus === "Active"
+              ? true
+              : false,
+          filter_featured: null,
+          sort_by: "name",
+          sort_order: "ASC",
+        };
+
+        console.log(payload, "payload");
+        const res = await searchPathologyTests(payload, token!);
+        setTests(res.labTests);
+        setFilteredTests(res.labTests);
+      } catch (error: any) {
+        console.error("Error fetching radiology tests:", error);
+        toast.error(error.message || "Failed to fetch tests");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRadiologyTests();
+  }, [searchTerm, selectedStatus, token]);
 
   useEffect(() => {
-    let filtered = dummyRadiologyTests;
+    let filtered = tests;
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -117,7 +122,7 @@ const RadiologyTests: React.FC = () => {
     }
 
     setFilteredTests(filtered);
-  }, [searchTerm, selectedStatus]);
+  }, [searchTerm, selectedStatus, tests]);
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -201,23 +206,17 @@ const RadiologyTests: React.FC = () => {
     }
   };
 
-  const handleAddTest = (newTestData: Omit<RadiologyTest, "id">) => {
-    const newTest: RadiologyTest = {
-      ...newTestData,
-      id: Date.now().toString(),
-    };
-    setTests([...tests, newTest]);
-    setFilteredTests([...tests, newTest]);
-    toast.success("Test added successfully!");
+  const handleAddTest = async (newTestData: RadiologyTest) => {
+    setTests([...tests, newTestData]);
+    setFilteredTests([...tests, newTestData]);
   };
 
-  const handleUpdateTest = (updatedTest: RadiologyTest) => {
+  const handleUpdateTest = async (updatedTest: RadiologyTest) => {
     const updatedTests = tests.map((test) =>
       test.id === updatedTest.id ? updatedTest : test
     );
     setTests(updatedTests);
     setFilteredTests(updatedTests);
-    toast.success("Test updated successfully!");
   };
 
   const handleTestAction = async (action: string, test: RadiologyTest) => {
@@ -551,6 +550,12 @@ const RadiologyTests: React.FC = () => {
           setSelectedTest(null);
         }}
         test={selectedTest}
+        onEdit={(test) => {
+          setEditingTest(test);
+          setShowViewTestModal(false);
+          setShowAddTestModal(true);
+        }}
+        onUpdateTest={handleUpdateTest}
       />
     </div>
   );
