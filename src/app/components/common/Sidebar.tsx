@@ -141,10 +141,37 @@ const Sidebar = () => {
           name: "Consultations",
           link: "/admin/dashboard/consultations/consultation",
         },
+
         // {
         //   name: "Orders",
         //   link: "/admin/dashboard/consultations/orders",
         // },
+      ],
+    },
+    {
+      name: "Lab Tests",
+      icon: <LucideComputer size={18} />,
+      subItems: [
+        {
+          name: "Pathology Tests",
+          link: "/admin/dashboard/lab_tests/pathology_tests",
+        },
+        {
+          name: "Radiology Tests",
+          link: "/admin/dashboard/lab_tests/radiology_tests",
+        },
+        {
+          name: "Health Packages",
+          link: "/admin/dashboard/lab_tests/health_package",
+        },
+        {
+          name: "Bookings",
+          link: "/admin/dashboard/lab_tests/bookings",
+        },
+        {
+          name: "Phlebotomists",
+          link: "/admin/dashboard/lab_tests/phlebotomists",
+        },
       ],
     },
   ];
