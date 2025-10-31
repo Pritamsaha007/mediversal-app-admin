@@ -22,9 +22,11 @@ import { PathologyTest } from "./types";
 import {
   fetchCategories,
   searchPathologyTests,
+  deletePathologyTest, // Import the delete function
   type SearchLabTestsPayload,
 } from "../services/index";
 import { useAdminStore } from "@/app/store/adminStore";
+
 interface PathologyStats {
   totalTests: number;
   activeTests: number;
@@ -52,17 +54,22 @@ const PathologyTests: React.FC = () => {
   const statusOptions = ["All Status", "Active", "Inactive"];
 
   const generateStats = (): PathologyStats => {
-    const totalTests = tests.length;
-    const activeTests = tests.filter((t) => t.is_active).length;
-    const totalCategories = new Set(tests.map((test) => test.category_id)).size;
+    // Filter out deleted tests for stats
+    const activeTests = tests.filter((t) => !t.is_deleted);
+    const totalTests = activeTests.length;
+    const activeTestCount = activeTests.filter((t) => t.is_active).length;
+    const totalCategories = new Set(activeTests.map((test) => test.category_id))
+      .size;
 
     return {
       totalTests,
-      activeTests,
+      activeTests: activeTestCount,
       totalCategories,
     };
   };
+
   const stats = generateStats();
+
   const fetchCategoryData = async () => {
     setLoading(true);
     try {
@@ -90,7 +97,7 @@ const PathologyTests: React.FC = () => {
       try {
         const payload: SearchLabTestsPayload = {
           start: 0,
-          max: 50,
+          max: null,
           search_category: category_id,
           search: searchTerm || null,
           filter_sample_type_ids: null,
@@ -106,9 +113,14 @@ const PathologyTests: React.FC = () => {
         };
 
         const res = await searchPathologyTests(payload, token!);
-        console.log(res.labTests, "pathology tests");
+
+        const activeTests = res.labTests.filter(
+          (test: PathologyTest) => !test.is_deleted
+        );
+
+        console.log(activeTests, "active pathology tests");
         setTests(res.labTests);
-        setFilteredTests(res.labTests);
+        setFilteredTests(activeTests);
       } catch (error: any) {
         console.error("Error fetching pathology tests:", error);
         toast.error(error.message || "Failed to fetch tests");
@@ -121,7 +133,7 @@ const PathologyTests: React.FC = () => {
   }, [category_id, searchTerm, selectedStatus, token]);
 
   useEffect(() => {
-    let filtered = tests;
+    let filtered = tests.filter((test) => !test.is_deleted);
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -147,7 +159,7 @@ const PathologyTests: React.FC = () => {
   };
 
   const handleBulkDelete = async () => {
-    if (selectedTests.length === 0) return;
+    if (selectedTests.length === 0 || !token) return;
 
     const confirmed = await new Promise<boolean>((resolve) => {
       const toastId = toast(
@@ -188,13 +200,31 @@ const PathologyTests: React.FC = () => {
     if (confirmed) {
       setLoading(true);
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const updatedTests = tests.filter(
-          (test) => !selectedTests.includes(test.id)
+        const deletePromises = selectedTests.map((testId) =>
+          deletePathologyTest(testId, token)
         );
-        setTests(updatedTests);
-        setFilteredTests(updatedTests);
+
+        await Promise.all(deletePromises);
+
+        const payload: SearchLabTestsPayload = {
+          start: 0,
+          max: 50,
+          search_category: category_id,
+          search: searchTerm || null,
+          filter_sample_type_ids: null,
+          filter_active: null,
+          filter_featured: null,
+          sort_by: "name",
+          sort_order: "ASC",
+        };
+
+        const res = await searchPathologyTests(payload, token!);
+        const activeTests = res.labTests.filter(
+          (test: PathologyTest) => !test.is_deleted
+        );
+
+        setTests(res.labTests);
+        setFilteredTests(activeTests);
 
         toast.success(`${selectedTests.length} tests deleted successfully!`);
         setSelectedTests([]);
@@ -225,7 +255,10 @@ const PathologyTests: React.FC = () => {
 
   const handleAddTest = async (newTestData: PathologyTest) => {
     setTests([...tests, newTestData]);
-    setFilteredTests([...tests, newTestData]);
+    setFilteredTests([
+      ...tests.filter((test) => !test.is_deleted),
+      newTestData,
+    ]);
   };
 
   const handleUpdateTest = async (updatedTest: PathologyTest) => {
@@ -233,7 +266,7 @@ const PathologyTests: React.FC = () => {
       test.id === updatedTest.id ? updatedTest : test
     );
     setTests(updatedTests);
-    setFilteredTests(updatedTests);
+    setFilteredTests(updatedTests.filter((test) => !test.is_deleted));
   };
 
   const handleTestAction = async (action: string, test: PathologyTest) => {
@@ -284,11 +317,27 @@ const PathologyTests: React.FC = () => {
 
         if (confirmed) {
           try {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await deletePathologyTest(test.id, token);
 
-            const updatedTests = tests.filter((t) => t.id !== test.id);
-            setTests(updatedTests);
-            setFilteredTests(updatedTests);
+            const payload: SearchLabTestsPayload = {
+              start: 0,
+              max: 50,
+              search_category: category_id,
+              search: searchTerm || null,
+              filter_sample_type_ids: null,
+              filter_active: null,
+              filter_featured: null,
+              sort_by: "name",
+              sort_order: "ASC",
+            };
+
+            const res = await searchPathologyTests(payload, token!);
+            const activeTests = res.labTests.filter(
+              (test: PathologyTest) => !test.is_deleted
+            );
+
+            setTests(res.labTests);
+            setFilteredTests(activeTests);
 
             toast.success("Test deleted successfully!");
           } catch (error: any) {
@@ -316,7 +365,6 @@ const PathologyTests: React.FC = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
   return (
     <div className="min-h-screen bg-gray-50 p-2">
       <div className="max-w-7xl mx-auto">

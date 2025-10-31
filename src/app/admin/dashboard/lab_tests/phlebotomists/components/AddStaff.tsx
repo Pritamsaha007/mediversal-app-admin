@@ -83,11 +83,9 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
   const [fetchingData, setFetchingData] = useState(false);
   const [enumDataLoaded, setEnumDataLoaded] = useState(false);
 
-  // Dropdown states
   const [showServiceCityDropdown, setShowServiceCityDropdown] = useState(false);
   const [showServiceAreaDropdown, setShowServiceAreaDropdown] = useState(false);
 
-  // Enum data states
   const [daysData, setDaysData] = useState<EnumItem[]>([]);
   const [specializationsData, setSpecializationsData] = useState<EnumItem[]>(
     []
@@ -842,7 +840,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
                 isActivePhlebo: e.target.checked,
               })
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded mt-1"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded mt-1"
           />
           <div>
             <div className="text-xs font-medium text-[#161D1F]">
@@ -864,7 +862,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
                 isHomeCertified: e.target.checked,
               });
             }}
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded mt-1"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded mt-1"
           />
           <div>
             <div className="text-xs font-medium text-[#161D1F]">
@@ -910,7 +908,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
             type="radio"
             checked={sameAsPrevious}
             onChange={() => setSameAsPrevious(true)}
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300"
           />
           <label className="text-xs text-[#0088b1]">
             Select the same time range as the previous day
@@ -922,7 +920,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
             type="radio"
             checked={!sameAsPrevious}
             onChange={() => setSameAsPrevious(false)}
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300"
           />
           <label className="text-xs text-[#0088b1]">
             Make a fresh time range
@@ -990,7 +988,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
                               key={`start-${time}`}
                               value={time}
                               className="text-gray-500"
-                              selected={time === range.startTime} // Ensure selected attribute
+                              selected={time === range.startTime}
                             >
                               {time}
                             </option>

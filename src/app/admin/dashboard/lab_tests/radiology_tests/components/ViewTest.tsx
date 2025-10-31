@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { X, Edit } from "lucide-react";
-import toast from "react-hot-toast";
+import { X } from "lucide-react";
 import { ManageRelationshipsModal } from "./ManageRelationship";
 import { RadiologyTest } from "../types";
 
@@ -43,13 +42,6 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
               Radiology Test Details
             </h3>
             <div className="flex items-center gap-2">
-              <button
-                onClick={handleEdit}
-                className="p-2 text-gray-500 hover:text-blue-500 hover:bg-gray-100 rounded-lg"
-                title="Edit Test"
-              >
-                <Edit className="w-5 h-5" />
-              </button>
               <button
                 onClick={onClose}
                 className="p-2 hover:bg-gray-100 rounded-lg"
@@ -229,7 +221,8 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
               onClick={handleManageRelationships}
               className="px-8 py-2.5 bg-[#0088B1] text-white rounded-lg text-xs font-medium hover:bg-[#00729A] transition-colors"
             >
-              Manage Relationships
+              Manage Relationships(
+              {test.related_lab_test_ids?.length || 0})
             </button>
           </div>
         </div>

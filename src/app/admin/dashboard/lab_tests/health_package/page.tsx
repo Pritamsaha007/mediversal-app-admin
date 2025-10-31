@@ -20,7 +20,11 @@ import { AddTestModal } from "./components/AddTest";
 import { ViewTestModal } from "./components/ViewTest";
 
 import { useAdminStore } from "@/app/store/adminStore";
-import { searchHeathPackages, searchPathologyTests } from "../services/index";
+import {
+  searchHeathPackages,
+  searchPathologyTests,
+  deleteHealthPackage, // Import the new delete function
+} from "../services/index";
 import { HealthPackage } from "./types";
 import { PathologyTest } from "../pathology_tests/types";
 
@@ -77,10 +81,12 @@ const HealthPackages: React.FC = () => {
   const statusOptions = ["All Status", "Active", "Inactive"];
 
   const generateStats = (): HealthPackagesStats => {
-    const totalTests = tests.length;
-    const activeTests = tests.filter((t) => t.is_active).length;
+    // Filter out deleted packages for stats
+    const activePackages = tests.filter((p) => !p.is_deleted);
+    const totalTests = activePackages.length;
+    const activeTests = activePackages.filter((t) => t.is_active).length;
     const totalCategories = new Set(
-      tests.map((test) => test.linked_test_ids?.length || 0)
+      activePackages.map((test) => test.linked_test_ids?.length || 0)
     ).size;
 
     return {
@@ -130,7 +136,7 @@ const HealthPackages: React.FC = () => {
     try {
       const payload = {
         start: 0,
-        max: 100,
+        max: null,
         filter_linked_test_ids: null,
         search: searchTerm || null,
         filter_featured: null,
@@ -140,12 +146,17 @@ const HealthPackages: React.FC = () => {
 
       const response = await searchHeathPackages(payload, token);
       const healthPackages = response.healthpackages || [];
-      console.log(healthPackages, "healthpackages");
+
+      const activeHealthPackages = healthPackages.filter(
+        (pkg: HealthPackage) => !pkg.is_deleted
+      );
+
+      console.log(activeHealthPackages, "active health packages");
       setTests(healthPackages);
-      setFilteredTests(healthPackages);
+      setFilteredTests(activeHealthPackages);
 
       const allTestIds = new Set<string>();
-      healthPackages.forEach((pkg: HealthPackage) => {
+      activeHealthPackages.forEach((pkg: HealthPackage) => {
         if (pkg.linked_test_ids) {
           pkg.linked_test_ids.forEach((id) => allTestIds.add(id));
         }
@@ -169,7 +180,7 @@ const HealthPackages: React.FC = () => {
   }, [token]);
 
   useEffect(() => {
-    let filtered = tests;
+    let filtered = tests.filter((test) => !test.is_deleted);
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -194,7 +205,7 @@ const HealthPackages: React.FC = () => {
   };
 
   const handleBulkDelete = async () => {
-    if (selectedTests.length === 0) return;
+    if (selectedTests.length === 0 || !token) return;
 
     const confirmed = await new Promise<boolean>((resolve) => {
       const toastId = toast(
@@ -235,11 +246,13 @@ const HealthPackages: React.FC = () => {
     if (confirmed) {
       setLoading(true);
       try {
-        const updatedTests = tests.filter(
-          (test) => !selectedTests.includes(test.id)
+        const deletePromises = selectedTests.map((packageId) =>
+          deleteHealthPackage(packageId, token)
         );
-        setTests(updatedTests);
-        setFilteredTests(updatedTests);
+
+        await Promise.all(deletePromises);
+
+        fetchHealthPackages();
 
         toast.success(
           `${selectedTests.length} health packages deleted successfully!`
@@ -272,7 +285,7 @@ const HealthPackages: React.FC = () => {
 
   const handleAddTest = (newTest: HealthPackage) => {
     setTests([...tests, newTest]);
-    setFilteredTests([...tests, newTest]);
+    setFilteredTests([...tests.filter((test) => !test.is_deleted), newTest]);
 
     if (newTest.linked_test_ids && newTest.linked_test_ids.length > 0) {
       fetchTestNames(newTest.linked_test_ids);
@@ -286,7 +299,7 @@ const HealthPackages: React.FC = () => {
       test.id === updatedTest.id ? updatedTest : test
     );
     setTests(updatedTests);
-    setFilteredTests(updatedTests);
+    setFilteredTests(updatedTests.filter((test) => !test.is_deleted));
 
     if (updatedTest.linked_test_ids && updatedTest.linked_test_ids.length > 0) {
       const newTestIds = updatedTest.linked_test_ids.filter(
@@ -299,7 +312,6 @@ const HealthPackages: React.FC = () => {
 
     toast.success("Health package updated successfully!");
   };
-
   const handleTestAction = async (action: string, test: HealthPackage) => {
     setTestActionDropdown(null);
 
@@ -348,9 +360,9 @@ const HealthPackages: React.FC = () => {
 
         if (confirmed) {
           try {
-            const updatedTests = tests.filter((t) => t.id !== test.id);
-            setTests(updatedTests);
-            setFilteredTests(updatedTests);
+            await deleteHealthPackage(test.id, token);
+
+            fetchHealthPackages();
 
             toast.success("Health package deleted successfully!");
           } catch (error: any) {

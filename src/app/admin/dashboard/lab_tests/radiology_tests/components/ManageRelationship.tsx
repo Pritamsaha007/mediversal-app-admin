@@ -157,7 +157,14 @@ export const ManageRelationshipsModal: React.FC<
       }
 
       toast.success("Radiology test relationships updated successfully!");
+
+      // Close the modal first
       onClose();
+
+      // Then refresh the entire screen after a short delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error: any) {
       console.error("Error updating relationships:", error);
       toast.error(error.message || "Failed to update relationships");

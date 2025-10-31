@@ -512,7 +512,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                       key={modality.id}
                       type="button"
                       onClick={() => handleSelectModality(modality.id)}
-                      className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-700"
+                      className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-400"
                     >
                       {modality.value}
                     </button>
@@ -593,7 +593,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                       key={part.id}
                       type="button"
                       onClick={() => handleAddInspectionPart(part.id)}
-                      className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-700"
+                      className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-400"
                     >
                       {part.value}
                     </button>
@@ -697,7 +697,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         />
       </div>
 
-      {/* Precautions Section */}
       <div>
         <label className="block text-xs font-medium text-[#161D1F] mb-2">
           Precautions
@@ -724,7 +723,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         </div>
       </div>
 
-      {/* Selected Precautions */}
       {formData.precautions.length > 0 && (
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
@@ -750,13 +748,11 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         </div>
       )}
 
-      {/* Preparation Instructions */}
       <div>
         <label className="block text-xs font-medium text-[#161D1F] mb-2">
           Preparation Instructions
         </label>
 
-        {/* Common Instructions Quick Add */}
         <div className="mb-3">
           <p className="text-xs text-gray-600 mb-2">
             Quick add common instructions:
@@ -781,7 +777,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
-        {/* Custom Instruction Input */}
         <div className="space-y-2">
           <div className="flex gap-2">
             <input
@@ -803,7 +798,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
-        {/* Selected Preparation Instructions */}
         {formData.preparation_instructions.length > 0 && (
           <div className="mt-3">
             <div className="flex flex-wrap gap-2">
@@ -828,7 +822,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Active Radiology Test */}
         <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
           <input
             type="checkbox"
@@ -836,7 +829,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             onChange={(e) =>
               setFormData((prev) => ({ ...prev, is_active: e.target.checked }))
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
@@ -859,7 +852,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 is_featured_lab_test: e.target.checked,
               }))
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
@@ -882,7 +875,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 is_home_collection_available: e.target.checked,
               }))
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
@@ -894,7 +887,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
-        {/* Lab/Hospital Visit Required */}
         <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
           <input
             type="checkbox"
@@ -905,7 +897,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 in_person_visit_reqd: e.target.checked,
               }))
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
@@ -917,7 +909,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
-        {/* Fasting Requirement */}
         <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
           <input
             type="checkbox"
@@ -928,7 +919,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 is_fasting_reqd: e.target.checked,
               }))
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
@@ -958,7 +949,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </button>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="flex border-b border-gray-200">
           <button
             onClick={() => setActiveSection("basic")}

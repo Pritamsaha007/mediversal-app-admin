@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { X, ImagePlus } from "lucide-react";
+import { X, ImagePlus, Search, Plus } from "lucide-react";
 import { tabs, Hospital } from "../data/hospitalsData";
 import {
   getEnumValues,
@@ -10,6 +10,13 @@ import {
 } from "../services/hospitalService";
 import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
+import { PathologyTest } from "../../../lab_tests/pathology_tests/types";
+import { HealthPackage } from "../../../lab_tests/health_package/types";
+import {
+  fetchCategories,
+  searchHeathPackages,
+  searchPathologyTests,
+} from "../../../lab_tests/services";
 
 interface AddHospitalModalProps {
   isOpen: boolean;
@@ -44,6 +51,8 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
     },
     description: "",
     departments: [],
+    lab_test_ids: [],
+    health_package_ids: [],
     operatingHours: {
       Monday: { startTime: "09:00", endTime: "17:00" },
       Tuesday: { startTime: "09:00", endTime: "17:00" },
@@ -63,25 +72,86 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
   const [enumLoading, setEnumLoading] = useState(true);
   const { token } = useAdminStore();
 
+  // Tests and Packages State
+  const [activeCategory, setActiveCategory] = useState("Pathology Tests");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [availableTests, setAvailableTests] = useState<PathologyTest[]>([]);
+  const [availablePackages, setAvailablePackages] = useState<HealthPackage[]>(
+    []
+  );
+  const [loadingTests, setLoadingTests] = useState(false);
+  const [loadingPackages, setLoadingPackages] = useState(false);
+  const [allPathologyTests, setAllPathologyTests] = useState<PathologyTest[]>(
+    []
+  );
+  const [allRadiologyTests, setAllRadiologyTests] = useState<PathologyTest[]>(
+    []
+  );
+  const [allHealthPackages, setAllHealthPackages] = useState<HealthPackage[]>(
+    []
+  );
   const [contactInputs, setContactInputs] = useState({
     phone: "",
     email: "",
     website: "",
   });
 
+  // Utility function to convert department names to IDs
+  const convertDepartmentsToIds = (
+    departments: string[],
+    enumDepartments: EnumItem[]
+  ): string[] => {
+    // Ensure departments is an array
+    if (!Array.isArray(departments)) {
+      return [];
+    }
+
+    return departments
+      .map((dept) => {
+        // Check if dept is null, undefined, or empty
+        if (!dept || typeof dept !== "string") {
+          return dept || "";
+        }
+
+        // Check if it's already a UUID
+        if (
+          dept.match(
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+          )
+        ) {
+          return dept;
+        }
+        // If it's a name, find the ID
+        const deptEnum = enumDepartments.find((d) => d.value === dept);
+        return deptEnum?.id || dept;
+      })
+      .filter(Boolean); // Remove any empty values
+  };
+
+  // Load form data when editing hospital and enum data is ready
   useEffect(() => {
-    if (editingHospital) {
-      // Find the state ID from the enum
+    if (
+      editingHospital &&
+      enumDepartments.length > 0 &&
+      enumStates.length > 0
+    ) {
       const stateEnum = enumStates.find(
         (s) => s.value === editingHospital.address.state
+      );
+
+      // Convert department names to IDs
+      const departmentIds = convertDepartmentsToIds(
+        editingHospital.departments,
+        enumDepartments
       );
 
       setFormData({
         ...editingHospital,
         address: {
           ...editingHospital.address,
-          state: stateEnum?.id || editingHospital.address.state, // Use ID if found, fallback to original
+          state: stateEnum?.id || editingHospital.address.state,
         },
+        departments: departmentIds,
         image: editingHospital.image || null,
       });
       setContactInputs({
@@ -89,10 +159,15 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
         email: editingHospital.contact.email[0] || "",
         website: editingHospital.contact.website || "",
       });
-    } else {
+    }
+  }, [editingHospital, enumDepartments, enumStates]);
+
+  // Reset form when not editing
+  useEffect(() => {
+    if (!editingHospital && isOpen) {
       resetForm();
     }
-  }, [editingHospital, isOpen, enumStates]);
+  }, [editingHospital, isOpen]);
 
   useEffect(() => {
     const loadEnumData = async () => {
@@ -120,24 +195,183 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
 
     if (isOpen) {
       loadEnumData();
+      // Load ALL tests and packages when modal opens
+      fetchAvailableTests();
+      fetchAvailablePackages();
     }
   }, [isOpen, token]);
 
-  // In AddHospitalModal.tsx, update the departments mapping logic:
-  useEffect(() => {
-    if (editingHospital && enumDepartments.length > 0) {
-      // Map department names to IDs for editing
-      const departmentIds = editingHospital.departments.map((deptName) => {
-        const deptEnum = enumDepartments.find((d) => d.value === deptName);
-        return deptEnum?.id || deptName;
-      });
+  const fetchAvailableTests = async () => {
+    if (!token) return;
+    setLoadingTests(true);
+    try {
+      const categoryData = await fetchCategories(token);
+      const pathologyId = categoryData.roles[2]?.id || "";
+      const radiologyId = categoryData.roles[11]?.id || "";
 
+      const pathologyPayload = {
+        start: 0,
+        max: 100,
+        search_category: pathologyId,
+        search: searchTerm || null,
+        filter_sample_type_ids: null,
+        filter_active: true,
+        filter_featured: null,
+        sort_by: "name",
+        sort_order: "ASC" as const,
+      };
+
+      const radiologyPayload = {
+        start: 0,
+        max: 100,
+        search_category: radiologyId,
+        search: searchTerm || null,
+        filter_sample_type_ids: null,
+        filter_active: true,
+        filter_featured: null,
+        sort_by: "name",
+        sort_order: "ASC" as const,
+      };
+
+      const [pathologyResponse, radiologyResponse] = await Promise.all([
+        searchPathologyTests(pathologyPayload, token),
+        searchPathologyTests(radiologyPayload, token),
+      ]);
+
+      const pathologyTests = pathologyResponse.labTests || [];
+      const radiologyTests = radiologyResponse.labTests || [];
+
+      // Store ALL tests separately
+      setAllPathologyTests(pathologyTests);
+      setAllRadiologyTests(radiologyTests);
+
+      // Filter based on active category for display
+      if (activeCategory === "Pathology Tests") {
+        setAvailableTests(pathologyTests);
+      } else if (activeCategory === "Radiology Tests") {
+        setAvailableTests(radiologyTests);
+      }
+    } catch (error) {
+      console.error("Error fetching tests:", error);
+      toast.error("Failed to load tests");
+    } finally {
+      setLoadingTests(false);
+    }
+  };
+
+  const fetchAvailablePackages = async () => {
+    if (!token) return;
+    setLoadingPackages(true);
+    try {
+      const payload = {
+        start: 0,
+        max: 100,
+        search: searchTerm || null,
+        filter_active: true,
+        filter_popular: null,
+        sort_by: "name",
+        sort_order: "ASC" as const,
+      };
+
+      const response = await searchHeathPackages(payload, token);
+      const packages = response.healthpackages || [];
+
+      // Store ALL packages
+      setAllHealthPackages(packages);
+      setAvailablePackages(packages);
+    } catch (error) {
+      console.error("Error fetching health packages:", error);
+      toast.error("Failed to load health packages");
+    } finally {
+      setLoadingPackages(false);
+    }
+  };
+  const allAvailableTests = [...allPathologyTests, ...allRadiologyTests];
+
+  // Get selected tests from ALL available tests (not just current category)
+  const selectedTests = allAvailableTests.filter((test) =>
+    formData.lab_test_ids.includes(test.id)
+  );
+
+  // Get selected packages from ALL available packages
+  const selectedPackages = allHealthPackages.filter((pkg) =>
+    formData.health_package_ids.includes(pkg.id)
+  );
+  useEffect(() => {
+    if (searchTerm) {
+      const delaySearch = setTimeout(() => {
+        if (activeCategory === "Health Packages") {
+          fetchAvailablePackages();
+        } else {
+          fetchAvailableTests();
+        }
+      }, 500);
+
+      return () => clearTimeout(delaySearch);
+    } else if (isOpen && token) {
+      // When search is cleared, reload all data
+      if (activeCategory === "Health Packages") {
+        fetchAvailablePackages();
+      } else {
+        fetchAvailableTests();
+      }
+    }
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (activeCategory && token && isOpen) {
+      if (activeCategory === "Health Packages") {
+        setAvailablePackages(allHealthPackages);
+      } else if (activeCategory === "Pathology Tests") {
+        setAvailableTests(allPathologyTests);
+      } else if (activeCategory === "Radiology Tests") {
+        setAvailableTests(allRadiologyTests);
+      }
+    }
+  }, [activeCategory]);
+  // Handle test selection
+  const handleAddTest = (test: PathologyTest) => {
+    if (!formData.lab_test_ids.includes(test.id)) {
       setFormData((prev) => ({
         ...prev,
-        departments: departmentIds,
+        lab_test_ids: [...prev.lab_test_ids, test.id],
       }));
     }
-  }, [editingHospital, enumDepartments]);
+  };
+
+  const handleRemoveTest = (testId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      lab_test_ids: prev.lab_test_ids.filter((id) => id !== testId),
+    }));
+  };
+
+  const isTestSelected = (testId: string) => {
+    return formData.lab_test_ids.includes(testId);
+  };
+
+  // Handle package selection
+  const handleAddPackage = (pkg: HealthPackage) => {
+    if (!formData.health_package_ids.includes(pkg.id)) {
+      setFormData((prev) => ({
+        ...prev,
+        health_package_ids: [...prev.health_package_ids, pkg.id],
+      }));
+    }
+  };
+
+  const handleRemovePackage = (packageId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      health_package_ids: prev.health_package_ids.filter(
+        (id) => id !== packageId
+      ),
+    }));
+  };
+
+  const isPackageSelected = (packageId: string) => {
+    return formData.health_package_ids.includes(packageId);
+  };
 
   const handleInputChange = (field: string, value: any, nested?: string) => {
     if (nested) {
@@ -227,6 +461,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
 
         return operatingHour;
       });
+
       const apiData: HospitalFormData = {
         ...(editingHospital?.id && { id: editingHospital.id }),
         name: formData.name,
@@ -245,22 +480,12 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
         email: formData.contact.email[0] || "",
         website: formData.contact.website,
         departments: formData.departments,
-        operating_hrs: Object.entries(formData.operatingHours).map(
-          ([dayName, hours]) => {
-            const dayEnum = enumDays.find((d) => d.value === dayName);
-            const originalOperatingHour =
-              editingHospital?.operatingHours[dayName];
-            return {
-              day_id: dayEnum?.id || "",
-              start_time: hours.startTime,
-              end_time: hours.endTime,
-              ...(originalOperatingHour?.id && {
-                id: originalOperatingHour.id,
-              }),
-            };
-          }
-        ),
+        lab_test_ids: formData.lab_test_ids,
+        health_package_ids: formData.health_package_ids,
+        operating_hrs: allDaysOperatingHours,
       };
+
+      console.log("Submitting hospital data:", apiData);
 
       await addOrUpdateHospital(apiData, token);
       toast.success(
@@ -302,6 +527,8 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
       },
       description: "",
       departments: [],
+      lab_test_ids: [],
+      health_package_ids: [],
       operatingHours: {
         Monday: { startTime: "09:00", endTime: "17:00" },
         Tuesday: { startTime: "09:00", endTime: "17:00" },
@@ -315,8 +542,282 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
       image: null,
     });
     setContactInputs({ phone: "", email: "", website: "" });
+    setSearchTerm("");
+    setActiveCategory("Pathology Tests");
     setActiveTab(0);
+
+    // Reset the new state variables
+    setAllPathologyTests([]);
+    setAllRadiologyTests([]);
+    setAllHealthPackages([]);
+    setAvailableTests([]);
+    setAvailablePackages([]);
   };
+
+  // Render Departments & Tests Section (Combined as per your image)
+  const renderDepartmentsAndTestsSection = () => (
+    <div className="space-y-8">
+      {/* Available Departments */}
+      <div className="space-y-4">
+        <h3 className="text-[12px] font-semibold text-[#161d1f]">
+          <span className="text-red-500">*</span> Available Departments
+        </h3>
+
+        {enumLoading ? (
+          <div className="text-center py-4 text-xs text-gray-500">
+            Loading departments...
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {enumDepartments.map((dept) => (
+              <label
+                key={dept.id}
+                className="flex items-center space-x-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.departments.includes(dept.id)}
+                  onChange={() => handleArrayToggle("departments", dept.id)}
+                  className="w-4 h-4 text-[#1BA3C7] border-gray-300 rounded focus:ring-[#1BA3C7]"
+                />
+                <span className="text-[12px] text-gray-700">{dept.value}</span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Assign Lab Tests & Health Packages */}
+      <div className="space-y-4">
+        <h3 className="text-[12px] font-semibold text-[#161d1f]">
+          Assign Lab Tests & Health Packages
+        </h3>
+
+        {/* Category Tabs */}
+        <div className="flex border-b border-gray-200">
+          {["Pathology Tests", "Radiology Tests", "Health Packages"].map(
+            (category) => (
+              <button
+                key={category}
+                onClick={() => setActiveCategory(category)}
+                className={`flex-1 px-4 py-2 text-xs font-medium border-b-2 transition-colors ${
+                  activeCategory === category
+                    ? "bg-black text-white"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {category}
+              </button>
+            )
+          )}
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder={
+              activeCategory === "Health Packages"
+                ? "Search Health Packages..."
+                : "Search Lab Tests, Diagnostics..."
+            }
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-600 text-black"
+          />
+        </div>
+
+        {/* Tests/Packages Table */}
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="max-h-60 overflow-y-auto">
+            {loadingTests || loadingPackages ? (
+              <div className="p-4 text-center text-xs text-gray-500">
+                Loading {activeCategory.toLowerCase()}...
+              </div>
+            ) : activeCategory === "Health Packages" ? (
+              availablePackages.length > 0 ? (
+                availablePackages.map((pkg) => (
+                  <div
+                    key={pkg.id}
+                    className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+                  >
+                    <div className="p-3 flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="text-xs font-medium text-[#161D1F]">
+                          {pkg.name}
+                        </div>
+                        <div className="text-[10px] text-gray-500 mt-1">
+                          Price: ₹{pkg.selling_price} | Tests:{" "}
+                          {pkg.linked_test_ids?.length || 0}
+                        </div>
+                        <div className="text-[10px] text-gray-500">
+                          {pkg.description}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleAddPackage(pkg)}
+                        disabled={isPackageSelected(pkg.id)}
+                        className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs ${
+                          isPackageSelected(pkg.id)
+                            ? "text-gray-300 cursor-not-allowed"
+                            : "text-[#0088B1] hover:bg-blue-50"
+                        }`}
+                      >
+                        <Plus className="w-3 h-3" />
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-xs text-gray-500">
+                  No packages found
+                </div>
+              )
+            ) : availableTests.length > 0 ? (
+              availableTests.map((test) => (
+                <div
+                  key={test.id}
+                  className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+                >
+                  <div className="p-3 flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="text-xs font-medium text-[#161D1F]">
+                        {test.name}
+                      </div>
+                      <div className="text-[10px] text-gray-500 mt-1">
+                        Code: {test.code} | Report Time: {test.report_time_hrs}{" "}
+                        hrs
+                      </div>
+                      {test.sample_type_ids &&
+                        test.sample_type_ids.length > 0 && (
+                          <div className="text-[10px] text-gray-500">
+                            Sample: {test.sample_type_ids.join(", ")}
+                          </div>
+                        )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAddTest(test)}
+                      disabled={isTestSelected(test.id)}
+                      className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs ${
+                        isTestSelected(test.id)
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "text-[#0088B1] hover:bg-blue-50"
+                      }`}
+                    >
+                      <Plus className="w-3 h-3" />
+                      Add
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-4 text-center text-xs text-gray-500">
+                No tests found
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Selected Items - Show ALL selected tests and packages together */}
+      {(selectedTests.length > 0 || selectedPackages.length > 0) && (
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <h4 className="text-xs font-semibold text-[#161D1F] mb-3">
+            Selected Items ({selectedTests.length + selectedPackages.length})
+          </h4>
+
+          {/* Selected Tests */}
+          {selectedTests.length > 0 && (
+            <div className="mb-4">
+              <h5 className="text-xs font-medium text-[#161D1F] mb-2">
+                Tests ({selectedTests.length})
+              </h5>
+              <div className="space-y-2">
+                {selectedTests.map((test) => (
+                  <div
+                    key={test.id}
+                    className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <div className="text-xs font-medium text-[#161D1F]">
+                        {test.name}
+                      </div>
+                      <div className="text-[10px] text-gray-500">
+                        Code: {test.code} | Price: ₹{test.selling_price} |
+                        Report Time: {test.report_time_hrs} hrs
+                      </div>
+                      {test.sample_type_ids &&
+                        test.sample_type_ids.length > 0 && (
+                          <div className="text-[10px] text-gray-500">
+                            Sample: {test.sample_type_ids.join(", ")}
+                          </div>
+                        )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTest(test.id)}
+                      className="text-red-500 hover:text-red-700 ml-2"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Selected Packages */}
+          {selectedPackages.length > 0 && (
+            <div>
+              <h5 className="text-xs font-medium text-[#161D1F] mb-2">
+                Health Packages ({selectedPackages.length})
+              </h5>
+              <div className="space-y-2">
+                {selectedPackages.map((pkg) => (
+                  <div
+                    key={pkg.id}
+                    className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <div className="text-xs font-medium text-[#161D1F]">
+                        {pkg.name}
+                      </div>
+                      <div className="text-[10px] text-gray-500">
+                        Price: ₹{pkg.selling_price} | Included Tests:{" "}
+                        {pkg.linked_test_ids?.length || 0}
+                      </div>
+                      <div className="text-[10px] text-gray-500">
+                        {pkg.description}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePackage(pkg.id)}
+                      className="text-red-500 hover:text-red-700 ml-2"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Summary */}
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="text-xs text-gray-600">
+              Total: {selectedTests.length} tests + {selectedPackages.length}{" "}
+              packages
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   if (!isOpen) return null;
 
@@ -338,7 +839,12 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
 
         {/* Tabs */}
         <div className="flex mx-2">
-          {tabs.map((tab, index) => (
+          {[
+            "Basic Information",
+            "Hospital Details",
+            "Assign Departments & Tests",
+            "Operating Hours",
+          ].map((tab, index) => (
             <button
               key={index}
               onClick={() => setActiveTab(index)}
@@ -406,7 +912,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                 </div>
               </div>
 
-              {/* Hospital Address */}
               <div className="space-y-4">
                 <h3 className="text-[12px] font-medium text-[#161d1f]">
                   Hospital Address
@@ -692,39 +1197,8 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
             </div>
           )}
 
-          {/* Tab 3: Departments */}
-          {activeTab === 2 && (
-            <div className="space-y-6">
-              <h3 className="text-[10px] font-semibold text-[#161d1f] mb-6">
-                <span className="text-red-500">*</span> Available Departments
-              </h3>
-
-              {enumLoading ? (
-                <div className="text-center py-4">Loading departments...</div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {enumDepartments.map((dept) => (
-                    <label
-                      key={dept.id}
-                      className="flex items-center space-x-2"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.departments.includes(dept.id)}
-                        onChange={() =>
-                          handleArrayToggle("departments", dept.id)
-                        }
-                        className="w-3 h-3 text-[#1BA3C7] border-gray-300 rounded focus:ring-[#1BA3C7]"
-                      />
-                      <span className="text-[12px] text-gray-700">
-                        {dept.value}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          {/* Tab 3: Departments & Tests (Combined) */}
+          {activeTab === 2 && renderDepartmentsAndTestsSection()}
 
           {/* Tab 4: Operating Hours */}
           {activeTab === 3 && (
@@ -802,7 +1276,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
             </button>
           )}
 
-          {activeTab < tabs.length - 1 ? (
+          {activeTab < 3 ? (
             <button
               onClick={() => setActiveTab(activeTab + 1)}
               className="px-6 py-2 text-[#16181b] text-[10px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

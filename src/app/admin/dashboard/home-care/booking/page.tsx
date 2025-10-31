@@ -129,7 +129,7 @@ const BookingManagement: React.FC = () => {
 
     return {
       id: apiOrder.id.slice(0, 4) + "..." + apiOrder.id.slice(-4),
-      bookingId: `MD${apiOrder.id.slice(0, 8)}`,
+      bookingId: `${apiOrder.id.slice(0, 8)}`,
       date: apiOrder.order_date
         ? new Date(apiOrder.order_date).toLocaleDateString("en-GB", {
             day: "2-digit",

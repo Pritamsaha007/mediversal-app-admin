@@ -740,7 +740,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 is_active: e.target.checked,
               })
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
@@ -762,7 +762,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 is_popular: e.target.checked,
               })
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
@@ -783,7 +783,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 is_fasting_reqd: e.target.checked,
               })
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
@@ -805,7 +805,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 in_person_visit_reqd: e.target.checked,
               })
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
@@ -827,7 +827,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 is_home_collection_available: e.target.checked,
               })
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">

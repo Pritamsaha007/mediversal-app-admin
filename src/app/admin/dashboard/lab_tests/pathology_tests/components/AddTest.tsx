@@ -55,7 +55,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   );
   const { token } = useAdminStore();
 
-  // Dropdown states
   const [showTestParamsDropdown, setShowTestParamsDropdown] = useState(false);
   const [showReportTimeDropdown, setShowReportTimeDropdown] = useState(false);
   const [showSampleTypeDropdown, setShowSampleTypeDropdown] = useState(false);
@@ -171,7 +170,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     });
   };
 
-  // Add this function to handle common instructions if needed
   const handleAddCommonInstruction = (instruction: string) => {
     if (!formData.preparation_instructions.includes(instruction)) {
       setFormData({
@@ -183,6 +181,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       });
     }
   };
+
   const handleAddTestParameter = (parameter: string) => {
     if (!formData.test_params.includes(parameter)) {
       setFormData({
@@ -200,33 +199,27 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     });
   };
 
-  const handleAddSampleType = (sampleTypeValue: string) => {
-    // Find the sample type object to get both value and ID
+  const handleAddSampleType = (sampleTypeId: string) => {
     const sampleTypeObj = sampleTypeOptions.find(
-      (st) => st.value === sampleTypeValue
+      (st) => st.id === sampleTypeId
     );
-    if (
-      sampleTypeObj &&
-      !formData.sample_type_ids.includes(sampleTypeObj.value)
-    ) {
+    if (sampleTypeObj && !formData.sample_type_ids.includes(sampleTypeObj.id)) {
       setFormData({
         ...formData,
-        sample_type_ids: [...formData.sample_type_ids, sampleTypeObj.value],
+        sample_type_ids: [...formData.sample_type_ids, sampleTypeObj.id],
       });
     }
     setShowSampleTypeDropdown(false);
   };
 
-  const handleRemoveSampleType = (sampleTypeValue: string) => {
+  const handleRemoveSampleType = (sampleTypeId: string) => {
     setFormData({
       ...formData,
       sample_type_ids: formData.sample_type_ids.filter(
-        (s) => s !== sampleTypeValue
+        (id) => id !== sampleTypeId
       ),
     });
   };
-
-  // In the submit handler, convert values back to IDs:
 
   const handleSelectReportTime = (hours: number) => {
     setFormData({
@@ -243,7 +236,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     if (!file) return;
 
     try {
-      // ✅ Validate file type and size
       if (!file.type.startsWith("image/")) {
         toast.error("Please upload a valid image file.");
         return;
@@ -310,28 +302,18 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
     setSubmitting(true);
     try {
-      // Prepare sample_type_ids
-      const sampleTypeIds = formData.sample_type_ids.map((sampleType) => {
-        const sampleTypeObj = sampleTypeOptions.find(
-          (st) => st.value === sampleType
-        );
-        return sampleTypeObj ? sampleTypeObj.id : sampleType;
-      });
-
-      // Prepare payload - EXPLICITLY include all boolean values
       const payload = {
         name: formData.name,
         description: formData.description,
         code: formData.code,
-        category_id: category_id, // Now will have default value
-        sample_type_ids: sampleTypeIds,
+        category_id: category_id,
+        sample_type_ids: formData.sample_type_ids || [],
         test_params: formData.test_params || [],
         report_time_hrs: formData.report_time_hrs,
         cost_price: formData.cost_price,
         selling_price: formData.selling_price,
         preparation_instructions: formData.preparation_instructions,
         precautions: formData.precautions || [],
-        // EXPLICITLY set boolean values (don't rely on API defaults)
         is_fasting_reqd: Boolean(formData.is_fasting_reqd),
         in_person_visit_reqd: Boolean(formData.in_person_visit_reqd),
         is_featured_lab_test: Boolean(formData.is_featured_lab_test),
@@ -355,7 +337,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
         await updatePathologyTest(updatePayload, token);
 
-        // Update local state with the exact values we sent
         onUpdateTest({
           ...payload,
           id: editTest.id,
@@ -387,13 +368,12 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   };
 
   const handleReset = () => {
-    // Fetch the default category ID again
     fetchDropdownData().then(() => {
       setFormData((prev) => ({
         name: "",
         description: "",
         code: "",
-        category_id: prev.category_id, // Keep the fetched category_id
+        category_id: prev.category_id,
         sample_type_ids: [],
         test_params: [],
         report_time_hrs: 0,
@@ -414,7 +394,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     });
   };
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -490,9 +469,8 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         </div>
       </div>
 
-      {/* Sample Type, Report Time, and Preparation in same row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Sample Type */}
+        {/* Sample Type - Updated to show chips like inspection parts */}
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
             Sample Type
@@ -511,14 +489,14 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             </button>
 
             {showSampleTypeDropdown && !loading && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                 {sampleTypeOptions.length > 0 ? (
                   sampleTypeOptions.map((sampleType) => (
                     <button
                       key={sampleType.id}
                       type="button"
-                      onClick={() => handleAddSampleType(sampleType.value)}
-                      className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-700"
+                      onClick={() => handleAddSampleType(sampleType.id)}
+                      className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-400"
                     >
                       {sampleType.value}
                     </button>
@@ -531,29 +509,36 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
               </div>
             )}
           </div>
-          {/* Selected Sample Types */}
+
+          {/* Sample Type Chips - Similar to inspection parts */}
           {formData.sample_type_ids.length > 0 && (
             <div className="mt-2 space-y-1">
-              {formData.sample_type_ids.map((sampleType, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2 bg-[#0088B1] rounded-xl"
-                >
-                  <span className="text-xs text-[#FFF]">{sampleType}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSampleType(sampleType)}
-                    className="text-[#FFF]"
+              {formData.sample_type_ids.map((sampleTypeId, index) => {
+                const sampleType = sampleTypeOptions.find(
+                  (st) => st.id === sampleTypeId
+                );
+                return (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-2 bg-[#0088B1] rounded-xl"
                   >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                    <span className="text-xs text-[#FFF]">
+                      {sampleType?.value || sampleTypeId}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSampleType(sampleTypeId)}
+                      className="text-[#FFF]"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Report Time */}
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
             * Report Preparation Time (Hrs.)
@@ -577,7 +562,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             </button>
 
             {showReportTimeDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                 {reportTimeOptions.map((hours) => (
                   <button
                     key={hours}
@@ -593,7 +578,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
-        {/* Test Parameters Section */}
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
             Test Parameters
@@ -609,7 +593,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             </button>
 
             {showTestParamsDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                 {testParameterOptions.map((parameter) => (
                   <button
                     key={parameter}
@@ -624,7 +608,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             )}
           </div>
 
-          {/* Selected Parameters */}
           {formData.test_params.length > 0 && (
             <div className="mt-2 space-y-1">
               {formData.test_params.map((parameter, index) => (
@@ -632,7 +615,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                   key={index}
                   className="flex items-center justify-between p-2 bg-[#0088B1] rounded-xl"
                 >
-                  <span className="text-xs text[#FFF]">{parameter}</span>
+                  <span className="text-xs text-[#FFF]">{parameter}</span>
                   <button
                     type="button"
                     onClick={() => handleRemoveParameter(parameter)}
@@ -787,7 +770,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             onChange={(e) =>
               setFormData((prev) => ({ ...prev, is_active: e.target.checked }))
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
@@ -809,7 +792,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 is_featured_lab_test: e.target.checked,
               }))
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
@@ -831,7 +814,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 is_home_collection_available: e.target.checked,
               }))
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
@@ -853,7 +836,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 in_person_visit_reqd: e.target.checked,
               }))
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
@@ -875,7 +858,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 is_fasting_reqd: e.target.checked,
               }))
             }
-            className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+            className="h-4 w-4 accent-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
           />
           <div>
             <h4 className="text-xs font-medium text-[#161D1F]">
@@ -892,7 +875,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+      <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col relative">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h3 className="text-[16px] font-semibold text-[#161D1F]">
             {editTest ? "Edit Lab Test" : "Add New Lab Test"}
@@ -928,7 +911,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 overflow-visible">
           {activeSection === "basic" && renderBasicInformation()}
           {activeSection === "settings" && renderSettings()}
         </div>

@@ -28,6 +28,7 @@ export const ManageRelationshipsModal: React.FC<
   const [saving, setSaving] = useState(false);
   const { token } = useAdminStore();
   const [category_id, setCategory_id] = useState<string>("");
+
   const fetchCategoryData = async () => {
     setLoading(true);
     try {
@@ -141,7 +142,7 @@ export const ManageRelationshipsModal: React.FC<
         image_url: test.image_url || "",
         modality_type_id: test.modality_type_id || "",
         inspection_parts_ids: test.inspection_parts_ids || [],
-        related_lab_test_ids: updatedRelatedIds, // This is the important field
+        related_lab_test_ids: updatedRelatedIds,
       };
 
       const response = await updatePathologyTest(updatePayload, token);
@@ -155,7 +156,14 @@ export const ManageRelationshipsModal: React.FC<
       }
 
       toast.success("Lab test relationships updated successfully!");
+
+      // Close the modal first
       onClose();
+
+      // Then refresh the entire screen after a short delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error: any) {
       console.error("Error updating relationships:", error);
       toast.error(error.message || "Failed to update relationships");
@@ -218,7 +226,6 @@ export const ManageRelationshipsModal: React.FC<
                           </h5>
                           <div className="flex items-center gap-3 text-[12px] text-gray-500">
                             <span>Test Code: {relTest.code}</span>
-
                             <span>|</span>
                             <span>
                               Report Time: {relTest.report_time_hrs} hrs
@@ -273,7 +280,6 @@ export const ManageRelationshipsModal: React.FC<
                           </h5>
                           <div className="flex items-center gap-3 text-[12px] text-gray-500">
                             <span>Test Code: {availTest.code}</span>
-
                             <span>|</span>
                             <span>Price: ₹{availTest.selling_price}</span>
                           </div>

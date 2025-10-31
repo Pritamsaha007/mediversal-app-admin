@@ -5,58 +5,48 @@ import StatsCard from "../../home-care/components/StatsCard";
 import {
   Search,
   ChevronDown,
-  Plus,
-  Settings,
-  Activity,
-  Users,
   Eye,
-  Edit,
-  Trash2,
   Calendar,
   DollarSign,
   TrendingUp,
-  MoreVertical,
   MoreHorizontal,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { AssignPhlebotomistModal } from "./components/assignStaff";
 import ViewBookingModal from "./components/viewBooking";
+import {
+  LabTestBooking,
+  PatientDetailsList,
+  SearchLabTestBookingsPayload,
+  UpdateLabTestBookingPayload,
+} from "./type";
+import { searchLabTestBookings, updateLabTestBooking } from "../services";
+import { useAdminStore } from "@/app/store/adminStore";
+import { getOrderStatus } from "../../home-care/booking/services/api/orderServices";
 
-interface BookingType {
-  id: string;
-  bookingId: string;
-  testName: string;
-  patientName: string;
-  patientId: string;
-  status: "Completed" | "Pending" | "In Progress" | "Cancelled" | "Scheduled";
-  paymentMethod: "Debit Card" | "Credit Card" | "Cash" | "Pending" | "UPI";
-  paymentStatus: "Completed" | "Pending" | "Failed";
-  amount: number;
-  date: string;
-  testType: string;
-  contactNo?: string;
-  email?: string;
-  age?: string;
-  gender?: string;
-  sampleCollectionDate?: string;
-  sampleCollectionTime?: string;
-  appointedPhlebotomist?: string;
-  labHospital?: string;
-  reportPreparationTime?: string;
-  symptomsReason?: string;
-  testCategory?: string;
-}
 interface BookingStats {
   todaysBookings: number;
   todaysRevenue: number;
   totalRevenue: number;
 }
+const statusOptions = ["Pending", "Completed", "Cancelled"];
+
+interface OrderStatusEnum {
+  id: string;
+  slno: number;
+  code: string;
+  value: string;
+  description: string | null;
+  metadata: any | null;
+}
 
 const BookingsManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
-  const [bookings, setBookings] = useState<BookingType[]>([]);
-  const [filteredBookings, setFilteredBookings] = useState<BookingType[]>([]);
+  const [bookings, setBookings] = useState<LabTestBooking[]>([]);
+  const [filteredBookings, setFilteredBookings] = useState<LabTestBooking[]>(
+    []
+  );
   const [openDropdown, setOpenDropdown] = useState<null | "status">(null);
   const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,35 +57,32 @@ const BookingsManagement: React.FC = () => {
     null
   );
   const [showViewBooking, setShowViewBooking] = useState(false);
+  const [showAssignPhlebotomist, setShowAssignPhlebotomist] = useState(false);
   const [selectedBookingForView, setSelectedBookingForView] =
-    useState<BookingType | null>(null);
+    useState<LabTestBooking | null>(null);
+  const [selectedBookingForAssign, setSelectedBookingForAssign] =
+    useState<LabTestBooking | null>(null);
+  const { token } = useAdminStore();
 
-  const dummyBookings: BookingType[] = [
-    {
-      id: "1",
-      bookingId: "UWA0007890",
-      testName: "Ultrasound Whole Abdomen",
-      patientName: "John Doe",
-      patientId: "P-001",
-      status: "Scheduled",
-      paymentMethod: "UPI",
-      paymentStatus: "Completed",
-      amount: 699.0,
-      date: "2024-01-15",
-      testType: "Stomach, Liver",
-      contactNo: "+91 62017 53532",
-      email: "rakeshsinha4527@gmail.com",
-      age: "29 Yrs.",
-      gender: "Male",
-      sampleCollectionDate: "18/09/2025",
-      sampleCollectionTime: "5:00 PM - 6:00 PM",
-      appointedPhlebotomist: "Pritam Saha",
-      labHospital: "Mediversal Health Studio",
-      reportPreparationTime: "6 Hrs.",
-      symptomsReason:
-        "Persistent fatigue and dizziness, advised for complete blood count (CBC).",
-    },
-  ];
+  const [orderStatuses, setOrderStatuses] = useState<OrderStatusEnum[]>([]);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+
+  const fetchOrderStatuses = async () => {
+    try {
+      const response = await getOrderStatus(token);
+      if (response.success) {
+        const relevantStatuses = (response.roles as OrderStatusEnum[]).filter(
+          (status) =>
+            ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(
+              status.value
+            )
+        );
+        setOrderStatuses(relevantStatuses);
+      }
+    } catch (err) {
+      console.error("Failed to fetch order statuses:", err);
+    }
+  };
 
   const statusOptions = [
     "All Status",
@@ -106,29 +93,71 @@ const BookingsManagement: React.FC = () => {
     "Scheduled",
   ];
 
-  const orderStatuses = [
-    { id: "scheduled", value: "Scheduled" },
-    { id: "in-progress", value: "In Progress" },
-    { id: "completed", value: "Completed" },
-    { id: "pending", value: "Pending" },
-    { id: "cancelled", value: "Cancelled" },
-  ];
+  const mapOrderStatus = (status: string) => {
+    switch (status.toUpperCase()) {
+      case "PENDING":
+      case "PENDING_ASSIGNMENT":
+        return "Pending" as const;
+      case "IN_PROGRESS":
+      case "INPROGRESS":
+      case "IN-PROGRESS":
+        return "In Progress" as const;
+      case "COMPLETED":
+        return "Completed" as const;
+      case "CANCELLED":
+        return "Cancelled" as const;
+      default:
+        return "Pending" as const;
+    }
+  };
+
+  const fetchBookings = async () => {
+    setLoading(true);
+    try {
+      const payload: SearchLabTestBookingsPayload = {
+        start: 0,
+        max: null,
+        search_text: searchTerm || null,
+        filter_status:
+          selectedStatus !== "All Status" ? [selectedStatus] : null,
+        sort_by: "created_date",
+        sort_order: "DESC",
+      };
+
+      const response = await searchLabTestBookings(payload, token);
+      console.log(response, "bookings");
+      if (response.success) {
+        setBookings(response.labTestBookings);
+        setFilteredBookings(response.labTestBookings);
+      } else {
+        toast.error("Failed to fetch bookings");
+      }
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      toast.error("Error loading bookings");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const generateStats = (): BookingStats => {
+    const today = new Date().toISOString().split("T")[0];
+
     const todaysBookings = bookings.filter(
-      (booking) => booking.date === "2024-01-15"
+      (booking) => booking.booking_date.split("T")[0] === today
     ).length;
 
     const todaysRevenue = bookings
       .filter(
         (booking) =>
-          booking.date === "2024-01-15" && booking.paymentStatus === "Completed"
+          booking.booking_date.split("T")[0] === today &&
+          booking.payment_status === "Completed"
       )
-      .reduce((sum, booking) => sum + booking.amount, 0);
+      .reduce((sum, booking) => sum + parseFloat(booking.amount), 0);
 
     const totalRevenue = bookings
-      .filter((booking) => booking.paymentStatus === "Completed")
-      .reduce((sum, booking) => sum + booking.amount, 0);
+      .filter((booking) => booking.payment_status === "Completed")
+      .reduce((sum, booking) => sum + parseFloat(booking.amount), 0);
 
     return {
       todaysBookings,
@@ -140,50 +169,21 @@ const BookingsManagement: React.FC = () => {
   const stats = generateStats();
 
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setBookings(dummyBookings);
-      setFilteredBookings(dummyBookings);
-      setLoading(false);
-    }, 1000);
+    fetchBookings();
+    fetchOrderStatuses();
   }, []);
 
   useEffect(() => {
-    let filtered = bookings;
+    const delayDebounceFn = setTimeout(() => {
+      fetchBookings();
+    }, 500);
 
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (booking) =>
-          booking.testName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          booking.patientName
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          booking.bookingId.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (selectedStatus !== "All Status") {
-      filtered = filtered.filter(
-        (booking) => booking.status === selectedStatus
-      );
-    }
-
-    setFilteredBookings(filtered);
-  }, [searchTerm, selectedStatus, bookings]);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, selectedStatus]);
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
     setOpenDropdown(null);
-  };
-
-  const handleOrderStatusChange = (bookingId: string, newStatus: string) => {
-    const updatedBookings = bookings.map((booking) =>
-      booking.id === bookingId
-        ? { ...booking, status: newStatus as any }
-        : booking
-    );
-    setBookings(updatedBookings);
-    setOpenStatusDropdown(null);
   };
 
   const handleSelectBooking = (bookingId: string, checked: boolean) => {
@@ -203,7 +203,7 @@ const BookingsManagement: React.FC = () => {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case "scheduled":
         return "bg-yellow-100 text-yellow-800";
       case "in progress":
@@ -212,28 +212,120 @@ const BookingsManagement: React.FC = () => {
         return "bg-green-100 text-green-800";
       case "cancelled":
         return "bg-red-100 text-red-800";
+      case "pending":
+        return "bg-orange-100 text-orange-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
+  const getStatusIdFromValue = (
+    statusValue: string,
+    orderStatuses: OrderStatusEnum[]
+  ): string => {
+    const status = orderStatuses.find(
+      (s) => s.value.toLowerCase() === statusValue.toLowerCase()
+    );
+    return status?.id || orderStatuses[0]?.id;
+  };
+
+  const handleOrderStatusChange = async (
+    bookingId: string,
+    newStatus: string
+  ) => {
+    setUpdatingStatus(bookingId);
+
+    const optimisticBookings = bookings.map((booking) =>
+      booking.id === bookingId
+        ? {
+            ...booking,
+            status: newStatus,
+          }
+        : booking
+    );
+    setBookings(optimisticBookings);
+    setOpenStatusDropdown(null);
+
+    try {
+      const statusId = getStatusIdFromValue(newStatus, orderStatuses);
+
+      const updatePayload: UpdateLabTestBookingPayload = {
+        id: bookingId,
+        status_id: statusId,
+      };
+
+      const response = await updateLabTestBooking(updatePayload, token);
+
+      if (response.success) {
+        toast.success(`Booking status updated to ${newStatus}`);
+
+        fetchBookings();
+      } else {
+        throw new Error("Failed to update booking status");
+      }
+    } catch (error) {
+      console.error("Error updating booking status:", error);
+      toast.error("Failed to update booking status");
+
+      fetchBookings();
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
+  const handleAssignPhlebotomist = (booking: LabTestBooking) => {
+    setSelectedBookingForAssign(booking);
+    setShowAssignPhlebotomist(true);
+    setOpenActionDropdown(null);
+  };
+
+  const handlePhlebotomistAssigned = () => {
+    fetchBookings();
+    toast.success("Phlebotomist assigned successfully");
+  };
 
   const getPaymentStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status) {
       case "completed":
         return "bg-green-100 text-green-800";
       case "pending":
         return "bg-yellow-100 text-yellow-800";
       case "failed":
         return "bg-red-100 text-red-800";
+      case "not paid":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
 
-  const handleViewBooking = (booking: BookingType) => {
+  const handleViewBooking = (booking: LabTestBooking) => {
     setSelectedBookingForView(booking);
     setShowViewBooking(true);
     setOpenActionDropdown(null);
+  };
+
+  const handleDeleteBooking = async (bookingId: string) => {
+    if (window.confirm("Are you sure you want to delete this booking?")) {
+      try {
+        const updatedBookings = bookings.filter(
+          (booking) => booking.id !== bookingId
+        );
+        setBookings(updatedBookings);
+        toast.success("Booking deleted successfully");
+      } catch (error) {
+        toast.error("Failed to delete booking");
+      }
+    }
+  };
+
+  const formatPatientNames = (patientDetails: PatientDetailsList) => {
+    return patientDetails.patients_list
+      .map((patient) => patient.name)
+      .join(", ");
+  };
+
+  const formatBookingId = (id: string) => {
+    return `${id.substring(0, 8).toUpperCase()}`;
   };
 
   useEffect(() => {
@@ -292,7 +384,6 @@ const BookingsManagement: React.FC = () => {
           />
         </div>
 
-        {/* Search and Filter Section */}
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
@@ -336,7 +427,6 @@ const BookingsManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Bookings Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
@@ -411,20 +501,27 @@ const BookingsManagement: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">
-                            {booking.testName}
+                            {booking.labtestnames.join(", ")}
                           </div>
                           <div className="text-xs text-gray-500">
-                            Booking ID: {booking.bookingId}
+                            Booking ID: {formatBookingId(booking.id)}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Date:{" "}
+                            {new Date(
+                              booking.booking_date
+                            ).toLocaleDateString()}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">
-                            {booking.patientName}
+                            {formatPatientNames(booking.patient_details)}
                           </div>
                           <div className="text-xs text-gray-500">
-                            ID: {booking.patientId}
+                            Patients:{" "}
+                            {booking.patient_details.patients_list.length}
                           </div>
                         </div>
                       </td>
@@ -438,11 +535,18 @@ const BookingsManagement: React.FC = () => {
                                   : booking.id
                               )
                             }
+                            disabled={updatingStatus === booking.id}
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
                               booking.status
-                            )} hover:opacity-80 transition-opacity`}
+                            )} hover:opacity-80 transition-opacity ${
+                              updatingStatus === booking.id
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
                           >
-                            {booking.status}
+                            {updatingStatus === booking.id
+                              ? "Updating..."
+                              : booking.status}
                             <ChevronDown className="w-3 h-3 ml-1" />
                           </button>
                           {openStatusDropdown === booking.id && (
@@ -457,7 +561,8 @@ const BookingsManagement: React.FC = () => {
                                           status.value
                                         )
                                       }
-                                      className="w-full px-3 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 transition-colors"
+                                      disabled={updatingStatus === booking.id}
+                                      className="w-full px-3 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                       {status.value}
                                     </button>
@@ -471,16 +576,16 @@ const BookingsManagement: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium ${getPaymentStatusColor(
-                            booking.paymentStatus
+                            booking.payment_status
                           )}`}
                         >
-                          {booking.paymentStatus}
+                          {booking.payment_status}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-xs font-medium text-[#161D1F]">
                           ₹{" "}
-                          {booking.amount.toLocaleString("en-US", {
+                          {parseFloat(booking.amount).toLocaleString("en-US", {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}
@@ -513,25 +618,28 @@ const BookingsManagement: React.FC = () => {
                                       View Details
                                     </button>
                                   </li>
-                                  <li>
-                                    <button className="w-full px-3 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 transition-colors">
-                                      Assign Phlebotomist
-                                    </button>
-                                  </li>
-                                  <li>
+                                  {booking.status == "PENDING" && (
+                                    <li>
+                                      <button
+                                        onClick={() =>
+                                          handleAssignPhlebotomist(booking)
+                                        }
+                                        className="w-full px-3 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                      >
+                                        Assign Phlebotomist
+                                      </button>
+                                    </li>
+                                  )}
+                                  {/* <li>
                                     <button
-                                      onClick={() => {
-                                        const updatedBookings = bookings.filter(
-                                          (b) => b.id !== booking.id
-                                        );
-                                        setBookings(updatedBookings);
-                                        setOpenActionDropdown(null);
-                                      }}
+                                      onClick={() =>
+                                        handleDeleteBooking(booking.id)
+                                      }
                                       className="w-full px-3 py-2 text-left text-[12px] text-red-600 hover:bg-red-50 transition-colors"
                                     >
                                       Delete Booking
                                     </button>
-                                  </li>
+                                  </li> */}
                                 </ul>
                               </div>
                             )}
@@ -547,7 +655,6 @@ const BookingsManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* View Booking Modal */}
       <ViewBookingModal
         isOpen={showViewBooking}
         onClose={() => {
@@ -555,6 +662,15 @@ const BookingsManagement: React.FC = () => {
           setSelectedBookingForView(null);
         }}
         booking={selectedBookingForView}
+      />
+
+      <AssignPhlebotomistModal
+        isOpen={showAssignPhlebotomist}
+        onClose={() => {
+          setShowAssignPhlebotomist(false);
+          setSelectedBookingForAssign(null);
+        }}
+        booking={selectedBookingForAssign}
       />
     </div>
   );

@@ -27,7 +27,7 @@ export interface UpdateHealthPackagePayload extends Partial<HealthPackage> {
 }
 export interface SearchHealthPackagesPayload {
   start: number;
-  max: number;
+  max: number | null;
   filter_linked_test_ids?: string | null;
   search: string | null;
   filter_featured?: boolean | null;
