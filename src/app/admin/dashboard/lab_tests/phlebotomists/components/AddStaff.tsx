@@ -102,35 +102,34 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
 
   const timeOptions = [
     "06:00 AM",
-    "06:45 AM",
+
     "07:00 AM",
-    "07:45 AM",
+
     "08:00 AM",
-    "08:45 AM",
+
     "09:00 AM",
-    "09:45 AM",
+
     "10:00 AM",
-    "10:45 AM",
+
     "11:00 AM",
-    "11:45 AM",
+
     "12:00 PM",
-    "12:45 PM",
+
     "01:00 PM",
-    "01:45 PM",
+
     "02:00 PM",
-    "02:45 PM",
+
     "03:00 PM",
-    "03:45 PM",
+
     "04:00 PM",
-    "04:45 PM",
+
     "05:00 PM",
-    "05:45 PM",
+
     "06:00 PM",
-    "06:45 PM",
+
     "07:00 PM",
-    "07:45 PM",
+
     "08:00 PM",
-    "08:45 PM",
   ];
 
   const [sameAsPrevious, setSameAsPrevious] = useState(false);
@@ -1033,17 +1032,23 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
                           range.slot_capacity === 0 ? "" : range.slot_capacity
                         }
                         onChange={(e) => {
-                          const value =
+                          let value =
                             e.target.value === ""
                               ? 0
                               : parseInt(e.target.value) || 0;
+
+                          if (value > 2) value = 2;
+                          if (value < 0) value = 0;
+
                           updateTimeRange(globalIndex, "slot_capacity", value);
                         }}
                         className="w-full px-2 py-2 border border-gray-300 rounded-lg text-xs focus:border-[#0088B1] focus:outline-none text-black placeholder-gray-500"
                         min="0"
+                        max="2"
                         placeholder="0"
                       />
                     </div>
+
                     <button
                       type="button"
                       onClick={() => removeTimeRange(globalIndex)}

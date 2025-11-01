@@ -50,12 +50,12 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     related_lab_test_ids: [] as string[],
   });
   const [newInstruction, setNewInstruction] = useState("");
+  const [newTestParameter, setNewTestParameter] = useState("");
   const [activeSection, setActiveSection] = useState<"basic" | "settings">(
     "basic"
   );
   const { token } = useAdminStore();
 
-  const [showTestParamsDropdown, setShowTestParamsDropdown] = useState(false);
   const [showReportTimeDropdown, setShowReportTimeDropdown] = useState(false);
   const [showSampleTypeDropdown, setShowSampleTypeDropdown] = useState(false);
   const [category_id, setCategory_id] = useState<string>("");
@@ -63,16 +63,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const testParameterOptions = [
-    "Red Blood Cell Count (RBC)",
-    "White Blood Cell Count (WBC)",
-    "Haemoglobin (Hb)",
-    "Hematocrit (Hct)",
-    "Platelet Count",
-    "Mean Corpuscular Volume (MCV)",
-    "Mean Corpuscular Haemoglobin (MCH)",
-    "Mean Corpuscular Hemoglobin Concentration (MCHC)",
-  ];
   const reportTimeOptions = [6, 12, 16, 32, 48, 64, 72];
 
   const fetchDropdownData = async () => {
@@ -182,14 +172,17 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     }
   };
 
-  const handleAddTestParameter = (parameter: string) => {
-    if (!formData.test_params.includes(parameter)) {
+  const handleAddTestParameter = () => {
+    if (
+      newTestParameter.trim() &&
+      !formData.test_params.includes(newTestParameter.trim())
+    ) {
       setFormData({
         ...formData,
-        test_params: [...formData.test_params, parameter],
+        test_params: [...formData.test_params, newTestParameter.trim()],
       });
+      setNewTestParameter("");
     }
-    setShowTestParamsDropdown(false);
   };
 
   const handleRemoveParameter = (param: string) => {
@@ -398,7 +391,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest(".dropdown-container")) {
-        setShowTestParamsDropdown(false);
         setShowReportTimeDropdown(false);
         setShowSampleTypeDropdown(false);
       }
@@ -470,7 +462,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Sample Type - Updated to show chips like inspection parts */}
+        {/* Sample Type */}
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
             Sample Type
@@ -510,7 +502,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             )}
           </div>
 
-          {/* Sample Type Chips - Similar to inspection parts */}
+          {/* Sample Type Chips */}
           {formData.sample_type_ids.length > 0 && (
             <div className="mt-2 space-y-1">
               {formData.sample_type_ids.map((sampleTypeId, index) => {
@@ -578,36 +570,31 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
+        {/* Test Parameters - Changed to Input Box */}
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
             Test Parameters
           </label>
-          <div className="dropdown-container relative">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newTestParameter}
+              onChange={(e) => setNewTestParameter(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-600 text-black"
+              placeholder="Add test parameter"
+              onKeyPress={(e) => e.key === "Enter" && handleAddTestParameter()}
+            />
             <button
               type="button"
-              onClick={() => setShowTestParamsDropdown(!showTestParamsDropdown)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-left bg-white flex items-center justify-between"
+              onClick={handleAddTestParameter}
+              disabled={!newTestParameter.trim()}
+              className="px-3 py-2 bg-[#0088B1] text-white rounded-lg text-xs hover:bg-[#00729A] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span className="text-gray-600">Select test parameters</span>
-              <ChevronDown className="w-4 h-4 text-gray-400" />
+              <Plus className="w-4 h-4" />
             </button>
-
-            {showTestParamsDropdown && (
-              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {testParameterOptions.map((parameter) => (
-                  <button
-                    key={parameter}
-                    type="button"
-                    onClick={() => handleAddTestParameter(parameter)}
-                    className="w-full px-3 py-2 text-xs text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg text-gray-400"
-                  >
-                    {parameter}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
+          {/* Test Parameters Chips */}
           {formData.test_params.length > 0 && (
             <div className="mt-2 space-y-1">
               {formData.test_params.map((parameter, index) => (
