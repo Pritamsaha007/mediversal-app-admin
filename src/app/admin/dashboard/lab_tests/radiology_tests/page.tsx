@@ -21,6 +21,7 @@ import {
   fetchCategories,
   SearchLabTestsPayload,
   searchPathologyTests,
+  deletePathologyTest, // Import the new delete function
 } from "../services/index";
 import { useAdminStore } from "@/app/store/adminStore";
 
@@ -50,17 +51,21 @@ const RadiologyTests: React.FC = () => {
 
   const statusOptions = ["All Status", "Active", "Inactive"];
   const [category_id, setCategory_id] = useState<string>("");
+
   const generateStats = (): RadiologyStats => {
-    const totalTests = tests.length;
-    const activeTests = tests.filter((t) => t.is_active).length;
-    const totalCategories = new Set(tests.map((test) => test.category_id)).size;
+    const activeTests = tests.filter((t) => !t.is_deleted);
+    const totalTests = activeTests.length;
+    const activeTestCount = activeTests.filter((t) => t.is_active).length;
+    const totalCategories = new Set(activeTests.map((test) => test.category_id))
+      .size;
 
     return {
       totalTests,
-      activeTests,
+      activeTests: activeTestCount,
       totalCategories,
     };
   };
+
   const stats = generateStats();
 
   useEffect(() => {
@@ -73,9 +78,9 @@ const RadiologyTests: React.FC = () => {
 
         const payload: SearchLabTestsPayload = {
           start: 0,
-          max: 50,
+          max: null,
           search_category: defaultCategoryId || null,
-          search: null,
+          search: searchTerm || null,
           filter_sample_type_ids: null,
           filter_active:
             selectedStatus === "All Status"
@@ -90,8 +95,13 @@ const RadiologyTests: React.FC = () => {
 
         console.log(payload, "payload");
         const res = await searchPathologyTests(payload, token!);
+
+        const activeTests = res.labTests.filter(
+          (test: RadiologyTest) => !test.is_deleted
+        );
+
         setTests(res.labTests);
-        setFilteredTests(res.labTests);
+        setFilteredTests(activeTests);
       } catch (error: any) {
         console.error("Error fetching radiology tests:", error);
         toast.error(error.message || "Failed to fetch tests");
@@ -104,7 +114,7 @@ const RadiologyTests: React.FC = () => {
   }, [searchTerm, selectedStatus, token]);
 
   useEffect(() => {
-    let filtered = tests;
+    let filtered = tests.filter((test) => !test.is_deleted);
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -130,7 +140,7 @@ const RadiologyTests: React.FC = () => {
   };
 
   const handleBulkDelete = async () => {
-    if (selectedTests.length === 0) return;
+    if (selectedTests.length === 0 || !token) return;
 
     const confirmed = await new Promise<boolean>((resolve) => {
       const toastId = toast(
@@ -171,13 +181,36 @@ const RadiologyTests: React.FC = () => {
     if (confirmed) {
       setLoading(true);
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const updatedTests = tests.filter(
-          (test) => !selectedTests.includes(test.id)
+        // Delete each selected test using the delete function
+        const deletePromises = selectedTests.map((testId) =>
+          deletePathologyTest(testId, token)
         );
-        setTests(updatedTests);
-        setFilteredTests(updatedTests);
+
+        await Promise.all(deletePromises);
+
+        // Refresh the list to get updated data
+        const categoryData = await fetchCategories(token);
+        const defaultCategoryId = categoryData.roles[11]?.id || "";
+
+        const payload: SearchLabTestsPayload = {
+          start: 0,
+          max: 50,
+          search_category: defaultCategoryId || null,
+          search: searchTerm || null,
+          filter_sample_type_ids: null,
+          filter_active: null,
+          filter_featured: null,
+          sort_by: "name",
+          sort_order: "ASC",
+        };
+
+        const res = await searchPathologyTests(payload, token!);
+        const activeTests = res.labTests.filter(
+          (test: RadiologyTest) => !test.is_deleted
+        );
+
+        setTests(res.labTests);
+        setFilteredTests(activeTests);
 
         toast.success(`${selectedTests.length} tests deleted successfully!`);
         setSelectedTests([]);
@@ -208,7 +241,10 @@ const RadiologyTests: React.FC = () => {
 
   const handleAddTest = async (newTestData: RadiologyTest) => {
     setTests([...tests, newTestData]);
-    setFilteredTests([...tests, newTestData]);
+    setFilteredTests([
+      ...tests.filter((test) => !test.is_deleted),
+      newTestData,
+    ]);
   };
 
   const handleUpdateTest = async (updatedTest: RadiologyTest) => {
@@ -216,9 +252,10 @@ const RadiologyTests: React.FC = () => {
       test.id === updatedTest.id ? updatedTest : test
     );
     setTests(updatedTests);
-    setFilteredTests(updatedTests);
+    setFilteredTests(updatedTests.filter((test) => !test.is_deleted));
   };
 
+  // Delete using the new delete function
   const handleTestAction = async (action: string, test: RadiologyTest) => {
     setTestActionDropdown(null);
 
@@ -267,11 +304,32 @@ const RadiologyTests: React.FC = () => {
 
         if (confirmed) {
           try {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            // Call the delete function
+            await deletePathologyTest(test.id, token);
 
-            const updatedTests = tests.filter((t) => t.id !== test.id);
-            setTests(updatedTests);
-            setFilteredTests(updatedTests);
+            // Refresh the list to get updated data
+            const categoryData = await fetchCategories(token);
+            const defaultCategoryId = categoryData.roles[11]?.id || "";
+
+            const payload: SearchLabTestsPayload = {
+              start: 0,
+              max: 50,
+              search_category: defaultCategoryId || null,
+              search: searchTerm || null,
+              filter_sample_type_ids: null,
+              filter_active: null,
+              filter_featured: null,
+              sort_by: "name",
+              sort_order: "ASC",
+            };
+
+            const res = await searchPathologyTests(payload, token!);
+            const activeTests = res.labTests.filter(
+              (test: RadiologyTest) => !test.is_deleted
+            );
+
+            setTests(res.labTests);
+            setFilteredTests(activeTests);
 
             toast.success("Test deleted successfully!");
           } catch (error: any) {

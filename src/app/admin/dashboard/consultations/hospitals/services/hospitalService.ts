@@ -17,6 +17,8 @@ export interface HospitalAPI {
   email: string;
   website: string;
   departments: string[];
+  lab_test_ids: string[];
+  health_package_ids: string[];
   operating_hours: {
     day: string;
     end_time: string;
@@ -64,6 +66,8 @@ export interface HospitalFormData {
   email: string;
   website?: string;
   departments: string[];
+  lab_test_ids: string[];
+  health_package_ids: string[];
   operating_hrs: {
     id?: string;
     day_id: string;

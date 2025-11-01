@@ -1,4 +1,11 @@
 import {
+  AvailableSlotsResponse,
+  SearchLabTestBookingsPayload,
+  SearchLabTestBookingsResponse,
+  UpdateLabTestBookingPayload,
+  UpdateLabTestBookingResponse,
+} from "../bookings/type";
+import {
   CreateHealthPackagePayload,
   HealthPackage,
   SearchHealthPackagesPayload,
@@ -67,6 +74,41 @@ export async function updatePathologyTest(
   }
 
   return await response.json();
+}
+
+export async function deletePathologyTest(
+  testId: string,
+  token: string
+): Promise<CreateTestResponse> {
+  const deletePayload = {
+    id: testId,
+    is_deleted: true,
+    name: "",
+    description: "",
+    code: "",
+    category_id: "",
+    sample_type_ids: [] as string[],
+    test_params: [] as string[],
+    report_time_hrs: 0,
+    cost_price: 0,
+    selling_price: 0,
+    preparation_instructions: [] as string[],
+    precautions: [] as string[],
+    is_fasting_reqd: false,
+    in_person_visit_reqd: false,
+    is_featured_lab_test: false,
+    is_home_collection_available: false,
+    is_active: false,
+    image_url: "",
+    modality_type_id: "",
+    inspection_parts_ids: [] as string[],
+    related_lab_test_ids: [] as string[],
+  };
+
+  return await updatePathologyTest(
+    deletePayload as UpdatePathologyTestPayload,
+    token
+  );
 }
 export interface EnumItem {
   id: string;
@@ -137,7 +179,7 @@ export const fetchServiceAreas = (token: string) =>
   fetchEnums(EnumCodes.SERVICE_AREA, token);
 export interface SearchLabTestsPayload {
   start: number;
-  max: number;
+  max: number | null;
   search_category: string | null;
   search: string | null;
   filter_sample_type_ids: string[] | null;
@@ -299,6 +341,34 @@ export async function updateHealthPackage(
 
   return await response.json();
 }
+
+export async function deleteHealthPackage(
+  packageId: string,
+  token: string
+): Promise<CreateHealthPackageResponse> {
+  const deletePayload = {
+    id: packageId,
+    is_deleted: true,
+    name: "",
+    description: "",
+    image_url: "",
+    linked_test_ids: [] as string[],
+    cost_price: 0,
+    selling_price: 0,
+    prepare_instructions: [] as string[],
+    is_active: false,
+    is_popular: false,
+    related_health_package_ids: [] as string[],
+    is_fasting_reqd: false,
+    in_person_visit_reqd: false,
+    is_home_collection_available: false,
+  };
+
+  return await updateHealthPackage(
+    deletePayload as UpdateHealthPackagePayload,
+    token
+  );
+}
 export async function createPhlebotomist(
   payload: CreatePhlebotomistPayload,
   token: string
@@ -344,7 +414,31 @@ export async function updatePhlebotomist(
 
   return await response.json();
 }
+export async function deletePhlebotomist(
+  phlebotomistId: string,
+  token: string
+): Promise<CreatePhlebotomistResponse> {
+  const deletePayload = {
+    id: phlebotomistId,
+    is_deleted: true,
+    name: "",
+    mobile_number: "",
+    email: "",
+    service_city: "",
+    service_area: "",
+    specialization_id: "",
+    license_no: "",
+    joining_date: "",
+    is_home_collection_certified: false,
+    is_available: false,
+    availability: [],
+  };
 
+  return await updatePhlebotomist(
+    deletePayload as UpdatePhlebotomistPayload,
+    token
+  );
+}
 export interface SearchPhlebotomistsPayload {
   start: number;
   max: number;
@@ -377,6 +471,89 @@ export async function searchPhlebotomists(
 ): Promise<SearchPhlebotomistsResponse> {
   const response = await fetch(
     `${LAB_API_BASE_URL}/api/labtest/phlebotomist/search`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return await response.json();
+}
+
+export async function searchLabTestBookings(
+  payload: SearchLabTestBookingsPayload,
+  token: string
+): Promise<SearchLabTestBookingsResponse> {
+  const response = await fetch(
+    `${LAB_API_BASE_URL}/api/labtest/booking/search`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return await response.json();
+}
+
+export async function updateLabTestBooking(
+  payload: UpdateLabTestBookingPayload,
+  token: string
+): Promise<UpdateLabTestBookingResponse> {
+  const response = await fetch(`${LAB_API_BASE_URL}/api/labtest/bookings`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return await response.json();
+}
+// Add these interfaces to your services file
+
+export interface AvailableSlotsPayload {
+  search_text: string | null;
+  city_id: string | null;
+  area_id: string | null;
+  date: string;
+}
+
+export async function fetchAvailableSlots(
+  payload: AvailableSlotsPayload,
+  token: string
+): Promise<AvailableSlotsResponse> {
+  const response = await fetch(
+    `${LAB_API_BASE_URL}/api/labtest/phlebotomist/available-slots`,
     {
       method: "POST",
       headers: {

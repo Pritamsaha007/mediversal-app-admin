@@ -1,35 +1,11 @@
 import React from "react";
 import { X, Clock } from "lucide-react";
-
-interface BookingType {
-  id: string;
-  bookingId: string;
-  testName: string;
-  patientName: string;
-  patientId: string;
-  status: "Completed" | "Pending" | "In Progress" | "Cancelled" | "Scheduled";
-  paymentMethod: "Debit Card" | "Credit Card" | "Cash" | "Pending" | "UPI";
-  paymentStatus: "Completed" | "Pending" | "Failed";
-  amount: number;
-  date: string;
-  testType: string;
-  contactNo?: string;
-  email?: string;
-  age?: string;
-  gender?: string;
-  sampleCollectionDate?: string;
-  sampleCollectionTime?: string;
-  appointedPhlebotomist?: string;
-  labHospital?: string;
-  reportPreparationTime?: string;
-  symptomsReason?: string;
-  testCategory?: string;
-}
+import { LabTestBooking } from "../type";
 
 interface ViewBookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  booking: BookingType | null;
+  booking: LabTestBooking | null;
 }
 
 const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
@@ -39,25 +15,27 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
 }) => {
   if (!isOpen || !booking) return null;
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "scheduled":
-        return "bg-yellow-100 text-yellow-800 border-yellow-800";
-      case "in progress":
-        return "bg-blue-100 text-blue-800 border-blue-800";
-      case "completed":
-        return "bg-green-100 text-green-800 border-green-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800 border-red-800";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-800";
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return dateString;
     }
+  };
+
+  const primaryPatient = booking.patient_details?.patients_list?.[0] || {
+    name: "Unknown",
+    age: 0,
+    gender: "Unknown",
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <h2 className="text-[18px] font-semibold text-[#161D1F]">
             Booking Details
@@ -71,60 +49,62 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Booking Header */}
           <div className="">
             <h3 className="text-[16px] font-semibold text-[#161D1F] mb-2">
-              {booking.testName}
+              {booking.labtestnames?.join(", ") || "Lab Tests"}
             </h3>
             <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
-              <span>Booking ID: {booking.bookingId}</span>
+              <span>Booking ID: {booking.id}</span>
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                {booking.testType}
+                {formatDate(booking.booking_date)}
               </span>
             </div>
 
-            {/* Tags */}
             <div className="flex items-start gap-2">
               <span className="text-xs text-[#161D1F] font-medium">Tags:</span>
               <div className="flex flex-wrap gap-2">
                 <span
-                  className={`px-3 py-1 rounded-md text-xs border  text-[#9B51E0] border-[#9B51E0]`}
+                  className={`px-3 py-1 rounded-md text-xs border text-[#9B51E0] border-[#9B51E0]`}
                 >
-                  Lab/Hospital visit
+                  Lab Test
                 </span>
                 <span
-                  className={`px-3 py-1 rounded-md text-xs border bg-[#B78E12] text-white`}
+                  className={`px-3 py-1 rounded-md text-xs border ${
+                    booking.status?.toLowerCase() === "completed"
+                      ? "bg-green-100 text-green-800 border-green-800"
+                      : booking.status?.toLowerCase() === "in progress"
+                      ? "bg-blue-100 text-blue-800 border-blue-800"
+                      : booking.status?.toLowerCase() === "scheduled"
+                      ? "bg-yellow-100 text-yellow-800 border-yellow-800"
+                      : "bg-yellow-100 text-yellow-800 border-yellow-800"
+                  }`}
                 >
-                  {booking.status}
+                  {booking.status || "Unknown"}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Report Preparation Time */}
           <div>
             <span className="text-xs text-[#161D1F] font-medium">
               Report Preparation Time:
             </span>
-            <span className="ml-2 text-xs text-[#161D1F]">
-              {booking.reportPreparationTime || "6 Hrs."}
-            </span>
+            <span className="ml-2 text-xs text-[#161D1F]">6 Hrs.</span>
           </div>
 
-          {/* Patient Details */}
           <div>
-            <h4 className="text-xs font-semibold text-[#161D1F] mb-3 ">
+            <h4 className="text-xs font-semibold text-[#161D1F] mb-3">
               Patient Details
             </h4>
-            <div className=" rounded-lg p-4 border border-gray-200  bg-[#E8F4F7]">
-              <div className="grid grid-cols-2 gap-x-12 gap-y-3 ">
+            <div className="rounded-lg p-4 border border-gray-200 bg-[#E8F4F7]">
+              <div className="grid grid-cols-2 gap-x-12 gap-y-3">
                 <div>
                   <span className="text-xs text-[#161D1F] font-medium">
-                    Contact No.:
+                    Patient Name:
                   </span>
                   <span className="ml-2 text-xs text-[#161D1F]">
-                    {booking.contactNo || "+91 62017 53532"}
+                    {primaryPatient.name || "Not specified"}
                   </span>
                 </div>
                 <div>
@@ -132,51 +112,69 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                     Age & Gender:
                   </span>
                   <span className="ml-2 text-xs text-[#161D1F]">
-                    {booking.age || "29 Yrs."} | {booking.gender || "Male"}
+                    {primaryPatient.age || "0"} Yrs. |{" "}
+                    {primaryPatient.gender || "Unknown"}
                   </span>
                 </div>
-                <div className="col-span-2">
+                <div>
                   <span className="text-xs text-[#161D1F] font-medium">
-                    Email ID:
+                    Total Patients:
                   </span>
                   <span className="ml-2 text-xs text-[#161D1F]">
-                    {booking.email || "rakeshsinha4527@gmail.com"}
+                    {booking.patient_details?.patients_list?.length || 1}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-xs text-[#161D1F] font-medium">
+                    Payment Status:
+                  </span>
+                  <span className="ml-2 text-xs text-[#161D1F]">
+                    {booking.payment_status || "Unknown"}
                   </span>
                 </div>
               </div>
+
+              {booking.patient_details?.patients_list &&
+                booking.patient_details.patients_list.length > 1 && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <span className="text-xs text-[#161D1F] font-medium block mb-2">
+                      All Patients:
+                    </span>
+                    <div className="space-y-2">
+                      {booking.patient_details.patients_list.map(
+                        (patient, index) => (
+                          <div key={index} className="text-xs text-[#161D1F]">
+                            {patient.name} - {patient.age} Yrs. -{" "}
+                            {patient.gender}
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                )}
             </div>
           </div>
 
-          {/* Hospital Visit & Payment Details */}
           <div>
             <h4 className="text-xs font-semibold text-[#161D1F] mb-3">
-              Hospital Visit & Payment Details
+              Test & Payment Details
             </h4>
-            <div className=" rounded-lg p-4 border border-gray-200">
+            <div className="rounded-lg p-4 border border-gray-200">
               <div className="grid grid-cols-2 gap-x-12 gap-y-3">
                 <div>
                   <span className="text-xs text-[#161D1F] font-medium">
-                    Sample Collection Date & Time:
+                    Booking Date:
                   </span>
                   <span className="ml-2 text-xs text-[#161D1F]">
-                    {booking.sampleCollectionDate || "18/09/2025"} |{" "}
-                    {booking.sampleCollectionTime || "5:00 PM - 6:00 PM"}
+                    {formatDate(booking.booking_date)}
                   </span>
                 </div>
                 <div>
                   <span className="text-xs text-[#161D1F] font-medium">
-                    Appointed Phlebotomist:
+                    Created Date:
                   </span>
                   <span className="ml-2 text-xs text-[#161D1F]">
-                    {booking.appointedPhlebotomist || "Pritam Saha"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-[#161D1F] font-medium">
-                    Lab/Hospital:
-                  </span>
-                  <span className="ml-2 text-xs text-[#161D1F]">
-                    {booking.labHospital || "Mediversal Health Studio"}
+                    {formatDate(booking.created_date)}
                   </span>
                 </div>
                 <div>
@@ -184,36 +182,35 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                     Lab Test Charges:
                   </span>
                   <span className="ml-2 text-xs text-[#161D1F]">
-                    Rs. {booking.amount.toFixed(0)}
+                    ₹{" "}
+                    {parseFloat(booking.amount || "0").toLocaleString("en-IN")}
                   </span>
                 </div>
-                <div className="col-span-2">
+                <div>
                   <span className="text-xs text-[#161D1F] font-medium">
-                    Payment Method:
+                    Customer ID:
                   </span>
                   <span className="ml-2 text-xs text-[#161D1F]">
-                    {booking.paymentMethod}
+                    {booking.customer_id || "Not assigned"}
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Symptoms/Reason for Visit */}
           <div>
             <h4 className="text-xs font-semibold text-[#161D1F] mb-3">
-              Symptoms/Reason for Visit:
+              Test Information:
             </h4>
             <div className="rounded-lg p-4 border border-gray-200 bg-white">
               <p className="text-xs text-[#161D1F]">
-                {booking.symptomsReason ||
-                  "Persistent fatigue and dizziness, advised for complete blood count (CBC)."}
+                {booking.labtestnames?.join(", ") ||
+                  "No test information available"}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
         <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-3">
           <button
             onClick={onClose}

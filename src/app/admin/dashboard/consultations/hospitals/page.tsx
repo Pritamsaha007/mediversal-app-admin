@@ -85,6 +85,7 @@ const Hospitals: React.FC = () => {
       };
 
       const response = await getHospitals(params, token);
+      console.log(response, "real");
       let convertedHospitals = response.hospitals.map(
         convertAPIToLocalHospital
       );
@@ -109,7 +110,8 @@ const Hospitals: React.FC = () => {
       setLoading(false);
     }
   };
-
+  console.log(hospitals, "main api");
+  console.log(filteredHospitals, "hospitals new");
   useEffect(() => {
     loadHospitals();
   }, [searchTerm, selectedDepartment, selectedOperatingHours, token]);

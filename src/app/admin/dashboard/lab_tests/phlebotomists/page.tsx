@@ -22,8 +22,12 @@ import { useAdminStore } from "@/app/store/adminStore";
 import {
   EnumItem,
   fetchDays,
+  fetchPhleboSpecializations,
+  fetchServiceAreas,
+  fetchServiceCities,
   searchPhlebotomists,
   SearchPhlebotomistsPayload,
+  updatePhlebotomist,
 } from "../services/index";
 
 interface PhlebotomistStats {
@@ -57,9 +61,55 @@ const PhlebotomistManagement: React.FC = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [daysData, setDaysData] = useState<EnumItem[]>([]);
   const [daysDataLoaded, setDaysDataLoaded] = useState(false);
-
+  const [specializationsData, setSpecializationsData] = useState<EnumItem[]>(
+    []
+  );
+  const [fetchingData, setFetchingData] = useState(false);
+  const [enumDataLoaded, setEnumDataLoaded] = useState(false);
+  const [serviceCitiesData, setServiceCitiesData] = useState<EnumItem[]>([]);
+  const [serviceAreasData, setServiceAreasData] = useState<EnumItem[]>([]);
   const { token } = useAdminStore();
+  useEffect(() => {
+    const fetchEnumData = async () => {
+      if (!token) return;
 
+      setFetchingData(true);
+      setEnumDataLoaded(false);
+      try {
+        const [
+          daysResponse,
+          specializationsResponse,
+          citiesResponse,
+          areasResponse,
+        ] = await Promise.all([
+          fetchDays(token),
+          fetchPhleboSpecializations(token),
+          fetchServiceCities(token),
+          fetchServiceAreas(token),
+        ]);
+
+        console.log("Enum data fetched:", {
+          days: daysResponse.roles,
+          specializations: specializationsResponse.roles,
+          cities: citiesResponse.roles,
+          areas: areasResponse.roles,
+        });
+
+        setDaysData(daysResponse.roles || []);
+        setSpecializationsData(specializationsResponse.roles || []);
+        setServiceCitiesData(citiesResponse.roles || []);
+        setServiceAreasData(areasResponse.roles || []);
+        setEnumDataLoaded(true);
+      } catch (error: any) {
+        console.error("Error fetching enum data:", error);
+        toast.error("Failed to load form data");
+      } finally {
+        setFetchingData(false);
+      }
+    };
+
+    fetchEnumData();
+  }, [token]);
   useEffect(() => {
     const fetchEnumData = async () => {
       if (!token) return;
@@ -111,7 +161,107 @@ const PhlebotomistManagement: React.FC = () => {
       updated_by: apiPhlebo.updated_by || "",
     };
   };
+  const handleDeletePhlebotomist = async (phlebotomist: Phlebotomist) => {
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
+    const confirmed = await new Promise<boolean>((resolve) => {
+      const toastId = toast(
+        (t) => (
+          <div className="flex flex-col gap-2">
+            <span>Are you sure you want to delete {phlebotomist.name}</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  toast.dismiss(toastId);
+                  resolve(true);
+                }}
+                className="px-3 py-1 bg-red-400 text-white rounded text-sm"
+              >
+                Yes, Delete
+              </button>
+              <button
+                onClick={() => {
+                  toast.dismiss(toastId);
+                  resolve(false);
+                }}
+                className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ),
+        {
+          duration: Infinity,
+        }
+      );
+    });
 
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Helper functions to get IDs from display names
+      const getCityId = (cityName: string): string => {
+        const city = serviceCitiesData.find((item) => item.value === cityName);
+        return city?.id || cityName; // Fallback to original if not found
+      };
+
+      const getAreaId = (areaName: string): string => {
+        const area = serviceAreasData.find((item) => item.value === areaName);
+        return area?.id || areaName; // Fallback to original if not found
+      };
+
+      const getSpecializationId = (specializationName: string): string => {
+        const specialization = specializationsData.find(
+          (item) => item.value === specializationName
+        );
+        return specialization?.id || specializationName; // Fallback to original if not found
+      };
+
+      // Convert display names to UUIDs
+      const serviceCityId = getCityId(phlebotomist.service_city);
+      const serviceAreaId = getAreaId(phlebotomist.service_area);
+      const specializationId = getSpecializationId(
+        phlebotomist.specialization_id
+      );
+
+      const updatePayload = {
+        id: phlebotomist.id,
+        name: phlebotomist.name,
+        mobile_number: phlebotomist.mobile_number,
+        email: phlebotomist.email,
+        rating: phlebotomist.rating,
+        experience_in_yrs: phlebotomist.experience_in_yrs,
+        service_city: serviceCityId, // Use UUID instead of display name
+        service_area: serviceAreaId, // Use UUID instead of display name
+        specialization_id: specializationId, // Use UUID instead of display name
+        license_no: phlebotomist.license_no,
+        joining_date: phlebotomist.joining_date,
+        is_home_collection_certified: phlebotomist.is_home_collection_certified,
+        is_available: false,
+        is_deleted: true,
+        availability: phlebotomist.availability,
+      };
+
+      console.log("Delete Payload:", updatePayload);
+      await updatePhlebotomist(updatePayload, token);
+
+      toast.success("Phlebotomist deleted successfully");
+
+      fetchPhlebotomists();
+    } catch (error: any) {
+      console.error("Error deleting phlebotomist:", error);
+      toast.error(error.message || "Failed to delete phlebotomist");
+    } finally {
+      setLoading(false);
+    }
+  };
   const filterOptions = ["All Phlebotomist", "Active", "Inactive"];
   const locationOptions = [
     "All Locations",
@@ -564,7 +714,13 @@ const PhlebotomistManagement: React.FC = () => {
                           >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="p-1 text-[#F44336] hover:text-red-500">
+                          <button
+                            onClick={() =>
+                              handleDeletePhlebotomist(phlebotomist)
+                            }
+                            className="p-1 text-[#F44336] hover:text-red-500"
+                            disabled={loading}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>

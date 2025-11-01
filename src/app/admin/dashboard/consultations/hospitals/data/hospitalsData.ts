@@ -25,6 +25,8 @@ export interface Hospital {
   };
   description: string;
   departments: string[];
+  lab_test_ids: string[];
+  health_package_ids: string[];
   operatingHours: OperatingHours;
   emergencyServices: boolean;
   image?: File | string | null;
@@ -49,6 +51,13 @@ export const convertAPIToLocalHospital = (apiHospital: any): Hospital => {
     };
   });
 
+  // Extract lab test IDs from the nested lab_tests array
+  const labTestIds = apiHospital.lab_tests?.map((test: any) => test.id) || [];
+
+  // Extract health package IDs from the nested health_packages array
+  const healthPackageIds =
+    apiHospital.health_packages?.map((pkg: any) => pkg.id) || [];
+
   return {
     id: apiHospital.id,
     name: apiHospital.name,
@@ -68,6 +77,10 @@ export const convertAPIToLocalHospital = (apiHospital: any): Hospital => {
     },
     description: apiHospital.description || "",
     departments: apiHospital.departments || [],
+
+    lab_test_ids: labTestIds,
+    health_package_ids: healthPackageIds,
+
     operatingHours,
     emergencyServices: apiHospital.is_available_24_7 || false,
     image: apiHospital.display_pic || null,

@@ -241,13 +241,13 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
                   <div>
                     <p className="text-xs text-gray-600 mb-1">Cost Price:</p>
                     <p className="text-[15px] font-semibold text-[#161D1F]">
-                      $ {test.cost_price.toFixed(2)}
+                      ₹ {test.cost_price.toFixed(2)}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-600 mb-1">Selling Price:</p>
                     <p className="text-[15px] font-semibold text-[#161D1F]">
-                      $ {test.selling_price.toFixed(2)}
+                      ₹ {test.selling_price.toFixed(2)}
                     </p>
                   </div>
                 </div>
