@@ -84,7 +84,7 @@ export const AssignPhlebotomistModal: React.FC<
         search_text: searchTerm || null,
         city_id: null,
         area_id: null,
-        date: selectedDate || new Date().toISOString().split("T")[0], // Default to today
+        date: selectedDate || new Date().toISOString().split("T")[0],
       };
 
       const response = await fetchAvailableSlots(payload, token);
@@ -102,7 +102,6 @@ export const AssignPhlebotomistModal: React.FC<
     }
   };
 
-  // Group slots by phlebotomist
   const getGroupedPhlebotomists = () => {
     const grouped: { [key: string]: PhlebotomistSlot[] } = {};
 
@@ -118,7 +117,6 @@ export const AssignPhlebotomistModal: React.FC<
 
   const groupedPhlebotomists = getGroupedPhlebotomists();
 
-  // Filter phlebotomists based on search and category
   const filteredPhlebotomistIds = Object.keys(groupedPhlebotomists).filter(
     (phleboId) => {
       const slots = groupedPhlebotomists[phleboId];
@@ -181,6 +179,11 @@ export const AssignPhlebotomistModal: React.FC<
         toast.success("Phlebotomist assigned successfully!");
         onAssignmentSuccess?.();
         onClose();
+
+        // Refresh the page after successful assignment
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } else {
         throw new Error("Failed to assign phlebotomist");
       }
@@ -229,8 +232,9 @@ export const AssignPhlebotomistModal: React.FC<
   useEffect(() => {
     if (isOpen) {
       fetchSpecializations();
-
       setSelectedDate(new Date().toISOString().split("T")[0]);
+      // Reset assigned phlebotomist when modal opens
+      setAssignedPhlebotomist(null);
     }
   }, [isOpen]);
 
@@ -520,7 +524,7 @@ export const AssignPhlebotomistModal: React.FC<
                               {isAssigned(phleboId)
                                 ? "Assigned"
                                 : assignedPhlebotomist
-                                ? "Already Assigned Other Staff"
+                                ? "Already Assigned"
                                 : "Select Time"}
                             </button>
 

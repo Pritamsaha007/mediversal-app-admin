@@ -147,17 +147,17 @@ const BookingsManagement: React.FC = () => {
       (booking) => booking.booking_date.split("T")[0] === today
     ).length;
 
-    const todaysRevenue = bookings
-      .filter(
-        (booking) =>
-          booking.booking_date.split("T")[0] === today &&
-          booking.payment_status === "Completed"
-      )
-      .reduce((sum, booking) => sum + parseFloat(booking.amount), 0);
+    const todaysRevenue = bookings.reduce((sum, booking) => {
+      const value = booking.today_revenue ?? "0";
+      const num = parseFloat(value) || 0;
+      return sum + num;
+    }, 0);
 
-    const totalRevenue = bookings
-      .filter((booking) => booking.payment_status === "Completed")
-      .reduce((sum, booking) => sum + parseFloat(booking.amount), 0);
+    const totalRevenue = bookings.reduce((sum, booking) => {
+      const value = booking.total_revenue ?? "0";
+      const num = parseFloat(value) || 0;
+      return sum + num;
+    }, 0);
 
     return {
       todaysBookings,
@@ -618,7 +618,8 @@ const BookingsManagement: React.FC = () => {
                                       View Details
                                     </button>
                                   </li>
-                                  {booking.status == "PENDING" && (
+                                  {(booking.status === "PENDING" ||
+                                    booking.status === "SCHEDULED") && (
                                     <li>
                                       <button
                                         onClick={() =>
