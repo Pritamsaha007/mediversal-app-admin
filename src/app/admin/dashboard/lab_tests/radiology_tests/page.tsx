@@ -181,14 +181,12 @@ const RadiologyTests: React.FC = () => {
     if (confirmed) {
       setLoading(true);
       try {
-        // Delete each selected test using the delete function
         const deletePromises = selectedTests.map((testId) =>
           deletePathologyTest(testId, token)
         );
 
         await Promise.all(deletePromises);
 
-        // Refresh the list to get updated data
         const categoryData = await fetchCategories(token);
         const defaultCategoryId = categoryData.roles[11]?.id || "";
 
@@ -539,7 +537,7 @@ const RadiologyTests: React.FC = () => {
                           <div className="flex items-center gap-1">
                             <Activity className="text-gray-500 w-4 h-4" />
                             <span className="text-xs text-gray-500">
-                              {test.description}
+                              {test.code}
                             </span>
                           </div>
                         </div>

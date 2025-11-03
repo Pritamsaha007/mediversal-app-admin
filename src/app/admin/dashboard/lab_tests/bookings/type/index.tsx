@@ -98,3 +98,72 @@ export interface AvailableSlotsResponse {
   success: boolean;
   slots: PhlebotomistSlot[];
 }
+export interface BookingDetailsResponse {
+  success: boolean;
+  booking: {
+    id: string;
+    customer_id: string;
+    status: {
+      id: string;
+      value: string;
+    };
+    lab_tests: Array<{
+      id: string;
+      name: string;
+      description: string;
+      code: string;
+      category: {
+        id: string;
+        value: string;
+      };
+      sample_types: any;
+      report_time_hrs: number;
+      cost_price: number;
+      selling_price: number;
+      is_fasting_reqd: boolean | null;
+      is_featured_lab_test: boolean | null;
+      is_home_collection_available: boolean;
+      is_active: boolean;
+    }>;
+    health_packages: any;
+    hospital: any;
+    coupon: any;
+    state: any;
+    address_type: any;
+    phlebotomist: {
+      id: string;
+      name: string;
+      service_city: {
+        id: string;
+        value: string;
+      };
+      license_no: string;
+      is_home_collection_certified: boolean;
+    } | null;
+    price: string;
+    payment_status: string;
+    booking_date: string;
+    booking_time: number;
+    can_sample_collected_at_home: boolean;
+    patient_details: {
+      patients_list: Array<{
+        name: string;
+        age: number;
+        gender: string;
+      }>;
+    };
+    house_no: string;
+    area: string;
+    landmark: string;
+    pincode: string;
+    city: string;
+    address_line1: string | null;
+    address_line2: string | null;
+    recepient_name: string;
+    recepient_phone: string;
+    report_url: string | null;
+    report_received_date: string;
+    created_date: string;
+    updated_date: string;
+  };
+}

@@ -546,7 +546,7 @@ const PathologyTests: React.FC = () => {
                           <div className="flex items-center gap-1">
                             <Droplets className="text-gray-500 w-4 h-4" />
                             <span className="text-xs text-gray-500">
-                              {test.description}
+                              {test.code}
                             </span>
                           </div>
                         </div>

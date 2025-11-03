@@ -1,5 +1,6 @@
 import {
   AvailableSlotsResponse,
+  BookingDetailsResponse,
   SearchLabTestBookingsPayload,
   SearchLabTestBookingsResponse,
   UpdateLabTestBookingPayload,
@@ -539,7 +540,6 @@ export async function updateLabTestBooking(
 
   return await response.json();
 }
-// Add these interfaces to your services file
 
 export interface AvailableSlotsPayload {
   search_text: string | null;
@@ -561,6 +561,31 @@ export async function fetchAvailableSlots(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return await response.json();
+}
+
+export async function getBookingById(
+  bookingID: string,
+  token: string
+): Promise<BookingDetailsResponse> {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_HOMECARE_API_BASE_URL}/api/labtest/booking/${bookingID}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     }
   );
 

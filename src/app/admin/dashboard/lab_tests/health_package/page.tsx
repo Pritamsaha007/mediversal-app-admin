@@ -571,7 +571,7 @@ const HealthPackages: React.FC = () => {
                           <div className="flex items-center gap-1">
                             <Droplets className="text-gray-500 w-4 h-4" />
                             <span className="text-xs text-gray-500">
-                              {test.description}
+                              ID: {test.id.slice(0, 6).toUpperCase()}
                             </span>
                           </div>
                         </div>
