@@ -241,7 +241,9 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
       setLoading(true);
 
-      const fileContent = await fileToBase64(file);
+      const fileUri = URL.createObjectURL(file);
+
+      const fileContent = await fileToBase64(fileUri);
 
       const bucketName =
         process.env.NODE_ENV === "development"
@@ -260,7 +262,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       };
 
       const uploadRes = await uploadFile(token!, uploadRequest);
-
+      console.log(uploadRes, "res");
       setFormData((prev) => ({
         ...prev,
         image_url: uploadRes.result,
@@ -274,15 +276,29 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       setLoading(false);
     }
   };
+  const fileToBase64 = async (fileUri: string): Promise<string> => {
+    try {
+      const response = await fetch(fileUri);
+      const blob = await response.blob();
 
-  const fileToBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result?.toString().split(",")[1];
+          if (base64) {
+            resolve(base64);
+          } else {
+            reject(new Error("Failed to convert file to base64"));
+          }
+        };
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error("Error converting file to base64:", error);
+      throw error;
+    }
+  };
   const getSafeValue = (value: any, defaultValue: any = "") => {
     return value !== undefined && value !== null ? value : defaultValue;
   };

@@ -202,7 +202,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         is_active: true,
         is_popular: false,
         is_deleted: false,
-        // New fields
+
         related_health_package_ids: [],
         is_fasting_reqd: false,
         in_person_visit_reqd: false,
@@ -232,7 +232,9 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
       setLoading(true);
 
-      const fileContent = await fileToBase64(file);
+      const fileUri = URL.createObjectURL(file);
+
+      const fileContent = await fileToBase64(fileUri);
 
       const bucketName =
         process.env.NODE_ENV === "development"
@@ -251,7 +253,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       };
 
       const uploadRes = await uploadFile(token!, uploadRequest);
-
+      console.log(uploadRes, "res");
       setFormData((prev) => ({
         ...prev,
         image_url: uploadRes.result,
@@ -265,15 +267,29 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       setLoading(false);
     }
   };
+  const fileToBase64 = async (fileUri: string): Promise<string> => {
+    try {
+      const response = await fetch(fileUri);
+      const blob = await response.blob();
 
-  const fileToBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result?.toString().split(",")[1];
+          if (base64) {
+            resolve(base64);
+          } else {
+            reject(new Error("Failed to convert file to base64"));
+          }
+        };
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error("Error converting file to base64:", error);
+      throw error;
+    }
+  };
   const handleAddTest = (test: PathologyTest) => {
     if (!selectedTests.some((t) => t.id === test.id)) {
       setSelectedTests([...selectedTests, test]);
@@ -432,7 +448,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
   const renderBasicInformation = () => (
     <div className="space-y-6">
-      {/* Image Upload */}
       <div>
         <h4 className="text-xs font-medium text-[#161D1F] mb-3">
           Upload Health Package Image
@@ -461,7 +476,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         </div>
       </div>
 
-      {/* Health Package Name */}
       <div>
         <label className="block text-xs font-medium text-[#161D1F] mb-2">
           * Health Package Name
@@ -475,13 +489,11 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         />
       </div>
 
-      {/* Select Tests Section */}
       <div>
         <h4 className="text-xs font-medium text-[#161D1F] mb-3">
           Select tests to include
         </h4>
 
-        {/* Category Tabs */}
         <div className="flex border-b border-gray-200 mb-4">
           {categories.map((category) => (
             <button
@@ -498,7 +510,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           ))}
         </div>
 
-        {/* Search Bar */}
         <div className="relative mb-4">
           <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
@@ -510,7 +521,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           />
         </div>
 
-        {/* Tests Table */}
         <div className="border border-gray-200 rounded-lg overflow-hidden">
           <div className="max-h-60 overflow-y-auto">
             {loading ? (
@@ -563,7 +573,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
-        {/* Selected Tests */}
         {selectedTests.length > 0 && (
           <div className="mt-4 p-3 bg-gray-50 rounded-lg">
             <div className="text-xs font-medium text-[#161D1F] mb-2">
