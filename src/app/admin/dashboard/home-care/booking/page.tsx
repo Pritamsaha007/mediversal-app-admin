@@ -173,9 +173,12 @@ const BookingManagement: React.FC = () => {
       },
       assignedStaff: null,
       actualOrderId: apiOrder.id,
+      // Add raw date for sorting
+      rawDate: apiOrder.order_date ? new Date(apiOrder.order_date) : new Date(),
     };
   };
 
+  // Sort bookings by date in reverse order (newest first)
   const filteredBookings = apiBookings
     .map(convertApiOrderToBooking)
     .filter((booking) => {
@@ -190,6 +193,10 @@ const BookingManagement: React.FC = () => {
         statusFilter === "All Status" || booking.status === statusFilter;
 
       return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      // Sort by rawDate in descending order (newest first)
+      return b.rawDate.getTime() - a.rawDate.getTime();
     });
 
   const fetchOrders = async () => {
@@ -273,6 +280,7 @@ const BookingManagement: React.FC = () => {
       setUpdatingStatus(null);
     }
   };
+
   console.log(filteredBookings, "jksdn");
   const formatStatusDisplay = (statusValue: string): string => {
     switch (statusValue.toUpperCase()) {
@@ -595,25 +603,12 @@ const BookingManagement: React.FC = () => {
                           <div className="text-xs text-[#899193]">
                             Booking ID: {booking.bookingId}
                           </div>
-                          <div className="mt-1">
-                            <span
-                              className={`px-2 py-1 rounded text-[10px] font-medium ${getPriorityColor(
-                                booking.priority
-                              )}`}
-                            >
-                              {booking.priority}
-                            </span>
-                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div>
                           <div className="font-medium text-[12px] text-[#161D1F]">
                             {booking.customer.name}
-                          </div>
-                          <div className="text-[10px] text-[#899193] flex items-center gap-1">
-                            <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                            {booking.customer.location}
                           </div>
                         </div>
                       </td>

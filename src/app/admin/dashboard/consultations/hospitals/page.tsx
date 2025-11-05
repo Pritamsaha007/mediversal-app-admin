@@ -493,11 +493,10 @@ const Hospitals: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">Loading hospitals...</div>
-                    </td>
-                  </tr>
+                  <td colSpan={7} className="px-6 py-12 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
+                    {/* <div className="text-gray-500">Loading hospitals...</div> */}
+                  </td>
                 ) : filteredHospitals.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">

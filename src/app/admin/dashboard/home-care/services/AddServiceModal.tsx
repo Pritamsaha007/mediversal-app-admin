@@ -19,6 +19,8 @@ interface Service {
     is_active: boolean;
     consent_category_id: string;
   }>;
+  display_sections: string[];
+  custom_medical_info: any;
 }
 
 interface Offering {
