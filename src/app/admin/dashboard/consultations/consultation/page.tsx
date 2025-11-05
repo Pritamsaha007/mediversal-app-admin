@@ -696,9 +696,10 @@ const Consultations: React.FC = () => {
                 {loading ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
+                      {/* <div className="text-gray-500">
                         Loading consultations...
-                      </div>
+                      </div> */}
                     </td>
                   </tr>
                 ) : filteredConsultations.length === 0 ? (

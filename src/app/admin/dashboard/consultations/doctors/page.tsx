@@ -602,7 +602,8 @@ const Doctors: React.FC = () => {
                 {loading ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">Loading doctors...</div>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
+                      {/* <div className="text-gray-500">Loading doctors...</div> */}
                     </td>
                   </tr>
                 ) : filteredDoctors.length === 0 ? (

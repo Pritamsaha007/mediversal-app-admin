@@ -33,6 +33,8 @@ const transformHomecareServiceToService = (
     description: homecareService.description,
     category: homecareService.display_sections?.[0] || "General",
     status: homecareService.status,
+    display_sections: homecareService.display_sections,
+    custom_medical_info: homecareService.custom_medical_info,
     offerings: homecareService.service_tags.map((tag, index) => ({
       id: `${homecareService.id}-offering-${index}`,
       name: tag,
@@ -77,6 +79,8 @@ interface Service {
     is_active: boolean;
     consent_category_id: string;
   }>;
+  display_sections: string[];
+  custom_medical_info: any;
 }
 
 interface ServiceStats {
@@ -141,6 +145,8 @@ const Services: React.FC = () => {
         token
       );
 
+      console.log(response.services, "services");
+
       if (response.success) {
         const transformedServices = response.services.map(
           transformHomecareServiceToService
@@ -158,6 +164,7 @@ const Services: React.FC = () => {
       setLoading(false);
     }
   };
+  console.log(services, "new transformed");
   useEffect(() => {
     if (isLoggedIn && token) {
       fetchServices();
@@ -504,7 +511,8 @@ const Services: React.FC = () => {
                 {loading ? (
                   <tr>
                     <td colSpan={4} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">Loading services...</div>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
+                      {/* <div className="text-gray-500">Loading services...</div> */}
                     </td>
                   </tr>
                 ) : filteredServices.length === 0 ? (

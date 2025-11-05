@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { createOrUpdateHomecareService } from "./service/api/homecareServices";
 import { useAdminStore } from "@/app/store/adminStore";
@@ -20,6 +20,8 @@ interface Service {
     is_active: boolean;
     consent_category_id: string;
   }>;
+  display_sections: string[];
+  custom_medical_info: any;
 }
 
 interface SectionFieldData {
@@ -93,6 +95,14 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
     "Patient Information": "PatientInfo",
   };
 
+  const reverseSectionMapping: { [key: string]: string } = {
+    MedicalInfo: "Medical Information",
+    DoctorInfo: "Doctor's Information",
+    InstallationInfo: "Installation Requirements",
+    ContactInfo: "Contact & Location",
+    PatientInfo: "Patient Information",
+  };
+
   const medicalFieldMapping: { [key: string]: string } = {
     "Allergies & Restrictions": "allergies",
     "Pain Level": "painlevel",
@@ -103,6 +113,42 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
     "Previous Similar Procedures": "similarprocedures",
     "Medical History": "medicalhistory",
   };
+
+  const reverseMedicalFieldMapping: { [key: string]: string } = {
+    allergies: "Allergies & Restrictions",
+    painlevel: "Pain Level",
+    mobilitylevel: "Mobility Level",
+    physiohistory: "Previous Physiotherapy History",
+    therapygoals: "Therapy Goals",
+    procedureason: "Reason for Procedure",
+    similarprocedures: "Previous Similar Procedures",
+    medicalhistory: "Medical History",
+  };
+
+  // Initialize selected sections and medical fields when editing
+  useEffect(() => {
+    if (editService && isOpen) {
+      // Convert display_sections back to readable section names
+      const mappedSections = editService.display_sections
+        .map((section) => reverseSectionMapping[section] || section)
+        .filter((section) => section !== "Patient Information"); // Remove PatientInfo as it's default
+
+      setSelectedSections(mappedSections);
+
+      // Convert custom_medical_info back to readable field names
+      if (editService.custom_medical_info) {
+        const mappedMedicalFields = Object.keys(editService.custom_medical_info)
+          .map((field) => reverseMedicalFieldMapping[field] || field)
+          .filter((field) => field); // Remove any undefined values
+
+        setSelectedMedicalFields(mappedMedicalFields);
+      }
+    } else if (isOpen) {
+      // Reset for new service
+      setSelectedSections([]);
+      setSelectedMedicalFields([]);
+    }
+  }, [editService, isOpen]);
 
   const handleSectionToggle = (section: string) => {
     setSelectedSections((prev) => {
@@ -178,7 +224,12 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
           }
         });
       }
-      if (Object.keys(customMedicalInfo).length === 0) {
+
+      // Always include medicalhistory if no fields selected or if Medical Information section is selected
+      if (
+        Object.keys(customMedicalInfo).length === 0 ||
+        selectedSections.includes("Medical Information")
+      ) {
         customMedicalInfo.medicalhistory = "textbox";
       }
 
@@ -191,7 +242,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
         service_tags: serviceData.tags,
         display_sections: displaySections,
         custom_medical_info: customMedicalInfo,
-        consents: consentsPayload, // Add this line
+        consents: consentsPayload,
       };
 
       const response = await createOrUpdateHomecareService(payload, token);
@@ -204,6 +255,8 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
             description: serviceData.description.trim(),
             status: serviceData.status,
             category: serviceData.tags[0] || "General",
+            display_sections: displaySections,
+            custom_medical_info: customMedicalInfo,
           };
           onUpdateService(updatedService);
           toast.success("Service updated successfully!");
@@ -227,8 +280,25 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
   };
 
   const handleReset = () => {
-    setSelectedSections([]);
-    setSelectedMedicalFields([]);
+    if (editService) {
+      // Reset to original service data
+      const mappedSections = editService.display_sections
+        .map((section) => reverseSectionMapping[section] || section)
+        .filter((section) => section !== "Patient Information");
+
+      setSelectedSections(mappedSections);
+
+      if (editService.custom_medical_info) {
+        const mappedMedicalFields = Object.keys(editService.custom_medical_info)
+          .map((field) => reverseMedicalFieldMapping[field] || field)
+          .filter((field) => field);
+
+        setSelectedMedicalFields(mappedMedicalFields);
+      }
+    } else {
+      setSelectedSections([]);
+      setSelectedMedicalFields([]);
+    }
   };
 
   if (!isOpen) return null;
@@ -240,7 +310,8 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div>
             <h3 className="text-[16px] font-semibold text-[#161D1F]">
-              Add New Service - Add Section & Fields
+              {editService ? "Edit Service" : "Add New Service"} - Sections &
+              Fields
             </h3>
             <p className="text-[10px] text-[#899193] mt-1">
               Select the sections you want to include in the service form from
@@ -275,10 +346,10 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
                       </span>
                       <button
                         onClick={() => handleSectionToggle(section)}
-                        className={`text-[10px] text-[#0088B1] font-semibold ${
+                        className={`text-[10px] font-semibold ${
                           selectedSections.includes(section)
-                            ? "text-gray-400"
-                            : "text-[#0088B1]"
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-[#0088B1] hover:text-[#00729A]"
                         }`}
                         disabled={selectedSections.includes(section)}
                       >
@@ -308,10 +379,10 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
                         </span>
                         <button
                           onClick={() => handleMedicalFieldToggle(field)}
-                          className={`text-[10px] text-[#0088B1] font-semibold ${
+                          className={`text-[10px] font-semibold ${
                             selectedMedicalFields.includes(field)
-                              ? "text-gray-400"
-                              : "text-[#0088B1]"
+                              ? "text-gray-400 cursor-not-allowed"
+                              : "text-[#0088B1] hover:text-[#00729A]"
                           }`}
                           disabled={selectedMedicalFields.includes(field)}
                         >
@@ -336,8 +407,8 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
               </h4>
               <div className="min-h-[150px] border border-gray-300 rounded-lg">
                 <div className="space-y-0">
-                  <div className="flex items-center justify-between p-4 border-b">
-                    <span className="text-[12px] text-[#161D1F]">
+                  <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+                    <span className="text-[12px] text-[#161D1F] font-medium">
                       Patient Information
                     </span>
                     <span className="text-[10px] text-gray-500">(Default)</span>
@@ -345,7 +416,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
                   {selectedSections.map((section) => (
                     <div
                       key={section}
-                      className="flex items-center justify-between p-4 border-b"
+                      className="flex items-center justify-between p-4 border-b hover:bg-gray-50"
                     >
                       <span className="text-[12px] text-[#161D1F]">
                         {section}
@@ -358,6 +429,13 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
                       </button>
                     </div>
                   ))}
+                  {selectedSections.length === 0 && (
+                    <div className="flex items-center justify-center h-20">
+                      <p className="text-[12px] text-gray-500">
+                        No additional sections selected
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -365,21 +443,23 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
             {/* Selected Fields */}
             <div>
               <h4 className="text-[14px] font-medium text-[#161D1F] mb-4">
-                Selected Fields
+                Selected Medical Fields
               </h4>
               <div className="min-h-[150px] border border-gray-300 rounded-lg">
                 {selectedMedicalFields.length === 0 ? (
                   <div className="flex items-center justify-center h-full min-h-[120px]">
                     <p className="text-[12px] text-gray-500">
-                      No fields selected
+                      {selectedSections.includes("Medical Information")
+                        ? "No medical fields selected"
+                        : "Select 'Medical Information' section to add fields"}
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-0">
                     {selectedMedicalFields.map((field) => (
                       <div
                         key={field}
-                        className="flex items-center justify-between p-4 border-b"
+                        className="flex items-center justify-between p-4 border-b hover:bg-gray-50"
                       >
                         <span className="text-[12px] text-[#161D1F]">
                           {field}
@@ -408,6 +488,12 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
             Reset
           </button>
           <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="px-6 py-2 text-[#161D1F] text-[10px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
             <button
               onClick={handleSave}
               disabled={isSubmitting}

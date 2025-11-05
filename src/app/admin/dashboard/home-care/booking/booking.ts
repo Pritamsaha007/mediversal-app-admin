@@ -33,4 +33,5 @@ export interface DetailedBooking {
     number: string;
   };
   assignedStaff: string | null;
+  rawDate: Date;
 }
