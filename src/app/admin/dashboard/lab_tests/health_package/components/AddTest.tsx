@@ -136,7 +136,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       setAvailableTests(filteredTests);
     });
   };
-
   useEffect(() => {
     if (isOpen && token) {
       fetchAllAvailableTests();
@@ -146,12 +145,30 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   useEffect(() => {
     if (searchTerm) {
       const delaySearch = setTimeout(() => {
-        fetchAllAvailableTests();
+        const categoryData = fetchCategories(token!).then((categoryData) => {
+          const pathologyId = categoryData.roles[2]?.id || "";
+          const radiologyId = categoryData.roles[11]?.id || "";
+
+          const filteredTests = allAvailableTests.filter((test) => {
+            const matchesSearch =
+              test.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              test.code.toLowerCase().includes(searchTerm.toLowerCase());
+
+            const matchesCategory =
+              activeCategory === "Pathology"
+                ? test.category_id === pathologyId
+                : test.category_id === radiologyId;
+
+            return matchesSearch && matchesCategory;
+          });
+
+          setAvailableTests(filteredTests);
+        });
       }, 500);
 
       return () => clearTimeout(delaySearch);
-    } else if (isOpen && token) {
-      fetchAllAvailableTests();
+    } else {
+      filterAvailableTestsByCategory();
     }
   }, [searchTerm]);
 
