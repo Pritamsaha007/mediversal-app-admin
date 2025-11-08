@@ -25,7 +25,7 @@ import {
   searchPathologyTests,
   deleteHealthPackage, // Import the new delete function
 } from "../services/index";
-import { HealthPackage } from "./types";
+import { HealthPackage, statics } from "./types";
 import { PathologyTest } from "../pathology_tests/types";
 
 interface HealthPackagesStats {
@@ -52,6 +52,7 @@ const HealthPackages: React.FC = () => {
   const [testNamesMap, setTestNamesMap] = useState<Map<string, string>>(
     new Map()
   );
+  const [statics, setStatics] = useState<statics | null>(null);
 
   const { token } = useAdminStore();
 
@@ -103,7 +104,7 @@ const HealthPackages: React.FC = () => {
 
     try {
       const payload = {
-        start: 0,
+        start: null,
         max: 100,
         search_category: null,
         search: null,
@@ -135,8 +136,8 @@ const HealthPackages: React.FC = () => {
     setLoading(true);
     try {
       const payload = {
-        start: 0,
-        max: null,
+        start: null,
+        max: 200,
         filter_linked_test_ids: null,
         search: searchTerm || null,
         filter_featured: null,
@@ -146,7 +147,8 @@ const HealthPackages: React.FC = () => {
 
       const response = await searchHeathPackages(payload, token);
       const healthPackages = response.healthpackages || [];
-
+      const statics = response.statics;
+      setStatics(statics);
       const activeHealthPackages = healthPackages.filter(
         (pkg: HealthPackage) => !pkg.is_deleted
       );
@@ -431,19 +433,19 @@ const HealthPackages: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
           <StatsCard
             title="Total Packages"
-            stats={stats.totalTests}
+            stats={statics?.total_health_packages}
             icon={<Settings className="w-5 h-5" />}
             color="text-blue-500"
           />
           <StatsCard
             title="Active Packages"
-            stats={stats.activeTests}
+            stats={statics?.total_active_health_packages}
             icon={<Activity className="w-5 h-5" />}
             color="text-green-500"
           />
           <StatsCard
-            title="Total Categories"
-            stats={stats.totalCategories}
+            title="Average Discount"
+            stats={statics?.average_discount_percentage}
             icon={<Users className="w-5 h-5" />}
             color="text-purple-500"
           />

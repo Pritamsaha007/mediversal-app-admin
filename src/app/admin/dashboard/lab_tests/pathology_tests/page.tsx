@@ -30,7 +30,7 @@ import { useAdminStore } from "@/app/store/adminStore";
 interface PathologyStats {
   totalTests: number;
   activeTests: number;
-  totalCategories: number;
+  totalCategories: string | undefined;
 }
 
 const PathologyTests: React.FC = () => {
@@ -58,8 +58,7 @@ const PathologyTests: React.FC = () => {
     const activeTests = tests.filter((t) => !t.is_deleted);
     const totalTests = activeTests.length;
     const activeTestCount = activeTests.filter((t) => t.is_active).length;
-    const totalCategories = new Set(activeTests.map((test) => test.category_id))
-      .size;
+    const totalCategories = activeTests[0]?.average_discount_percentage;
 
     return {
       totalTests,
@@ -96,8 +95,8 @@ const PathologyTests: React.FC = () => {
       setLoading(true);
       try {
         const payload: SearchLabTestsPayload = {
-          start: 0,
-          max: null,
+          start: null,
+          max: 200,
           search_category: category_id,
           search: searchTerm || null,
           filter_sample_type_ids: null,
@@ -416,7 +415,7 @@ const PathologyTests: React.FC = () => {
             color="text-green-500"
           />
           <StatsCard
-            title="Total Categories"
+            title="Average Discount"
             stats={stats.totalCategories}
             icon={<Users className="w-5 h-5" />}
             color="text-purple-500"
