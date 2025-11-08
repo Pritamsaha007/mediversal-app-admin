@@ -23,6 +23,7 @@ export interface RadiologyTest {
   modality_type_id: string;
   inspection_parts_ids: string[];
   related_lab_test_ids: string[];
+  average_discount_percentage?: string;
 }
 
 export interface CreateRadiologyTestPayload {

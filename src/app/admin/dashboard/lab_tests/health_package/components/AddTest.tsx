@@ -179,7 +179,8 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         is_fasting_reqd: editTest.is_fasting_reqd || false,
         in_person_visit_reqd: editTest.in_person_visit_reqd || false,
         is_home_collection_available:
-          editTest.is_home_collection_available !== undefined
+          editTest.is_home_collection_available !== undefined &&
+          editTest.is_home_collection_available !== null
             ? editTest.is_home_collection_available
             : true,
       });

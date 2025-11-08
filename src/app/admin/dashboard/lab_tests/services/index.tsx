@@ -10,6 +10,7 @@ import {
   CreateHealthPackagePayload,
   HealthPackage,
   SearchHealthPackagesPayload,
+  statics,
   UpdateHealthPackagePayload,
 } from "../health_package/types";
 import {
@@ -179,7 +180,7 @@ export const fetchServiceCities = (token: string) =>
 export const fetchServiceAreas = (token: string) =>
   fetchEnums(EnumCodes.SERVICE_AREA, token);
 export interface SearchLabTestsPayload {
-  start: number;
+  start: number | null;
   max: number | null;
   search_category: string | null;
   search: string | null;
@@ -220,6 +221,7 @@ export async function searchPathologyTests(
 export interface SearchHealthPackagesResponse {
   success: boolean;
   healthpackages: HealthPackage[];
+  statics: statics;
 }
 
 export async function searchHeathPackages(

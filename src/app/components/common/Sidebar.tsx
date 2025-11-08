@@ -172,6 +172,10 @@ const Sidebar = () => {
           name: "Phlebotomists",
           link: "/admin/dashboard/lab_tests/phlebotomists",
         },
+        {
+          name: "Reports",
+          link: "/admin/dashboard/lab_tests/reports",
+        },
       ],
     },
   ];

@@ -244,7 +244,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       const fileUri = URL.createObjectURL(file);
 
       const fileContent = await fileToBase64(fileUri);
-
+      console.log(fileContent, "filecontent");
       const bucketName =
         process.env.NODE_ENV === "development"
           ? process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_DEV
@@ -478,7 +478,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Sample Type */}
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
             Sample Type
@@ -518,7 +517,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             )}
           </div>
 
-          {/* Sample Type Chips */}
           {formData.sample_type_ids.length > 0 && (
             <div className="mt-2 space-y-1">
               {formData.sample_type_ids.map((sampleTypeId, index) => {
