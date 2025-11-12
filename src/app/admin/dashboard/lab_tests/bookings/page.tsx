@@ -10,6 +10,8 @@ import {
   DollarSign,
   TrendingUp,
   MoreHorizontal,
+  UserPlus,
+  Upload,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { AssignPhlebotomistModal } from "./components/assignStaff";
@@ -20,7 +22,11 @@ import {
   SearchLabTestBookingsPayload,
   UpdateLabTestBookingPayload,
 } from "./type";
-import { searchLabTestBookings, updateLabTestBooking } from "../services";
+import {
+  searchLabTestBookings,
+  updateLabTestBooking,
+  uploadFile,
+} from "../services";
 import { useAdminStore } from "@/app/store/adminStore";
 import { getOrderStatus } from "../../home-care/booking/services/api/orderServices";
 
@@ -201,7 +207,99 @@ const BookingsManagement: React.FC = () => {
       setSelectedBookings([]);
     }
   };
+  const handleReportUpload = async (bookingId: string) => {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".pdf,.jpg,.jpeg,.png,.doc,.docx";
 
+    fileInput.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        setLoading(true);
+
+        if (
+          !file.type.startsWith("image/") &&
+          file.type !== "application/pdf"
+        ) {
+          toast.error("Please upload a valid image or PDF file.");
+          return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error("File size should be less than 10MB.");
+          return;
+        }
+
+        const fileContent = await fileToBase64(URL.createObjectURL(file));
+
+        const bucketName =
+          process.env.NODE_ENV === "development"
+            ? process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_DEV
+            : process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_PROD;
+
+        if (!bucketName) {
+          throw new Error("S3 bucket name is not configured properly.");
+        }
+
+        const uploadRequest = {
+          bucketName,
+          folderPath: "labTestReports",
+          fileName: `report_${bookingId}_${Date.now()}_${file.name}`,
+          fileContent,
+        };
+
+        const uploadRes = await uploadFile(token!, uploadRequest);
+        const reportUrl = uploadRes.result;
+
+        const updatePayload: UpdateLabTestBookingPayload = {
+          id: bookingId,
+          report_url: reportUrl,
+          report_received_date: new Date().toISOString(),
+        };
+
+        const response = await updateLabTestBooking(updatePayload, token);
+
+        if (response.success) {
+          toast.success("Report uploaded successfully!");
+          fetchBookings();
+        } else {
+          throw new Error("Failed to update booking with report");
+        }
+      } catch (error: any) {
+        console.error("Report upload failed:", error);
+        toast.error(error.message || "Failed to upload report");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fileInput.click();
+  };
+  const fileToBase64 = async (fileUri: string): Promise<string> => {
+    try {
+      const response = await fetch(fileUri);
+      const blob = await response.blob();
+
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result?.toString().split(",")[1];
+          if (base64) {
+            resolve(base64);
+          } else {
+            reject(new Error("Failed to convert file to base64"));
+          }
+        };
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error("Error converting file to base64:", error);
+      throw error;
+    }
+  };
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "scheduled":
@@ -628,7 +726,21 @@ const BookingsManagement: React.FC = () => {
                                         }
                                         className="w-full px-3 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 transition-colors flex items-center gap-2"
                                       >
+                                        <UserPlus className="w-3 h-3" />
                                         Assign Phlebotomist
+                                      </button>
+                                    </li>
+                                  )}
+                                  {booking.status == "COMPLETED" && (
+                                    <li>
+                                      <button
+                                        onClick={() =>
+                                          handleReportUpload(booking.id)
+                                        }
+                                        className="w-full px-3 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                      >
+                                        <Upload className="w-3 h-3" />
+                                        Upload Report
                                       </button>
                                     </li>
                                   )}

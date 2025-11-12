@@ -1,87 +1,231 @@
 "use client";
-import React, { useState } from "react";
-import { Search, ChevronDown, Eye, Printer } from "lucide-react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import {
+  Search,
+  ChevronDown,
+  Eye,
+  Download,
+  X,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+} from "lucide-react";
 import toast from "react-hot-toast";
+import {
+  LabTestReport,
+  ReportStatus,
+  SearchLabTestReportsPayload,
+} from "./types";
+import { searchLabTestReports } from "../services";
+import { useAdminStore } from "@/app/store/adminStore";
 
-interface Report {
-  id: string;
-  patientName: string;
-  bookingId: string;
-  testsBooked?: string;
-  testCategory?: string;
-  packageBooked?: string;
-  reportStatus: string;
-  isHospitalVisit?: boolean;
-  reportDateTime: string;
-  processedBy: string;
-  collectionType: string;
-}
+const getDateRangeForFilter = (
+  filter: string
+): { start_date: string | null; end_date: string | null } => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+  let startDate = null;
+
+  switch (filter) {
+    case "Today":
+      startDate = new Date(today);
+      break;
+    case "Yesterday":
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 1);
+      endDate.setDate(today.getDate() - 1);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    case "Last 7 days":
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 6);
+      break;
+    case "Last 30 days":
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 29);
+      break;
+    case "This month":
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+
+      endDate.setFullYear(today.getFullYear(), today.getMonth() + 1, 0);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    case "Last month":
+      startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+
+      endDate.setFullYear(today.getFullYear(), today.getMonth(), 0);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+
+    default:
+      return { start_date: null, end_date: null };
+  }
+
+  const formatToISO = (d: Date) => d.toISOString();
+
+  return {
+    start_date: formatToISO(startDate),
+    end_date: formatToISO(endDate),
+  };
+};
+
+// Debounce hook/utility
+const useDebounce = (callback: () => void, delay: number) => {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  return useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      callback();
+    }, delay);
+  }, [callback, delay]);
+};
 
 const ReportsManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("All Status");
-  const [selectedDateRange, setSelectedDateRange] =
-    useState("Pick a date range");
-  const [reports, setReports] = useState<Report[]>([
-    {
-      id: "1",
-      patientName: "Anupam Prakash",
-      bookingId: "CBC0003456",
-      testsBooked: "MRI Scan",
-      testCategory: "Pathology",
-      isHospitalVisit: true,
-      reportStatus: "Sent",
-      reportDateTime: "15/09/2025 11:30 AM",
-      processedBy: "Dr. RavishKuuthai",
-      collectionType: "LubvNepark visit",
-    },
-  ]);
-  const [filteredReports, setFilteredReports] = useState<Report[]>(reports);
+  const [currentSearchTerm, setCurrentSearchTerm] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState<
+    ReportStatus | "All Status"
+  >("All Status");
+  const [selectedDateRange, setSelectedDateRange] = useState("All Time");
+
+  const [reports, setReports] = useState<LabTestReport[]>([]);
+
   const [openDropdown, setOpenDropdown] = useState<null | "filter" | "date">(
     null
   );
   const [selectedReports, setSelectedReports] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [rotation, setRotation] = useState(0);
 
-  const filterOptions = [
+  const filterOptions: (ReportStatus | "All Status")[] = [
     "All Status",
-    "Start",
-    "Pooling",
+    "Pending",
+    "No report",
+    "Sent",
     "Under Review",
-    "Processing",
   ];
+
   const dateRangeOptions = [
+    "All Time",
     "Today",
     "Yesterday",
     "Last 7 days",
     "Last 30 days",
     "This month",
     "Last month",
-    "Custom range",
   ];
+  const { token } = useAdminStore();
 
-  // Filter reports based on search and filters
-  React.useEffect(() => {
-    let filtered = reports;
+  const fetchReports = async () => {
+    setLoading(true);
 
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (report) =>
-          report.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          report.bookingId.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+    const dateRange = getDateRangeForFilter(selectedDateRange);
+    let finalStartDate = dateRange.start_date;
+    let finalEndDate = dateRange.end_date;
+
+    if (selectedDateRange === "All Time") {
+      finalStartDate = null;
+      finalEndDate = null;
     }
 
-    // Status filter
-    if (selectedFilter !== "All Status") {
-      filtered = filtered.filter(
-        (report) => report.reportStatus === selectedFilter
-      );
-    }
+    try {
+      const payload: SearchLabTestReportsPayload = {
+        search_text: currentSearchTerm || null,
+        filter_report_status:
+          selectedFilter !== "All Status" ? [selectedFilter] : null,
+        sort_by: "booking_date",
+        sort_order: "DESC",
 
-    setFilteredReports(filtered);
-  }, [searchTerm, selectedFilter, reports]);
+        start: 0,
+        max: null,
+        start_date: finalStartDate,
+        end_date: finalEndDate,
+      };
+
+      const data = await searchLabTestReports(payload, token);
+
+      if (data.success) {
+        let tempR: LabTestReport[] = [];
+
+        data.reports.map((report) => {
+          if (report.report_url) {
+            tempR.push(report);
+          }
+        });
+        setReports(tempR);
+
+        //toast.success(`Loaded ${tempR.length} reports`);
+      } else {
+        throw new Error("Failed to fetch reports");
+      }
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+      toast.error("Failed to load reports");
+    } finally {
+      setLoading(false);
+    }
+  };
+  console.log(reports, "reports");
+
+  // New function to update currentSearchTerm after debounce
+  const updateSearchTerm = useCallback(() => {
+    setCurrentSearchTerm(searchTerm);
+  }, [searchTerm]);
+
+  // Debounced search term update
+  const debouncedUpdateSearchTerm = useDebounce(updateSearchTerm, 500); // 500ms debounce
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    debouncedUpdateSearchTerm();
+  };
+
+  const applyFiltersAndSearch = () => {
+    fetchReports();
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      // Clear the debounce timer and update immediately on Enter
+      if (
+        debouncedUpdateSearchTerm &&
+        (debouncedUpdateSearchTerm as any).cancel
+      ) {
+        (debouncedUpdateSearchTerm as any).cancel();
+      }
+      setCurrentSearchTerm(searchTerm);
+    }
+  };
+
+  // Effect to re-fetch when filters or the debounced search term changes
+  useEffect(() => {
+    applyFiltersAndSearch();
+  }, [selectedFilter, selectedDateRange, currentSearchTerm]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (
+        !target.closest(".dropdown-toggle") &&
+        !target.closest(".dropdown-menu")
+      ) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleSelectReport = (id: string, checked: boolean) => {
     if (checked) {
@@ -93,60 +237,90 @@ const ReportsManagement: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedReports(filteredReports.map((report) => report.id));
+      setSelectedReports(reports.map((report) => report.booking_id));
     } else {
       setSelectedReports([]);
     }
   };
 
-  const handleUpdateStatus = async (reportId: string, newStatus: string) => {
-    setLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      setReports((prev) =>
-        prev.map((report) =>
-          report.id === reportId
-            ? { ...report, reportStatus: newStatus }
-            : report
-        )
-      );
-
-      toast.success(`Report status updated to ${newStatus}`);
-    } catch (error) {
-      toast.error("Failed to update report status");
-    } finally {
-      setLoading(false);
-    }
+  const handleViewReport = (reportUrl: string) => {
+    setPreviewUrl(reportUrl);
+    setShowPreview(true);
+    setZoomLevel(1);
+    setRotation(0);
   };
 
-  const handleSendReport = (reportId: string) => {
-    toast.success("Report sent successfully");
+  const closePreview = () => {
+    setShowPreview(false);
+    setPreviewUrl(null);
+    setZoomLevel(1);
+    setRotation(0);
   };
 
-  const handlePrintReport = (reportId: string) => {
-    toast.success("Printing report...");
+  const zoomIn = () => {
+    setZoomLevel((prev) => Math.min(prev + 0.25, 3));
   };
 
-  const renderTests = (report: Report) => {
+  const zoomOut = () => {
+    setZoomLevel((prev) => Math.max(prev - 0.25, 0.5));
+  };
+
+  const rotate = () => {
+    setRotation((prev) => (prev + 90) % 360);
+  };
+
+  const resetView = () => {
+    setZoomLevel(1);
+    setRotation(0);
+  };
+
+  const isPdf = (url: string) => {
+    return url.toLowerCase().endsWith(".pdf");
+  };
+
+  const isImage = (url: string) => {
+    const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"];
+    return imageExtensions.some((ext) => url.toLowerCase().endsWith(ext));
+  };
+
+  const renderTests = (report: LabTestReport) => {
+    const validTests = report.test_names.filter(
+      (test) => test && test.trim() !== ""
+    );
+    const validCategories = report.category_names.filter(
+      (cat) => cat && cat.trim() !== ""
+    );
+
     return (
       <div className="px-2 py-2 whitespace-nowrap">
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-gray-700">{report.testsBooked}</span>
-          <div className="flex-row gap-5">
-            {report.testCategory == "Pathology" ? (
-              <span className="text-xs text-[#594D44] bg-[#F6D1E9] rounded-md px-1 py-1 flex-1 mr-2">
-                {report.testCategory}
+          {validTests.length > 0 ? (
+            validTests.map((test, index) => (
+              <span key={index} className="text-xs text-gray-700">
+                {test}
+              </span>
+            ))
+          ) : (
+            <span className="text-xs text-gray-500">No tests specified</span>
+          )}
+          <div className="flex flex-wrap gap-1 mt-1">
+            {validCategories.map((category, index) => (
+              <span
+                key={index}
+                className={`text-xs text-[#594D44] rounded-md px-2 py-1 ${
+                  category === "Pathology" ? "bg-[#F6D1E9]" : "bg-[#ECD8C9]"
+                }`}
+              >
+                {category}
+              </span>
+            ))}
+            {report.is_hospital_visit ? (
+              <span className="text-xs text-[#9B51E0] rounded-md border border-[#9B51E0] px-2 py-1">
+                Lab/Hospital visit
               </span>
             ) : (
-              <span className="text-xs text-[#594D44] bg-[#ECD8C9] rounded-md px-1 py-1 flex-1 mr-2">
-                {report.testCategory}
-              </span>
-            )}
-            {report.isHospitalVisit && (
-              <span className="text-xs text-[#9B51E0] rounded-md border-1 border-[#9B51E0] px-1 py-1 flex-1">
-                Lab/Hospital visit
+              <span className="text-xs text-[#9B51E0] rounded-md border border-[#9B51E0] px-2 py-1">
+                Home Collection Visit
               </span>
             )}
           </div>
@@ -155,37 +329,149 @@ const ReportsManagement: React.FC = () => {
     );
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: ReportStatus) => {
     switch (status) {
       case "Sent":
         return "bg-[#34C759] text-white";
       case "Pending":
-        return "bg-[#34C759] text-white";
+        return "bg-[#FF9500] text-white";
       case "Under Review":
-        return "border-1 border-[#34C759] text-[#34C759]";
-      case "Processing":
-        return "bg-[#2F80ED] text-white";
+        return "border border-[#34C759] text-[#34C759] bg-white";
+      case "No report":
+        return "bg-[#FF3B30] text-white";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
 
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".dropdown-toggle")) {
-        setOpenDropdown(null);
-      }
-    };
+  const formatDateTime = (dateString: string | null) => {
+    if (!dateString) return "N/A";
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+    const date = new Date(dateString);
+    return (
+      date.toLocaleDateString("en-GB") +
+      " " +
+      date.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
+      {showPreview && previewUrl && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-semibold">Report Preview</h3>
+              <div className="flex items-center gap-4">
+                {/* Image Controls */}
+                {isImage(previewUrl) && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={zoomOut}
+                      className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
+                      title="Zoom Out"
+                    >
+                      <ZoomOut className="w-4 h-4" />
+                    </button>
+                    <span className="text-sm text-gray-600">
+                      {Math.round(zoomLevel * 100)}%
+                    </span>
+                    <button
+                      onClick={zoomIn}
+                      className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
+                      title="Zoom In"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={rotate}
+                      className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
+                      title="Rotate"
+                    >
+                      <RotateCw className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={resetView}
+                      className="p-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
+                      title="Reset View"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                )}
+                <button
+                  onClick={closePreview}
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto p-4 flex items-center justify-center">
+              {isPdf(previewUrl) ? (
+                <div className="w-full h-full">
+                  <iframe
+                    src={previewUrl}
+                    className="w-full h-full min-h-[500px] border-0"
+                    title="Report PDF"
+                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                  />
+                </div>
+              ) : isImage(previewUrl) ? (
+                <div className="overflow-auto max-w-full max-h-full">
+                  <img
+                    src={previewUrl}
+                    alt="Report"
+                    className="max-w-full max-h-full object-contain transition-transform duration-200"
+                    style={{
+                      transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="text-center p-8">
+                  <p className="text-gray-500 mb-4">Unsupported file format</p>
+                  <a
+                    href={previewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                    download
+                  >
+                    <Download className="w-4 h-4" />
+                    Download File
+                  </a>
+                </div>
+              )}
+            </div>
+            <div className="border-t p-3 bg-gray-50">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">
+                  {isPdf(previewUrl)
+                    ? "PDF Document"
+                    : isImage(previewUrl)
+                    ? "Image"
+                    : "File"}
+                </span>
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
+                  download
+                >
+                  <Download className="w-4 h-4" />
+                  Download
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
@@ -198,10 +484,11 @@ const ReportsManagement: React.FC = () => {
             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
             <input
               type="text"
-              placeholder="Search by patient name, booking ID..."
+              placeholder="Search by patient name, booking ID, test names..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
+              onChange={handleSearchChange} // Use the new debounced change handler
+              onKeyPress={handleSearchKeyPress}
+              className="w-full pl-10 text-[#161D1F] pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
           <div className="flex gap-3">
@@ -216,7 +503,7 @@ const ReportsManagement: React.FC = () => {
                 <ChevronDown className="w-5 h-5" />
               </button>
               {openDropdown === "filter" && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
+                <div className="dropdown-menu absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
                   {filterOptions.map((filter) => (
                     <button
                       key={filter}
@@ -236,6 +523,7 @@ const ReportsManagement: React.FC = () => {
                 </div>
               )}
             </div>
+
             <div className="relative">
               <button
                 onClick={() =>
@@ -247,7 +535,7 @@ const ReportsManagement: React.FC = () => {
                 <ChevronDown className="w-5 h-5" />
               </button>
               {openDropdown === "date" && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
+                <div className="dropdown-menu absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
                   {dateRangeOptions.map((dateRange) => (
                     <button
                       key={dateRange}
@@ -272,12 +560,14 @@ const ReportsManagement: React.FC = () => {
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-[16px] font-medium text-[#161D1F]">
-              All Reports
-              <span className="text-[8px] text-[#899193] font-normal ml-2">
-                {filteredReports.length} Reports
-              </span>
-            </h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-[16px] font-medium text-[#161D1F]">
+                All Reports
+                <span className="text-[8px] text-[#899193] font-normal ml-2">
+                  {reports.length} Reports
+                </span>
+              </h3>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -289,8 +579,8 @@ const ReportsManagement: React.FC = () => {
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                       checked={
-                        selectedReports.length === filteredReports.length &&
-                        filteredReports.length > 0
+                        selectedReports.length === reports.length &&
+                        reports.length > 0
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
@@ -319,73 +609,87 @@ const ReportsManagement: React.FC = () => {
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
                     </td>
                   </tr>
-                ) : filteredReports.length === 0 ? (
+                ) : reports.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">No reports found.</div>
+                      <div className="text-gray-500">
+                        No reports found for the current filters.
+                      </div>
                     </td>
                   </tr>
                 ) : (
-                  filteredReports.map((report) => (
-                    <tr key={report.id} className="hover:bg-gray-50">
+                  reports.map((report) => (
+                    <tr key={report.booking_id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                          checked={selectedReports.includes(report.id)}
+                          checked={selectedReports.includes(report.booking_id)}
                           onChange={(e) =>
-                            handleSelectReport(report.id, e.target.checked)
+                            handleSelectReport(
+                              report.booking_id,
+                              e.target.checked
+                            )
                           }
                         />
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
                           <div className="text-xs font-medium text-[#161D1F]">
-                            {report.patientName}
+                            {report.patient_name || "N/A"}
                           </div>
                           <div className="text-xs text-gray-500">
-                            Booking ID: {report.bookingId}
+                            Booking ID:{" "}
+                            {report.booking_id.slice(0, 6).toUpperCase()}
                           </div>
-                          <div className="text-xs text-gray-400">
-                            Processed by: {report.processedBy}
-                          </div>
-                          {/* <div className="text-xs text-gray-400">
-                            ({report.collectionType})
-                          </div> */}
                         </div>
                       </td>
                       <td className="px-6 py-4">{renderTests(report)}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`px-2 py-1 rounded-md text-xs font-medium ${getStatusColor(
-                            report.reportStatus
+                            report.report_status
                           )}`}
                         >
-                          {report.reportStatus}
+                          {report.report_status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs ">
-                        <span className="text-xs text-[#0073A0] bg-[#E8F4F7] rounded-md px-1 py-1 flex-1 mr-2">
-                          {report.reportDateTime}
+                      <td className="px-6 py-4 whitespace-nowrap text-xs">
+                        <span className="text-xs text-[#0073A0] bg-[#E8F4F7] rounded-md px-2 py-1">
+                          {formatDateTime(report.report_date_time)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">
                         <div className="flex items-center gap-2 justify-end">
-                          <button
-                            className="p-1 text-gray-500 hover:text-blue-500"
-                            disabled={loading}
-                            title="Delete Report"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                          {report.report_url ? (
+                            <>
+                              {/* <button
+                                onClick={() =>
+                                  handleViewReport(report.report_url!)
+                                }
+                                className="p-1 text-gray-500 hover:text-blue-500 transition-colors"
+                                title="View Report"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button> */}
 
-                          <button
-                            onClick={() => handlePrintReport(report.id)}
-                            className="p-1 text-gray-500 hover:text-purple-500"
-                            title="Print Report"
-                          >
-                            <Printer className="w-4 h-4" />
-                          </button>
+                              <a
+                                href={report.report_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1 text-gray-500 hover:text-[#0088B1] transition-colors"
+                                title="Download/Open Report"
+                                download
+                              >
+                                {/* <Download className="w-4 h-4" /> */}
+                                Download Report
+                              </a>
+                            </>
+                          ) : (
+                            <span className="text-xs text-gray-400">
+                              No report available
+                            </span>
+                          )}
                         </div>
                       </td>
                     </tr>

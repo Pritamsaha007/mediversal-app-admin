@@ -24,6 +24,10 @@ import {
   Phlebotomist,
   UpdatePhlebotomistPayload,
 } from "../phlebotomists/type";
+import {
+  SearchLabTestReportsPayload,
+  SearchLabTestReportsResponse,
+} from "../reports/types";
 
 const LAB_API_BASE_URL = process.env.NEXT_PUBLIC_HOMECARE_API_BASE_URL;
 
@@ -588,6 +592,31 @@ export async function getBookingById(
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return await response.json();
+}
+export async function searchLabTestReports(
+  payload: SearchLabTestReportsPayload,
+  token: string
+): Promise<SearchLabTestReportsResponse> {
+  const response = await fetch(
+    `${LAB_API_BASE_URL}/api/labtest/report/search`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     }
   );
 
