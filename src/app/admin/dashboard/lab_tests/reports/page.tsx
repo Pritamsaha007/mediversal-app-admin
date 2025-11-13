@@ -175,13 +175,11 @@ const ReportsManagement: React.FC = () => {
   };
   console.log(reports, "reports");
 
-  // New function to update currentSearchTerm after debounce
   const updateSearchTerm = useCallback(() => {
     setCurrentSearchTerm(searchTerm);
   }, [searchTerm]);
 
-  // Debounced search term update
-  const debouncedUpdateSearchTerm = useDebounce(updateSearchTerm, 500); // 500ms debounce
+  const debouncedUpdateSearchTerm = useDebounce(updateSearchTerm, 500);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -194,7 +192,6 @@ const ReportsManagement: React.FC = () => {
 
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      // Clear the debounce timer and update immediately on Enter
       if (
         debouncedUpdateSearchTerm &&
         (debouncedUpdateSearchTerm as any).cancel
@@ -205,7 +202,6 @@ const ReportsManagement: React.FC = () => {
     }
   };
 
-  // Effect to re-fetch when filters or the debounced search term changes
   useEffect(() => {
     applyFiltersAndSearch();
   }, [selectedFilter, selectedDateRange, currentSearchTerm]);

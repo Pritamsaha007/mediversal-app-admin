@@ -24,6 +24,7 @@ export interface PathologyTest {
   inspection_parts_ids: string[];
   related_lab_test_ids: string[];
   average_discount_percentage?: string;
+  duration_range?: string;
 }
 
 export interface CreatePathologyTestPayload {
@@ -47,6 +48,7 @@ export interface CreatePathologyTestPayload {
   modality_type_id: string;
   inspection_parts_ids: string[];
   related_lab_test_ids: string[];
+  duration_range?: string;
 }
 
 export interface UpdatePathologyTestPayload {
@@ -71,4 +73,5 @@ export interface UpdatePathologyTestPayload {
   modality_type_id?: string;
   inspection_parts_ids?: string[];
   related_lab_test_ids: string[];
+  duration_range?: string;
 }

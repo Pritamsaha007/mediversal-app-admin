@@ -24,6 +24,7 @@ export interface RadiologyTest {
   inspection_parts_ids: string[];
   related_lab_test_ids: string[];
   average_discount_percentage?: string;
+  duration_range?: string;
 }
 
 export interface CreateRadiologyTestPayload {

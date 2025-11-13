@@ -49,6 +49,8 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     modality_type_id: "",
     inspection_parts_ids: [] as string[],
     related_lab_test_ids: [] as string[],
+    minDuration: 0,
+    maxDuration: 0,
   });
   const [newInstruction, setNewInstruction] = useState("");
   const [newPrecaution, setNewPrecaution] = useState("");
@@ -71,6 +73,23 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
 
   const reportTimeOptions = [6, 12, 16, 32, 48, 64, 72];
+
+  const parseDurationRange = (durationRange: string | undefined) => {
+    if (!durationRange) return { min: 0, max: 0 };
+
+    try {
+      const cleaned = durationRange.replace(/[\[\]]/g, "");
+      const [min, max] = cleaned.split(",").map(Number);
+      return { min: min || 0, max: max || 0 };
+    } catch (error) {
+      console.error("Error parsing duration range:", error);
+      return { min: 0, max: 0 };
+    }
+  };
+
+  const formatDurationRange = (min: number, max: number): string => {
+    return `[${min},${max}]`;
+  };
 
   const fetchDropdownData = async () => {
     setLoading(true);
@@ -98,6 +117,8 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
   useEffect(() => {
     if (editTest && isOpen) {
+      const durationRange = parseDurationRange(editTest.duration_range);
+
       setFormData({
         name: editTest.name || "",
         description: editTest.description || "",
@@ -120,6 +141,8 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         modality_type_id: editTest.modality_type_id || "",
         inspection_parts_ids: editTest.inspection_parts_ids || [],
         related_lab_test_ids: editTest.related_lab_test_ids || [],
+        minDuration: durationRange.min,
+        maxDuration: durationRange.max,
       });
     } else if (isOpen) {
       setFormData({
@@ -143,6 +166,8 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         modality_type_id: "",
         inspection_parts_ids: [],
         related_lab_test_ids: [],
+        minDuration: 0,
+        maxDuration: 0,
       });
     }
   }, [editTest, isOpen, category_id]);
@@ -290,6 +315,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       setLoading(false);
     }
   };
+
   const fileToBase64 = async (fileUri: string): Promise<string> => {
     try {
       const response = await fetch(fileUri);
@@ -313,6 +339,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       throw error;
     }
   };
+
   const getSafeValue = (value: any, defaultValue: any = "") => {
     return value !== undefined && value !== null ? value : defaultValue;
   };
@@ -323,8 +350,23 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       return;
     }
 
+    if (formData.minDuration < 0 || formData.maxDuration < 0) {
+      toast.error("Duration values cannot be negative");
+      return;
+    }
+
+    if (formData.minDuration > formData.maxDuration) {
+      toast.error("Minimum duration cannot be greater than maximum duration");
+      return;
+    }
+
     setSubmitting(true);
     try {
+      const duration_range = formatDurationRange(
+        formData.minDuration,
+        formData.maxDuration
+      );
+
       const payload = {
         name: formData.name,
         description: formData.description,
@@ -348,6 +390,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         modality_type_id: formData.modality_type_id || "",
         inspection_parts_ids: formData.inspection_parts_ids || [],
         related_lab_test_ids: formData.related_lab_test_ids || [],
+        duration_range: duration_range,
       };
 
       console.log("Submitting payload:", payload);
@@ -366,6 +409,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           is_deleted: editTest.is_deleted || false,
           created_by: editTest.created_by,
           updated_by: editTest.updated_by,
+          duration_range: duration_range,
         });
         toast.success("Radiology test updated successfully!");
       } else {
@@ -377,6 +421,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           is_deleted: false,
           created_by: "current-user-id",
           updated_by: "current-user-id",
+          duration_range: duration_range,
         };
         onAddTest(newTest);
         toast.success("Radiology test created successfully!");
@@ -413,6 +458,8 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         modality_type_id: "",
         inspection_parts_ids: [],
         related_lab_test_ids: [],
+        minDuration: 0,
+        maxDuration: 0,
       }));
     });
   };
@@ -492,7 +539,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
             Modality Type
@@ -542,7 +589,53 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             )}
           </div>
         </div>
+        <div>
+          <label className="block text-xs font-medium text-[#161D1F] mb-2">
+            * Diagnostic Duration (min.)
+          </label>
 
+          <div className="flex gap-3">
+            <input
+              type="number"
+              value={formData.minDuration || ""}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  minDuration:
+                    e.target.value === "" ? 0 : Number(e.target.value),
+                })
+              }
+              className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-600 text-black"
+              placeholder="Min"
+              min="0"
+            />
+
+            <input
+              type="number"
+              value={formData.maxDuration || ""}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  maxDuration:
+                    e.target.value === "" ? 0 : Number(e.target.value),
+                })
+              }
+              className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg text-xs placeholder-gray-600 text-black"
+              placeholder="Max"
+              min="0"
+            />
+          </div>
+
+          {formData.minDuration > 0 && formData.maxDuration > 0 && (
+            <p className="text-xs text-gray-500 mt-1">
+              Duration range:{" "}
+              {formatDurationRange(formData.minDuration, formData.maxDuration)}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
             * Report Preparation Time (Hrs.)
@@ -857,7 +950,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
-        {/* Featured Radiology Test */}
         <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
           <input
             type="checkbox"
@@ -880,7 +972,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
-        {/* Home Collection Available */}
         <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg">
           <input
             type="checkbox"
