@@ -9,6 +9,8 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -71,7 +73,6 @@ const getDateRangeForFilter = (
   };
 };
 
-// Debounce hook/utility
 const useDebounce = (callback: () => void, delay: number) => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -94,6 +95,8 @@ const ReportsManagement: React.FC = () => {
   const [selectedDateRange, setSelectedDateRange] = useState("All Time");
 
   const [reports, setReports] = useState<LabTestReport[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
   const [openDropdown, setOpenDropdown] = useState<null | "filter" | "date">(
     null
@@ -124,8 +127,9 @@ const ReportsManagement: React.FC = () => {
   ];
   const { token } = useAdminStore();
 
-  const fetchReports = async () => {
+  const fetchReports = async (page: number = 0) => {
     setLoading(true);
+    setSelectedReports([]);
 
     const dateRange = getDateRangeForFilter(selectedDateRange);
     let finalStartDate = dateRange.start_date;
@@ -137,15 +141,15 @@ const ReportsManagement: React.FC = () => {
     }
 
     try {
+      const pageSize = 20;
       const payload: SearchLabTestReportsPayload = {
         search_text: currentSearchTerm || null,
         filter_report_status:
           selectedFilter !== "All Status" ? [selectedFilter] : null,
         sort_by: "booking_date",
         sort_order: "DESC",
-
-        start: 0,
-        max: null,
+        start: page * pageSize,
+        max: pageSize,
         start_date: finalStartDate,
         end_date: finalEndDate,
       };
@@ -153,16 +157,19 @@ const ReportsManagement: React.FC = () => {
       const data = await searchLabTestReports(payload, token);
 
       if (data.success) {
-        let tempR: LabTestReport[] = [];
+        // let tempR: LabTestReport[] = [];
 
-        data.reports.map((report) => {
-          if (report.report_url) {
-            tempR.push(report);
-          }
-        });
-        setReports(tempR);
+        // data.reports.map((report) => {
+        //   if (report.report_url) {
+        //     tempR.push(report);
+        //   }
+        // });
 
-        //toast.success(`Loaded ${tempR.length} reports`);
+        setReports(data.reports);
+
+        setHasMore(data.reports.length === pageSize);
+
+        setCurrentPage(page);
       } else {
         throw new Error("Failed to fetch reports");
       }
@@ -173,7 +180,6 @@ const ReportsManagement: React.FC = () => {
       setLoading(false);
     }
   };
-  console.log(reports, "reports");
 
   const updateSearchTerm = useCallback(() => {
     setCurrentSearchTerm(searchTerm);
@@ -187,7 +193,7 @@ const ReportsManagement: React.FC = () => {
   };
 
   const applyFiltersAndSearch = () => {
-    fetchReports();
+    fetchReports(0);
   };
 
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -202,9 +208,23 @@ const ReportsManagement: React.FC = () => {
     }
   };
 
+  const loadNextPage = () => {
+    if (hasMore && !loading) {
+      const nextPage = currentPage + 1;
+      fetchReports(nextPage);
+    }
+  };
+
+  const loadPreviousPage = () => {
+    if (currentPage > 0 && !loading) {
+      const prevPage = currentPage - 1;
+      fetchReports(prevPage);
+    }
+  };
+
   useEffect(() => {
     applyFiltersAndSearch();
-  }, [selectedFilter, selectedDateRange, currentSearchTerm]);
+  }, [selectedFilter, selectedDateRange, currentSearchTerm, token]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -482,7 +502,7 @@ const ReportsManagement: React.FC = () => {
               type="text"
               placeholder="Search by patient name, booking ID, test names..."
               value={searchTerm}
-              onChange={handleSearchChange} // Use the new debounced change handler
+              onChange={handleSearchChange}
               onKeyPress={handleSearchKeyPress}
               className="w-full pl-10 text-[#161D1F] pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
@@ -560,7 +580,7 @@ const ReportsManagement: React.FC = () => {
               <h3 className="text-[16px] font-medium text-[#161D1F]">
                 All Reports
                 <span className="text-[8px] text-[#899193] font-normal ml-2">
-                  {reports.length} Reports
+                  {reports.length} Reports on this page
                 </span>
               </h3>
             </div>
@@ -599,7 +619,7 @@ const ReportsManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {loading ? (
+                {loading && reports.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
@@ -659,16 +679,6 @@ const ReportsManagement: React.FC = () => {
                         <div className="flex items-center gap-2 justify-end">
                           {report.report_url ? (
                             <>
-                              {/* <button
-                                onClick={() =>
-                                  handleViewReport(report.report_url!)
-                                }
-                                className="p-1 text-gray-500 hover:text-blue-500 transition-colors"
-                                title="View Report"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button> */}
-
                               <a
                                 href={report.report_url}
                                 target="_blank"
@@ -677,7 +687,6 @@ const ReportsManagement: React.FC = () => {
                                 title="Download/Open Report"
                                 download
                               >
-                                {/* <Download className="w-4 h-4" /> */}
                                 Download Report
                               </a>
                             </>
@@ -691,8 +700,45 @@ const ReportsManagement: React.FC = () => {
                     </tr>
                   ))
                 )}
+                {loading && reports.length > 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-4 text-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-600 mx-auto"></div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
+          </div>
+
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <button
+              onClick={loadPreviousPage}
+              disabled={currentPage === 0 || loading}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
+                currentPage === 0 || loading
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-[#161D1F] hover:bg-gray-100"
+              }`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+
+            <div className="text-sm text-gray-600">Page {currentPage + 1}</div>
+
+            <button
+              onClick={loadNextPage}
+              disabled={!hasMore || loading}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
+                !hasMore || loading
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-[#161D1F] hover:bg-gray-100"
+              }`}
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import StatusBadge from "../../home-care/components/StatusBadge";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+
 import StatsCard from "../../home-care/components/StatsCard";
 import {
   Search,
@@ -12,6 +12,8 @@ import {
   MoreHorizontal,
   UserPlus,
   Upload,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { AssignPhlebotomistModal } from "./components/assignStaff";
@@ -35,7 +37,6 @@ interface BookingStats {
   todaysRevenue: number;
   totalRevenue: number;
 }
-const statusOptions = ["Pending", "Completed", "Cancelled"];
 
 interface OrderStatusEnum {
   id: string;
@@ -46,13 +47,27 @@ interface OrderStatusEnum {
   metadata: any | null;
 }
 
+const useDebounce = (callback: () => void, delay: number) => {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  return useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      callback();
+    }, delay);
+  }, [callback, delay]);
+};
+
 const BookingsManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentSearchTerm, setCurrentSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [bookings, setBookings] = useState<LabTestBooking[]>([]);
-  const [filteredBookings, setFilteredBookings] = useState<LabTestBooking[]>(
-    []
-  );
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+
   const [openDropdown, setOpenDropdown] = useState<null | "status">(null);
   const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -73,6 +88,15 @@ const BookingsManagement: React.FC = () => {
   const [orderStatuses, setOrderStatuses] = useState<OrderStatusEnum[]>([]);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
+  const statusOptions = [
+    "All Status",
+    "Completed",
+    "Pending",
+    "In Progress",
+    "Cancelled",
+    "Scheduled",
+  ];
+
   const fetchOrderStatuses = async () => {
     try {
       const response = await getOrderStatus(token);
@@ -90,40 +114,16 @@ const BookingsManagement: React.FC = () => {
     }
   };
 
-  const statusOptions = [
-    "All Status",
-    "Completed",
-    "Pending",
-    "In Progress",
-    "Cancelled",
-    "Scheduled",
-  ];
-
-  const mapOrderStatus = (status: string) => {
-    switch (status.toUpperCase()) {
-      case "PENDING":
-      case "PENDING_ASSIGNMENT":
-        return "Pending" as const;
-      case "IN_PROGRESS":
-      case "INPROGRESS":
-      case "IN-PROGRESS":
-        return "In Progress" as const;
-      case "COMPLETED":
-        return "Completed" as const;
-      case "CANCELLED":
-        return "Cancelled" as const;
-      default:
-        return "Pending" as const;
-    }
-  };
-
-  const fetchBookings = async () => {
+  const fetchBookings = async (page: number = 0) => {
     setLoading(true);
+    setSelectedBookings([]);
+
     try {
+      const pageSize = 20;
       const payload: SearchLabTestBookingsPayload = {
-        start: 0,
-        max: null,
-        search_text: searchTerm || null,
+        start: page * pageSize,
+        max: pageSize,
+        search_text: currentSearchTerm || null,
         filter_status:
           selectedStatus !== "All Status" ? [selectedStatus] : null,
         sort_by: "created_date",
@@ -134,7 +134,8 @@ const BookingsManagement: React.FC = () => {
       console.log(response, "bookings");
       if (response.success) {
         setBookings(response.labTestBookings);
-        setFilteredBookings(response.labTestBookings);
+        setHasMore(response.labTestBookings.length === pageSize);
+        setCurrentPage(page);
       } else {
         toast.error("Failed to fetch bookings");
       }
@@ -174,18 +175,55 @@ const BookingsManagement: React.FC = () => {
 
   const stats = generateStats();
 
+  const updateSearchTerm = useCallback(() => {
+    setCurrentSearchTerm(searchTerm);
+  }, [searchTerm]);
+
+  const debouncedUpdateSearchTerm = useDebounce(updateSearchTerm, 500);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    debouncedUpdateSearchTerm();
+  };
+
+  const applyFiltersAndSearch = () => {
+    fetchBookings(0);
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      if (
+        debouncedUpdateSearchTerm &&
+        (debouncedUpdateSearchTerm as any).cancel
+      ) {
+        (debouncedUpdateSearchTerm as any).cancel();
+      }
+      setCurrentSearchTerm(searchTerm);
+    }
+  };
+
+  const loadNextPage = () => {
+    if (hasMore && !loading) {
+      const nextPage = currentPage + 1;
+      fetchBookings(nextPage);
+    }
+  };
+
+  const loadPreviousPage = () => {
+    if (currentPage > 0 && !loading) {
+      const prevPage = currentPage - 1;
+      fetchBookings(prevPage);
+    }
+  };
+
   useEffect(() => {
-    fetchBookings();
+    fetchBookings(0);
     fetchOrderStatuses();
   }, []);
 
   useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchBookings();
-    }, 500);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, selectedStatus]);
+    applyFiltersAndSearch();
+  }, [selectedStatus, currentSearchTerm, token]);
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -202,11 +240,12 @@ const BookingsManagement: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedBookings(filteredBookings.map((booking) => booking.id));
+      setSelectedBookings(bookings.map((booking) => booking.id));
     } else {
       setSelectedBookings([]);
     }
   };
+
   const handleReportUpload = async (bookingId: string) => {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
@@ -263,7 +302,7 @@ const BookingsManagement: React.FC = () => {
 
         if (response.success) {
           toast.success("Report uploaded successfully!");
-          fetchBookings();
+          fetchBookings(currentPage);
         } else {
           throw new Error("Failed to update booking with report");
         }
@@ -277,6 +316,7 @@ const BookingsManagement: React.FC = () => {
 
     fileInput.click();
   };
+
   const fileToBase64 = async (fileUri: string): Promise<string> => {
     try {
       const response = await fetch(fileUri);
@@ -300,6 +340,7 @@ const BookingsManagement: React.FC = () => {
       throw error;
     }
   };
+
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "scheduled":
@@ -316,6 +357,7 @@ const BookingsManagement: React.FC = () => {
         return "bg-gray-100 text-gray-800";
     }
   };
+
   const getStatusIdFromValue = (
     statusValue: string,
     orderStatuses: OrderStatusEnum[]
@@ -355,16 +397,14 @@ const BookingsManagement: React.FC = () => {
 
       if (response.success) {
         toast.success(`Booking status updated to ${newStatus}`);
-
-        fetchBookings();
+        fetchBookings(currentPage);
       } else {
         throw new Error("Failed to update booking status");
       }
     } catch (error) {
       console.error("Error updating booking status:", error);
       toast.error("Failed to update booking status");
-
-      fetchBookings();
+      fetchBookings(currentPage);
     } finally {
       setUpdatingStatus(null);
     }
@@ -376,10 +416,10 @@ const BookingsManagement: React.FC = () => {
     setOpenActionDropdown(null);
   };
 
-  const handlePhlebotomistAssigned = () => {
-    fetchBookings();
-    toast.success("Phlebotomist assigned successfully");
-  };
+  // const handlePhlebotomistAssigned = () => {
+  //   fetchBookings(currentPage); // Refresh current page
+  //   toast.success("Phlebotomist assigned successfully");
+  // };
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
@@ -489,7 +529,8 @@ const BookingsManagement: React.FC = () => {
               type="text"
               placeholder="Search by booking ID, patient name, test name..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
+              onKeyPress={handleSearchKeyPress}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
@@ -530,7 +571,7 @@ const BookingsManagement: React.FC = () => {
             <h3 className="text-[16px] font-medium text-[#161D1F]">
               All Bookings
               <span className="text-[8px] text-[#899193] font-normal ml-2">
-                {filteredBookings.length} Bookings
+                {bookings.length} Bookings on this page
               </span>
             </h3>
           </div>
@@ -544,8 +585,8 @@ const BookingsManagement: React.FC = () => {
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                       checked={
-                        selectedBookings.length === filteredBookings.length &&
-                        filteredBookings.length > 0
+                        selectedBookings.length === bookings.length &&
+                        bookings.length > 0
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
@@ -571,21 +612,20 @@ const BookingsManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {loading ? (
+                {loading && bookings.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
-                      {/* <div className="text-gray-500">Loading bookings...</div> */}
                     </td>
                   </tr>
-                ) : filteredBookings.length === 0 ? (
+                ) : bookings.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="text-gray-500">No bookings found.</div>
                     </td>
                   </tr>
                 ) : (
-                  filteredBookings.map((booking) => (
+                  bookings.map((booking) => (
                     <tr key={booking.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
@@ -744,16 +784,6 @@ const BookingsManagement: React.FC = () => {
                                       </button>
                                     </li>
                                   )}
-                                  {/* <li>
-                                    <button
-                                      onClick={() =>
-                                        handleDeleteBooking(booking.id)
-                                      }
-                                      className="w-full px-3 py-2 text-left text-[12px] text-red-600 hover:bg-red-50 transition-colors"
-                                    >
-                                      Delete Booking
-                                    </button>
-                                  </li> */}
                                 </ul>
                               </div>
                             )}
@@ -763,8 +793,45 @@ const BookingsManagement: React.FC = () => {
                     </tr>
                   ))
                 )}
+                {loading && bookings.length > 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-4 text-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-600 mx-auto"></div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
+          </div>
+
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <button
+              onClick={loadPreviousPage}
+              disabled={currentPage === 0 || loading}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
+                currentPage === 0 || loading
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-[#161D1F] hover:bg-gray-100"
+              }`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+
+            <div className="text-sm text-gray-600">Page {currentPage + 1}</div>
+
+            <button
+              onClick={loadNextPage}
+              disabled={!hasMore || loading}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
+                !hasMore || loading
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-[#161D1F] hover:bg-gray-100"
+              }`}
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>

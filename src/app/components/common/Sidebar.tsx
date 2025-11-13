@@ -5,6 +5,14 @@ import {
   ChevronRight,
   ChevronDown,
   CornerDownRight,
+  LayoutDashboard,
+  PillIcon,
+  BadgePercent,
+  Ambulance,
+  UserLock,
+  Funnel,
+  Phone,
+  Laptop,
 } from "lucide-react";
 import MainMediversalLogo from "../../../../public/Mediversal FLogo - Color 1.svg";
 import Image from "next/image";
@@ -43,7 +51,7 @@ const Sidebar = () => {
   const menuItems: MenuItem[] = [
     {
       name: "Dashboard",
-      icon: <LucideComputer size={18} />,
+      icon: <LayoutDashboard size={18} />,
       subItems: [
         {
           name: "Overview",
@@ -53,7 +61,7 @@ const Sidebar = () => {
     },
     {
       name: "Pharmacy",
-      icon: <LucideComputer size={18} />,
+      icon: <PillIcon size={18} />,
       subItems: [
         {
           name: "Products",
@@ -89,7 +97,7 @@ const Sidebar = () => {
     // },
     {
       name: "Coupons",
-      icon: <LucideComputer size={18} />,
+      icon: <BadgePercent size={18} />,
       subItems: [
         {
           name: "Coupons",
@@ -105,7 +113,7 @@ const Sidebar = () => {
     },
     {
       name: "Home Care",
-      icon: <LucideComputer size={18} />,
+      icon: <Ambulance size={18} />,
       subItems: [
         {
           name: "Services",
@@ -127,7 +135,7 @@ const Sidebar = () => {
     },
     {
       name: "Consultations",
-      icon: <LucideComputer size={18} />,
+      icon: <Laptop size={18} />,
       subItems: [
         {
           name: "Doctors",
@@ -150,7 +158,7 @@ const Sidebar = () => {
     },
     {
       name: "Lab Tests",
-      icon: <LucideComputer size={18} />,
+      icon: <Funnel size={18} />,
       subItems: [
         {
           name: "Pathology Tests",
