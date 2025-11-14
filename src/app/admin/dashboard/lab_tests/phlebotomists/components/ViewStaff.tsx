@@ -177,12 +177,12 @@ const ViewPhlebotomistModal: React.FC<{
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-3">
+        {/* <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-3">
           <button className="px-8 py-2.5 bg-[#0088B1] text-white rounded-lg text-xs hover:bg-[#00729A] flex items-center gap-2 font-medium">
             <Phone className="w-4 h-4" />
             Contact Phlebotomist
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );

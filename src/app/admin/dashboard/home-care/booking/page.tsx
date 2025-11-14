@@ -210,7 +210,7 @@ const BookingManagement: React.FC = () => {
           statusFilter === "All Status" ? null : statusFilter,
       };
       const response = await getHomecareOrders(payload, token);
-      console.log(response, ":ljkhdjl");
+
       if (response.success) {
         setApiBookings(response.orders);
       }
