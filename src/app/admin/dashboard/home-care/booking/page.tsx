@@ -1,20 +1,19 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { Search, Plus, ChevronDown } from "lucide-react";
-import DropdownMenu from "./DropdownMenu";
-import BookingModal from "./BookingModal";
-import AddBookingModal from "./AddBookingModal";
-import AssignStaffModal from "./AssignStaffModal";
+import DropdownMenu from "./components/DropdownMenu";
+import BookingModal from "./components/BookingModal";
+import AddBookingModal from "./components/AddBookingModal";
+import AssignStaffModal from "./components/AssignStaffModal";
 import { useAdminStore } from "../../../../store/adminStore";
-import { DetailedBooking } from "./booking";
+import { ApiOrderResponse, DetailedBooking } from "./types";
 
 import {
   getHomecareOrders,
-  ApiOrderResponse,
   getOrderStatus,
   createOrder,
   updateOrder,
-} from "./services/api/orderServices";
+} from "./services";
 import toast from "react-hot-toast";
 
 const statusOptions = ["Pending", "Completed", "Cancelled"];
@@ -28,7 +27,6 @@ interface OrderStatusEnum {
   metadata: any | null;
 }
 
-// Main Booking Management Component
 const BookingManagement: React.FC = () => {
   const [bookings, setBookings] = useState<DetailedBooking[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,7 +61,6 @@ const BookingManagement: React.FC = () => {
     try {
       const response = await getOrderStatus(token);
       if (response.success) {
-        // Filter to show only relevant statuses in dropdown
         const relevantStatuses = (response.roles as OrderStatusEnum[]).filter(
           (status) =>
             ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(
@@ -173,12 +170,10 @@ const BookingManagement: React.FC = () => {
       },
       assignedStaff: null,
       actualOrderId: apiOrder.id,
-      // Add raw date for sorting
       rawDate: apiOrder.order_date ? new Date(apiOrder.order_date) : new Date(),
     };
   };
 
-  // Sort bookings by date in reverse order (newest first)
   const filteredBookings = apiBookings
     .map(convertApiOrderToBooking)
     .filter((booking) => {
@@ -195,7 +190,6 @@ const BookingManagement: React.FC = () => {
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
-      // Sort by rawDate in descending order (newest first)
       return b.rawDate.getTime() - a.rawDate.getTime();
     });
 
@@ -230,13 +224,11 @@ const BookingManagement: React.FC = () => {
     try {
       setUpdatingStatus(orderId);
 
-      // Find the current order to get all its data
       const currentOrder = apiBookings.find((order) => order.id === orderId);
       if (!currentOrder) {
         throw new Error("Order not found");
       }
 
-      // Create payload with existing order data but updated status
       const updatePayload = {
         id: currentOrder.id,
         customer_id: customer_id,
@@ -244,11 +236,10 @@ const BookingManagement: React.FC = () => {
       };
 
       console.log(updatePayload);
-      // Use the createOrder API to update the order with new status
+
       const response = await updateOrder(updatePayload, token);
 
       if (response.success) {
-        // Update local state with the new status
         setApiBookings((prev) =>
           prev.map((order) =>
             order.id === orderId
@@ -261,10 +252,8 @@ const BookingManagement: React.FC = () => {
           )
         );
 
-        // Close dropdown
         setOpenStatusDropdown(null);
 
-        // Show success message
         toast.success(
           `Order status updated to ${formatStatusDisplay(statusValue)}`
         );
@@ -452,7 +441,6 @@ const BookingManagement: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
             Booking Management
@@ -466,7 +454,6 @@ const BookingManagement: React.FC = () => {
           </button>
         </div>
 
-        {/* Search and Filter */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#899193] w-5 h-5" />
@@ -508,7 +495,6 @@ const BookingManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Bookings Count */}
         <div className="mb-6">
           <h2 className="text-[16px] font-semibold text-[#161D1F]">
             All Bookings
@@ -518,64 +504,68 @@ const BookingManagement: React.FC = () => {
           </h2>
         </div>
 
-        {/* Table */}
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-600">Loading orders...</p>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="text-center py-8">
-            <p className="text-sm text-red-600">{error}</p>
-            <button
-              onClick={fetchOrders}
-              className="mt-2 text-sm text-cyan-600 hover:text-cyan-700"
-            >
-              Try again
-            </button>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-4 text-left">
-                      <input
-                        type="checkbox"
-                        className="rounded border-gray-300"
-                        checked={isAllSelected}
-                        ref={(el) => {
-                          if (el) el.indeterminate = isIndeterminate;
-                        }}
-                        onChange={(e) => handleSelectAll(e.target.checked)}
-                      />
-                    </th>
-                    <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
-                      Booking Detail
-                    </th>
-                    <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
-                      Customer Detail
-                    </th>
-                    <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
-                      Booking Status
-                    </th>
-                    <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
-                      Payment
-                    </th>
-                    <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
-                      Services
-                    </th>
-                    <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
-                      Total
-                    </th>
-                    <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-4 text-left">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300"
+                      checked={isAllSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = isIndeterminate;
+                      }}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                    />
+                  </th>
+                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
+                    Booking Detail
+                  </th>
+                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
+                    Customer Detail
+                  </th>
+                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
+                    Booking Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
+                    Payment
+                  </th>
+                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
+                    Services
+                  </th>
+                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
+                    Total
+                  </th>
+                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="py-8">
+                    <div className="flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-8">
+                    <p className="text-sm text-red-600">{error}</p>
+                    <button
+                      onClick={fetchOrders}
+                      className="mt-2 text-sm text-cyan-600 hover:text-cyan-700"
+                    >
+                      Try again
+                    </button>
+                  </td>
+                </tr>
+              ) : (
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredBookings.map((booking) => (
                     <tr
@@ -700,12 +690,11 @@ const BookingManagement: React.FC = () => {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              )}
+            </table>
           </div>
-        )}
+        </div>
 
-        {/* No results message */}
         {filteredBookings.length === 0 && !loading && (
           <div className="text-center py-12">
             <p className="text-[#899193] text-lg">
@@ -714,7 +703,6 @@ const BookingManagement: React.FC = () => {
           </div>
         )}
 
-        {/* Selected bookings actions */}
         {selectedBookings.length > 0 && (
           <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <div className="flex items-center justify-between">

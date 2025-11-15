@@ -9,7 +9,7 @@ import {
   PhoneOff,
   Settings,
 } from "lucide-react";
-import { getRTCToken } from "../service/consultationService";
+import { getRTCToken } from "../service";
 import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
 import AgoraRTC, {

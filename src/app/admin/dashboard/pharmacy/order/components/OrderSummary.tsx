@@ -11,10 +11,7 @@ import OrderPayment from "./OrderSummary/OrderPayment";
 import OrderHistory from "./OrderSummary/OrderHistory";
 import { Order } from "../types/types";
 import OrderPrescriptions from "./OrderSummary/OrderPrescriptions";
-import {
-  CancelOrderRequest,
-  cancelShiprocketOrder,
-} from "../services/orderServices";
+import { CancelOrderRequest, cancelShiprocketOrder } from "../services";
 
 interface OrderDetailsModalProps {
   isOpen: boolean;

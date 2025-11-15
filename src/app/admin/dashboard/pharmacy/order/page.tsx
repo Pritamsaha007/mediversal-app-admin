@@ -14,12 +14,13 @@ import {
   Eye,
 } from "lucide-react";
 import { Order, FilterOptions, SortOption } from "./types/types";
-import { OrderService } from "./services/orderServices";
+import { OrderService } from "./services";
 import { StatsCard } from "./components/StatsCard";
 import StatusBadge from "./components/StatusBadge";
 import OrderActionDropdown from "./components/OrderActionDropdown";
-import { Pagination } from "./components/Pagination";
+
 import PrescriptionModal from "./components/OrderSummary";
+import Pagination from "@/app/components/common/pagination";
 
 const Orders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,7 +36,7 @@ const Orders: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [actionDropdownOpen, setActionDropdownOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [orderActionDropdown, setOrderActionDropdown] = useState<number | null>(
     null
@@ -43,11 +44,11 @@ const Orders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const actionDropdownRef = useRef<HTMLDivElement>(null);
+
   const getPaginatedOrders = () => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
+    const startIndex = currentPage * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
 
-    // Sort by date in descending order (newest first)
     const sortedOrders = [...filteredOrders].sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -55,12 +56,12 @@ const Orders: React.FC = () => {
 
     return sortedOrders.slice(startIndex, endIndex);
   };
+
   const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
   const [selectedOrderForPrescription, setSelectedOrderForPrescription] =
     useState<Order | null>(null);
 
-  // Add this function to calculate total pages:
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const hasMore = (currentPage + 1) * itemsPerPage < filteredOrders.length;
 
   const statusOptions = [
     "All Statuses",
@@ -99,7 +100,7 @@ const Orders: React.FC = () => {
       setLoading(true);
       setError(null);
       const fetchedOrders = await OrderService.fetchOrders();
-      console.log(fetchOrders, "fecthedorders");
+      console.log(fetchedOrders, "fetchedorders");
       setOrders(fetchedOrders);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch orders");
@@ -108,50 +109,51 @@ const Orders: React.FC = () => {
     }
   };
 
-  // Filter and sort orders
   useEffect(() => {
     const filters: FilterOptions = {
       status: selectedStatus,
       payment: selectedPayment,
       sortBy,
-      searchTerm: searchTerm.trim(), // Trim whitespace
+      searchTerm: searchTerm.trim(),
     };
 
-    console.log("Applying filters:", filters); // Debug log
+    console.log("Applying filters:", filters);
     let filtered = OrderService.filterOrders(orders, filters);
 
-    // Only sort if it's not the default "Sort" option
     if (sortBy !== "Sort") {
       filtered = OrderService.sortOrders(filtered, sortBy);
     }
 
-    console.log("Filtered orders:", filtered.length); // Debug log
+    console.log("Filtered orders:", filtered.length);
     setFilteredOrders(filtered);
   }, [orders, selectedStatus, selectedPayment, sortBy, searchTerm]);
 
-  // Initial data fetch
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [selectedStatus, selectedPayment, sortBy, searchTerm]);
 
   const handleExportPDF = () => {
     console.log("Exporting orders to PDF...");
   };
 
   const handleStatusChange = (status: string) => {
-    console.log("Status changed to:", status); // Debug log
+    console.log("Status changed to:", status);
     setSelectedStatus(status);
     setOpenDropdown(null);
   };
 
   const handlePaymentChange = (payment: string) => {
-    console.log("Payment changed to:", payment); // Debug log
+    console.log("Payment changed to:", payment);
     setSelectedPayment(payment);
     setOpenDropdown(null);
   };
 
   const handleSortChange = (sort: SortOption) => {
-    console.log("Sort changed to:", sort); // Debug log
+    console.log("Sort changed to:", sort);
     setSortBy(sort);
     setOpenDropdown(null);
   };
@@ -168,8 +170,8 @@ const Orders: React.FC = () => {
         setLoading(true);
         const orderIds = selectedOrders.map((id) => parseInt(id));
         await OrderService.bulkDeleteOrders(orderIds);
-        setSelectedOrders([]); // Clear selection
-        await fetchOrders(); // Refresh data
+        setSelectedOrders([]);
+        await fetchOrders();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Bulk delete failed");
       } finally {
@@ -228,7 +230,6 @@ const Orders: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      // Select only orders on the current page
       const currentPageOrders = getPaginatedOrders()
         .filter((order) => order.id != null)
         .map((order) => order.id.toString());
@@ -237,7 +238,6 @@ const Orders: React.FC = () => {
         ...new Set([...selectedOrders, ...currentPageOrders]),
       ]);
     } else {
-      // Deselect only orders on the current page
       const currentPageOrderIds = getPaginatedOrders()
         .filter((order) => order.id != null)
         .map((order) => order.id.toString());
@@ -263,22 +263,18 @@ const Orders: React.FC = () => {
     };
   }, []);
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+  const handleNextPage = () => {
+    if (hasMore && !loading) {
+      setCurrentPage((prev) => prev + 1);
+    }
   };
 
-  // Add this function to handle items per page change:
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Reset to first page
+  const handlePreviousPage = () => {
+    if (currentPage > 0 && !loading) {
+      setCurrentPage((prev) => prev - 1);
+    }
   };
 
-  // Reset to first page when filters change - add this useEffect:
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedStatus, selectedPayment, sortBy, searchTerm]);
-
-  // Generate stats from orders
   const stats = OrderService.generateOrderStats(orders);
 
   useEffect(() => {
@@ -294,29 +290,16 @@ const Orders: React.FC = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
   console.log(filteredOrders, "orders");
+
   return (
     <div className="min-h-screen bg-gray-50 p-2">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">Orders</h1>
-          <div className="flex gap-3">
-            <button
-              className="flex items-center gap-2 text-[12px] px-4 py-2 bg-[#0088B1] text-[#F8F8F8] rounded-lg hover:bg-[#00729A]"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <Plus className="w-3 h-3" />
-              Place New Order
-            </button>
-            <button className="flex items-center gap-2 text-[12px] px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50">
-              <FileText className="w-3 h-3" />
-              Bulk Import
-            </button>
-          </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
           <StatsCard
             title="Total Orders"
@@ -361,7 +344,6 @@ const Orders: React.FC = () => {
           </div>
         )}
 
-        {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
@@ -373,105 +355,8 @@ const Orders: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
-          <div className="flex gap-3">
-            {/* Status Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() =>
-                  setOpenDropdown(openDropdown === "status" ? null : "status")
-                }
-                className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
-              >
-                {selectedStatus}
-                <ChevronDown className="w-4 h-4" />
-              </button>
-              {openDropdown === "status" && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                  {statusOptions.map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusChange(status)}
-                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
-                        selectedStatus === status
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-[#161D1F]"
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="relative">
-              <button
-                onClick={() =>
-                  setOpenDropdown(openDropdown === "payment" ? null : "payment")
-                }
-                className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
-              >
-                {selectedPayment}
-                <ChevronDown className="w-4 h-4" />
-              </button>
-              {openDropdown === "payment" && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                  {paymentOptions.map((payment) => (
-                    <button
-                      key={payment}
-                      onClick={() => handlePaymentChange(payment)}
-                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
-                        selectedPayment === payment
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-[#161D1F]"
-                      }`}
-                    >
-                      {payment}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="relative">
-              <button
-                onClick={() =>
-                  setOpenDropdown(openDropdown === "sort" ? null : "sort")
-                }
-                className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
-              >
-                {sortBy}
-                <ChevronDown className="w-4 h-4" />
-              </button>
-              {openDropdown === "sort" && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-56 bg-white border border-gray-200 rounded-lg shadow-lg">
-                  {sortOptions.map((sort) => (
-                    <button
-                      key={sort}
-                      onClick={() => handleSortChange(sort)}
-                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
-                        sortBy === sort
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-[#161D1F]"
-                      }`}
-                    >
-                      {sort}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="relative">
-              <button
-                onClick={handleExportPDF}
-                className="flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
-              >
-                <Download className="w-4 h-4" />
-                Export
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* Tabs */}
         <div className="flex justify-between mb-4 bg-[#F8F8F8] rounded-lg">
           <div className=""></div>
           <div>
@@ -511,15 +396,12 @@ const Orders: React.FC = () => {
           </div>
         </div>
 
-        {/* Orders Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
               {activeTab}
               <span className="text-[8px] text-[#899193] font-normal ml-2">
                 {filteredOrders.length} Orders
-                {filteredOrders.length > itemsPerPage &&
-                  `(${getPaginatedOrders().length} shown)`}
               </span>
             </h3>
           </div>
@@ -569,13 +451,9 @@ const Orders: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
+                    <td colSpan={8} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
-                      {/* <div className="text-gray-500">Loading bookings...</div> */}
                     </td>
-                    {/* <td colSpan={8} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">Loading orders... </div>
-                    </td> */}
                   </tr>
                 ) : (
                   getPaginatedOrders().map((order, index) => (
@@ -610,10 +488,6 @@ const Orders: React.FC = () => {
                           <div className="font-medium">
                             {order?.customerName || "Guest User"}
                           </div>
-
-                          {/* <div className="text-xs text-gray-500">
-                            {order.customerEmail}
-                          </div> */}
                           <div className="text-xs text-gray-500">
                             {order.customerPhone}
                           </div>
@@ -658,18 +532,6 @@ const Orders: React.FC = () => {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          {/* <OrderActionDropdown
-                            order={order}
-                            isOpen={orderActionDropdown === order.orderId}
-                            onToggle={() =>
-                              setOrderActionDropdown(
-                                orderActionDropdown === order.orderId
-                                  ? null
-                                  : order.orderId
-                              )
-                            }
-                            onAction={handleOrderAction}
-                          /> */}
                         </div>
                       </td>
                     </tr>
@@ -677,6 +539,17 @@ const Orders: React.FC = () => {
                 )}
               </tbody>
             </table>
+
+            <Pagination
+              currentPage={currentPage}
+              hasMore={hasMore}
+              loading={loading}
+              onPrevious={handlePreviousPage}
+              onNext={handleNextPage}
+              totalItems={filteredOrders.length}
+              itemsPerPage={itemsPerPage}
+            />
+
             <PrescriptionModal
               isOpen={prescriptionModalOpen}
               onClose={() => {
@@ -684,14 +557,6 @@ const Orders: React.FC = () => {
                 setSelectedOrderForPrescription(null);
               }}
               order={selectedOrderForPrescription!}
-            />
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={filteredOrders.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
             />
           </div>
         </div>
