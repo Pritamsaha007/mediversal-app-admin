@@ -34,6 +34,7 @@ export interface DetailedBooking {
   };
   assignedStaff: string | null;
   rawDate: Date;
+  recipt_url: string;
 }
 export interface CreateOrderPayload {
   customer_id: string;
@@ -143,6 +144,7 @@ export interface ApiOrderResponse {
   order_status_name: string;
   homecare_service_name: string;
   customer_name: string;
+  recipt_url: string;
   customer_details: {
     address_line1: string | null;
     address_line2: string | null;

@@ -93,7 +93,7 @@ const BookingManagement: React.FC = () => {
     };
 
     const mapOrderStatus = (status: string) => {
-      switch (status.toUpperCase()) {
+      switch (status) {
         case "PENDING":
         case "PENDING_ASSIGNMENT":
           return "Pending" as const;
@@ -171,6 +171,7 @@ const BookingManagement: React.FC = () => {
       assignedStaff: null,
       actualOrderId: apiOrder.id,
       rawDate: apiOrder.order_date ? new Date(apiOrder.order_date) : new Date(),
+      recipt_url: apiOrder.recipt_url,
     };
   };
 
@@ -445,13 +446,13 @@ const BookingManagement: React.FC = () => {
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
             Booking Management
           </h1>
-          <button
+          {/* <button
             onClick={handleNewBooking}
             className="flex items-center text-[12px] gap-2 bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
             New Booking
-          </button>
+          </button> */}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -462,7 +463,7 @@ const BookingManagement: React.FC = () => {
               placeholder="Search by order id, name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 text-[12px] rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 text-[12px] rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent placeholder:text-gray-400"
             />
           </div>
 
