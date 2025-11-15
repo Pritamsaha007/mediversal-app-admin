@@ -12,8 +12,6 @@ import {
   MoreHorizontal,
   UserPlus,
   Upload,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { AssignPhlebotomistModal } from "./components/assignStaff";
@@ -30,7 +28,8 @@ import {
   uploadFile,
 } from "../services";
 import { useAdminStore } from "@/app/store/adminStore";
-import { getOrderStatus } from "../../home-care/booking/services/api/orderServices";
+import { getOrderStatus } from "../../home-care/booking/services";
+import Pagination from "../../../../components/common/pagination";
 
 interface BookingStats {
   todaysBookings: number;
@@ -150,9 +149,12 @@ const BookingsManagement: React.FC = () => {
   const generateStats = (): BookingStats => {
     const today = new Date().toISOString().split("T")[0];
 
-    const todaysBookings = bookings.filter(
-      (booking) => booking.booking_date.split("T")[0] === today
-    ).length;
+    const todaysBookings = bookings.filter((booking) => {
+      const bookingDate = new Date(booking.booking_date)
+        .toISOString()
+        .split("T")[0];
+      return bookingDate === today;
+    }).length;
 
     const todaysRevenue = bookings.reduce((sum, booking) => {
       const value = booking.today_revenue ?? "0";
@@ -416,11 +418,6 @@ const BookingsManagement: React.FC = () => {
     setOpenActionDropdown(null);
   };
 
-  // const handlePhlebotomistAssigned = () => {
-  //   fetchBookings(currentPage); // Refresh current page
-  //   toast.success("Phlebotomist assigned successfully");
-  // };
-
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case "completed":
@@ -456,10 +453,18 @@ const BookingsManagement: React.FC = () => {
     }
   };
 
-  const formatPatientNames = (patientDetails: PatientDetailsList) => {
-    return patientDetails.patients_list
-      .map((patient) => patient.name)
-      .join(", ");
+  const formatPatientNames = (
+    patientDetails: PatientDetailsList | null | undefined
+  ) => {
+    if (!patientDetails || !patientDetails.patients_list) {
+      return "No patient details";
+    }
+
+    const validPatients = patientDetails.patients_list
+      .filter((patient) => patient && patient.name)
+      .map((patient) => patient.name);
+
+    return validPatients.length > 0 ? validPatients.join(", ") : "No patients";
   };
 
   const formatBookingId = (id: string) => {
@@ -534,7 +539,7 @@ const BookingsManagement: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
-          <div className="flex gap-3">
+          {/* <div className="flex gap-3">
             <div className="relative">
               <button
                 onClick={() =>
@@ -563,7 +568,7 @@ const BookingsManagement: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -640,16 +645,20 @@ const BookingsManagement: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">
-                            {booking.labtestnames.join(", ")}
+                            {Array.isArray(booking.labtestnames)
+                              ? booking.labtestnames.join(", ")
+                              : "No tests listed"}
                           </div>
                           <div className="text-xs text-gray-500">
                             Booking ID: {formatBookingId(booking.id)}
                           </div>
                           <div className="text-xs text-gray-500">
                             Date:{" "}
-                            {new Date(
-                              booking.booking_date
-                            ).toLocaleDateString()}
+                            {booking.booking_date
+                              ? new Date(
+                                  booking.booking_date
+                                ).toLocaleDateString()
+                              : "No date"}
                           </div>
                         </div>
                       </td>
@@ -660,7 +669,8 @@ const BookingsManagement: React.FC = () => {
                           </div>
                           <div className="text-xs text-gray-500">
                             Patients:{" "}
-                            {booking.patient_details.patients_list.length}
+                            {booking.patient_details?.patients_list?.length ||
+                              0}
                           </div>
                         </div>
                       </td>
@@ -683,33 +693,44 @@ const BookingsManagement: React.FC = () => {
                                 : ""
                             }`}
                           >
-                            {updatingStatus === booking.id
-                              ? "Updating..."
-                              : booking.status}
-                            <ChevronDown className="w-3 h-3 ml-1" />
+                            {updatingStatus === booking.id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                                Updating...
+                              </>
+                            ) : (
+                              <>
+                                {booking.status.charAt(0).toUpperCase() +
+                                  booking.status.slice(1).toLowerCase()}
+
+                                <ChevronDown className="w-3 h-3 ml-1" />
+                              </>
+                            )}
                           </button>
-                          {openStatusDropdown === booking.id && (
-                            <div className="absolute left-0 mt-1 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-20">
-                              <ul className="flex flex-col divide-y divide-gray-200">
-                                {orderStatuses.map((status) => (
-                                  <li key={status.id}>
-                                    <button
-                                      onClick={() =>
-                                        handleOrderStatusChange(
-                                          booking.id,
-                                          status.value
-                                        )
-                                      }
-                                      disabled={updatingStatus === booking.id}
-                                      className="w-full px-3 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                      {status.value}
-                                    </button>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
+                          {openStatusDropdown === booking.id &&
+                            updatingStatus !== booking.id && (
+                              <div className="absolute left-0 mt-1 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-20">
+                                <div className="flex flex-col ">
+                                  {orderStatuses.map((status) => (
+                                    <li key={status.id}>
+                                      <button
+                                        onClick={() =>
+                                          handleOrderStatusChange(
+                                            booking.id,
+                                            status.value
+                                          )
+                                        }
+                                        disabled={updatingStatus === booking.id}
+                                        className="w-full px-3 py-2 text-left text-[10px] text-[#161D1F] hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {status.value.charAt(0).toUpperCase() +
+                                          status.value.slice(1).toLowerCase()}
+                                      </button>
+                                    </li>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -724,10 +745,13 @@ const BookingsManagement: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-xs font-medium text-[#161D1F]">
                           ₹{" "}
-                          {parseFloat(booking.amount).toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                          {parseFloat(booking.amount || "0").toLocaleString(
+                            "en-US",
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">
@@ -804,35 +828,15 @@ const BookingsManagement: React.FC = () => {
             </table>
           </div>
 
-          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-            <button
-              onClick={loadPreviousPage}
-              disabled={currentPage === 0 || loading}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
-                currentPage === 0 || loading
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-[#161D1F] hover:bg-gray-100"
-              }`}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </button>
-
-            <div className="text-sm text-gray-600">Page {currentPage + 1}</div>
-
-            <button
-              onClick={loadNextPage}
-              disabled={!hasMore || loading}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
-                !hasMore || loading
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-[#161D1F] hover:bg-gray-100"
-              }`}
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            hasMore={hasMore}
+            loading={loading}
+            onPrevious={loadPreviousPage}
+            onNext={loadNextPage}
+            totalItems={bookings.length}
+            itemsPerPage={20}
+          />
         </div>
       </div>
 

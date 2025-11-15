@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { X } from "lucide-react";
-import { type Consultation } from "../data/consultation";
+import { Consultation } from "../types";
 
 interface ViewConsultationModalProps {
   isOpen: boolean;

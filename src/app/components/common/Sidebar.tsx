@@ -101,7 +101,7 @@ const Sidebar = () => {
       subItems: [
         {
           name: "Coupons",
-          link: "/admin/dashboard/coupons/coupons",
+          link: "/admin/dashboard/coupons",
         },
         // { name: "Create Role", link: "/dashboard/user-management/create-role" },
         // { name: "Role List", link: "/dashboard/user-management/role-list" },

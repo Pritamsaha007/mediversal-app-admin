@@ -5,7 +5,7 @@ import {
   getConsultationEnumData,
   updateConsultationStatus,
   getEnumData,
-} from "./service/consultationService";
+} from "./service";
 
 import {
   Search,
@@ -24,9 +24,11 @@ import AddConsultationModal from "./components/AddConsultationModal";
 import ViewConsultationModal from "./components/ViewConsultationModal";
 import StatsCard from "./components/StatsCard";
 import { useAdminStore } from "@/app/store/adminStore";
-import { Consultation, transformAPIToConsultation } from "./data/consultation";
+import { transformAPIToConsultation } from "./utils";
 import toast from "react-hot-toast";
 import VideoCallModal from "./components/VideoCallModal";
+import { Consultation } from "./types";
+import Pagination from "../../../../components/common/pagination";
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   if (!status) {
@@ -115,6 +117,11 @@ const Consultations: React.FC = () => {
   const [showAddConsultationModal, setShowAddConsultationModal] =
     useState(false);
 
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 20;
+
   const statusOptions = [
     "All Status",
     "Scheduled",
@@ -127,7 +134,6 @@ const Consultations: React.FC = () => {
     "online" | "hospital"
   >("online");
 
-  // New state for status management
   const [consultationStatuses, setConsultationStatuses] = useState<
     ConsultationStatusEnum[]
   >([]);
@@ -136,7 +142,6 @@ const Consultations: React.FC = () => {
   );
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
-  // Generate stats
   const generateStats = () => {
     const totalConsultations = consultations.length;
     const onlineConsultations = consultations.filter(
@@ -202,12 +207,10 @@ const Consultations: React.FC = () => {
 
   const stats = generateStats();
 
-  // Fetch consultation statuses
   const fetchConsultationStatuses = async () => {
     try {
       const response = await getEnumData("ORDER_STATUS", token);
       if (response) {
-        // Filter to show only relevant statuses in dropdown
         const relevantStatuses = response.roles.filter(
           (status: ConsultationStatusEnum) =>
             ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(
@@ -222,51 +225,62 @@ const Consultations: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const loadConsultations = async () => {
-      if (!token) return;
+  const loadConsultations = async (page: number = currentPage) => {
+    if (!token) return;
 
-      setLoading(true);
-      try {
-        const params = {
-          search_text: searchTerm.trim() || null,
-          filter_status:
-            selectedStatus !== "All Status"
-              ? selectedStatus.toLowerCase()
-              : null,
-          is_online_consultation:
-            selectedConsultationType === "Online"
-              ? true
-              : selectedConsultationType === "In-Person"
-              ? false
-              : null,
-        };
+    setLoading(true);
+    try {
+      const start = page * itemsPerPage;
 
-        const response = await getConsultations(params, token);
-        console.log(response, "abcd");
-        const transformedData = response.consultations.map(
-          transformAPIToConsultation
-        );
+      const params = {
+        start,
+        max: itemsPerPage,
+        search_text: searchTerm.trim() || null,
+        filter_status:
+          selectedStatus !== "All Status" ? selectedStatus.toLowerCase() : null,
+        is_online_consultation:
+          selectedConsultationType === "Online"
+            ? true
+            : selectedConsultationType === "In-Person"
+            ? false
+            : null,
+      };
 
-        setConsultations(transformedData);
-        setFilteredConsultations(transformedData);
+      const response = await getConsultations(params, token);
+      console.log(response, "consultations response");
 
-        if (searchTerm && transformedData.length === 0) {
-          toast("No consultations found matching your search");
-        }
-      } catch (error) {
-        console.error("Error loading consultations:", error);
-        toast.error("Failed to load consultations. Please try again.");
-      } finally {
-        setLoading(false);
+      const transformedData = response.consultations.map(
+        transformAPIToConsultation
+      );
+
+      setConsultations(transformedData);
+      setFilteredConsultations(transformedData);
+
+      setHasMore(transformedData.length === itemsPerPage);
+      setTotalItems(transformedData.length);
+
+      if (searchTerm && transformedData.length === 0) {
+        toast("No consultations found matching your search");
       }
-    };
+    } catch (error) {
+      console.error("Error loading consultations:", error);
+      toast.error("Failed to load consultations. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Load consultation statuses
+  useEffect(() => {
     fetchConsultationStatuses();
 
-    // Debounce search
-    const timeoutId = setTimeout(loadConsultations, 300);
+    setCurrentPage(0);
+  }, [token, searchTerm, selectedStatus, selectedConsultationType]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      loadConsultations(currentPage);
+    }, 300);
+
     return () => clearTimeout(timeoutId);
   }, [
     token,
@@ -274,10 +288,21 @@ const Consultations: React.FC = () => {
     selectedStatus,
     selectedConsultationType,
     refreshTrigger,
+    currentPage,
   ]);
-  console.log(filteredConsultations, "filetred");
-  // Handle status change for consultation
-  // Handle status change for consultation
+
+  const handleNextPage = () => {
+    if (hasMore && !loading) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0 && !loading) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
   const handleStatusChange = async (
     consultationId: string,
     customer_id: string | null,
@@ -287,13 +312,11 @@ const Consultations: React.FC = () => {
     try {
       setUpdatingStatus(consultationId);
 
-      // Store the current status for rollback in case of error
       const currentConsultation = consultations.find(
         (c) => c.id === consultationId
       );
       const currentStatus = currentConsultation?.status;
 
-      // Update local state IMMEDIATELY for instant UI update
       setConsultations((prev) =>
         prev.map((consultation) =>
           consultation.id === consultationId
@@ -305,7 +328,6 @@ const Consultations: React.FC = () => {
         )
       );
 
-      // Also update filteredConsultations for instant UI update
       setFilteredConsultations((prev) =>
         prev.map((consultation) =>
           consultation.id === consultationId
@@ -319,7 +341,6 @@ const Consultations: React.FC = () => {
 
       console.log(consultationId, customer_id, statusId, "jnds");
 
-      // Call the update consultation status API
       const response = await updateConsultationStatus(
         consultationId,
         customer_id,
@@ -328,21 +349,18 @@ const Consultations: React.FC = () => {
       );
 
       if (response.success) {
-        // Close dropdown
         setOpenStatusDropdown(null);
 
-        // Show success message
         toast.success(
           `Consultation status updated to ${formatStatusDisplay(statusValue)}`
         );
       } else {
-        // If API call fails, revert the local state
         setConsultations((prev) =>
           prev.map((consultation) =>
             consultation.id === consultationId
               ? {
                   ...consultation,
-                  status: currentStatus || "Scheduled", // Fallback to original status
+                  status: currentStatus || "Scheduled",
                 }
               : consultation
           )
@@ -353,7 +371,7 @@ const Consultations: React.FC = () => {
             consultation.id === consultationId
               ? {
                   ...consultation,
-                  status: currentStatus || "Scheduled", // Fallback to original status
+                  status: currentStatus || "Scheduled",
                 }
               : consultation
           )
@@ -372,6 +390,7 @@ const Consultations: React.FC = () => {
       setUpdatingStatus(null);
     }
   };
+
   const formatStatusDisplay = (statusValue: string): string => {
     switch (statusValue.toUpperCase()) {
       case "SCHEDULED":
@@ -388,8 +407,10 @@ const Consultations: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+  const getStatusColor = (status?: string) => {
+    const normalized = status?.toLowerCase() ?? "";
+
+    switch (normalized) {
       case "scheduled":
         return "bg-yellow-100 text-yellow-800";
       case "in-progress":
@@ -466,7 +487,6 @@ const Consultations: React.FC = () => {
   const handleAddConsultation = (consultationData: any) => {
     console.log("Consultation Data:", consultationData);
 
-    // Trigger a refresh instead of manually updating state
     setRefreshTrigger((prev) => prev + 1);
 
     const actionText = editingConsultation ? "updated" : "scheduled";
@@ -521,7 +541,7 @@ const Consultations: React.FC = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        {/* <div className="flex items-center justify-between mb-6">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
             Consultation & Scheduling
           </h1>
@@ -549,9 +569,8 @@ const Consultations: React.FC = () => {
               Schedule Online Consultation
             </button>
           </div>
-        </div>
+        </div> */}
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <StatsCard
             title="Total Doctor Consultations"
@@ -576,7 +595,6 @@ const Consultations: React.FC = () => {
           />
         </div>
 
-        {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
@@ -588,7 +606,7 @@ const Consultations: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
-          <div className="flex gap-4">
+          {/* <div className="flex gap-4">
             <div className="relative">
               <button
                 onClick={() =>
@@ -645,10 +663,9 @@ const Consultations: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
 
-        {/* Consultations Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
@@ -802,7 +819,13 @@ const Consultations: React.FC = () => {
                               </>
                             ) : (
                               <>
-                                {consultation.status}
+                                {consultation?.status
+                                  ? consultation.status
+                                      .charAt(0)
+                                      .toUpperCase() +
+                                    consultation.status.slice(1).toLowerCase()
+                                  : ""}
+
                                 <ChevronDown className="w-3 h-3" />
                               </>
                             )}
@@ -865,6 +888,16 @@ const Consultations: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={currentPage}
+            hasMore={hasMore}
+            loading={loading}
+            onPrevious={handlePreviousPage}
+            onNext={handleNextPage}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+          />
         </div>
       </div>
 

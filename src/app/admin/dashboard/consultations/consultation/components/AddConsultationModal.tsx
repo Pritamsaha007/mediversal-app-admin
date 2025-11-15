@@ -3,14 +3,14 @@ import React, { useState, useEffect } from "react";
 import { X, Search } from "lucide-react";
 import {
   searchHospitals,
-  EnumItem,
   searchDoctors,
   createOrUpdateConsultation,
   getConsultationEnumData,
-} from "../service/consultationService";
+} from "../service";
 import { useAdminStore } from "@/app/store/adminStore";
-import { Consultation } from "../data/consultation";
+
 import toast from "react-hot-toast";
+import { Consultation, EnumItem } from "../types";
 
 interface AddConsultationModalProps {
   isOpen: boolean;

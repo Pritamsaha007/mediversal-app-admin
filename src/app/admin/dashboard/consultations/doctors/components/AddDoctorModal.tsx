@@ -1,11 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { X, Plus, ImagePlus, Edit } from "lucide-react";
-import { tabs, Doctor, convertAvailabilityToSlots } from "../data/doctorsData";
-import { EnumItem } from "../services/doctorService";
+import { tabs, convertAvailabilityToSlots } from "../utils";
+
 import HospitalSearchInput from "./HospitalSearchInput";
 import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
+import { Doctor, EnumItem } from "../types";
 
 interface AddDoctorModalProps {
   isOpen: boolean;
@@ -87,7 +88,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       if (!existingStart || !existingEnd || !newStartTime || !newEndTime)
         return false;
 
-      // Check for overlap
       return (
         (newStartTime >= existingStart && newStartTime < existingEnd) ||
         (newEndTime > existingStart && newEndTime <= existingEnd) ||
@@ -117,7 +117,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       return;
     }
 
-    // Check for overlapping slots
     if (
       isTimeSlotOverlapping(selectedDay, newSlot.startTime, newSlot.endTime)
     ) {
@@ -127,7 +126,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       return;
     }
 
-    // Add the new slot directly without calling addTimeSlot
     setFormData((prev) => ({
       ...prev,
       availability: {
@@ -143,7 +141,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       },
     }));
 
-    // Reset the form
     setNewSlot({
       startTime: "",
       endTime: "",
@@ -228,7 +225,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       return;
     }
 
-    // Check for overlapping slots (excluding the current slot being edited)
     if (
       isTimeSlotOverlapping(
         editingSlot.day,
@@ -243,7 +239,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       return;
     }
 
-    // Update the slot
     setFormData((prev) => ({
       ...prev,
       availability: {
@@ -262,7 +257,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       },
     }));
 
-    // Reset form and editing state
     setNewSlot({
       startTime: "",
       endTime: "",
@@ -373,7 +367,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 ">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl mx-4 max-h-[90vh] overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-gray-200">
           <h2 className="text-[16px] font-medium text-[#161d1f]">
             {editingDoctor ? "Edit Doctor" : "Add New Doctor"}
@@ -386,7 +379,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="flex mx-2">
           {tabs.map((tab, index) => (
             <button
@@ -403,12 +395,9 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           ))}
         </div>
 
-        {/* Content */}
         <div className="p-8 overflow-y-auto max-h-[60vh]">
-          {/* Tab 1: Basic Information */}
           {activeTab === 0 && (
             <div className="space-y-8">
-              {/* Doctor Image Upload */}
               <div className="flex flex-col items-center">
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 h-auto w-full text-center hover:border-[#1BA3C7] transition-colors">
                   <input
@@ -459,7 +448,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                 </div>
               </div>
 
-              {/* Form Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
@@ -547,7 +535,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
             </div>
           )}
 
-          {/* Tab 2: Doctor Details */}
           {activeTab === 1 && (
             <div className="space-y-6">
               <div>
@@ -610,7 +597,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                 </div>
               </div>
 
-              {/* Consultation Mode */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="space-y-3">
                   <label className="flex items-center space-x-3">
@@ -649,7 +635,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                 </div>
               </div>
 
-              {/* Languages Known */}
               <div>
                 <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
                   <span className="text-red-500">*</span> Languages Known
@@ -678,7 +663,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
             </div>
           )}
 
-          {/* Tab 3: Availability */}
           {activeTab === 2 && (
             <div className="space-y-6">
               <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-6 rounded-xl border border-blue-100">
@@ -691,7 +675,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                 </p>
               </div>
 
-              {/* Days Selection */}
               <div className="grid grid-cols-7 gap-2 mb-6">
                 {enumData.days.map((day) => (
                   <button
@@ -723,7 +706,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                       : `Add Time Slot for ${selectedDay}`}
                   </h4>
 
-                  {/* Time Slot Input Form */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                     <div>
                       <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
@@ -809,7 +791,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Created Slots List */}
                   <div className="space-y-3">
                     <h5 className="text-[10px] font-medium text-gray-600 border-b border-gray-200 pb-2">
                       Created Slots (
@@ -865,7 +846,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
             </div>
           )}
 
-          {/* Tab 4: Compliance */}
           {activeTab === 3 && (
             <div className="space-y-6">
               <h3 className="text-[10px] font-semibold text-[#161d1f] mb-6">
@@ -918,7 +898,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-end p-6 border-t border-gray-200 gap-4">
           <button
             onClick={resetForm}

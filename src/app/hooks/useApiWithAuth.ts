@@ -8,10 +8,8 @@ export const useApiWithAuth = () => {
       throw new Error("User not authenticated");
     }
 
-    // Refresh token if needed before making the API call
     await refreshTokenIfNeeded();
 
-    // Get the latest token after potential refresh
     const latestToken = useAdminStore.getState().token;
 
     const response = await fetch(url, {
@@ -23,13 +21,11 @@ export const useApiWithAuth = () => {
       },
     });
 
-    // If we get a 401, try to refresh token once more
     if (response.status === 401) {
       try {
         await refreshTokenIfNeeded();
         const refreshedToken = useAdminStore.getState().token;
 
-        // Retry the request with refreshed token
         const retryResponse = await fetch(url, {
           ...options,
           headers: {
@@ -40,7 +36,6 @@ export const useApiWithAuth = () => {
         });
 
         if (retryResponse.status === 401) {
-          // If still 401 after refresh, logout user
           logout();
           throw new Error("Session expired. Please login again.");
         }

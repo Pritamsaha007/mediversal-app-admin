@@ -23,7 +23,7 @@ import { useAdminStore } from "@/app/store/adminStore";
 import {
   searchHeathPackages,
   searchPathologyTests,
-  deleteHealthPackage, // Import the new delete function
+  deleteHealthPackage,
 } from "../services/index";
 import { HealthPackage, statics } from "./types";
 import { PathologyTest } from "../pathology_tests/types";
@@ -60,6 +60,24 @@ const HealthPackages: React.FC = () => {
     const visibleTests = testIds.slice(0, maxVisible);
     const remainingCount = testIds.length - maxVisible;
 
+    // Check if we're still loading test names
+    const isLoadingNames = testIds.some((testId) => !testNamesMap.has(testId));
+
+    if (isLoadingNames) {
+      return (
+        <div className="flex flex-wrap gap-1">
+          {visibleTests.map((testId, index) => (
+            <span
+              key={testId}
+              className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-400 animate-pulse"
+            >
+              Loading...
+            </span>
+          ))}
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-wrap gap-1">
         {visibleTests.map((testId, index) => (
@@ -82,7 +100,6 @@ const HealthPackages: React.FC = () => {
   const statusOptions = ["All Status", "Active", "Inactive"];
 
   const generateStats = (): HealthPackagesStats => {
-    // Filter out deleted packages for stats
     const activePackages = tests.filter((p) => !p.is_deleted);
     const totalTests = activePackages.length;
     const activeTests = activePackages.filter((t) => t.is_active).length;
@@ -462,7 +479,7 @@ const HealthPackages: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
-          <div className="flex gap-3">
+          {/* <div className="flex gap-3">
             <div className="relative">
               <button
                 onClick={() =>
@@ -491,7 +508,7 @@ const HealthPackages: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -530,6 +547,9 @@ const HealthPackages: React.FC = () => {
                   </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Selling Price
+                  </th>
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                    Discount Percentage
                   </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Status
@@ -594,6 +614,9 @@ const HealthPackages: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-[#161D1F]">
                         ₹{test.selling_price}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-[#161D1F]">
+                        {test.discount_percentage}%
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <StatusBadge

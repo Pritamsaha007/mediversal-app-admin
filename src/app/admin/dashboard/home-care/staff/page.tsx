@@ -11,8 +11,8 @@ import {
 } from "lucide-react";
 import AddStaffModal from "./components/AddStaffModal";
 import ViewStaffModal from "./components/ViewStaffModal";
-import { Staff } from "./types";
-import { ApiStaff, fetchStaff, deleteStaff } from "./service/api/staff";
+import { ApiStaff, Staff } from "./types";
+import { fetchStaff, deleteStaff } from "./service";
 
 const StaffManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -359,8 +359,8 @@ const StaffManagement: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
-          <div className="flex gap-3">
-            {/* Status Dropdown */}
+          {/* <div className="flex gap-3">
+           
             <div className="relative">
               <button
                 onClick={() =>
@@ -389,7 +389,7 @@ const StaffManagement: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Staff Table */}

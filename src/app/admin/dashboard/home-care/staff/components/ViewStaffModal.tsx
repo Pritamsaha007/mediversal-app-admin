@@ -20,7 +20,6 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
       style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
     >
       <div className="bg-[#F3F9FB] rounded-xl shadow-xl w-[700px] relative">
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-600 hover:text-black"
@@ -29,7 +28,6 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
         </button>
 
         <div className="p-6 space-y-6">
-          {/* Header */}
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 flex items-center justify-center bg-sky-100 rounded-full text-lg font-semibold text-sky-700">
               {staff.name.charAt(0)}
@@ -53,9 +51,7 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
             </span>
           </div>
 
-          {/* Info Sections */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Contact Info */}
             <div className="border border-[#899193] rounded-lg p-4 space-y-2">
               <h3 className="text-sm font-medium text-black mb-2">
                 Contact Information
@@ -76,7 +72,6 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
               </p>
             </div>
 
-            {/* Professional Details */}
             <div className="border border-[#899193] rounded-lg p-4 space-y-2">
               <h3 className="text-sm font-medium text-black mb-2">
                 Professional Details
@@ -101,7 +96,6 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
             </div>
           </div>
 
-          {/* Specializations */}
           <div className=" border border-[#899193] rounded-lg p-4 space-y-2">
             <h3 className="text-xs font-medium text-gray-700 mb-2">
               Specializations
@@ -118,7 +112,6 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
             </div>
           </div>
 
-          {/* Certifications */}
           {staff.certifications && staff.certifications.length > 0 && (
             <div className=" border border-[#899193] rounded-lg p-4 space-y-2">
               <h3 className="text-xs font-medium text-gray-700 mb-2">
@@ -137,7 +130,6 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex justify-end pt-4 gap-5">
             <button className="flex items-center gap-2 bg-[#0088B1]  text-white text-xs px-4 py-2 rounded-lg">
               <Phone className="w-4 h-4" /> Contact Staff

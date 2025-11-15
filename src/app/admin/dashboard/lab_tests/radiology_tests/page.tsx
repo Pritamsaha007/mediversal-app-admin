@@ -301,10 +301,8 @@ const RadiologyTests: React.FC = () => {
 
         if (confirmed) {
           try {
-            // Call the delete function
             await deletePathologyTest(test.id, token);
 
-            // Refresh the list to get updated data
             const categoryData = await fetchCategories(token);
             const defaultCategoryId = categoryData.roles[11]?.id || "";
 
@@ -424,7 +422,7 @@ const RadiologyTests: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
-          <div className="flex gap-3">
+          {/* <div className="flex gap-3">
             <div className="relative">
               <button
                 onClick={() =>
@@ -453,7 +451,7 @@ const RadiologyTests: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

@@ -1,13 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { X, ImagePlus, Search, Plus } from "lucide-react";
-import { tabs, Hospital } from "../data/hospitalsData";
-import {
-  getEnumValues,
-  addOrUpdateHospital,
-  EnumItem,
-  HospitalFormData,
-} from "../services/hospitalService";
+import { tabs } from "../utils";
+import { getEnumValues, addOrUpdateHospital } from "../services";
 import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
 import { PathologyTest } from "../../../lab_tests/pathology_tests/types";
@@ -17,6 +12,7 @@ import {
   searchHeathPackages,
   searchPathologyTests,
 } from "../../../lab_tests/services";
+import { EnumItem, Hospital, HospitalFormData } from "../types";
 
 interface AddHospitalModalProps {
   isOpen: boolean;
@@ -72,7 +68,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
   const [enumLoading, setEnumLoading] = useState(true);
   const { token } = useAdminStore();
 
-  // Tests and Packages State
   const [activeCategory, setActiveCategory] = useState("Pathology Tests");
   const [searchTerm, setSearchTerm] = useState("");
   const [availableTests, setAvailableTests] = useState<PathologyTest[]>([]);
@@ -96,24 +91,20 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
     website: "",
   });
 
-  // Utility function to convert department names to IDs
   const convertDepartmentsToIds = (
     departments: string[],
     enumDepartments: EnumItem[]
   ): string[] => {
-    // Ensure departments is an array
     if (!Array.isArray(departments)) {
       return [];
     }
 
     return departments
       .map((dept) => {
-        // Check if dept is null, undefined, or empty
         if (!dept || typeof dept !== "string") {
           return dept || "";
         }
 
-        // Check if it's already a UUID
         if (
           dept.match(
             /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -121,14 +112,13 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
         ) {
           return dept;
         }
-        // If it's a name, find the ID
+
         const deptEnum = enumDepartments.find((d) => d.value === dept);
         return deptEnum?.id || dept;
       })
-      .filter(Boolean); // Remove any empty values
+      .filter(Boolean);
   };
 
-  // Load form data when editing hospital and enum data is ready
   useEffect(() => {
     if (
       editingHospital &&
@@ -139,7 +129,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
         (s) => s.value === editingHospital.address.state
       );
 
-      // Convert department names to IDs
       const departmentIds = convertDepartmentsToIds(
         editingHospital.departments,
         enumDepartments
@@ -162,7 +151,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
     }
   }, [editingHospital, enumDepartments, enumStates]);
 
-  // Reset form when not editing
   useEffect(() => {
     if (!editingHospital && isOpen) {
       resetForm();
@@ -195,7 +183,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
 
     if (isOpen) {
       loadEnumData();
-      // Load ALL tests and packages when modal opens
+
       fetchAvailableTests();
       fetchAvailablePackages();
     }
@@ -241,11 +229,9 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
       const pathologyTests = pathologyResponse.labTests || [];
       const radiologyTests = radiologyResponse.labTests || [];
 
-      // Store ALL tests separately
       setAllPathologyTests(pathologyTests);
       setAllRadiologyTests(radiologyTests);
 
-      // Filter based on active category for display
       if (activeCategory === "Pathology Tests") {
         setAvailableTests(pathologyTests);
       } else if (activeCategory === "Radiology Tests") {
@@ -276,7 +262,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
       const response = await searchHeathPackages(payload, token);
       const packages = response.healthpackages || [];
 
-      // Store ALL packages
       setAllHealthPackages(packages);
       setAvailablePackages(packages);
     } catch (error) {
@@ -288,12 +273,10 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
   };
   const allAvailableTests = [...allPathologyTests, ...allRadiologyTests];
 
-  // Get selected tests from ALL available tests (not just current category)
   const selectedTests = allAvailableTests.filter((test) =>
     formData.lab_test_ids.includes(test.id)
   );
 
-  // Get selected packages from ALL available packages
   const selectedPackages = allHealthPackages.filter((pkg) =>
     formData.health_package_ids.includes(pkg.id)
   );
@@ -309,7 +292,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
 
       return () => clearTimeout(delaySearch);
     } else if (isOpen && token) {
-      // When search is cleared, reload all data
       if (activeCategory === "Health Packages") {
         fetchAvailablePackages();
       } else {
@@ -329,7 +311,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
       }
     }
   }, [activeCategory]);
-  // Handle test selection
+
   const handleAddTest = (test: PathologyTest) => {
     if (!formData.lab_test_ids.includes(test.id)) {
       setFormData((prev) => ({
@@ -350,7 +332,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
     return formData.lab_test_ids.includes(testId);
   };
 
-  // Handle package selection
   const handleAddPackage = (pkg: HealthPackage) => {
     if (!formData.health_package_ids.includes(pkg.id)) {
       setFormData((prev) => ({
@@ -546,7 +527,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
     setActiveCategory("Pathology Tests");
     setActiveTab(0);
 
-    // Reset the new state variables
     setAllPathologyTests([]);
     setAllRadiologyTests([]);
     setAllHealthPackages([]);
@@ -554,10 +534,8 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
     setAvailablePackages([]);
   };
 
-  // Render Departments & Tests Section (Combined as per your image)
   const renderDepartmentsAndTestsSection = () => (
     <div className="space-y-8">
-      {/* Available Departments */}
       <div className="space-y-4">
         <h3 className="text-[12px] font-semibold text-[#161d1f]">
           <span className="text-red-500">*</span> Available Departments
@@ -587,13 +565,11 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
         )}
       </div>
 
-      {/* Assign Lab Tests & Health Packages */}
       <div className="space-y-4">
         <h3 className="text-[12px] font-semibold text-[#161d1f]">
           Assign Lab Tests & Health Packages
         </h3>
 
-        {/* Category Tabs */}
         <div className="flex border-b border-gray-200">
           {["Pathology Tests", "Radiology Tests", "Health Packages"].map(
             (category) => (
@@ -612,7 +588,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
           )}
         </div>
 
-        {/* Search Bar */}
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
@@ -628,7 +603,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
           />
         </div>
 
-        {/* Tests/Packages Table */}
         <div className="border border-gray-200 rounded-lg overflow-hidden">
           <div className="max-h-60 overflow-y-auto">
             {loadingTests || loadingPackages ? (
@@ -723,14 +697,12 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
         </div>
       </div>
 
-      {/* Selected Items - Show ALL selected tests and packages together */}
       {(selectedTests.length > 0 || selectedPackages.length > 0) && (
         <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
           <h4 className="text-xs font-semibold text-[#161D1F] mb-3">
             Selected Items ({selectedTests.length + selectedPackages.length})
           </h4>
 
-          {/* Selected Tests */}
           {selectedTests.length > 0 && (
             <div className="mb-4">
               <h5 className="text-xs font-medium text-[#161D1F] mb-2">
@@ -770,7 +742,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
             </div>
           )}
 
-          {/* Selected Packages */}
           {selectedPackages.length > 0 && (
             <div>
               <h5 className="text-xs font-medium text-[#161D1F] mb-2">
@@ -807,7 +778,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
             </div>
           )}
 
-          {/* Summary */}
           <div className="mt-3 pt-3 border-t border-gray-200">
             <div className="text-xs text-gray-600">
               Total: {selectedTests.length} tests + {selectedPackages.length}{" "}
@@ -824,7 +794,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl mx-4 max-h-[90vh] overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-gray-200">
           <h2 className="text-[16px] font-medium text-[#161d1f]">
             {editingHospital ? "Edit Hospital" : "Add New Hospital"}
@@ -837,7 +806,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="flex mx-2">
           {[
             "Basic Information",
@@ -859,12 +827,9 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
           ))}
         </div>
 
-        {/* Content */}
         <div className="p-8 overflow-y-auto max-h-[60vh]">
-          {/* Tab 1: Basic Information */}
           {activeTab === 0 && (
             <div className="space-y-8">
-              {/* Hospital Image Upload */}
               <div className="flex flex-col items-center">
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 h-auto w-full text-center hover:border-[#1BA3C7] transition-colors">
                   <input
@@ -1049,7 +1014,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
             </div>
           )}
 
-          {/* Tab 2: Hospital Details */}
           {activeTab === 1 && (
             <div className="space-y-6">
               <div>
@@ -1067,7 +1031,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                 />
               </div>
 
-              {/* Emergency Services */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <label className="flex items-center space-x-3">
                   <input
@@ -1089,7 +1052,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                 </label>
               </div>
 
-              {/* Contact Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
@@ -1197,10 +1159,8 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
             </div>
           )}
 
-          {/* Tab 3: Departments & Tests (Combined) */}
           {activeTab === 2 && renderDepartmentsAndTestsSection()}
 
-          {/* Tab 4: Operating Hours */}
           {activeTab === 3 && (
             <div className="space-y-6">
               <h3 className="text-[10px] font-semibold text-[#161d1f] mb-6">
@@ -1258,7 +1218,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-end p-6 border-t border-gray-200 gap-4">
           <button
             onClick={resetForm}

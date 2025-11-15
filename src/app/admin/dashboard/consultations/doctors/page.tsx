@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { type Doctor, generateTimeSlots } from "./data/doctorsData";
+import { generateTimeSlots } from "./utils";
 import {
   Search,
   ChevronDown,
@@ -17,19 +17,18 @@ import StatsCard from "./components/StatsCards";
 import DoctorDetailsModal from "./components/DoctorDetailsModal";
 import {
   getDoctors,
-  GetDoctorsParams,
   createOrUpdateDoctor,
   getAllEnumData,
-  EnumItem,
   deleteDoctor,
-} from "./services/doctorService";
+} from "./services";
 import {
   convertAPIDoctor,
   convertAvailabilityToSlots,
   convertSlotsToAvailability,
-} from "./data/doctorsData";
+} from "./utils";
 import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
+import { Doctor, EnumItem, GetDoctorsParams } from "./types";
 
 const StatusBadge: React.FC<{ isOnline: boolean; isInPerson: boolean }> = ({
   isOnline,
@@ -528,7 +527,7 @@ const Doctors: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
-          <div className="relative">
+          {/* <div className="relative">
             <button
               onClick={() =>
                 setOpenDropdown(openDropdown === "status" ? null : "status")
@@ -555,7 +554,7 @@ const Doctors: React.FC = () => {
                 ))}
               </div>
             )}
-          </div>
+          </div> */}
         </div>
 
         {/* Doctors Table */}

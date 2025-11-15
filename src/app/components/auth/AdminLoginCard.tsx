@@ -6,7 +6,7 @@ import { getCurrentDateTime } from "../../utils/date.utils";
 import { AdminLoginCardProps } from "../../types/auth.types";
 import { useAdminStore } from "@/app/store/adminStore";
 import { useRouter } from "next/navigation";
-import { cognitoAdminLogin } from "../../service/api/cognito/cognitoAuth";
+import { cognitoAdminLogin } from "../../service/cognito/cognitoAuth";
 import { toast } from "react-hot-toast";
 
 const AdminLoginCard: React.FC<AdminLoginCardProps> = ({ className = "" }) => {

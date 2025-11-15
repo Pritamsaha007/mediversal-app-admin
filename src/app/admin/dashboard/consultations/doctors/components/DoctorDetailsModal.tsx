@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import { X } from "lucide-react";
-import { Doctor } from "../data/doctorsData";
-import { EnumItem } from "../services/doctorService";
+
+import { Doctor, EnumItem } from "../types";
 
 interface DoctorDetailsModalProps {
   isOpen: boolean;
@@ -50,7 +50,6 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-[16px] font-medium text-[#161d1f]">
             Doctor Details
@@ -63,9 +62,7 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[70vh]">
-          {/* Tags */}
           <div className="mb-6">
             <span className="text-[12px] font-medium text-[#161d1f] mr-3">
               Tags:
@@ -90,7 +87,6 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
             </div>
           </div>
 
-          {/* Description */}
           <div className="mb-6">
             <span className="text-[10px] font-medium text-[#161d1f]">
               Description:
@@ -101,7 +97,6 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
             </p>
           </div>
 
-          {/* Qualifications and Consultation Pricing */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <span className="text-[10px] font-medium text-[#161d1f]">
@@ -121,7 +116,6 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
             </div>
           </div>
 
-          {/* Compliances */}
           <div className="mb-6">
             <h4 className="text-[10px] font-medium text-[#161d1f] mb-3">
               Compliances
@@ -156,7 +150,6 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
             </div>
           </div>
 
-          {/* Available Slots */}
           <div className="mb-6">
             <h4 className="text-[12px] font-medium text-[#161d1f] mb-4">
               Weekly Schedule
@@ -172,10 +165,8 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
                   "Saturday",
                   "Sunday",
                 ].map((dayName) => {
-                  // Get slots from availability if available
                   let daySlots = doctor.availability?.[dayName] || [];
 
-                  // If no slots in availability, get from doctor_slots
                   if (daySlots.length === 0 && doctor.doctor_slots) {
                     daySlots = doctor.doctor_slots
                       .filter((slot) => slot.day === dayName)
@@ -241,7 +232,6 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-end p-6 border-t border-gray-200">
           <button
             onClick={handleEdit}

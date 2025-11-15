@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Timeline, TimelineEvent } from "react-event-timeline";
 import { Order } from "../../types/types";
-import { getTracking } from "../../services/orderServices"; // Import the new API
+import { getTracking } from "../../services"; // Import the new API
 
 interface ShipmentTrackActivity {
   date: string;

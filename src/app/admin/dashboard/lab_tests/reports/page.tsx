@@ -9,8 +9,6 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCw,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -20,6 +18,7 @@ import {
 } from "./types";
 import { searchLabTestReports } from "../services";
 import { useAdminStore } from "@/app/store/adminStore";
+import Pagination from "../../../../components/common/pagination";
 
 const getDateRangeForFilter = (
   filter: string
@@ -157,18 +156,8 @@ const ReportsManagement: React.FC = () => {
       const data = await searchLabTestReports(payload, token);
 
       if (data.success) {
-        // let tempR: LabTestReport[] = [];
-
-        // data.reports.map((report) => {
-        //   if (report.report_url) {
-        //     tempR.push(report);
-        //   }
-        // });
-
         setReports(data.reports);
-
         setHasMore(data.reports.length === pageSize);
-
         setCurrentPage(page);
       } else {
         throw new Error("Failed to fetch reports");
@@ -711,35 +700,15 @@ const ReportsManagement: React.FC = () => {
             </table>
           </div>
 
-          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-            <button
-              onClick={loadPreviousPage}
-              disabled={currentPage === 0 || loading}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
-                currentPage === 0 || loading
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-[#161D1F] hover:bg-gray-100"
-              }`}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </button>
-
-            <div className="text-sm text-gray-600">Page {currentPage + 1}</div>
-
-            <button
-              onClick={loadNextPage}
-              disabled={!hasMore || loading}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
-                !hasMore || loading
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-[#161D1F] hover:bg-gray-100"
-              }`}
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            hasMore={hasMore}
+            loading={loading}
+            onPrevious={loadPreviousPage}
+            onNext={loadNextPage}
+            totalItems={reports.length}
+            itemsPerPage={20}
+          />
         </div>
       </div>
     </div>

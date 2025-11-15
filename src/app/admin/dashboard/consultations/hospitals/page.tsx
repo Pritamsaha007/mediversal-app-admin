@@ -1,11 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { type Hospital, convertAPIToLocalHospital } from "./data/hospitalsData";
-import {
-  getHospitals,
-  getEnumValues,
-  deleteHospital,
-} from "./services/hospitalService";
+import { convertAPIToLocalHospital } from "./utils";
+import { getHospitals, getEnumValues, deleteHospital } from "./services";
 import {
   Search,
   ChevronDown,
@@ -21,6 +17,7 @@ import HospitalDetailsModal from "./components/HospitalDetailsModal";
 import { useAdminStore } from "@/app/store/adminStore";
 import ConfirmationModal from "./components/ConfirmationModal";
 import toast from "react-hot-toast";
+import { Hospital } from "./types";
 
 const Hospitals: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -380,7 +377,7 @@ const Hospitals: React.FC = () => {
             />
           </div>
 
-          <div className="relative">
+          {/* <div className="relative">
             <button
               onClick={() =>
                 setOpenDropdown(
@@ -448,7 +445,7 @@ const Hospitals: React.FC = () => {
                 ))}
               </div>
             )}
-          </div>
+          </div> */}
         </div>
 
         {/* Hospitals Table */}
