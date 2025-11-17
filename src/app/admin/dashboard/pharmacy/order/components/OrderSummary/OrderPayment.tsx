@@ -13,30 +13,25 @@ const OrderPayment: React.FC<OrderPaymentProps> = ({ order }) => {
     return isNaN(value) ? "₹0.00" : `₹${value.toFixed(2)}`;
   };
 
-  // Safely extract values with fallbacks
   const totalOrderAmount = Number(order?.TotalOrderAmount) || 0;
   const appliedDiscount = Number(order?.applied_discount_value) || 0;
   const originalValue = totalOrderAmount + appliedDiscount;
 
-  // Handle final amount safely
   const finalAmount =
     originalValue > 0
       ? originalValue < 499
-        ? originalValue - 50
-        : originalValue - 10
+        ? originalValue - 45
+        : originalValue - 5
       : 0;
 
-  // Handle delivery charges
   const deliveryCharges =
     originalValue < 499 && originalValue > 0 ? "₹40" : "N/A";
 
-  // Safe fallbacks for payment details
   const paymentMethod = order?.paymentMethod || "N/A";
   const paymentStatus = order?.paymentStatus || "Unknown";
 
   return (
     <div className="space-y-6 h-80">
-      {/* Payment Information */}
       <div>
         <div className="bg-white p-4 rounded-lg border border-gray-300 space-y-4">
           <h3 className="text-sm font-medium text-gray-700 mb-4">
@@ -72,10 +67,10 @@ const OrderPayment: React.FC<OrderPaymentProps> = ({ order }) => {
             <span className="text-xs text-gray-700">₹5.00</span>
           </div>
 
-          <div className="flex justify-between items-center">
+          {/* <div className="flex justify-between items-center">
             <span className="text-gray-600 text-xs">Platform Fee:</span>
             <span className="text-xs text-gray-700">₹5.00</span>
-          </div>
+          </div> */}
 
           {appliedDiscount > 0 && (
             <div className="flex justify-between items-center">

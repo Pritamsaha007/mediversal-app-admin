@@ -2,13 +2,9 @@
 import React, { useEffect, useState } from "react";
 import StatusBadge from "../components/StatusBadge";
 import StatsCard from "../components/StatsCard";
-import ManageOfferingsModal from "./ManageOfferingsModal";
-import AddServiceModal from "./AddServiceModal";
-import {
-  getHomecareServices,
-  deleteHomecareService,
-  type HomecareService,
-} from "./service/api/homecareServices";
+import ManageOfferingsModal from "./components/ManageOfferingsModal";
+import AddServiceModal from "./components/AddServiceModal";
+import { getHomecareServices, deleteHomecareService } from "./service";
 import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
 
@@ -23,6 +19,7 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
+import { HomecareService } from "./types";
 
 const transformHomecareServiceToService = (
   homecareService: HomecareService
@@ -437,8 +434,8 @@ const Services: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
-          <div className="flex gap-3">
-            {/* Status Dropdown */}
+          {/* <div className="flex gap-3">
+      
             <div className="relative">
               <button
                 onClick={() =>
@@ -467,7 +464,7 @@ const Services: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Services Table */}

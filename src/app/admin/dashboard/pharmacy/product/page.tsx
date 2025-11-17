@@ -9,8 +9,6 @@ import {
   ShoppingBag,
   ListOrdered,
   Projector,
-  ChevronRight,
-  ChevronLeft,
 } from "lucide-react";
 import { categories, sortOptions, tabs } from "./data/productCatalogData";
 import { AddProductModal } from "./components/AddProductModal";
@@ -24,6 +22,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useProductStore } from "./store/productStore";
 import { useDebounce } from "./utils/useDebounce";
+import Pagination from "@/app/components/common/pagination";
 
 const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,6 +49,10 @@ const ProductCatalog: React.FC = () => {
     removeProductFromStore,
     addProductToStore,
   } = useProductStore();
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0); // 0-based for simple Pagination
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   const handleRefreshProducts = async () => {
     await refreshProducts();
@@ -121,20 +124,12 @@ const ProductCatalog: React.FC = () => {
     setIsModalOpen(false);
     await refreshProducts();
   };
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    itemsPerPage: 20,
-    totalItems: statistics.activeProducts + statistics.inactiveProducts,
-    totalPages: Math.ceil(
-      (statistics.activeProducts + statistics.inactiveProducts) / 20
-    ),
-  });
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
     setCategoryDropdownOpen(false);
     // Reset pagination when category changes
-    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    setCurrentPage(0);
   };
 
   useEffect(() => {
@@ -144,19 +139,8 @@ const ProductCatalog: React.FC = () => {
         searchCategory: selectedCategory,
       }),
     };
-    fetchProducts(0, 20, filters);
-  }, [debouncedSearch, selectedCategory]);
-
-  useEffect(() => {
-    setPagination((prev) => ({
-      ...prev,
-      totalItems: statistics.activeProducts + statistics.inactiveProducts,
-      totalPages: Math.ceil(
-        (statistics.activeProducts + statistics.inactiveProducts) /
-          prev.itemsPerPage
-      ),
-    }));
-  }, [statistics]);
+    fetchProducts(currentPage * itemsPerPage, itemsPerPage, filters);
+  }, [debouncedSearch, selectedCategory, currentPage, itemsPerPage]);
 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
@@ -164,13 +148,13 @@ const ProductCatalog: React.FC = () => {
   useEffect(() => {
     const loadInitialData = async () => {
       await Promise.all([
-        fetchProducts(0, pagination.itemsPerPage),
+        fetchProducts(currentPage * itemsPerPage, itemsPerPage),
         getStatistics(),
       ]);
     };
 
     loadInitialData();
-  }, [pagination.itemsPerPage, fetchProducts, getStatistics]);
+  }, [currentPage, itemsPerPage, fetchProducts, getStatistics]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -245,19 +229,21 @@ const ProductCatalog: React.FC = () => {
     }
   };
 
-  const handleNextPage = async () => {
-    if (pagination.currentPage < pagination.totalPages) {
-      const nextPage = pagination.currentPage + 1;
-      const start = (nextPage - 1) * pagination.itemsPerPage;
+  // Calculate hasMore for simple Pagination component
+  const totalItems = statistics.activeProducts + statistics.inactiveProducts;
+  const hasMore = (currentPage + 1) * itemsPerPage < totalItems;
 
-      await fetchProducts(start, pagination.itemsPerPage);
-      setPagination((prev) => ({ ...prev, currentPage: nextPage }));
+  // Pagination handlers for simple Pagination component
+  const handleNextPage = async () => {
+    if (hasMore && !loading) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
     }
   };
 
   const handlePreviousPage = () => {
-    if (pagination.currentPage > 1) {
-      setPagination((prev) => ({ ...prev, currentPage: prev.currentPage - 1 }));
+    if (currentPage > 0 && !loading) {
+      setCurrentPage(currentPage - 1);
     }
   };
 
@@ -282,13 +268,6 @@ const ProductCatalog: React.FC = () => {
       }
       return tabMatch;
     });
-    // Apply category filter
-    //   const categoryMatch =
-    //     selectedCategory === "All Categories" ||
-    //     product.category === selectedCategory;
-
-    //   return tabMatch && categoryMatch;
-    // });
 
     // Apply sorting
     if (sortBy !== "Sort") {
@@ -407,10 +386,6 @@ const ProductCatalog: React.FC = () => {
             >
               <Plus className="w-3 h-3" />
               Add New Products
-            </button>
-            <button className="flex items-center gap-2 text-[12px] px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50">
-              <FileText className="w-3 h-3" />
-              Bulk Import
             </button>
           </div>
         </div>
@@ -607,7 +582,7 @@ const ProductCatalog: React.FC = () => {
               <span className="text-[8px] text-[#899193] font-normal ml-2">
                 Showing {getFilteredProducts().length} of {products.length}{" "}
                 loaded products
-                {pagination.totalItems && " (Load more available)"}
+                {hasMore && " (Load more available)"}
               </span>
             </h3>
           </div>
@@ -662,44 +637,34 @@ const ProductCatalog: React.FC = () => {
                     <td colSpan={9} className="px-6 py-12 text-center">
                       <div className="flex items-center justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0088B1]"></div>
-                        {/* <span className="ml-3 text-gray-600">
-                          Loading products...
-                        </span> */}
                       </div>
                     </td>
                   </tr>
                 ) : !error && getFilteredProducts().length > 0 ? (
-                  getFilteredProducts()
-                    .slice(
-                      (pagination.currentPage - 1) * pagination.itemsPerPage,
-                      pagination.currentPage * pagination.itemsPerPage
-                    )
-                    .map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        onEdit={handleUpdateProduct}
-                        isSelected={selectedProducts.includes(product.id)}
-                        onSelect={handleProductSelect}
-                        onView={(id) => handleProductAction("view", id)}
-                        onUnfeature={(id) =>
-                          handleProductAction("unfeature", id)
-                        }
-                        onDeactivate={(id) =>
-                          handleProductAction("deactivate", id)
-                        }
-                        onDelete={(id) => handleProductAction("delete", id)}
-                        availableProducts={products}
-                        onUpdateRelationships={async (productId, data) => {
-                          console.log(
-                            "Updating relationships for product:",
-                            productId,
-                            data
-                          );
-                          await refreshProducts();
-                        }}
-                      />
-                    ))
+                  getFilteredProducts().map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onEdit={handleUpdateProduct}
+                      isSelected={selectedProducts.includes(product.id)}
+                      onSelect={handleProductSelect}
+                      onView={(id) => handleProductAction("view", id)}
+                      onUnfeature={(id) => handleProductAction("unfeature", id)}
+                      onDeactivate={(id) =>
+                        handleProductAction("deactivate", id)
+                      }
+                      onDelete={(id) => handleProductAction("delete", id)}
+                      availableProducts={products}
+                      onUpdateRelationships={async (productId, data) => {
+                        console.log(
+                          "Updating relationships for product:",
+                          productId,
+                          data
+                        );
+                        await refreshProducts();
+                      }}
+                    />
+                  ))
                 ) : (
                   <tr>
                     <td colSpan={9} className="px-6 py-12 text-center">
@@ -722,44 +687,18 @@ const ProductCatalog: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={currentPage}
+            hasMore={hasMore}
+            loading={loading}
+            onPrevious={handlePreviousPage}
+            onNext={handleNextPage}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+          />
         </div>
-        {!loading &&
-          !error &&
-          products.length > 0 &&
-          pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6 px-6 py-4 bg-white rounded-lg border border-gray-200">
-              <div className="text-sm text-gray-600">
-                Showing page {pagination.currentPage} of {pagination.totalPages}
-                ({pagination.totalItems} total products)
-              </div>
 
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handlePreviousPage}
-                  disabled={pagination.currentPage === 1 || loading}
-                  className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Previous
-                </button>
-
-                <span className="text-sm text-gray-600">
-                  Page {pagination.currentPage} of {pagination.totalPages}
-                </span>
-
-                <button
-                  onClick={handleNextPage}
-                  disabled={
-                    pagination.currentPage === pagination.totalPages || loading
-                  }
-                  className="flex items-center gap-2 px-4 py-2 text-sm bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
         <AddProductModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}

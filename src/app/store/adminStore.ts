@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import {
   refreshCognitoToken,
   cognitoSignOut,
-} from "../service/api/cognito/cognitoAuth";
+} from "../service/cognito/cognitoAuth";
 
 export interface AdminInfo {
   id: string;

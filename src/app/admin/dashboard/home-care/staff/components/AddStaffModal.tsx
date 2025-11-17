@@ -1,13 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { ChevronDown, X } from "lucide-react";
-import { Staff } from "../types";
-import {
-  createUpdateStaff,
-  CreateUpdateStaffPayload,
-  fetchRoles,
-  RoleApiResponse,
-} from "../service/api/staff";
+import { CreateUpdateStaffPayload, Staff } from "../types";
+import { createUpdateStaff, fetchRoles, RoleApiResponse } from "../service";
 
 interface AddStaffModalProps {
   isOpen: boolean;
@@ -98,7 +93,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
         const roles = await fetchRoles();
         setRoleOptions(roles);
 
-        // If editing, find the role ID from the role name
         if (initialData?.position) {
           const matchingRole = roles.find(
             (role) => role.role_name === initialData.position
@@ -173,7 +167,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
   };
 
   const handleSubmit = async () => {
-    // Basic validation
     if (!formData.fullName.trim()) {
       alert("Please enter full name");
       return;
@@ -191,7 +184,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
     setSubmitError(null);
 
     try {
-      // Parse experience with fallbacks
       const experienceYears =
         formData.experience.match(/(\d+)\s*years?/i)?.[1] || "0";
       const experienceMonths =
@@ -301,7 +293,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >
       <div className="bg-white rounded-lg w-full max-w-3xl max-h-[90vh] overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-[#161D1F]">
             {initialData ? "Edit Staff Member" : "Add New Staff Member"}
@@ -314,10 +305,8 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Full Name */}
             <div className="space-y-2">
               <label className="block text-[10px] font-medium text-[#161D1F]">
                 Full Name <span className="text-red-500">*</span>
@@ -332,7 +321,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
               />
             </div>
 
-            {/* Role */}
             <div className="space-y-2 relative">
               <label className="block text-[10px] font-medium text-[#161D1F]">
                 Role <span className="text-red-500">*</span>
@@ -373,7 +361,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
               </div>
             </div>
 
-            {/* Phone Number */}
             <div className="space-y-2">
               <label className="block text-[10px] font-medium text-[#161D1F]">
                 Phone Number <span className="text-red-500">*</span>
@@ -390,7 +377,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
               />
             </div>
 
-            {/* Email Address */}
             <div className="space-y-2">
               <label className="block text-[10px] font-medium text-[#161D1F]">
                 Email Address
@@ -406,7 +392,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
               />
             </div>
 
-            {/* Experience */}
             <div className="space-y-2">
               <label className="block text-[10px] font-medium text-[#161D1F]">
                 Experience
@@ -422,7 +407,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
               />
             </div>
 
-            {/* Location */}
             <div className="space-y-2">
               <label className="block text-[10px] font-medium text-[#161D1F]">
                 Location
@@ -437,7 +421,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
             </div>
           </div>
 
-          {/* Specialization */}
           <div className="space-y-2 mt-6">
             <label className="block text-[10px] font-medium text-[#161D1F]">
               Specialization
@@ -459,7 +442,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                 Add
               </button>
             </div>
-            {/* Specialization Tags */}
+
             {specializationTags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {specializationTags.map((tag, index) => (
@@ -481,7 +464,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
             )}
           </div>
 
-          {/* Certifications */}
           <div className="space-y-2 mt-6">
             <label className="block text-[10px] font-medium text-[#161D1F]">
               Certifications
@@ -503,7 +485,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                 Add
               </button>
             </div>
-            {/* Certification Tags */}
+
             {certificationTags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {certificationTags.map((tag, index) => (
@@ -526,7 +508,6 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
           <button
             type="button"
@@ -535,14 +516,13 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
           >
             Reset
           </button>
-          {/* Add error message above buttons */}
+
           {submitError && (
             <div className="px-6 py-2 bg-red-50 border-l-4 border-red-400">
               <p className="text-red-700 text-sm">{submitError}</p>
             </div>
           )}
 
-          {/* Update the submit button */}
           <button
             type="button"
             onClick={handleSubmit}

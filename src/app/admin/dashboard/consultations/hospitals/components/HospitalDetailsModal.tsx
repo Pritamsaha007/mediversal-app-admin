@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { X } from "lucide-react";
-import { Hospital } from "../data/hospitalsData";
+import { Hospital } from "../types";
 
 interface HospitalDetailsModalProps {
   isOpen: boolean;
@@ -28,7 +28,6 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[80vh] overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-[16px] font-medium text-[#161d1f]">
             Hospital Details
@@ -41,9 +40,7 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[70vh]">
-          {/* Hospital Name and Address */}
           <div className="mb-6">
             <h3 className="text-[14px] font-medium text-[#161d1f] mb-2">
               {hospital.name}
@@ -53,7 +50,6 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
             </div>
           </div>
 
-          {/* Tags */}
           <div className="mb-6">
             <span className="text-[12px] font-medium text-[#161d1f] mr-3">
               Tags:
@@ -67,7 +63,6 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
             </div>
           </div>
 
-          {/* Description */}
           <div className="mb-6">
             <span className="text-[12px] font-medium text-[#161d1f]">
               Description:
@@ -77,7 +72,6 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
             </p>
           </div>
 
-          {/* Contact Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <span className="text-[12px] font-medium text-[#161d1f]">
@@ -97,7 +91,6 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
             </div>
           </div>
 
-          {/* Departments */}
           <div className="mb-6">
             <h4 className="text-[12px] font-medium text-[#161d1f] mb-4">
               Departments
@@ -125,7 +118,6 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-end p-6 border-t border-gray-200">
           <button
             onClick={handleEdit}

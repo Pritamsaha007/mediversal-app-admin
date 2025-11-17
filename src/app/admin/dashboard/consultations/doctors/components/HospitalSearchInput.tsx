@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
-import { searchHospitals } from "../services/doctorService";
+import { searchHospitals } from "../services";
 
 interface Hospital {
   id: string;
@@ -11,14 +11,14 @@ interface HospitalSearchInputProps {
   selectedHospitals: string[];
   onHospitalChange: (hospitalIds: string[]) => void;
   token: string;
-  initialHospitalNames?: Record<string, string>; // Add this prop
+  initialHospitalNames?: Record<string, string>;
 }
 
 const HospitalSearchInput: React.FC<HospitalSearchInputProps> = ({
   selectedHospitals,
   onHospitalChange,
   token,
-  initialHospitalNames = {}, // Add this prop
+  initialHospitalNames = {},
 }) => {
   const [searchText, setSearchText] = useState("");
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
@@ -86,7 +86,6 @@ const HospitalSearchInput: React.FC<HospitalSearchInputProps> = ({
 
   return (
     <div className="relative">
-      {/* Selected Hospitals */}
       {selectedHospitals.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2">
           {selectedHospitals.map((hospitalId) => (
@@ -107,7 +106,6 @@ const HospitalSearchInput: React.FC<HospitalSearchInputProps> = ({
         </div>
       )}
 
-      {/* Search Input */}
       <div className="relative">
         <input
           type="text"
@@ -120,7 +118,6 @@ const HospitalSearchInput: React.FC<HospitalSearchInputProps> = ({
         <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
       </div>
 
-      {/* Dropdown */}
       {showDropdown && (searchText || hospitals.length > 0) && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
           {isLoading ? (
