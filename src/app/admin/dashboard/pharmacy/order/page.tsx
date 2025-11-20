@@ -12,6 +12,7 @@ import {
   Truck,
   Trash2,
   Eye,
+  PlusIcon,
 } from "lucide-react";
 import { Order, FilterOptions, SortOption } from "./types/types";
 import { OrderService } from "./services";
@@ -21,6 +22,7 @@ import OrderActionDropdown from "./components/OrderActionDropdown";
 
 import PrescriptionModal from "./components/OrderSummary";
 import Pagination from "@/app/components/common/pagination";
+import PlaceOrderModal from "./components/PlaceOrderModal/PlaceOrderModal";
 
 const Orders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,7 +46,7 @@ const Orders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const actionDropdownRef = useRef<HTMLDivElement>(null);
-
+  const [isPlaceOrderModalOpen, setIsPlaceOrderModalOpen] = useState(false);
   const getPaginatedOrders = () => {
     const startIndex = currentPage * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -298,6 +300,13 @@ const Orders: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">Orders</h1>
+          <button
+            onClick={() => setIsPlaceOrderModalOpen(true)}
+            className="bg-[#0088B1] text-white text-xs px-4 py-2 rounded-lg flex items-center gap-2 mt-4 hover:bg-[#006f8e]"
+          >
+            <PlusIcon className="w-4 h-4" />
+            Place New Order
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
@@ -557,6 +566,10 @@ const Orders: React.FC = () => {
                 setSelectedOrderForPrescription(null);
               }}
               order={selectedOrderForPrescription!}
+            />
+            <PlaceOrderModal
+              isOpen={isPlaceOrderModalOpen}
+              onClose={() => setIsPlaceOrderModalOpen(false)}
             />
           </div>
         </div>

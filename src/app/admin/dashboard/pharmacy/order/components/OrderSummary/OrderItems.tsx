@@ -37,7 +37,7 @@ const OrderItems: React.FC<OrderItemsProps> = ({ order }) => {
 
             return (
               <div
-                key={item.orderItemId} // This is correct and uses a unique ID
+                key={item.orderItemId}
                 className="grid grid-cols-5 gap-4 py-4 border-t border-gray-100 hover:bg-gray-50"
               >
                 <div>

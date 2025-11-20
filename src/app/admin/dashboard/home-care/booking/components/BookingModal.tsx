@@ -2,14 +2,18 @@ import React, { useEffect, useState } from "react";
 import { X, User, Phone, Edit } from "lucide-react";
 import AssignStaffModal from "./AssignStaffModal";
 import { AssignedStaff } from "../staffData";
-import { DetailedBooking, OrderDetailResponse } from "../types";
+import {
+  ApiOrderResponse,
+  DetailedBooking,
+  OrderDetailResponse,
+} from "../types";
 import { useAdminStore } from "@/app/store/adminStore";
 import { getOrderById } from "../services";
 
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  booking: DetailedBooking | null; // Change this
+  booking: ApiOrderResponse | null;
   onAssignStaff: (bookingId: string) => void;
   onContactPatient: (phone: string) => void;
   onEditOrder: (bookingId: string) => void;
@@ -34,19 +38,19 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const { token } = useAdminStore();
 
   useEffect(() => {
-    if (isOpen && booking?.actualOrderId && token) {
+    if (isOpen && booking?.id && token) {
       fetchOrderDetails();
     }
-  }, [isOpen, booking?.actualOrderId, token]);
+  }, [isOpen, booking?.id, token]);
   if (!isOpen || !booking) return null;
 
   const fetchOrderDetails = async () => {
-    if (!booking?.actualOrderId) return;
+    if (!booking?.id) return;
 
     try {
       setLoading(true);
       setError(null);
-      const response = await getOrderById(booking.actualOrderId, token);
+      const response = await getOrderById(booking.id, token);
       if (response.success) {
         setOrderDetails(response.order);
       }
@@ -67,8 +71,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   if (!isOpen || !booking) return null;
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const getorder_statusColor = (order_status: string) => {
+    switch (order_status) {
       case "Pending Assignment":
         return "bg-yellow-100 text-yellow-800";
       case "In Progress":
@@ -99,10 +103,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
     bookingId: string,
     staffs: AssignedStaff[]
   ) => {
-    // Refresh order details to get updated staff info
     fetchOrderDetails();
 
-    // Call parent callback if provided
     if (onUpdateAssignedStaff) {
       onUpdateAssignedStaff(bookingId, staffs);
     }
@@ -138,7 +140,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
       <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex items-center justify-between p-4">
           <h2 className="text-[16px] font-semibold text-[#161D1F]">
             Booking ID: {booking.id}
@@ -151,30 +152,31 @@ const BookingModal: React.FC<BookingModalProps> = ({
           </button>
         </div>
 
-        {/* Status Badges */}
         <div className="p-6 border-b">
           <div className="flex gap-3">
             <span
-              className={`px-3 py-1 rounded-full text-[10px] font-medium ${getStatusColor(
-                booking.status
+              className={`px-3 py-1 rounded-full text-[10px] font-medium ${getorder_statusColor(
+                booking.order_status
               )}`}
             >
-              {booking.status}
+              {booking.order_status}
             </span>
             <span
               className={`px-3 py-1 rounded-full text-[10px] font-medium ${getPaymentColor(
-                booking.payment
+                booking.payment_status
               )}`}
             >
-              {booking.payment}
+              {booking.payment_status == "Refunded"
+                ? "Paid"
+                : booking.payment_status == "Paid"
+                ? "Paid"
+                : "Partial Payment"}
             </span>
           </div>
         </div>
 
-        {/* Main Content */}
         <div className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Patient Information */}
             <div className="rounded-lg p-6 border border-[#899193] bg-white">
               <h3 className="text-[14px] font-semibold text-[#161D1F] mb-4">
                 Patient Information
@@ -239,8 +241,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   </p>
                 </div>
               </div>
-
-              {/* Emergency Contact */}
               <div className="mt-6 pt-6 border-t">
                 <h4 className="text-[14px] font-semibold text-[#161D1F] mb-4">
                   Emergency Contact
@@ -268,7 +268,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
               </div>
             </div>
 
-            {/* Booking Information */}
             <div className=" rounded-lg p-6 border border-[#899193] bg-white">
               <h3 className="text-[14px] font-semibold text-[#161D1F] mb-4">
                 Booking Information
@@ -283,7 +282,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     ₹
                     {orderDetails?.order_total
                       ? Number(orderDetails.order_total).toLocaleString()
-                      : booking.total.toLocaleString()}
+                      : booking.order_total.toLocaleString()}
                   </p>
                 </div>
 
@@ -324,7 +323,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
             </div>
           </div>
 
-          {/* Service & Offering */}
           <div className="mt-8">
             <h3 className="text-[14px] font-semibold text-[#161D1F] mb-4">
               Service & Offering
@@ -334,36 +332,22 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 <div className="flex items-center gap-4">
                   <span className="bg-cyan-600 text-white px-3 py-1 rounded text-[10px] font-medium">
                     Service:{" "}
-                    {orderDetails?.service_details?.homecare_service_name ||
-                      booking.service}
+                    {orderDetails?.service_details?.homecare_service_name}
                   </span>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-[12px] text-[#161D1F]">
-                    ₹
-                    {orderDetails?.service_details
-                      ?.homecare_service_offering_price ||
-                      booking.serviceDetails.pricePerDay}
-                    /day
-                  </p>
                 </div>
               </div>
 
               <div className="mt-4">
                 <h4 className="font-semibold text-[12px] text-[#161D1F] mb-2">
-                  {orderDetails?.service_details
-                    ?.homecare_service_offering_name ||
-                    booking.serviceDetails.name}
+                  {
+                    orderDetails?.service_details
+                      ?.homecare_service_offering_name
+                  }
                 </h4>
-                <p className="text-[#899193] text-[10px]">
-                  {orderDetails?.service_details?.description ||
-                    booking.serviceDetails.description}
-                </p>
               </div>
             </div>
           </div>
 
-          {/* Assigned Staff */}
           <div className="mt-8">
             <h3 className="text-[10px] font-semibold text-[#161D1F] mb-4">
               Assigned Staff
@@ -391,7 +375,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="mt-8 flex flex-wrap gap-4">
             <button
               onClick={() => setIsAssignStaffModalOpen(true)}
@@ -402,20 +385,22 @@ const BookingModal: React.FC<BookingModalProps> = ({
             </button>
 
             <button
-              onClick={() => onContactPatient(booking.customer.phone)}
+              onClick={() =>
+                onContactPatient(contactLocation?.["Contact Number"])
+              }
               className="flex items-center text-[10px] gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Phone className="w-3 h-3" />
               Contact Patient
             </button>
 
-            <button
+            {/* <button
               onClick={() => onEditOrder(booking.id)}
               className="flex items-center text-[10px] gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Edit className="w-3 h-3" />
               Edit Order
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -423,7 +408,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         isOpen={isAssignStaffModalOpen}
         onClose={() => setIsAssignStaffModalOpen(false)}
         bookingId={booking.id}
-        actualOrderId={booking.actualOrderId}
+        actualOrderId={booking.id}
         onUpdateStaff={handleStaffAssignment}
       />
     </div>

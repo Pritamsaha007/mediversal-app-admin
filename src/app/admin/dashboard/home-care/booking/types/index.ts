@@ -125,7 +125,7 @@ export interface AssignStaffResponse {
 }
 export interface OrdersPayload {
   customer_id: string | null;
-  serach: string | null;
+  search: string | null;
   filter_order_status: string | null;
 }
 
