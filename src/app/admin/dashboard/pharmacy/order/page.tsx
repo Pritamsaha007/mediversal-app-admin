@@ -182,43 +182,46 @@ const Orders: React.FC = () => {
     }
     setActionDropdownOpen(false);
   };
-
-  const handleOrderAction = async (action: string, order: Order) => {
-    console.log(`Action: ${action}, Order ID: ${order.id}`);
-
-    try {
-      setLoading(true);
-      switch (action) {
-        case "view":
-          console.log("View order details:", order);
-          setSelectedOrderForPrescription(order);
-          setPrescriptionModalOpen(true);
-          break;
-        case "print":
-          console.log("Print order:", order);
-          break;
-        case "delete":
-          console.log("Delete confirmation for order:", order.id);
-          if (window.confirm("Are you sure you want to delete this order?")) {
-            console.log("User confirmed delete");
-            await OrderService.deleteOrder(Number(order.id));
-            console.log("Delete successful, refreshing orders");
-            await fetchOrders();
-            console.log("Orders refreshed");
-          }
-          break;
-        default:
-          console.log("Unknown action:", action);
-          break;
-      }
-    } catch (err) {
-      console.error("Order action error:", err);
-      setError(err instanceof Error ? err.message : "Operation failed");
-    } finally {
-      setLoading(false);
-      setOrderActionDropdown(null);
-    }
+  const handleOrderCreated = () => {
+    fetchOrders();
   };
+
+  // const handleOrderAction = async (action: string, order: Order) => {
+  //   console.log(`Action: ${action}, Order ID: ${order.id}`);
+
+  //   try {
+  //     setLoading(true);
+  //     switch (action) {
+  //       case "view":
+  //         console.log("View order details:", order);
+  //         setSelectedOrderForPrescription(order);
+  //         setPrescriptionModalOpen(true);
+  //         break;
+  //       case "print":
+  //         console.log("Print order:", order);
+  //         break;
+  //       case "delete":
+  //         console.log("Delete confirmation for order:", order.id);
+  //         if (window.confirm("Are you sure you want to delete this order?")) {
+  //           console.log("User confirmed delete");
+  //           await OrderService.deleteOrder(Number(order.id));
+  //           console.log("Delete successful, refreshing orders");
+  //           await fetchOrders();
+  //           console.log("Orders refreshed");
+  //         }
+  //         break;
+  //       default:
+  //         console.log("Unknown action:", action);
+  //         break;
+  //     }
+  //   } catch (err) {
+  //     console.error("Order action error:", err);
+  //     setError(err instanceof Error ? err.message : "Operation failed");
+  //   } finally {
+  //     setLoading(false);
+  //     setOrderActionDropdown(null);
+  //   }
+  // };
 
   const handleSelectOrder = (orderId: string, checked: boolean) => {
     if (!orderId) return;
@@ -570,6 +573,7 @@ const Orders: React.FC = () => {
             <PlaceOrderModal
               isOpen={isPlaceOrderModalOpen}
               onClose={() => setIsPlaceOrderModalOpen(false)}
+              onOrderCreated={handleOrderCreated}
             />
           </div>
         </div>

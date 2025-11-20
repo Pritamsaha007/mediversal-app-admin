@@ -15,11 +15,13 @@ import toast from "react-hot-toast";
 interface PlaceOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOrderCreated?: () => void;
 }
 
 const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
   isOpen,
   onClose,
+  onOrderCreated,
 }) => {
   const [activeTab, setActiveTab] = useState("customer");
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
@@ -291,6 +293,9 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
         toast.success("Order created successfully!");
         resetOrder();
         setTabErrors({});
+        if (onOrderCreated) {
+          onOrderCreated();
+        }
         onClose();
       } else {
         toast.error("Service not available for your location");

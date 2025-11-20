@@ -87,28 +87,6 @@ const CustomerInformationTab: React.FC = () => {
     setErrors(newErrors);
   };
 
-  const validateAllFields = (): boolean => {
-    const requiredFields = {
-      customerId: customerInfo.customerId,
-      name: customerInfo.name,
-      age: customerInfo.age,
-      phone: customerInfo.phone,
-      gender: gender,
-    };
-
-    const newErrors: Record<string, string> = {};
-
-    Object.entries(requiredFields).forEach(([field, value]) => {
-      validateField(field, value);
-    });
-
-    if (customerInfo.email) {
-      validateField("email", customerInfo.email);
-    }
-
-    return Object.keys(newErrors).length === 0;
-  };
-
   const RequiredStar = () => <span className="text-red-500">*</span>;
 
   const getInputClassName = (fieldName: string) => {

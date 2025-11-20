@@ -75,7 +75,6 @@ const BookingManagement: React.FC = () => {
     try {
       const response = await getOrderStatus(token);
       if (response.success) {
-        // Filter statuses to include only relevant ones for the UI dropdown
         const relevantStatuses = (response.roles as OrderStatusEnum[]).filter(
           (status) =>
             ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(
