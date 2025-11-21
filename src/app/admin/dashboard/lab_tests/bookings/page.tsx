@@ -712,7 +712,7 @@ const BookingsManagement: React.FC = () => {
                               <div className="absolute left-0 mt-1 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-20">
                                 <div className="flex flex-col ">
                                   {orderStatuses.map((status) => (
-                                    <li key={status.id}>
+                                    <div key={status.id}>
                                       <button
                                         onClick={() =>
                                           handleOrderStatusChange(
@@ -726,7 +726,7 @@ const BookingsManagement: React.FC = () => {
                                         {status.value.charAt(0).toUpperCase() +
                                           status.value.slice(1).toLowerCase()}
                                       </button>
-                                    </li>
+                                    </div>
                                   ))}
                                 </div>
                               </div>

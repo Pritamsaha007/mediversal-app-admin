@@ -5,6 +5,10 @@ import {
   FilterOptions,
   SortOption,
   TrackingData,
+  CreateOrderRequest,
+  CreateOrderResponse,
+  ServiceabilityRequest,
+  ServiceabilityResponse,
 } from "../types/types";
 import { useAdminStore } from "@/app/store/adminStore";
 
@@ -396,5 +400,119 @@ export const getTracking = async (awb: string): Promise<TrackingResponse> => {
     return response.data;
   } catch (error) {
     throw new Error(`Failed to fetch tracking data: ${error}`);
+  }
+};
+export const checkServiceability = async (
+  token: string | undefined,
+  requestData: ServiceabilityRequest
+): Promise<ServiceabilityResponse> => {
+  try {
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const queryParams = new URLSearchParams({
+      pickup_postcode: requestData.pickup_postcode,
+      delivery_postcode: requestData.delivery_postcode,
+      cod: requestData.cod.toString(),
+      weight: requestData.weight.toString(),
+    }).toString();
+
+    const response = await axios.get(
+      `${API_BASE_URL}/api/v1/shiprocket/serviceability?${queryParams}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error in checking serviceability:", error);
+
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        console.error("API Error Status:", error.response.status);
+        console.error("API Error Data:", error.response.data);
+      }
+    }
+
+    throw error;
+  }
+};
+
+export const createShiprocketOrder = async (
+  token: string | undefined,
+  isRequired: boolean,
+  requestData: CreateOrderRequest
+): Promise<CreateOrderResponse> => {
+  try {
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const response = await axios.post(
+      `${API_BASE_URL}/api/v1/shiprocket/order?isShiprocketOrderReqd=${isRequired}`,
+      requestData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error in creating Shiprocket order:", error);
+
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        console.error("API Error Status:", error.response.status);
+        console.error("API Error Data:", error.response.data);
+      } else if (error.request) {
+        console.error("Network Error - No response received:", error.request);
+      } else {
+        console.error("Request setup error:", error.message);
+      }
+    }
+
+    throw error;
+  }
+};
+export const BookingForPatna = async (
+  token: string | undefined,
+  pincode: number | undefined
+) => {
+  try {
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const response = await axios.post(
+      `${API_BASE_URL}/api/v1/shiprocket/order/ispatna/${pincode}`,
+
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error in creating Patna booking:", error);
+
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        console.error("API Error Status:", error.response.status);
+        console.error("API Error Data:", error.response.data);
+      }
+    }
+
+    throw error;
   }
 };

@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MoreVertical, Eye, Edit, UserPlus, X, Trash2 } from "lucide-react";
 
-import { DetailedBooking } from "../types";
+import { ApiOrderResponse, DetailedBooking } from "../types";
 
 interface DropdownMenuProps {
-  booking: DetailedBooking;
-  onViewDetails: (booking: DetailedBooking) => void;
+  booking: ApiOrderResponse;
+  onViewDetails: (booking: ApiOrderResponse) => void;
   onEditBooking: (bookingId: string) => void;
   onAssignStaff: (bookingId: string) => void;
   onCancelBooking: (bookingId: string) => void;

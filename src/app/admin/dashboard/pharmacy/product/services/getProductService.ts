@@ -416,3 +416,57 @@ export const productService = {
     productCache.clear();
   },
 };
+export const getProductsWithPagination = async (
+  start: number,
+  max: number,
+  token: string | undefined,
+  filters: {
+    searchCategory?: string | null;
+    searchTerm?: string | null;
+    filter_manufacturer?: string[] | null;
+    filter_product_name?: string[] | null;
+    filter_availability?: boolean | null;
+    filter_subcategory?: string[] | null;
+    filter_composition?: string[] | null;
+    filter_prescription_reqd?: boolean | null;
+    sort_by?: string | null;
+    sort_order?: string | null;
+  } = {}
+) => {
+  try {
+    const requestBody = {
+      searchCategory: filters.searchCategory || null,
+      searchTerm: filters.searchTerm || null,
+      filter_manufacturer: filters.filter_manufacturer || null,
+      filter_product_name: filters.filter_product_name || null,
+      filter_subcategory: filters.filter_subcategory || null,
+      filter_composition: filters.filter_composition || null,
+      filter_availability:
+        filters.filter_availability !== undefined
+          ? filters.filter_availability
+          : null,
+      filter_prescription_reqd:
+        filters.filter_prescription_reqd !== undefined
+          ? filters.filter_prescription_reqd
+          : null,
+      sort_by: filters.sort_by || null,
+      sort_order: filters.sort_order || null,
+    };
+    console.log(requestBody, "requestbody");
+    const response = await axios.post(
+      `${API_BASE_URL}/api/Product/getProducts?start=${start}&max=${max}`,
+      requestBody,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response || [];
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    throw error;
+  }
+};

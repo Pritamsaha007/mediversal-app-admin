@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Search, Plus, ChevronDown } from "lucide-react";
 import DropdownMenu from "./components/DropdownMenu";
 import BookingModal from "./components/BookingModal";
@@ -7,16 +7,16 @@ import AddBookingModal from "./components/AddBookingModal";
 import AssignStaffModal from "./components/AssignStaffModal";
 import { useAdminStore } from "../../../../store/adminStore";
 import { ApiOrderResponse, DetailedBooking } from "./types";
-
-import {
-  getHomecareOrders,
-  getOrderStatus,
-  createOrder,
-  updateOrder,
-} from "./services";
+import { getHomecareOrders, getOrderStatus, updateOrder } from "./services";
 import toast from "react-hot-toast";
 
-const statusOptions = ["Pending", "Completed", "Cancelled"];
+const statusOptions = [
+  "All Status",
+  "PENDING",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "CANCELLED",
+];
 
 interface OrderStatusEnum {
   id: string;
@@ -27,12 +27,31 @@ interface OrderStatusEnum {
   metadata: any | null;
 }
 
+const formatStatusDisplay = (statusValue: string): string => {
+  switch (statusValue) {
+    case "PENDING":
+    case "PENDING_ASSIGNMENT":
+      return "Pending";
+    case "IN_PROGRESS":
+    case "INPROGRESS":
+    case "IN-PROGRESS":
+      return "In Progress";
+    case "COMPLETED":
+      return "Completed";
+    case "CANCELLED":
+      return "Cancelled";
+    default:
+      return statusValue
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+};
+
 const BookingManagement: React.FC = () => {
-  const [bookings, setBookings] = useState<DetailedBooking[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [selectedBooking, setSelectedBooking] =
-    useState<DetailedBooking | null>(null);
+    useState<ApiOrderResponse | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
@@ -52,12 +71,7 @@ const BookingManagement: React.FC = () => {
   );
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchOrders();
-    fetchOrderStatuses();
-  }, [token]);
-
-  const fetchOrderStatuses = async () => {
+  const fetchOrderStatuses = useCallback(async () => {
     try {
       const response = await getOrderStatus(token);
       if (response.success) {
@@ -72,135 +86,16 @@ const BookingManagement: React.FC = () => {
     } catch (err) {
       console.error("Failed to fetch order statuses:", err);
     }
-  };
+  }, [token]);
 
-  const convertApiOrderToBooking = (
-    apiOrder: ApiOrderResponse
-  ): DetailedBooking => {
-    const getFullAddress = () => {
-      const { customer_details } = apiOrder;
-      const addressParts = [
-        customer_details.address_line1,
-        customer_details.address_line2,
-        customer_details.city,
-        customer_details.state,
-        customer_details.postal_code,
-        customer_details.country,
-      ].filter(Boolean);
-      return addressParts.length > 0
-        ? addressParts.join(", ")
-        : "Address not available";
-    };
-
-    const mapOrderStatus = (status: string) => {
-      switch (status) {
-        case "PENDING":
-        case "PENDING_ASSIGNMENT":
-          return "Pending" as const;
-        case "IN_PROGRESS":
-        case "INPROGRESS":
-        case "IN-PROGRESS":
-          return "In Progress" as const;
-        case "COMPLETED":
-          return "Completed" as const;
-        case "CANCELLED":
-          return "Cancelled" as const;
-        default:
-          return "Pending" as const;
-      }
-    };
-
-    const mapPaymentStatus = (status: string) => {
-      switch (status) {
-        case "Partially Paid":
-          return "Partial Payment" as const;
-        case "Paid":
-        case "Fully Paid":
-          return "Paid" as const;
-        case "Refunded":
-          return "Refunded" as const;
-        default:
-          return "Partial Payment" as const;
-      }
-    };
-
-    return {
-      id: apiOrder.id.slice(0, 4) + "..." + apiOrder.id.slice(-4),
-      bookingId: `${apiOrder.id.slice(0, 8)}`,
-      date: apiOrder.order_date
-        ? new Date(apiOrder.order_date).toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
-        : new Date().toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          }),
-      customer: {
-        name: apiOrder.customer_name || "New Customer",
-        customer_id: apiOrder.customer_id,
-        location: apiOrder.customer_details.city || "Location not specified",
-        age: 0,
-        gender: "Not specified",
-        phone: "Not available",
-        email: "Not available",
-        address: getFullAddress(),
-      },
-      status: mapOrderStatus(apiOrder.order_status_name),
-      payment: mapPaymentStatus(apiOrder.payment_status),
-      service: apiOrder.homecare_service_name,
-      serviceDetails: {
-        name: apiOrder.homecare_service_name,
-        description: "Service description not available",
-        pricePerDay:
-          parseFloat(apiOrder.order_total) / apiOrder.schedule_in_days,
-      },
-      total: parseFloat(apiOrder.order_total),
-      gst: parseFloat(apiOrder.order_total) * 0.11,
-      priority: "Low Priority" as const,
-      scheduled: `${apiOrder.schedule_in_days} days, ${apiOrder.schedule_in_hours} hours`,
-      duration: `${apiOrder.schedule_in_days} days`,
-      currentMedication: "Not specified",
-      medicalCondition: "Not specified",
-      emergencyContact: {
-        name: "Not available",
-        number: "Not available",
-      },
-      assignedStaff: null,
-      actualOrderId: apiOrder.id,
-      rawDate: apiOrder.order_date ? new Date(apiOrder.order_date) : new Date(),
-      recipt_url: apiOrder.recipt_url,
-    };
-  };
-
-  const filteredBookings = apiBookings
-    .map(convertApiOrderToBooking)
-    .filter((booking) => {
-      const matchesSearch =
-        booking.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.customer.name
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        booking.bookingId.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesStatus =
-        statusFilter === "All Status" || booking.status === statusFilter;
-
-      return matchesSearch && matchesStatus;
-    })
-    .sort((a, b) => {
-      return b.rawDate.getTime() - a.rawDate.getTime();
-    });
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const payload = {
         customer_id: null,
-        serach: searchTerm || null,
+        search: searchTerm || null,
+
         filter_order_status:
           statusFilter === "All Status" ? null : statusFilter,
       };
@@ -208,12 +103,23 @@ const BookingManagement: React.FC = () => {
 
       if (response.success) {
         setApiBookings(response.orders);
+      } else {
+        setError("Failed to fetch orders.");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch orders");
     } finally {
       setLoading(false);
     }
+  }, [token, searchTerm, statusFilter]);
+
+  useEffect(() => {
+    fetchOrders();
+    fetchOrderStatuses();
+  }, [fetchOrders, fetchOrderStatuses]);
+
+  const handleSearch = () => {
+    fetchOrders();
   };
 
   const handleStatusChange = async (
@@ -225,18 +131,11 @@ const BookingManagement: React.FC = () => {
     try {
       setUpdatingStatus(orderId);
 
-      const currentOrder = apiBookings.find((order) => order.id === orderId);
-      if (!currentOrder) {
-        throw new Error("Order not found");
-      }
-
       const updatePayload = {
-        id: currentOrder.id,
+        id: orderId,
         customer_id: customer_id,
         order_status: statusId,
       };
-
-      console.log(updatePayload);
 
       const response = await updateOrder(updatePayload, token);
 
@@ -247,6 +146,7 @@ const BookingManagement: React.FC = () => {
               ? {
                   ...order,
                   order_status_id: statusId,
+                  order_status: statusValue,
                   order_status_name: statusValue,
                 }
               : order
@@ -259,11 +159,11 @@ const BookingManagement: React.FC = () => {
           `Order status updated to ${formatStatusDisplay(statusValue)}`
         );
       } else {
-        throw new Error("Failed to update status");
+        throw new Error(response.message || "Failed to update status");
       }
     } catch (err) {
       console.error("Error updating status:", err);
-      toast.success(
+      toast.error(
         err instanceof Error ? err.message : "Failed to update order status"
       );
     } finally {
@@ -271,32 +171,18 @@ const BookingManagement: React.FC = () => {
     }
   };
 
-  console.log(filteredBookings, "jksdn");
-  const formatStatusDisplay = (statusValue: string): string => {
-    switch (statusValue.toUpperCase()) {
-      case "PENDING":
-        return "Pending";
-      case "IN_PROGRESS":
-      case "IN-PROGRESS":
-        return "In Progress";
-      case "COMPLETED":
-        return "Completed";
-      case "CANCELLED":
-        return "Cancelled";
-      default:
-        return statusValue;
-    }
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Pending":
+      case "PENDING":
+      case "PENDING_ASSIGNMENT":
         return "bg-yellow-100 text-yellow-800";
-      case "In Progress":
+      case "IN_PROGRESS":
+      case "INPROGRESS":
+      case "IN-PROGRESS":
         return "bg-blue-100 text-blue-800";
-      case "Completed":
+      case "COMPLETED":
         return "bg-green-100 text-green-800";
-      case "Cancelled":
+      case "CANCELLED":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -305,9 +191,10 @@ const BookingManagement: React.FC = () => {
 
   const getPaymentColor = (payment: string) => {
     switch (payment) {
-      case "Partial Payment":
+      case "Partially Paid":
         return "bg-yellow-100 text-yellow-800";
       case "Paid":
+      case "Fully Paid":
         return "bg-green-100 text-green-800";
       case "Refunded":
         return "bg-blue-100 text-blue-800";
@@ -316,87 +203,40 @@ const BookingManagement: React.FC = () => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "High Priority":
-        return "bg-red-100 text-red-800";
-      case "Medium Priority":
-        return "bg-yellow-100 text-yellow-800";
-      case "Low Priority":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const handleSearch = () => {
-    fetchOrders();
-  };
-
-  const handleViewDetails = (booking: DetailedBooking) => {
+  const handleViewDetails = (booking: ApiOrderResponse) => {
     setSelectedBooking(booking);
     setIsModalOpen(true);
   };
 
   const handleEditBooking = (bookingId: string) => {
-    console.log("Edit booking:", bookingId);
+    toast(`Edit booking: ${bookingId} not yet implemented.`);
   };
 
   const handleAssignStaff = (bookingId: string) => {
-    const booking = filteredBookings.find((b) => b.id === bookingId);
-    setSelectedBookingForStaff(bookingId);
-    setSelectedActualOrderId(booking?.actualOrderId || "");
-    setIsAssignStaffModalOpen(true);
-  };
-
-  const handleCancelBooking = (bookingId: string) => {
-    console.log("Cancel booking:", bookingId);
-    if (window.confirm("Are you sure you want to cancel this booking?")) {
-      setBookings((prev) =>
-        prev.map((booking) =>
-          booking.id === bookingId
-            ? {
-                ...booking,
-                status: "Cancelled" as const,
-                payment: "Refunded" as const,
-              }
-            : booking
-        )
-      );
-      toast.success(`Booking ${bookingId} has been cancelled`);
+    const booking = apiBookings.find((b) => b.id === bookingId);
+    if (booking) {
+      setSelectedBookingForStaff(bookingId);
+      setSelectedActualOrderId(booking.id);
+      setIsAssignStaffModalOpen(true);
+    } else {
+      toast.error("Booking not found.");
     }
   };
 
-  const handleDeleteBooking = (bookingId: string) => {
-    console.log("Delete booking:", bookingId);
-    if (
-      window.confirm(
-        "Are you sure you want to delete this booking? This action cannot be undone."
-      )
-    ) {
-      setBookings((prev) => prev.filter((booking) => booking.id !== bookingId));
-      toast.success(`Booking ${bookingId} has been deleted`);
-    }
-  };
+  const handleCancelBooking = (bookingId: string) => {};
+
+  const handleDeleteBooking = (bookingId: string) => {};
 
   const handleContactPatient = (phone: string) => {
-    console.log("Contact patient:", phone);
     toast.success(`Calling patient: ${phone}`);
   };
 
-  const handleEditOrder = (bookingId: string) => {
-    console.log("Edit order:", bookingId);
-    toast.success(`Edit order: ${bookingId}`);
-  };
+  const handleEditOrder = (bookingId: string) => {};
 
   const handleUpdateAssignedStaff = (bookingId: string, staffs: any[]) => {
     setApiBookings((prev) =>
       prev.map((order) => {
-        const booking = convertApiOrderToBooking(order);
-        if (
-          booking.id === bookingId ||
-          booking.actualOrderId === staffs[0]?.actualOrderId
-        ) {
+        if (order.id === bookingId) {
           return {
             ...order,
             staff_details: staffs.map((staff) => ({
@@ -418,7 +258,7 @@ const BookingManagement: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedBookings(filteredBookings.map((booking) => booking.id));
+      setSelectedBookings(apiBookings.map((booking) => booking.id));
     } else {
       setSelectedBookings([]);
     }
@@ -433,11 +273,24 @@ const BookingManagement: React.FC = () => {
   };
 
   const isAllSelected =
-    filteredBookings.length > 0 &&
-    selectedBookings.length === filteredBookings.length;
+    apiBookings.length > 0 && selectedBookings.length === apiBookings.length;
   const isIndeterminate =
-    selectedBookings.length > 0 &&
-    selectedBookings.length < filteredBookings.length;
+    selectedBookings.length > 0 && selectedBookings.length < apiBookings.length;
+
+  const filteredBookings = useMemo(() => {
+    if (!searchTerm) return apiBookings;
+
+    return apiBookings.filter((booking) => {
+      const idMatch = booking.id
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const nameMatch = booking.customer_name
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+      return idMatch || nameMatch;
+    });
+  }, [apiBookings, searchTerm]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -463,19 +316,24 @@ const BookingManagement: React.FC = () => {
               placeholder="Search by order id, name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 text-[12px] rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent placeholder:text-gray-400"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSearch();
+              }}
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 text-[12px] rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent placeholder:text-gray-400 text-black"
             />
           </div>
 
           <div className="relative">
-            <button
+            {/* <button
               onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
               className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors min-w-[150px] justify-between"
             >
-              <span className="text-[#161D1F] text-[12px]">{statusFilter}</span>
+              <span className="text-[#161D1F] text-[12px]">
+                {formatStatusDisplay(statusFilter)}
+              </span>
               <ChevronDown className="w-4 h-4 text-[#899193]" />
-            </button>
-            {isStatusDropdownOpen && (
+            </button> */}
+            {/* {isStatusDropdownOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                 <div className="py-2">
                   {statusOptions.map((status) => (
@@ -484,15 +342,23 @@ const BookingManagement: React.FC = () => {
                       onClick={() => {
                         setStatusFilter(status);
                         setIsStatusDropdownOpen(false);
+                        // Trigger fetch on status change
+                        if (status !== statusFilter) fetchOrders();
                       }}
-                      className="w-full px-4 py-2 text-left text-[#161D1F] hover:bg-gray-50 transition-colors"
+                      className="w-full px-4 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 transition-colors"
                     >
-                      {status}
+                      {formatStatusDisplay(status)}
                     </button>
                   ))}
                 </div>
               </div>
             )}
+            <button
+              onClick={handleSearch}
+              className="ml-4 px-4 py-2 text-white bg-cyan-600 rounded-lg hover:bg-cyan-700 transition-colors text-[12px] hidden sm:block"
+            >
+              Apply
+            </button> */}
           </div>
         </div>
 
@@ -500,7 +366,7 @@ const BookingManagement: React.FC = () => {
           <h2 className="text-[16px] font-semibold text-[#161D1F]">
             All Bookings
             <span className="ml-2 text-[#899193] text-[14px] font-normal text-base">
-              {filteredBookings.length} Bookings
+              {apiBookings.length} Bookings
             </span>
           </h2>
         </div>
@@ -586,20 +452,29 @@ const BookingManagement: React.FC = () => {
                       <td className="px-6 py-4">
                         <div>
                           <div className="font-medium text-[12px] text-[#161D1F]">
-                            {booking.id}
+                            {booking.id.slice(0, 6).toUpperCase()}
                           </div>
                           <div className="text-[10px] text-[#899193]">
-                            {booking.date}
+                            {booking.order_date
+                              ? new Date(booking.order_date).toLocaleDateString(
+                                  "en-GB",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  }
+                                )
+                              : "N/A"}
                           </div>
                           <div className="text-xs text-[#899193]">
-                            Booking ID: {booking.bookingId}
+                            Booking ID: {booking.id.slice(0, 8).toUpperCase()}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div>
                           <div className="font-medium text-[12px] text-[#161D1F]">
-                            {booking.customer.name}
+                            {booking.customer_name}
                           </div>
                         </div>
                       </td>
@@ -608,29 +483,29 @@ const BookingManagement: React.FC = () => {
                           <button
                             onClick={() =>
                               setOpenStatusDropdown(
-                                openStatusDropdown === booking.actualOrderId
+                                openStatusDropdown === booking.id
                                   ? null
-                                  : booking.actualOrderId
+                                  : booking.id
                               )
                             }
-                            disabled={updatingStatus === booking.actualOrderId}
+                            disabled={updatingStatus === booking.id}
                             className={`px-3 py-1 rounded-full text-[10px] font-medium ${getStatusColor(
-                              booking.status
+                              booking.order_status
                             )} flex items-center gap-1 hover:opacity-80 transition-opacity disabled:opacity-50`}
                           >
-                            {updatingStatus === booking.actualOrderId ? (
+                            {updatingStatus === booking.id ? (
                               <>
                                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
                                 Updating...
                               </>
                             ) : (
                               <>
-                                {booking.status}
+                                {formatStatusDisplay(booking.order_status)}
                                 <ChevronDown className="w-3 h-3" />
                               </>
                             )}
                           </button>
-                          {openStatusDropdown === booking.actualOrderId && (
+                          {openStatusDropdown === booking.id && (
                             <div className="absolute left-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
                               <div className="py-1">
                                 {orderStatuses.map((status) => (
@@ -638,10 +513,10 @@ const BookingManagement: React.FC = () => {
                                     key={status.id}
                                     onClick={() =>
                                       handleStatusChange(
-                                        booking.actualOrderId,
+                                        booking.id,
                                         status.id,
                                         status.value,
-                                        booking.customer.customer_id
+                                        booking.customer_id
                                       )
                                     }
                                     className="w-full px-3 py-2 text-left text-[10px] text-[#161D1F] hover:bg-gray-50 transition-colors"
@@ -657,24 +532,23 @@ const BookingManagement: React.FC = () => {
                       <td className="px-6 py-4">
                         <span
                           className={`px-3 py-1 rounded-full text-[10px] font-medium ${getPaymentColor(
-                            booking.payment
+                            booking.payment_status
                           )}`}
                         >
-                          {booking.payment}
+                          {booking.payment_status === "Refunded"
+                            ? "Paid"
+                            : booking.payment_status}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <span className="bg-gray-100 text-[#161D1F] px-3 py-1 rounded-full text-[10px]">
-                          {booking.service}
+                          {booking.homecare_service_name}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <div>
                           <div className="font-medium text-[12px] text-[#161D1F]">
-                            ₹{booking.total.toLocaleString()}
-                          </div>
-                          <div className="text-[10px] text-[#899193]">
-                            Incl. GST: ₹{booking.gst.toFixed(2)}
+                            ₹{parseFloat(booking.order_total).toLocaleString()}
                           </div>
                         </div>
                       </td>
@@ -696,7 +570,7 @@ const BookingManagement: React.FC = () => {
           </div>
         </div>
 
-        {filteredBookings.length === 0 && !loading && (
+        {apiBookings.length === 0 && !loading && !error && (
           <div className="text-center py-12">
             <p className="text-[#899193] text-lg">
               No bookings found matching your criteria.
@@ -727,17 +601,6 @@ const BookingManagement: React.FC = () => {
                         `Are you sure you want to cancel ${selectedBookings.length} booking(s)?`
                       )
                     ) {
-                      setBookings((prev) =>
-                        prev.map((booking) =>
-                          selectedBookings.includes(booking.id)
-                            ? {
-                                ...booking,
-                                status: "Cancelled" as const,
-                                payment: "Refunded" as const,
-                              }
-                            : booking
-                        )
-                      );
                       setSelectedBookings([]);
                     }
                   }}

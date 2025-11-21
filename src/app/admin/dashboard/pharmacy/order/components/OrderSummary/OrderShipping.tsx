@@ -8,7 +8,6 @@ interface OrderShippingProps {
 const OrderShipping: React.FC<OrderShippingProps> = ({ order }) => {
   return (
     <div className="space-y-6 h-80">
-      {/* Shipping Address */}
       <div>
         <div className="bg-white p-4 rounded-lg  border border-gray-300">
           <h3 className="text-sm font-medium text-gray-700 mb-4">
@@ -18,14 +17,14 @@ const OrderShipping: React.FC<OrderShippingProps> = ({ order }) => {
             <div>
               <p className="text-xs text-gray-700">{order.customerName}</p>
               <p className="text-gray-600 text-[10px] mt-1">
-                {order.customerAddress}
+                {order.customerAddress}, {order.billing_city},
+                {order.billing_state}, {order.billing_pincode}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Shipping Details */}
       <div>
         <div className="bg-white p-4 rounded-lg  border border-gray-300 space-y-4">
           <h3 className="text-sm font-medium text-gray-700 mb-4">
