@@ -921,6 +921,8 @@ const Consultations: React.FC = () => {
         consultationId={selectedConsultationForCall?.id || ""}
         patientName={selectedConsultationForCall?.patientName || ""}
         doctorName={selectedConsultationForCall?.appointedDoctor || ""}
+        doctorId={selectedConsultationForCall?.doctorId || ""}
+        paitentId={selectedConsultationForCall?.customer_id || ""}
       />
     </div>
   );

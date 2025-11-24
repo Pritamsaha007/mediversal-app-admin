@@ -270,3 +270,26 @@ export const updateConsultationStatus = async (
     throw error;
   }
 };
+
+export async function getRTMToken(userId: string, token: string) {
+  const url = new URL(
+    `${HOMECARE_API_BASE_URL}/api/clinic/consultation/rtm-token/${userId}`
+  );
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return await response.json();
+}
