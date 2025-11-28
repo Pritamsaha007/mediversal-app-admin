@@ -1,19 +1,20 @@
 export interface ProductFormData {
   id?: string;
-  productName: string;
+
+  ProductName: string;
   SKU: string;
   Category: string;
   Subcategory: string;
   Type: string;
-  brand: string;
-  manufacturer: string;
-  mrp: number | null;
-  sellingPrice: number | null;
-  stockQuantity: number | null;
+  ManufacturerName: string;
+  CostPrice: number | null;
+  SellingPrice: number | null;
+  StockAvailableInInventory: number | null;
+  subCategoryType: string;
 
-  description: string;
-  safetyDescription: string;
-  storageDescription: string;
+  ProductInformation: string;
+  SafetyAdvices: string;
+  StorageInstructions: string;
   Composition: string;
   dosageForm: string;
   ProductStrength: string | null;
@@ -21,30 +22,28 @@ export interface ProductFormData {
   productImage: File | string | null;
 
   schedule: string;
-  taxRate: number;
+  tax: number;
   HSN_Code: string;
   storageConditions: string;
-  shelfLife: number;
-  prescriptionRequired: boolean;
+  // shelfLife: number;
+  PrescriptionRequired: boolean;
   featuredProduct: boolean;
-  activeProduct: boolean;
+  active: boolean;
+  ColdChain: string;
+  GST: string;
+  admin_id: string;
 
-  productLength?: string;
-  productBreadth?: string;
-  productHeight?: string;
-  productWeight?: string;
+  productLength?: number;
+  productBreadth?: number;
+  productHeight?: number;
+  productWeight?: number;
+
+  DiscountedPrice?: number | null;
+  DiscountedPercentage?: number;
 
   Substitutes?: string[];
   SimilarProducts?: string[];
-}
-
-export interface AddProductModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onAddProduct: (product: ProductFormData) => void;
-  onUpdateProduct?: (product: ProductFormData) => void;
-  productToEdit?: ProductFormData | null;
-  isEditMode?: boolean;
+  Coupons?: string | null;
 }
 
 export const categories = [
@@ -73,11 +72,11 @@ export const dosageForms = [
 ];
 
 export const schedules = [
-  "Schedule H",
-  "Schedule H1",
-  "Schedule X",
-  "OTC",
-  "Ayurvedic",
+  "Cold Chain required",
+  "Non-Cold Chain required",
+  // "Schedule X",
+  // "OTC",
+  // "Ayurvedic",
 ];
 
 export const storageConditions = [

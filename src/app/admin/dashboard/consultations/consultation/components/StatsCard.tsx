@@ -19,8 +19,8 @@ const StatsCard: React.FC<StatsCardProps> = ({
     <div className="bg-white p-4 rounded-lg border border-gray-200">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-[10px] text-[#899193] mb-1">{title}</h3>
-          <p className="text-[18px] font-semibold text-[#161D1F]">{stats}</p>
+          <h3 className="text-[12px] text-[#899193] mb-1">{title}</h3>
+          <p className="text-[14px] font-semibold text-[#161D1F]">{stats}</p>
         </div>
         <div className={`${color}`}>{icon}</div>
       </div>

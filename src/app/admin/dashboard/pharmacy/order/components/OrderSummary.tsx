@@ -91,7 +91,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             </h2>
             <div className="flex items-center gap-2 mt-1">
               <StatusBadge status={order.deliverystatus || "Pending"} />
-              <StatusBadge status={order.paymentStatus} />
+              <StatusBadge status={order.paymentstatus} />
             </div>
           </div>
           <button

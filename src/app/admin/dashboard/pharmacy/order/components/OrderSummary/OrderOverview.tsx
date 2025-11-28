@@ -19,8 +19,8 @@ const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
           <div className="flex items-center gap-3 mb-4">
             {/* Avatar initials or fallback */}
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 text-gray-700 font-bold">
-              {order?.customerName
-                ? order.customerName
+              {order?.customername
+                ? order.customername
                     .split(" ")
                     .map((name: string) => name[0])
                     .join("")
@@ -31,10 +31,10 @@ const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
             {/* Customer info */}
             <div>
               <div className="font-semibold text-gray-800 text-xs">
-                {order?.customerName || "Guest User"}
+                {order?.customername || "Guest User"}
               </div>
               <div className="text-[10px] text-gray-500">
-                ID: {order?.customerId || "N/A"}
+                ID: {order?.customerid || "N/A"}
               </div>
             </div>
           </div>
@@ -43,15 +43,15 @@ const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
             <div className="flex items-center gap-3">
               <Phone className="w-3 h-3 text-gray-600" />
               <span className="text-gray-700 text-[10px]">
-                {order.customerPhone}
+                {order.customerphone}
               </span>
             </div>
 
-            {order.customerEmail && (
+            {order.customeremail && (
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-gray-600" />
                 <span className="text-gray-700 text-[10px]">
-                  {order.customerEmail}
+                  {order.customeremail}
                 </span>
               </div>
             )}
@@ -71,7 +71,7 @@ const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
               <div>
                 <div className="text-[10px] text-gray-500 mb-1">Order Date</div>
                 <div className="text-xs text-gray-800">
-                  {new Date(order.createdAt).toLocaleString("en-US", {
+                  {new Date(order.created_date).toLocaleString("en-US", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
@@ -85,7 +85,7 @@ const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
                   Last Updated
                 </div>
                 <div className="text-xs text-gray-800">
-                  {new Date(order.createdAt).toLocaleString("en-US", {
+                  {new Date(order.created_date).toLocaleString("en-US", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
@@ -110,7 +110,7 @@ const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
               <div>
                 <div className="text-xs text-gray-800">
                   {new Date(
-                    new Date(order.createdAt).getTime() +
+                    new Date(order.created_date).getTime() +
                       3 * 24 * 60 * 60 * 1000
                   ).toLocaleString("en-US", {
                     year: "numeric",
@@ -131,7 +131,7 @@ const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
               <div>
                 <div className="text-xs text-gray-800">
                   {new Date(
-                    new Date(order.createdAt).getTime() +
+                    new Date(order.created_date).getTime() +
                       3 * 24 * 60 * 60 * 1000
                   ).toLocaleString("en-US", {
                     year: "numeric",

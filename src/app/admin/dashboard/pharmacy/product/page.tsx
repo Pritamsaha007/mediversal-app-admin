@@ -14,7 +14,7 @@ import { categories, sortOptions, tabs } from "./data/productCatalogData";
 import { AddProductModal } from "./components/AddProductModal";
 import { ProductCard } from "./components/ProductCard";
 import { StatsCard } from "./components/StatsCard";
-import { productService } from "./services/getProductService";
+
 import { ProductFormData } from "./types/productForm.type";
 import toast from "react-hot-toast";
 import { useConfirmationDialog } from "./components/ConfirmationDialog";
@@ -23,6 +23,7 @@ import autoTable from "jspdf-autotable";
 import { useProductStore } from "./store/productStore";
 import { useDebounce } from "./utils/useDebounce";
 import Pagination from "@/app/components/common/pagination";
+import { productService } from "./services/ProductService";
 
 const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -329,6 +330,7 @@ const ProductCatalog: React.FC = () => {
         id,
         productData
       );
+      await refreshProducts();
       updateProductInStore(updatedProduct);
       await getStatistics();
       toast.success("Product updated successfully");

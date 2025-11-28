@@ -1,5 +1,9 @@
 import axios from "axios";
-import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
+import {
+  CacheItem,
+  Product,
+  ProductApiResponse,
+} from "@/app/admin/dashboard/pharmacy/product/types/product";
 import { ProductFormData } from "../types/productForm.type";
 import { productStore } from "@/app/store/productStore";
 import { useAdminStore } from "@/app/store/adminStore";
@@ -24,60 +28,139 @@ const getAuthHeaders = () => {
 };
 
 const productCache = new Map<string, any>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 5 * 60 * 1000;
 
-interface CacheItem {
-  data: any;
-  timestamp: number;
-}
+export const addProductAPI = async (
+  productData: any,
+  imageFiles: File[] = []
+) => {
+  try {
+    const formData = new FormData();
+    const { token } = useAdminStore.getState();
 
-/* ---------- API RESPONSE TYPES ---------- */
-interface ProductApiResponse {
-  productId: number;
-  ProductName: string;
-  CostPrice: string;
-  SellingPrice: string;
-  DiscountedPrice: string;
-  Type: string;
-  PrescriptionRequired: string;
-  ColdChain: string;
-  ManufacturerName: string;
-  Composition: string;
-  ProductInformation: string;
-  SafetyAdvices: string;
-  StorageInstructions: string;
-  ProductStrength: string;
-  PackageSize: string;
-  GST: string;
-  active: boolean;
-  Coupons: string;
-  StockAvailableInInventory: number;
-  InventoryUpdated: string;
-  InventoryUpdatedBy: number;
-  DiscountedPercentage: string;
-  updated_by: number;
-  archivedProduct: number;
-  imageUrls: string[];
-  HSN_Code: string;
-  substitutes: any[];
-  similarProducts: any[];
-  SKU: string;
-  Subcategory: string;
-  Category: string;
-  featuredProduct: boolean;
-}
+    formData.append("admin_id", productData.admin_id || "1");
+    formData.append("ProductName", productData.ProductName || "");
+    formData.append("CostPrice", productData.CostPrice?.toString() || "0");
+    formData.append(
+      "SellingPrice",
+      productData.SellingPrice?.toString() || "0"
+    );
+    formData.append(
+      "DiscountedPrice",
+      productData.SellingPrice?.toString() || "0"
+    );
+    formData.append("Category", productData.Category || "Medicine");
+    formData.append("Type", productData.Type || "Type Default");
+    formData.append(
+      "Subcategory",
+      productData.Subcategory || "Sub Category Default"
+    );
+    formData.append(
+      "PrescriptionRequired",
+      productData.PrescriptionRequired ? "Yes" : "No"
+    );
+    formData.append("ColdChain", productData.ColdChain || "No");
 
-interface StatisticsResponse {
-  activeProducts: string;
-  inactiveProducts: string;
-  inStockProducts: string;
-  outOfStockProducts: string;
-  featuredProducts: string;
-  nonfeaturedProducts: string;
-  totalCategories: number;
-}
+    formData.append(
+      "ManufacturerName",
+      productData.ManufacturerName || "Generic Manufacturer"
+    );
+    formData.append(
+      "Composition",
+      productData.Composition || "Standard Composition"
+    );
 
-/* ---------- CACHE HELPERS ---------- */
+    formData.append(
+      "ProductInformation",
+      productData.ProductInformation || "Product Information"
+    );
+    formData.append(
+      "SafetyAdvices",
+      productData.SafetyAdvices || "Follow standard safety guidelines"
+    );
+    formData.append(
+      "StorageInstructions",
+      productData.StorageInstructions || "Store in cool, dry place"
+    );
+
+    formData.append("Substitutes", "Generic Substitutes Available");
+    formData.append("SimilarProducts", "Similar Products Available");
+
+    formData.append("GST", productData.GST || "18");
+    formData.append("Coupons", "5");
+    formData.append(
+      "StockAvailableInInventory",
+      productData.StockAvailableInInventory?.toString() || "0"
+    );
+    formData.append("HSN_Code", productData.HSN_Code || "");
+    formData.append("SKU", productData.SKU || "");
+    formData.append("PackageSize", productData.PackageSize || "");
+    formData.append("ProductStrength", productData.ProductStrength || "");
+    formData.append("featuredProduct", productData.featuredProduct ? "1" : "0");
+    formData.append("active", productData.active ? "1" : "0");
+
+    formData.append(
+      "productLength",
+      productData.productLength?.toString() || "20"
+    );
+    formData.append(
+      "productBreadth",
+      productData.productBreadth?.toString() || "20"
+    );
+    formData.append(
+      "productHeight",
+      productData.productHeight?.toString() || "5"
+    );
+    formData.append(
+      "productWeight",
+      productData.productWeight?.toString() || "0.4"
+    );
+
+    formData.append("subCategoryType", productData.subCategoryType || "");
+    formData.append("tax", productData.tax?.toString() || "0");
+    formData.append("dosageForm", productData.dosageForm || "");
+    formData.append("schedule", productData.schedule || "");
+    formData.append("storageConditions", productData.storageConditions || "");
+    formData.append("shelfLife", productData.shelfLife?.toString() || "0");
+    formData.append(
+      "DiscountedPercentage",
+      productData.DiscountedPercentage?.toString() || "0"
+    );
+
+    if (imageFiles && imageFiles.length > 0) {
+      imageFiles.forEach((file, index) => {
+        formData.append(`images`, file);
+      });
+    }
+
+    for (const [k, v] of formData.entries()) {
+      console.log(k, v);
+    }
+
+    const response = await axios.post(
+      `${API_BASE_URL}/api/Product/addProduct`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          ...(token && {
+            Authorization: `Bearer ${token}`,
+          }),
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("API Error:", error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || "Failed to add product");
+    }
+    console.error("Error adding product:", error);
+    throw error;
+  }
+};
+
 const getFromCache = (key: string) => {
   const item = productCache.get(key) as CacheItem | undefined;
   if (!item) return null;
@@ -97,7 +180,6 @@ const setToCache = (key: string, data: any) => {
   });
 };
 
-/* ---------- MAPPER ---------- */
 const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
   const costPrice = parseFloat(apiProduct.CostPrice);
   const sellingPrice = parseFloat(apiProduct.SellingPrice);
@@ -128,11 +210,13 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
     sku: apiProduct.SKU || "",
     ProductStrength: apiProduct.ProductStrength || "",
     PackageSize: apiProduct.PackageSize || "",
-    schedule: apiProduct.ColdChain === "Yes" ? "Cold Chain" : "Non-Cold Chain",
-    taxRate: parseFloat(apiProduct.GST || apiProduct.GST || "0"),
+    ColdChain: apiProduct.ColdChain,
+    taxRate: parseFloat(apiProduct.tax),
+    GST: apiProduct.GST,
+    //sheltfLife: apiProduct.shelfLife || 0,
     hsnCode: apiProduct.HSN_Code || "",
     storageConditions: apiProduct.SafetyAdvices,
-    shelfLife: 0,
+
     Type: apiProduct.Type,
     prescriptionRequired: apiProduct.PrescriptionRequired === "Yes",
     saftyDescription: apiProduct.SafetyAdvices,
@@ -158,11 +242,10 @@ const mapApiResponseToProduct = (apiProduct: ProductApiResponse): Product => {
     similarCount: Array.isArray(apiProduct.similarProducts)
       ? apiProduct.similarProducts.length
       : 0,
-  };
+  } as unknown as Product;
 };
 
 export const productService = {
-  /* ----- DELETE PRODUCT ----- */
   async deleteProduct(id: string): Promise<void> {
     try {
       await apiClient.delete(`/api/Product/deleteProduct/${id}`, {
@@ -175,7 +258,6 @@ export const productService = {
     }
   },
 
-  /* ----- GET ALL PRODUCTS WITH PAGINATION & FILTERS ----- */
   async getAllProducts(
     start: number = 0,
     max: number = 20,
@@ -260,7 +342,6 @@ export const productService = {
     }
   },
 
-  /* ----- GET STATISTICS ONLY ----- */
   async getStatistics(): Promise<{
     activeProducts: number;
     inactiveProducts: number;
@@ -310,45 +391,58 @@ export const productService = {
     }
   },
 
-  /* ----- UPDATE PRODUCT ----- */
   async updateProduct(id: string, data: ProductFormData): Promise<Product> {
     try {
       const payload = {
-        ProductName: data.productName,
-        CostPrice: (data.mrp ?? 0).toFixed(2),
-        SellingPrice: (data.sellingPrice ?? 0).toFixed(2),
-        DiscountedPrice: (data.sellingPrice ?? 0).toFixed(2),
+        ProductName: data.ProductName,
+        CostPrice: (data.CostPrice ?? 0).toFixed(2),
+        SellingPrice: (data.SellingPrice ?? 0).toFixed(2),
+        DiscountedPrice: (
+          data.DiscountedPrice ??
+          data.SellingPrice ??
+          0
+        ).toFixed(2),
         Type: data.Type,
-        PrescriptionRequired: data.prescriptionRequired ? "Yes" : "No",
-        ColdChain: data.schedule === "Cold Chain" ? "Yes" : "No",
-        ManufacturerName: data.manufacturer,
+        PrescriptionRequired: data.PrescriptionRequired ? "Yes" : "No",
+        ColdChain: data.ColdChain || "No",
+        ManufacturerName: data.ManufacturerName,
         Composition: data.Composition,
-        ProductInformation: data.description,
-        SafetyAdvices: data.safetyDescription,
-        StorageInstructions: data.storageDescription,
+        ProductInformation: data.ProductInformation,
+        SafetyAdvices: data.SafetyAdvices,
+        StorageInstructions: data.StorageInstructions,
         Substitutes: data.Substitutes || [],
         SimilarProducts: data.SimilarProducts || [],
-        GST: data.taxRate.toFixed(2),
-        Coupons: "10",
+        GST: data.GST || "18",
+        Coupons: data.Coupons || "5",
         InventoryUpdated: new Date().toISOString(),
-        InventoryUpdatedBy: 1,
-        DiscountedPercentage: "5.00",
-        updated_by: 1,
-        archivedProduct: data.activeProduct ? 0 : 1,
+        InventoryUpdatedBy: data.admin_id || "1",
+        DiscountedPercentage: (data.DiscountedPercentage ?? 0).toFixed(2),
+        updated_by: data.admin_id || "1",
+        archivedProduct: data.active ? 0 : 1,
         HSN_Code: data.HSN_Code,
         SKU: data.SKU,
-        StockAvailableInInventory: data.stockQuantity,
+        StockAvailableInInventory: data.StockAvailableInInventory ?? 0,
         Category: data.Category,
         Subcategory: data.Subcategory,
+        subCategoryType: data.subCategoryType || "",
         featuredProduct: data.featuredProduct ? 1 : 0,
-        active: data.activeProduct ? 1 : 0,
+        active: data.active ? 1 : 0,
         PackageSize: data.PackageSize,
         ProductStrength: data.ProductStrength,
-        productLength: data.productLength ?? "0.00",
-        productBreadth: data.productBreadth ?? "0.00",
-        productHeight: data.productHeight ?? "0.00",
-        productWeight: data.productWeight ?? "0.00",
+        productLength: (data.productLength ?? 20).toFixed(2),
+        productBreadth: (data.productBreadth ?? 20).toFixed(2),
+        productHeight: (data.productHeight ?? 5).toFixed(2),
+        productWeight: (data.productWeight ?? 0.4).toFixed(2),
+        // Additional fields
+        dosageForm: data.dosageForm || "",
+        schedule: data.schedule || "",
+        storageConditions: data.storageConditions || "",
+        // shelfLife: data.shelfLife ?? 0,
+        tax: (data.tax ?? 0).toFixed(2),
+        admin_id: data.admin_id || "1",
       };
+
+      console.log("Update payload:", payload);
 
       const response = await apiClient.put(
         `/api/Product/updateProduct/${id}`,
@@ -364,7 +458,6 @@ export const productService = {
     }
   },
 
-  /* ----- SEARCH PRODUCTS ----- */
   async searchProducts(query: string): Promise<Product[]> {
     const cacheKey = `search_${query}`;
     const cachedData = getFromCache(cacheKey);
@@ -391,17 +484,15 @@ export const productService = {
     }
   },
 
-  /* ----- GET SINGLE PRODUCT ----- */
   async getProductById(id: string): Promise<Product> {
     const cacheKey = `product_${id}`;
     const cachedData = getFromCache(cacheKey);
     if (cachedData) return cachedData;
 
     try {
-      const response = await apiClient.get(
-        `/api/Product/getProduct/${id}`,
-        { headers: getAuthHeaders() } // Add this line
-      );
+      const response = await apiClient.get(`/api/Product/getProduct/${id}`, {
+        headers: getAuthHeaders(),
+      });
       const product = mapApiResponseToProduct(response.data);
       setToCache(cacheKey, product);
       return product;
@@ -411,7 +502,6 @@ export const productService = {
     }
   },
 
-  /* ----- CLEAR CACHE ----- */
   clearCache(): void {
     productCache.clear();
   },

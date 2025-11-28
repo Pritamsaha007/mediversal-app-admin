@@ -11,52 +11,67 @@ export interface StatsCardData {
 }
 
 export type Order = {
-  Awb: string | null;
-  ShipmentId: string | null;
-  TotalOrderAmount: string;
-  applied_discount_value: string | number | null;
-  billing_address_2: string | null;
-  billing_city: string;
-  billing_country: string;
-  billing_last_name: string | null;
-  billing_pincode: string;
-  billing_state: string;
-  cancellationReason: string | null;
-  comment: string;
-  coupon_id: number | null;
-  createdAt: string;
-  created_date: string;
-  customerAddress: string;
-  customerEmail: string | null;
-  customerId: string;
-  customerName: string;
-  customerPhone: string;
-  deliverystatus: string;
-  giftwrap_charges: string;
   id: string;
-  is_cancel_clicked: boolean;
-  is_return_clicked: boolean;
-  items: any[];
-  labelUrl: string | null;
-  manifestUrl: string | null;
-  orderDate: string;
-  parent_order_id: string | null;
-  paymentMethod: string;
-  paymentStatus: string;
-  paymentTime: string;
-  prescriptions: prescription[];
-  rapidshypAwb: string | null;
-  rapidshypShipmentId: number | null;
+  customerid: string;
+  customername: string;
+  customeraddress: string;
+  customerphone: string;
+  customeremail: string | null;
+  paymentstatus: string;
+  paymentmethod: string;
+  paymenttime: string | null;
+  transactionid: string | null;
+  totalorderamount: string;
+  deliverystatus: string;
+  shipmentid: string | null;
+  awb: string | null;
+  labelurl: string | null;
+  manifesturl: string | null;
+  coupon_id: string | null;
+  applied_discount_value: string | null;
+  cancellationreason: string | null;
+  orderdate: string;
+  comment: string | null;
+  billing_last_name: string | null;
+  billing_address_2: string | null;
+  billing_city: string | null;
+  billing_pincode: string | null;
+  billing_state: string | null;
+  billing_country: string | null;
   shipping_charges: string;
-  shiprocket_order_id: string;
-  shiprocket_order_status: string;
-  total_discount: string;
+  giftwrap_charges: string;
   transaction_charges: string;
-  transactionId: string | null;
+  total_discount: string;
+  shiprocket_order_status: string | null;
+  shiprocket_order_id: string | null;
+  is_return_clicked: boolean;
+  is_cancel_clicked: boolean;
+  created_date: string;
   updated_date: string;
+  order_items: OrderItem[];
+  prescription_id: string | null;
+  prescriptionurl: string | null;
+  receipt_url: string | null;
+  rider_staff_name: string | null;
+  rider_delivery_status: string | null;
 };
 
 export type OrderItem = {
+  id: string;
+  productId: string;
+  quantity: number;
+  sellingPrice: number;
+  sku: string;
+  tax: number;
+  productLength: number;
+  productBreadth: number;
+  productHeight: number;
+  productWeight: number;
+  productName: string;
+  product_image: string[] | null;
+};
+
+export type CreateOrderItem = {
   productId: string;
   productName: string;
   quantity: number;
@@ -420,7 +435,7 @@ export interface CreateOrderRequest {
   cancellationReason: string | null;
   prescription_url?: string | null;
   prescription_id?: number;
-  order_items: OrderItem[];
+  order_items: CreateOrderItem[];
 }
 
 export interface CreateOrderResponse {

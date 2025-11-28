@@ -10,8 +10,8 @@ interface BasicInformationTabProps {
   onInputChange: (field: keyof ProductFormData, value: any) => void;
   categoryDropdownOpen: boolean;
   setCategoryDropdownOpen: (open: boolean) => void;
-  subcategoryDropdownOpen: boolean; // Add this
-  setSubcategoryDropdownOpen: (open: boolean) => void; // Add this
+  subcategoryDropdownOpen: boolean;
+  setSubcategoryDropdownOpen: (open: boolean) => void;
 }
 
 export const BasicInformationTab = ({
@@ -32,8 +32,8 @@ export const BasicInformationTab = ({
           <input
             type="text"
             placeholder="Enter Product Name"
-            value={formData.productName ?? ""}
-            onChange={(e) => onInputChange("productName", e.target.value)}
+            value={formData.ProductName ?? ""}
+            onChange={(e) => onInputChange("ProductName", e.target.value)}
             className="w-full px-3 py-3 text-[#899193] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-[10px]"
           />
         </div>
@@ -129,42 +129,42 @@ export const BasicInformationTab = ({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
-            <span className="text-red-500">*</span> Brand
-          </label>
-          <input
-            type="text"
-            placeholder="Enter brand name"
-            value={formData.brand ?? ""}
-            onChange={(e) => onInputChange("brand", e.target.value)}
-            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
-          />
-        </div>
-        <div>
-          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             <span className="text-red-500">*</span> Manufacturer
           </label>
           <input
             type="text"
             placeholder="Enter manufacturer name"
-            value={formData.manufacturer ?? ""}
-            onChange={(e) => onInputChange("manufacturer", e.target.value)}
+            value={formData.ManufacturerName ?? ""}
+            onChange={(e) => onInputChange("ManufacturerName", e.target.value)}
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
+        {/* <div>
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+            Sub Category Type
+          </label>
+          <input
+            type="text"
+            placeholder="Enter subcategory type"
+            value={formData.subCategoryType ?? ""}
+            onChange={(e) => onInputChange("subCategoryType", e.target.value)}
+            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+          />
+        </div> */}
       </div>
 
       <div className="grid grid-cols-3 gap-4">
         <div>
           <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
-            <span className="text-red-500">*</span> MRP (₹)
+            <span className="text-red-500">*</span> Cost Price (₹)
           </label>
           <input
             type="number"
-            value={formData.mrp ?? ""}
+            value={formData.CostPrice ?? ""}
             placeholder="0"
             onChange={(e) => {
               const value = e.target.value;
-              onInputChange("mrp", value === "" ? "" : parseFloat(value));
+              onInputChange("CostPrice", value === "" ? "" : parseFloat(value));
             }}
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
@@ -176,9 +176,9 @@ export const BasicInformationTab = ({
           <input
             type="number"
             placeholder="0"
-            value={formData.sellingPrice ?? ""}
+            value={formData.SellingPrice ?? ""}
             onChange={(e) =>
-              onInputChange("sellingPrice", parseFloat(e.target.value) || 0)
+              onInputChange("SellingPrice", parseFloat(e.target.value) || 0)
             }
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
@@ -192,10 +192,13 @@ export const BasicInformationTab = ({
             placeholder="0"
             min="0"
             max="999999"
-            value={formData.stockQuantity ?? ""}
+            value={formData.StockAvailableInInventory ?? ""}
             onChange={(e) => {
               const value = e.target.value;
-              onInputChange("stockQuantity", value === "" ? "" : Number(value));
+              onInputChange(
+                "StockAvailableInInventory",
+                value === "" ? "" : Number(value)
+              );
             }}
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />

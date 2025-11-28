@@ -41,12 +41,12 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ order }) => {
         setLoading(true);
         setError(null);
 
-        if (!order.Awb) {
+        if (!order.awb) {
           throw new Error("Tracking number (AWB) is required");
         }
 
         // Use the new ShipRocket API
-        const data: TrackingResponse = await getTracking(order.Awb);
+        const data: TrackingResponse = await getTracking(order.awb);
 
         if (data?.tracking_data?.shipment_track_activities) {
           // Sort activities by date (newest first) for timeline

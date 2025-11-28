@@ -13,7 +13,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, stats, icon, color }) => (
     <div className="flex items-center justify-between">
       <div>
         <p className="text-[10px] text-[#899193] mb-1">{title}</p>
-        <p className="text-[18px] font-semibold text-[#161D1F]">{stats}</p>
+        <p className="text-[14px] font-semibold text-[#161D1F]">{stats}</p>
       </div>
       <div className={`${color}`}>{icon}</div>
     </div>

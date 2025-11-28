@@ -13,7 +13,7 @@ const OrderPayment: React.FC<OrderPaymentProps> = ({ order }) => {
     return isNaN(value) ? "₹0.00" : `₹${value.toFixed(2)}`;
   };
 
-  const totalOrderAmount = Number(order?.TotalOrderAmount) || 0;
+  const totalOrderAmount = Number(order?.totalorderamount) || 0;
   const appliedDiscount = Number(order?.applied_discount_value) || 0;
   const originalValue = totalOrderAmount + appliedDiscount;
 
@@ -27,8 +27,8 @@ const OrderPayment: React.FC<OrderPaymentProps> = ({ order }) => {
   const deliveryCharges =
     originalValue < 499 && originalValue > 0 ? "₹40" : "N/A";
 
-  const paymentMethod = order?.paymentMethod || "N/A";
-  const paymentStatus = order?.paymentStatus || "Unknown";
+  const paymentMethod = order?.paymentmethod || "N/A";
+  const paymentStatus = order?.paymentstatus || "Unknown";
 
   return (
     <div className="space-y-6 h-80">

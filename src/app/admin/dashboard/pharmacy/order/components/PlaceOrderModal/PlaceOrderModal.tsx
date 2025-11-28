@@ -9,7 +9,11 @@ import OrderItemsTab from "./OrderItemsTab";
 import { useOrderStore } from "../../store/placeOrderStore";
 import { useAdminStore } from "@/app/store/adminStore";
 import { checkServiceability, createShiprocketOrder } from "../../services";
-import { CreateOrderRequest, OrderItem } from "../../types/types";
+import {
+  CreateOrderItem,
+  CreateOrderRequest,
+  OrderItem,
+} from "../../types/types";
 import toast from "react-hot-toast";
 
 interface PlaceOrderModalProps {
@@ -249,7 +253,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
             prescriptionUrls.length > 0 ? prescriptionUrls[0] : null,
           cancellationReason: null,
           order_items:
-            orderItems?.map((item: OrderItem) => ({
+            orderItems?.map((item: CreateOrderItem) => ({
               productId: item.productId,
               productName: item.productName,
               quantity: item.quantity || 1,

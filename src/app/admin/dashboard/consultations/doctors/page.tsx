@@ -524,7 +524,7 @@ const Doctors: React.FC = () => {
               placeholder="Search by doctor name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
+              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-xs"
             />
           </div>
           {/* <div className="relative">
@@ -543,7 +543,7 @@ const Doctors: React.FC = () => {
                   <button
                     key={status}
                     onClick={() => handleStatusChange(status)}
-                    className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
+                    className={`block w-full px-4 py-2 text-xs text-left hover:bg-gray-100 ${
                       selectedStatus === status
                         ? "bg-blue-50 text-blue-600"
                         : "text-[#161D1F]"
@@ -626,7 +626,7 @@ const Doctors: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
-                          <div className="text-sm font-medium text-[#161D1F] mb-1">
+                          <div className="text-xs font-medium text-[#161D1F] mb-1">
                             {doctor.name}
                           </div>
                           <div className="text-xs text-gray-500 mb-2">
