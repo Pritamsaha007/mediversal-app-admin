@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { OrderItem, Product } from "../types/types";
+import { CreateOrderItem, OrderItem, Product } from "../types/types";
 
 interface CustomerInfo {
   customerId: string;
@@ -24,7 +24,7 @@ interface OrderState {
   customerInfo: CustomerInfo;
   shippingInfo: ShippingInfo;
   prescriptionUrls: string[];
-  orderItems: OrderItem[];
+  orderItems: CreateOrderItem[];
   paymentMethod: string;
   prescriptionItems: boolean;
   validationErrors: {
@@ -35,7 +35,7 @@ interface OrderState {
   updateCustomerInfo: (info: Partial<CustomerInfo>) => void;
   updateShippingInfo: (info: Partial<ShippingInfo>) => void;
   updatePrescriptionUrls: (urls: string[]) => void;
-  updateOrderItems: (items: OrderItem[]) => void;
+  updateOrderItems: (items: CreateOrderItem[]) => void;
   updatePaymentMethod: (method: string) => void;
   updatePrescriptionItems: (value: boolean) => void;
   validateCurrentTab: (tab: "customer" | "shipping" | "items") => boolean;

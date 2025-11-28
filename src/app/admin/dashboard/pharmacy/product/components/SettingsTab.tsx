@@ -27,12 +27,13 @@ export const SettingsTab = ({
   symptomsDropdownOpen,
   setSymptomsDropdownOpen,
 }: SettingsTabProps) => {
+  console.log(formData, "cold cahin");
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
-            Schedule
+            Cold Chain
           </label>
           <div className="relative">
             <button
@@ -40,41 +41,49 @@ export const SettingsTab = ({
               className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
             >
               <span
-                className={formData.schedule ? "text-black" : "text-gray-500"}
+                className={formData.ColdChain ? "text-black" : "text-gray-500"}
               >
-                {formData.schedule || "Select schedule"}
+                {formData.ColdChain === "Yes"
+                  ? "Yes - Cold Chain Required"
+                  : formData.ColdChain === "No"
+                  ? "No - No Cold Chain"
+                  : "Select Cold Chain"}
               </span>
               <ChevronDown className="w-4 h-4" />
             </button>
             {scheduleDropdownOpen && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
-                {schedules.map((schedule) => (
-                  <button
-                    key={schedule}
-                    onClick={() => {
-                      onInputChange("schedule", schedule);
-                      setScheduleDropdownOpen(false);
-                    }}
-                    className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
-                  >
-                    {schedule}
-                  </button>
-                ))}
+                <button
+                  onClick={() => {
+                    onInputChange("ColdChain", "Yes"); // Set to string "Yes"
+                    setScheduleDropdownOpen(false);
+                  }}
+                  className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg"
+                >
+                  Yes - Cold Chain Required
+                </button>
+                <button
+                  onClick={() => {
+                    onInputChange("ColdChain", "No");
+                    setScheduleDropdownOpen(false);
+                  }}
+                  className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 last:rounded-b-lg"
+                >
+                  No - No Cold Chain
+                </button>
               </div>
             )}
           </div>
         </div>
         <div>
           <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
-            Tax Rate (%)
+            <span className="text-red-500">*</span> GST (%)
           </label>
           <input
-            type="number"
-            placeholder="e.g., 5, 12, 18"
-            value={formData.taxRate || ""}
-            onChange={(e) =>
-              onInputChange("taxRate", parseFloat(e.target.value) || 0)
-            }
+            type="text"
+            placeholder="e.g., 5%, 12%, 18%"
+            value={formData.GST || ""}
+            onChange={(e) => onInputChange("GST", e.target.value)}
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
@@ -92,6 +101,55 @@ export const SettingsTab = ({
             onChange={(e) => onInputChange("HSN_Code", e.target.value)}
             className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
+        </div>
+        <div>
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+            Tax Rate (%)
+          </label>
+          <input
+            type="number"
+            placeholder="e.g., 5, 12, 18"
+            value={formData.tax || ""}
+            onChange={(e) =>
+              onInputChange("tax", parseFloat(e.target.value) || 0)
+            }
+            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+            Symptoms
+          </label>
+          <div className="relative">
+            <button
+              onClick={() => setSymptomsDropdownOpen(!symptomsDropdownOpen)}
+              className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
+            >
+              <span className={formData.Type ? "text-black" : "text-gray-500"}>
+                {formData.Type || "Select symptoms"}
+              </span>
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            {symptomsDropdownOpen && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {symptoms.map((symptom, index) => (
+                  <button
+                    key={`${symptom}-${index}`}
+                    onClick={() => {
+                      onInputChange("Type", symptom);
+                      setSymptomsDropdownOpen(false);
+                    }}
+                    className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
+                  >
+                    {symptom}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <div>
           <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
@@ -131,79 +189,26 @@ export const SettingsTab = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        {/* ‑‑‑‑ NEW ‑‑‑‑ */}
-        <div>
-          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
-            Symptoms
-          </label>
-          <div className="relative">
-            <button
-              onClick={() => setSymptomsDropdownOpen(!symptomsDropdownOpen)}
-              className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
-            >
-              <span className={formData.Type ? "text-black" : "text-gray-500"}>
-                {formData.Type || "Select symptoms"}
-              </span>
-              <ChevronDown className="w-4 h-4" />
-            </button>
-            {symptomsDropdownOpen && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {symptoms.map((symptom, index) => (
-                  <button
-                    key={`${symptom}-${index}`}
-                    onClick={() => {
-                      onInputChange("Type", symptom);
-                      setSymptomsDropdownOpen(false);
-                    }}
-                    className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
-                  >
-                    {symptom}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* existing Shelf Life input, unchanged */}
-        <div>
-          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
-            Shelf Life (months)
-          </label>
-          <input
-            type="number"
-            placeholder="0"
-            value={formData.shelfLife || ""}
-            onChange={(e) =>
-              onInputChange("shelfLife", parseInt(e.target.value) || 0)
-            }
-            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
-          />
-        </div>
-      </div>
-
       <div className="space-y-3">
         <div
           className={`p-4 border ${
-            formData.prescriptionRequired
+            formData.PrescriptionRequired
               ? "border-2 border-[#0088B1] bg-[#E8F4F7]"
               : "border-gray-200"
           } rounded-lg`}
         >
-          {" "}
           <div className="flex items-start space-x-3 ">
             <input
               type="checkbox"
-              checked={formData.prescriptionRequired}
+              checked={formData.PrescriptionRequired}
               onChange={(e) =>
-                onInputChange("prescriptionRequired", e.target.checked)
+                onInputChange("PrescriptionRequired", e.target.checked)
               }
               className="mt-0.5"
             />
             <div>
               <div className="font-medium text-[10px] text-[#161D1F]">
-                Prescription Required
+                <span className="text-red-500">*</span> Prescription Required
               </div>
               <div className="text-[8px] text-[#899193]">
                 Check this if the product requires a prescription for purchase
@@ -239,7 +244,7 @@ export const SettingsTab = ({
         </div>
         <div
           className={`p-4 border ${
-            formData.activeProduct
+            formData.active
               ? "border-2 border-[#0088B1] bg-[#E8F4F7]"
               : "border-gray-200"
           } rounded-lg`}
@@ -247,8 +252,8 @@ export const SettingsTab = ({
           <div className="flex items-start space-x-3">
             <input
               type="checkbox"
-              checked={formData.activeProduct}
-              onChange={(e) => onInputChange("activeProduct", e.target.checked)}
+              checked={formData.active}
+              onChange={(e) => onInputChange("active", e.target.checked)}
               className="mt-0.5 accent-[#0088B1]"
             />
             <div>

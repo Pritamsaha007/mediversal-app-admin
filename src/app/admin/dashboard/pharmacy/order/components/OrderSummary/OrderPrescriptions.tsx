@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import React from "react";
+import { FileText } from "lucide-react";
 import { Order } from "../../types/types";
 import PrescriptionViewer from "./PrescriptionViewer";
 
@@ -8,9 +8,6 @@ interface OrderPrescriptionsProps {
 }
 
 const OrderPrescriptions: React.FC<OrderPrescriptionsProps> = ({ order }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Handle null order case
   if (!order) {
     return (
       <div className="bg-white p-4 rounded-lg border h-80 border-gray-300 flex flex-col items-center justify-center">
@@ -22,8 +19,7 @@ const OrderPrescriptions: React.FC<OrderPrescriptionsProps> = ({ order }) => {
     );
   }
 
-  // Handle case where prescriptions array doesn't exist or is empty
-  if (!order.prescriptions || order.prescriptions.length === 0) {
+  if (!order.prescription_id && !order.prescriptionurl) {
     return (
       <div className="bg-white p-4 rounded-lg border h-80 border-gray-300 flex flex-col items-center justify-center">
         <h3 className="text-sm font-medium text-gray-700 mb-4">
@@ -36,9 +32,7 @@ const OrderPrescriptions: React.FC<OrderPrescriptionsProps> = ({ order }) => {
     );
   }
 
-  // Handle case where prescriptionURL might be null or undefined
-  const currentPrescription = order.prescriptions[currentIndex];
-  const prescriptionUrl = currentPrescription?.prescriptionURL;
+  const prescriptionUrl = order.prescriptionurl;
 
   if (!prescriptionUrl) {
     return (
@@ -51,23 +45,9 @@ const OrderPrescriptions: React.FC<OrderPrescriptionsProps> = ({ order }) => {
     );
   }
 
-  const goToPrevious = () => {
-    const isFirstPrescription = currentIndex === 0;
-    const newIndex = isFirstPrescription
-      ? order.prescriptions.length - 1
-      : currentIndex - 1;
-    setCurrentIndex(newIndex);
-  };
-
-  const goToNext = () => {
-    const isLastPrescription = currentIndex === order.prescriptions.length - 1;
-    const newIndex = isLastPrescription ? 0 : currentIndex + 1;
-    setCurrentIndex(newIndex);
-  };
-
   return (
     <div className="space-y-4 h-80">
-      <div className="bg-white p-4 rounded-lg border border-gray-300 relative">
+      <div className="bg-white p-4 rounded-lg border border-gray-300">
         <h3 className="text-sm font-medium text-gray-700 mb-4">
           Prescription Information
         </h3>
@@ -76,10 +56,7 @@ const OrderPrescriptions: React.FC<OrderPrescriptionsProps> = ({ order }) => {
           <div>
             <p className="text-xs text-gray-600">Prescription ID</p>
             <p className="font-medium text-xs text-gray-700">
-              {currentPrescription.prescription_id || "N/A"}
-              <span className="ml-2 text-xs text-gray-500">
-                ({currentIndex + 1} of {order.prescriptions.length})
-              </span>
+              {order.prescription_id || "N/A"}
             </p>
           </div>
           <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
@@ -88,40 +65,15 @@ const OrderPrescriptions: React.FC<OrderPrescriptionsProps> = ({ order }) => {
         </div>
 
         <div className="relative">
-          {order.prescriptions.length > 1 && (
-            <>
-              <button
-                onClick={goToPrevious}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors ml-5"
-              >
-                <ChevronLeft className="w-5 h-5 text-gray-600" />
-              </button>
-
-              <button
-                onClick={goToNext}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors mr-5"
-              >
-                <ChevronRight className="w-5 h-5 text-gray-600" />
-              </button>
-            </>
-          )}
-
           <PrescriptionViewer prescription={prescriptionUrl} />
         </div>
 
-        {order.prescriptions.length > 1 && (
-          <div className="flex justify-center mt-4 space-x-2">
-            {order.prescriptions.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={`w-2 h-2 rounded-full ${
-                  index === currentIndex ? "bg-[#0088B1]" : "bg-gray-300"
-                }`}
-              />
-            ))}
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="flex items-center text-xs text-gray-600">
+            <FileText className="w-4 h-4 mr-2" />
+            <span>Single prescription attached to this order</span>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

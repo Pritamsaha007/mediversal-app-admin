@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
-import { productService } from "../services/getProductService";
+import { productService } from "../services/ProductService";
 
 interface ProductState {
   products: Product[];
@@ -137,7 +137,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
   refreshProducts: async () => {
     productService.clearCache();
-    set({ products: [], loadedChunks: new Set() }); // Clear store data
+    set({ products: [], loadedChunks: new Set() });
     const { fetchProducts, getStatistics } = get();
     await Promise.all([fetchProducts(0, 20), getStatistics()]);
   },

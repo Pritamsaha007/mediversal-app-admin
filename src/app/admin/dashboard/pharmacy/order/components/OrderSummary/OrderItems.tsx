@@ -30,14 +30,14 @@ const OrderItems: React.FC<OrderItemsProps> = ({ order }) => {
             <div className="text-right text-xs">Total</div>
             {/* <div className="text-center text-xs">Prescription</div> */}
           </div>
-          {order.items.map((item) => {
+          {order.order_items.map((item) => {
             const requiresPrescription = isPrescriptionRequired(
               Number(item.productId)
             );
 
             return (
               <div
-                key={item.orderItemId}
+                key={item.id}
                 className="grid grid-cols-5 gap-4 py-4 border-t border-gray-100 hover:bg-gray-50"
               >
                 <div>
@@ -51,15 +51,13 @@ const OrderItems: React.FC<OrderItemsProps> = ({ order }) => {
                   )}
                 </div>
                 <div className="text-right text-xs text-gray-700">
-                  {formatCurrency(parseFloat(item.sellingPrice))}
+                  {formatCurrency(item.sellingPrice)}
                 </div>
                 <div className="text-center text-xs text-gray-600">
                   {item.quantity}
                 </div>
                 <div className="text-right text-xs text-gray-700">
-                  {formatCurrency(
-                    parseFloat(item.sellingPrice) * item.quantity
-                  )}
+                  {formatCurrency(item.sellingPrice * item.quantity)}
                 </div>
                 {/* <div className="text-center">
                   <span

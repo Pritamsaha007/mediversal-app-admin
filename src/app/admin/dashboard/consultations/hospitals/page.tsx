@@ -373,7 +373,7 @@ const Hospitals: React.FC = () => {
               placeholder="Search by hospital / Department name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
+              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-xs"
             />
           </div>
 
@@ -393,7 +393,7 @@ const Hospitals: React.FC = () => {
               <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                 <button
                   onClick={() => handleDepartmentChange("All Departments")}
-                  className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
+                  className={`block w-full px-4 py-2 text-xs text-left hover:bg-gray-100 ${
                     selectedDepartment === "All Departments"
                       ? "bg-blue-50 text-blue-600"
                       : "text-[#161D1F]"
@@ -405,7 +405,7 @@ const Hospitals: React.FC = () => {
                   <button
                     key={department}
                     onClick={() => handleDepartmentChange(department)}
-                    className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
+                    className={`block w-full px-4 py-2 text-xs text-left hover:bg-gray-100 ${
                       selectedDepartment === department
                         ? "bg-blue-50 text-blue-600"
                         : "text-[#161D1F]"
@@ -434,7 +434,7 @@ const Hospitals: React.FC = () => {
                   <button
                     key={hours}
                     onClick={() => handleOperatingHoursChange(hours)}
-                    className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
+                    className={`block w-full px-4 py-2 text-xs text-left hover:bg-gray-100 ${
                       selectedOperatingHours === hours
                         ? "bg-blue-50 text-blue-600"
                         : "text-[#161D1F]"
@@ -515,7 +515,7 @@ const Hospitals: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
-                          <div className="text-sm font-medium text-[#161D1F] mb-1">
+                          <div className="text-xs font-medium text-[#161D1F] mb-1">
                             {hospital.name}
                           </div>
                           <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
