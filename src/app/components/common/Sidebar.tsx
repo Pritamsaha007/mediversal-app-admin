@@ -14,6 +14,7 @@ import {
   Phone,
   Laptop,
   Bike,
+  BookUser,
 } from "lucide-react";
 import MainMediversalLogo from "../../../../public/Mediversal FLogo - Color 1.svg";
 import Image from "next/image";
@@ -198,6 +199,16 @@ const Sidebar = () => {
         {
           name: "Bookings",
           link: "/admin/dashboard/rider/bookings",
+        },
+      ],
+    },
+    {
+      name: "Customer",
+      icon: <BookUser size={18} />,
+      subItems: [
+        {
+          name: "All Customers",
+          link: "/admin/dashboard/customer",
         },
       ],
     },
