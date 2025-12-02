@@ -116,10 +116,9 @@ export const ProductRelationshipsModal: React.FC<
       const currentPage = loadMore ? pagination.currentPage + 1 : 0;
       const start = currentPage * 20;
 
-      // Fix: Send proper JSON body with search parameters
       const filters = {
         searchCategory: null,
-        searchTerm: query.trim() || null, // Send null if empty, otherwise send the search term
+        searchTerm: query.trim() || null,
       };
 
       const response = await fetch(
@@ -127,7 +126,7 @@ export const ProductRelationshipsModal: React.FC<
         {
           method: "POST",
           headers: getAuthHeaders(),
-          body: JSON.stringify(filters), // Add this line - you were missing the body
+          body: JSON.stringify(filters),
         }
       );
 

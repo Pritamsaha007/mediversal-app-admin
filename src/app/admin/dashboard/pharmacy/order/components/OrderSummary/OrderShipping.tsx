@@ -15,9 +15,9 @@ const OrderShipping: React.FC<OrderShippingProps> = ({ order }) => {
           </h3>
           <div className="flex items-start gap-3">
             <div>
-              <p className="text-xs text-gray-700">{order.customerName}</p>
+              <p className="text-xs text-gray-700">{order.customername}</p>
               <p className="text-gray-600 text-[10px] mt-1">
-                {order.customerAddress}, {order.billing_city},
+                {order.customeraddress}, {order.billing_city},
                 {order.billing_state}, {order.billing_pincode}
               </p>
             </div>
@@ -40,7 +40,7 @@ const OrderShipping: React.FC<OrderShippingProps> = ({ order }) => {
             <div>
               <p className="text-gray-600 text-[10px]">Shipping Cost</p>
               <p className="text-xs text-gray-700">
-                {Number(order.TotalOrderAmount) < 499 ? "₹40" : "N/A"}
+                {Number(order.totalorderamount) < 499 ? "₹40" : "N/A"}
               </p>
             </div>
           </div>
@@ -50,7 +50,7 @@ const OrderShipping: React.FC<OrderShippingProps> = ({ order }) => {
               <div>
                 <div className="text-xs text-gray-800">
                   {new Date(
-                    new Date(order.createdAt).getTime() +
+                    new Date(order.created_date).getTime() +
                       3 * 24 * 60 * 60 * 1000
                   ).toLocaleString("en-US", {
                     year: "numeric",
@@ -68,7 +68,7 @@ const OrderShipping: React.FC<OrderShippingProps> = ({ order }) => {
               <div>
                 <div className="text-xs text-gray-800">
                   {new Date(
-                    new Date(order.createdAt).getTime() +
+                    new Date(order.created_date).getTime() +
                       3 * 24 * 60 * 60 * 1000
                   ).toLocaleString("en-US", {
                     year: "numeric",
@@ -85,7 +85,7 @@ const OrderShipping: React.FC<OrderShippingProps> = ({ order }) => {
 
           <div>
             <p className="text-gray-600 text-[10px]">Tracking Number</p>
-            <p className="text-xs text-gray-700">{order.rapidshypAwb}</p>
+            <p className="text-xs text-gray-700">{order.awb}</p>
           </div>
 
           <div className="pt-4 border-t">

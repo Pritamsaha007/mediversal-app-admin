@@ -13,6 +13,7 @@ import {
   Trash2,
   Eye,
   PlusIcon,
+  Bike,
 } from "lucide-react";
 import { Order, FilterOptions, SortOption } from "./types/types";
 import { OrderService } from "./services";
@@ -23,6 +24,9 @@ import OrderActionDropdown from "./components/OrderActionDropdown";
 import PrescriptionModal from "./components/OrderSummary";
 import Pagination from "@/app/components/common/pagination";
 import PlaceOrderModal from "./components/PlaceOrderModal/PlaceOrderModal";
+import AssignRiderModal from "../../rider/components/AddRiderModal";
+import DeliveryOrder from "../../rider/types";
+import toast from "react-hot-toast";
 
 const Orders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,26 +48,32 @@ const Orders: React.FC = () => {
     null
   );
   const [orders, setOrders] = useState<Order[]>([]);
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [allOrdersForStats, setAllOrdersForStats] = useState<Order[]>([]);
   const actionDropdownRef = useRef<HTMLDivElement>(null);
   const [isPlaceOrderModalOpen, setIsPlaceOrderModalOpen] = useState(false);
-  const getPaginatedOrders = () => {
-    const startIndex = currentPage * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-
-    const sortedOrders = [...filteredOrders].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-
-    return sortedOrders.slice(startIndex, endIndex);
-  };
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
   const [selectedOrderForPrescription, setSelectedOrderForPrescription] =
     useState<Order | null>(null);
+  const [isAssignRiderModalOpen, setIsAssignRiderModalOpen] = useState(false);
+  const [selectedOrderForRider, setSelectedOrderForRider] =
+    useState<Order | null>(null);
+  // Calculate if there are more pages available
+  const hasMore = (currentPage + 1) * itemsPerPage < allOrdersForStats.length;
 
-  const hasMore = (currentPage + 1) * itemsPerPage < filteredOrders.length;
+  // Debug pagination
+  console.log("Pagination Debug:", {
+    currentPage,
+    itemsPerPage,
+    ordersOnPage: orders.length,
+    totalCount,
+    hasMore,
+    calculation: `(${currentPage + 1} * ${itemsPerPage}) = ${
+      (currentPage + 1) * itemsPerPage
+    } < ${totalCount}`,
+  });
 
   const statusOptions = [
     "All Statuses",
@@ -97,13 +107,60 @@ const Orders: React.FC = () => {
     "By Payment Status",
   ];
 
-  const fetchOrders = async () => {
+  // Map sort options to API parameters
+  const getSortParams = (sortOption: SortOption) => {
+    switch (sortOption) {
+      case "Order Total (Low to High)":
+        return { sort_by: "totalorderamount", sort_order: "ASC" };
+      case "Order Total (High to Low)":
+        return { sort_by: "totalorderamount", sort_order: "DESC" };
+      case "Order Date (Latest)":
+        return { sort_by: "created_date", sort_order: "DESC" };
+      case "Order Date (Oldest)":
+        return { sort_by: "created_date", sort_order: "ASC" };
+      case "By Order Status":
+        return { sort_by: "deliverystatus", sort_order: "ASC" };
+      case "By Payment Status":
+        return { sort_by: "paymentstatus", sort_order: "ASC" };
+      default:
+        return { sort_by: "created_date", sort_order: "DESC" };
+    }
+  };
+
+  const fetchOrders = async (resetPage: boolean = false) => {
     try {
       setLoading(true);
       setError(null);
-      const fetchedOrders = await OrderService.fetchOrders();
-      console.log(fetchedOrders, "fetchedorders");
+
+      const page = resetPage ? 0 : currentPage;
+      const sortParams = getSortParams(sortBy);
+
+      const params = {
+        search: searchTerm.trim(),
+        start: page * itemsPerPage,
+        max: itemsPerPage,
+        sort_by: sortParams.sort_by,
+        sort_order: sortParams.sort_order,
+        status: selectedStatus === "All Statuses" ? "" : selectedStatus,
+        payment: selectedPayment === "All Payments" ? "" : selectedPayment,
+      };
+
+      console.log("Fetching orders with params:", params);
+      const { orders: fetchedOrders, totalCount: total } =
+        await OrderService.fetchOrders(params);
+
+      console.log(
+        "API Response - Orders:",
+        fetchedOrders.length,
+        "Total Count:",
+        total
+      );
       setOrders(fetchedOrders);
+      setTotalCount(total);
+
+      if (resetPage) {
+        setCurrentPage(0);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch orders");
     } finally {
@@ -111,32 +168,53 @@ const Orders: React.FC = () => {
     }
   };
 
+  // Fetch all orders for stats (without pagination)
+  const fetchAllOrdersForStats = async () => {
+    try {
+      const { orders: allOrders } = await OrderService.fetchOrders({
+        max: 10000, // Large number to get all orders
+        start: 0,
+      });
+      setAllOrdersForStats(allOrders);
+    } catch (err) {
+      console.error("Failed to fetch orders for stats:", err);
+    }
+  };
+
+  // Debounced search
   useEffect(() => {
-    const filters: FilterOptions = {
-      status: selectedStatus,
-      payment: selectedPayment,
-      sortBy,
-      searchTerm: searchTerm.trim(),
-    };
-
-    console.log("Applying filters:", filters);
-    let filtered = OrderService.filterOrders(orders, filters);
-
-    if (sortBy !== "Sort") {
-      filtered = OrderService.sortOrders(filtered, sortBy);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
 
-    console.log("Filtered orders:", filtered.length);
-    setFilteredOrders(filtered);
-  }, [orders, selectedStatus, selectedPayment, sortBy, searchTerm]);
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchOrders(true);
+    }, 500); // 500ms debounce
 
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm]);
+
+  // Fetch orders when filters change
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(true);
+  }, [selectedStatus, selectedPayment, sortBy]);
+
+  // Fetch orders when page changes
+  useEffect(() => {
+    if (currentPage > 0) {
+      fetchOrders(false);
+    }
+  }, [currentPage]);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchOrders(true);
+    fetchAllOrdersForStats();
   }, []);
-
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [selectedStatus, selectedPayment, sortBy, searchTerm]);
 
   const handleExportPDF = () => {
     console.log("Exporting orders to PDF...");
@@ -154,6 +232,35 @@ const Orders: React.FC = () => {
     setOpenDropdown(null);
   };
 
+  const getRiderDeliveryStatus = (
+    status: string
+  ): "Pending" | "In Progress" | "Completed" | "Cancelled" => {
+    switch (status.toLowerCase()) {
+      case "delivered":
+        return "Completed";
+      case "cancelled":
+        return "Cancelled";
+      case "out for delivery":
+      case "on going":
+      case "shipped":
+        return "In Progress";
+      default:
+        return "Pending";
+    }
+  };
+  const handleCloseRiderModal = () => {
+    setIsAssignRiderModalOpen(false);
+    setSelectedOrderForRider(null);
+  };
+
+  const handleRiderAssignmentSuccess = () => {
+    toast.success("Rider assigned successfully!");
+    fetchOrders(true);
+  };
+  const handleOpenRiderModal = (order: Order) => {
+    setSelectedOrderForRider(order);
+    setIsAssignRiderModalOpen(true);
+  };
   const handleSortChange = (sort: SortOption) => {
     console.log("Sort changed to:", sort);
     setSortBy(sort);
@@ -173,7 +280,8 @@ const Orders: React.FC = () => {
         const orderIds = selectedOrders.map((id) => parseInt(id));
         await OrderService.bulkDeleteOrders(orderIds);
         setSelectedOrders([]);
-        await fetchOrders();
+        await fetchOrders(true);
+        await fetchAllOrdersForStats();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Bulk delete failed");
       } finally {
@@ -182,46 +290,11 @@ const Orders: React.FC = () => {
     }
     setActionDropdownOpen(false);
   };
+
   const handleOrderCreated = () => {
-    fetchOrders();
+    fetchOrders(true);
+    fetchAllOrdersForStats();
   };
-
-  // const handleOrderAction = async (action: string, order: Order) => {
-  //   console.log(`Action: ${action}, Order ID: ${order.id}`);
-
-  //   try {
-  //     setLoading(true);
-  //     switch (action) {
-  //       case "view":
-  //         console.log("View order details:", order);
-  //         setSelectedOrderForPrescription(order);
-  //         setPrescriptionModalOpen(true);
-  //         break;
-  //       case "print":
-  //         console.log("Print order:", order);
-  //         break;
-  //       case "delete":
-  //         console.log("Delete confirmation for order:", order.id);
-  //         if (window.confirm("Are you sure you want to delete this order?")) {
-  //           console.log("User confirmed delete");
-  //           await OrderService.deleteOrder(Number(order.id));
-  //           console.log("Delete successful, refreshing orders");
-  //           await fetchOrders();
-  //           console.log("Orders refreshed");
-  //         }
-  //         break;
-  //       default:
-  //         console.log("Unknown action:", action);
-  //         break;
-  //     }
-  //   } catch (err) {
-  //     console.error("Order action error:", err);
-  //     setError(err instanceof Error ? err.message : "Operation failed");
-  //   } finally {
-  //     setLoading(false);
-  //     setOrderActionDropdown(null);
-  //   }
-  // };
 
   const handleSelectOrder = (orderId: string, checked: boolean) => {
     if (!orderId) return;
@@ -235,7 +308,7 @@ const Orders: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const currentPageOrders = getPaginatedOrders()
+      const currentPageOrders = orders
         .filter((order) => order.id != null)
         .map((order) => order.id.toString());
 
@@ -243,7 +316,7 @@ const Orders: React.FC = () => {
         ...new Set([...selectedOrders, ...currentPageOrders]),
       ]);
     } else {
-      const currentPageOrderIds = getPaginatedOrders()
+      const currentPageOrderIds = orders
         .filter((order) => order.id != null)
         .map((order) => order.id.toString());
 
@@ -280,23 +353,10 @@ const Orders: React.FC = () => {
     }
   };
 
-  const stats = OrderService.generateOrderStats(orders);
+  const stats = OrderService.generateOrderStats(allOrdersForStats);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".dropdown-toggle")) {
-        setOpenDropdown(null);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  console.log(filteredOrders, "orders");
+  console.log("Current orders:", orders, "Total count:", totalCount);
+  console.log(orders.map((t) => t.rider_delivery_status));
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
@@ -346,9 +406,9 @@ const Orders: React.FC = () => {
               <button
                 onClick={() => {
                   setError(null);
-                  setLoading(true);
+                  fetchOrders(true);
                 }}
-                className="text-red-600 hover:text-red-800 underline text-sm"
+                className="text-red-600 hover:text-red-800 underline text-xs"
               >
                 Retry
               </button>
@@ -364,7 +424,7 @@ const Orders: React.FC = () => {
               placeholder="Search by order ID, customer name, or product"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
+              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-xs"
             />
           </div>
         </div>
@@ -389,14 +449,14 @@ const Orders: React.FC = () => {
                     <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
                       <button
                         onClick={handleBulkDelete}
-                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
+                        className="flex items-center gap-2 w-full px-4 py-2 text-xs text-left text-red-600 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4" />
                         Delete Selected
                       </button>
                       <button
                         onClick={handleExportPDF}
-                        className="block w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100"
+                        className="block w-full px-4 py-2 text-xs text-left text-[#161D1F] hover:bg-gray-100"
                       >
                         Export PDF
                       </button>
@@ -413,7 +473,7 @@ const Orders: React.FC = () => {
             <h3 className="text-[16px] font-medium text-[#161D1F]">
               {activeTab}
               <span className="text-[8px] text-[#899193] font-normal ml-2">
-                {filteredOrders.length} Orders
+                {totalCount} Orders
               </span>
             </h3>
           </div>
@@ -427,8 +487,8 @@ const Orders: React.FC = () => {
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                       checked={
-                        getPaginatedOrders().length > 0 &&
-                        getPaginatedOrders().every(
+                        orders.length > 0 &&
+                        orders.every(
                           (order) =>
                             order.id != null &&
                             selectedOrders.includes(order.id.toString())
@@ -467,8 +527,17 @@ const Orders: React.FC = () => {
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
                     </td>
                   </tr>
+                ) : orders.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="px-6 py-12 text-center text-gray-500"
+                    >
+                      No orders found
+                    </td>
+                  </tr>
                 ) : (
-                  getPaginatedOrders().map((order, index) => (
+                  orders.map((order, index) => (
                     <tr
                       key={order.id || `order-${index}`}
                       className="hover:bg-gray-50"
@@ -491,38 +560,39 @@ const Orders: React.FC = () => {
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-[#161D1F]">
+                        <div className="text-xs font-medium text-[#161D1F]">
                           {order.id.slice(0, 6).toUpperCase()}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-[#161D1F]">
+                        <div className="text-xs text-[#161D1F]">
                           <div className="font-medium">
-                            {order?.customerName || "Guest User"}
+                            {order?.customername || "Guest User"}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {order.customerPhone}
+                            {order.customerphone}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-[#161D1F]">
                         <div className="flex flex-col items-start">
-                          {OrderService.formatDate(order.createdAt)}
+                          {OrderService.formatDate(order.created_date)}
+
                           <span className="text-[10px] text-[#899193] mt-1">
                             {order.deliverystatus}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#161D1F]">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-[#161D1F]">
                         {OrderService.formatCurrency(
                           OrderService.calculateTotalAmount(order)
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col items-start">
-                          <StatusBadge status={order.paymentStatus} />
+                          <StatusBadge status={order.paymentstatus} />
                           <span className="text-[10px] text-[#899193] mt-1">
-                            Method: {order.paymentMethod}
+                            Method: {order.paymentmethod}
                           </span>
                         </div>
                       </td>
@@ -532,19 +602,33 @@ const Orders: React.FC = () => {
                           status={OrderService.getOrderStatus(order)}
                         />
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-[#161D1F] flex items-center gap-2">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => {
                               setSelectedOrderForPrescription(order);
                               setPrescriptionModalOpen(true);
                             }}
-                            className="p-1 text-gray-500 hover:text-blue-500"
+                            className="p-1 text-gray-500 hover:text-[#0088B1]"
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                         </div>
+                        {(order.billing_city?.trim().toLowerCase() ===
+                          "patna" ||
+                          order.billing_city?.trim().toLowerCase() ===
+                            "begusarai") && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleOpenRiderModal(order)}
+                              className="p-1 text-gray-500 hover:text-[#0088B1]"
+                              title="Assign Rider"
+                            >
+                              <Bike className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -558,7 +642,7 @@ const Orders: React.FC = () => {
               loading={loading}
               onPrevious={handlePreviousPage}
               onNext={handleNextPage}
-              totalItems={filteredOrders.length}
+              totalItems={totalCount}
               itemsPerPage={itemsPerPage}
             />
 
@@ -575,6 +659,38 @@ const Orders: React.FC = () => {
               onClose={() => setIsPlaceOrderModalOpen(false)}
               onOrderCreated={handleOrderCreated}
             />
+            {selectedOrderForRider && (
+              <AssignRiderModal
+                isOpen={isAssignRiderModalOpen}
+                onClose={handleCloseRiderModal}
+                order={{
+                  id: selectedOrderForRider.id || "",
+                  items: (selectedOrderForRider.order_items || []).map(
+                    (item) => ({
+                      qty: item.quantity || 1,
+                      name: item.productName || "Product",
+                    })
+                  ),
+                  amount: selectedOrderForRider.totalorderamount,
+                  billing_city: selectedOrderForRider.billing_city || "",
+                  billing_state: selectedOrderForRider.billing_state || "",
+                  customer_phone: selectedOrderForRider.customerphone || "",
+                  billing_country: selectedOrderForRider.billing_country || "",
+                  billing_pincode: selectedOrderForRider.billing_pincode || "",
+                  billing_address_1:
+                    selectedOrderForRider.billing_address_2 || "",
+                  billing_address_2:
+                    selectedOrderForRider.billing_address_2 || "",
+                  billing_last_name:
+                    selectedOrderForRider.billing_last_name || "",
+                  billing_first_name: selectedOrderForRider.customername || "",
+                  rider_delivery_status: getRiderDeliveryStatus(
+                    selectedOrderForRider.deliverystatus || ""
+                  ),
+                }}
+                onAssignmentSuccess={handleRiderAssignmentSuccess}
+              />
+            )}
           </div>
         </div>
       </div>

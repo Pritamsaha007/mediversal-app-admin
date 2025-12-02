@@ -13,6 +13,7 @@ import {
   Funnel,
   Phone,
   Laptop,
+  Bike,
 } from "lucide-react";
 import MainMediversalLogo from "../../../../public/Mediversal FLogo - Color 1.svg";
 import Image from "next/image";
@@ -183,6 +184,20 @@ const Sidebar = () => {
         {
           name: "Reports",
           link: "/admin/dashboard/lab_tests/reports",
+        },
+      ],
+    },
+    {
+      name: "Riders",
+      icon: <Bike size={18} />,
+      subItems: [
+        {
+          name: "Delivery Riders",
+          link: "/admin/dashboard/rider/deliveryRiders",
+        },
+        {
+          name: "Bookings",
+          link: "/admin/dashboard/rider/bookings",
         },
       ],
     },

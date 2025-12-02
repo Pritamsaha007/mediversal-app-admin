@@ -2,8 +2,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 import { useAdminStore } from "@/app/store/adminStore";
 
 export interface ProductRelationships {
-  similarProducts: string[]; // Changed from number[] to string[]
-  substitutes: string[]; // Changed from number[] to string[]
+  similarProducts: string[];
+  substitutes: string[];
 }
 
 interface ProductData {
@@ -26,7 +26,7 @@ const getAuthHeaders = () => {
 };
 
 export const updateProductRelationships = async (
-  productId: string, // Changed from number to string
+  productId: string,
   relationships: Partial<ProductRelationships>
 ): Promise<ProductRelationships> => {
   try {
@@ -35,7 +35,6 @@ export const updateProductRelationships = async (
       typeof productId !== "string" ||
       productId.trim() === ""
     ) {
-      // Updated validation
       throw new Error("Invalid product ID");
     }
 
@@ -45,16 +44,15 @@ export const updateProductRelationships = async (
 
     const payload = {
       similarProducts: Array.isArray(relationships.similarProducts)
-        ? relationships.similarProducts.filter((id) => id && id.trim() !== "") // Filter for valid strings
+        ? relationships.similarProducts.filter((id) => id && id.trim() !== "")
         : [],
       substitutes: Array.isArray(relationships.substitutes)
-        ? relationships.substitutes.filter((id) => id && id.trim() !== "") // Filter for valid strings
+        ? relationships.substitutes.filter((id) => id && id.trim() !== "")
         : [],
     };
 
-    // Fix: Update the API endpoint to match your requirement
     const response = await fetch(
-      `${API_BASE_URL}/api/Product/relationships/${productId}`, // Use productId directly as string
+      `${API_BASE_URL}/api/Product/relationships/${productId}`,
       {
         method: "POST",
         headers: getAuthHeaders(),

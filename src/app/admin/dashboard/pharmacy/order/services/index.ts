@@ -30,24 +30,77 @@ export class OrderService {
   static checkAllowedMethods(Id: number) {
     throw new Error("Method not implemented.");
   }
-  static async fetchOrders(): Promise<Order[]> {
+
+  // In your OrderService class
+  static async fetchOrders(params?: {
+    search?: string;
+    start?: number;
+    max?: number;
+    sort_by?: string;
+    sort_order?: string;
+    status?: string;
+    payment?: string;
+  }): Promise<{ orders: Order[]; totalCount: number }> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/order`, {
-        headers: getAuthHeaders(),
-      });
+      const { token } = useAdminStore.getState();
+      console.log("Fetching orders with token:", token);
+
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const requestBody = {
+        search: params?.search || "",
+        max: params?.max || 200,
+        start: params?.start || 0,
+        sort_by: params?.sort_by || "created_date",
+        sort_order: params?.sort_order || "ASC",
+        status: params?.status || "",
+        payment: params?.payment || "",
+      };
+
+      console.log("Request body:", requestBody);
+
+      const response = await axios.post(
+        `${API_BASE_URL}/api/order`,
+        requestBody,
+        {
+          headers: getAuthHeaders(),
+        }
+      );
+
+      console.log("API Response:", response.data);
+
+      let orders: Order[] = [];
+      let totalCount = 0;
 
       if (Array.isArray(response.data)) {
-        return response.data;
+        orders = response.data;
+        totalCount = response.data.length;
       } else if (response.data.data && Array.isArray(response.data.data)) {
-        return response.data.data;
+        orders = response.data.data;
+        totalCount = response.data.data.length;
+      } else if (response.data.orders && Array.isArray(response.data.orders)) {
+        orders = response.data.orders;
+        totalCount = response.data.orders.length;
+        // If the API provides total count separately, use it
+        if (response.data.totalCount !== undefined) {
+          totalCount = response.data.totalCount;
+        } else if (response.data.total !== undefined) {
+          totalCount = response.data.total;
+        }
       } else {
         throw new Error("Invalid response format");
       }
+
+      return { orders, totalCount };
     } catch (error) {
       console.error("Error fetching orders:", error);
       if (axios.isAxiosError(error)) {
+        console.error("Response data:", error.response?.data);
+        console.error("Response status:", error.response?.status);
         throw new Error(
-          `Failed to fetch orders: ${error.response?.status} ${error.response?.statusText}`
+          `Failed to fetch orders: ${error.response?.status} ${error.response?.statusText} - ${error.response?.data?.message}`
         );
       }
       throw new Error("Failed to fetch orders");
@@ -56,18 +109,18 @@ export class OrderService {
 
   static calculateTotalAmount(order: Order): number {
     if (
-      order.TotalOrderAmount !== null &&
-      order.TotalOrderAmount !== undefined
+      order.totalorderamount !== null &&
+      order.totalorderamount !== undefined
     ) {
-      const amount = parseFloat(order.TotalOrderAmount);
+      const amount = parseFloat(order.totalorderamount);
       if (!isNaN(amount)) {
         return amount;
       }
     }
 
-    if (order.items && Array.isArray(order.items)) {
-      return order.items.reduce((total, item) => {
-        const price = parseFloat(item.sellingPrice) || 0;
+    if (order.order_items && Array.isArray(order.order_items)) {
+      return order.order_items.reduce((total, item) => {
+        const price = item.sellingPrice;
         const quantity = item.quantity || 0;
         return total + price * quantity;
       }, 0);
@@ -94,21 +147,28 @@ export class OrderService {
   }
 
   static getOrderStatus(order: Order): string {
+    const city = order.billing_city?.trim().toLowerCase();
+
+    const isRiderCity = ["patna", "begusarai"].includes(city || "");
+
+    if (isRiderCity) {
+      return order.rider_delivery_status || "Not Provided";
+    }
+
     return order.deliverystatus || "Not Provided";
   }
 
   static filterOrders(orders: Order[], filters: FilterOptions): Order[] {
     return orders.filter((order) => {
-      // Search filter - with null/undefined checks
       if (filters.searchTerm) {
         const searchLower = filters.searchTerm.toLowerCase();
         const matchesSearch =
           (order.id && order.id.toString().includes(searchLower)) ||
-          (order.customerName &&
-            order.customerName.toLowerCase().includes(searchLower)) ||
-          (order.customerEmail &&
-            order.customerEmail.toLowerCase().includes(searchLower)) ||
-          (order.customerPhone && order.customerPhone.includes(searchLower));
+          (order.customername &&
+            order.customername.toLowerCase().includes(searchLower)) ||
+          (order.customeremail &&
+            order.customeremail.toLowerCase().includes(searchLower)) ||
+          (order.customerphone && order.customerphone.includes(searchLower));
 
         if (!matchesSearch) return false;
       }
@@ -122,7 +182,7 @@ export class OrderService {
       // Payment filter - fixed logic
       if (filters.payment && filters.payment !== "All Payments") {
         // Make sure we're comparing the correct payment status
-        if (order.paymentStatus !== filters.payment) return false;
+        if (order.paymentstatus !== filters.payment) return false;
       }
 
       return true;
@@ -146,13 +206,15 @@ export class OrderService {
       case "Order Date (Latest)":
         return sortedOrders.sort(
           (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            new Date(b.created_date).getTime() -
+            new Date(a.created_date).getTime()
         );
 
       case "Order Date (Oldest)":
         return sortedOrders.sort(
           (a, b) =>
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            new Date(a.created_date).getTime() -
+            new Date(b.created_date).getTime()
         );
 
       case "By Order Status":
@@ -162,7 +224,7 @@ export class OrderService {
 
       case "By Payment Status":
         return sortedOrders.sort((a, b) =>
-          a.paymentStatus.localeCompare(b.paymentStatus)
+          a.paymentstatus.localeCompare(b.paymentstatus)
         );
 
       default:
@@ -256,7 +318,7 @@ export class OrderService {
 
     // Calculate total revenue with better error handling
     const totalRevenue = orders.reduce((sum, order) => {
-      const orderAmount = Number(order.TotalOrderAmount);
+      const orderAmount = Number(order.totalorderamount);
       return sum + (isNaN(orderAmount) ? 0 : orderAmount);
     }, 0);
 
@@ -268,7 +330,9 @@ export class OrderService {
 
     const prescriptionVerification = orders.filter(
       (order) =>
-        order.items && Array.isArray(order.items) && order.items.length > 0
+        order.order_items &&
+        Array.isArray(order.totalorderamount) &&
+        order.order_items.length > 0
     ).length;
 
     return {

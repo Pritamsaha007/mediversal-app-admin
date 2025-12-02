@@ -1,16 +1,22 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import {
-  AddProductModalProps,
-  ProductFormData,
-} from "../types/productForm.type";
+import { ProductFormData } from "../types/productForm.type";
 import { BasicInformationTab } from "./BasicInformationTab";
 import { ProductDetailsTab } from "./ProductDetailsTab";
 import { SettingsTab } from "./SettingsTab";
-import { addProductAPI } from "../services/productService";
-import toast from "react-hot-toast";
 
+import toast from "react-hot-toast";
+import { useAdminStore } from "@/app/store/adminStore";
+import { addProductAPI } from "../services/ProductService";
+interface AddProductModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onAddProduct: (product: ProductFormData) => void;
+  onUpdateProduct?: (product: ProductFormData) => void;
+  productToEdit?: ProductFormData | null;
+  isEditMode?: boolean;
+}
 export const AddProductModal: React.FC<AddProductModalProps> = ({
   isOpen,
   onClose,
@@ -30,6 +36,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   const [subcategoryDropdownOpen, setSubcategoryDropdownOpen] = useState(false);
   const [symptomsDropdownOpen, setSymptomsDropdownOpen] = useState(false);
 
+  const admin = useAdminStore((state) => state.admin);
+
   useEffect(() => {
     if (isEditMode && productToEdit) {
       setFormData(productToEdit);
@@ -37,32 +45,44 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   }, [isEditMode, productToEdit]);
 
   const [formData, setFormData] = useState<ProductFormData>({
-    productName: "",
+    ProductName: "",
     SKU: "",
     Category: "",
     Subcategory: "",
-    brand: "",
-    manufacturer: "",
-    mrp: null,
-    sellingPrice: null,
-    stockQuantity: null,
-    description: "",
+    ManufacturerName: "",
+    CostPrice: null,
+    SellingPrice: null,
+    StockAvailableInInventory: null,
+    ProductInformation: "",
     Composition: "",
     dosageForm: "",
     ProductStrength: "",
     PackageSize: "",
     schedule: "",
     Type: "",
-    taxRate: 0,
+    tax: 0,
     HSN_Code: "",
     storageConditions: "",
-    shelfLife: 0,
-    prescriptionRequired: false,
+    // shelfLife: 0,
+    PrescriptionRequired: false,
     featuredProduct: false,
-    activeProduct: true,
-    safetyDescription: "",
-    storageDescription: "",
+    active: true,
+    SafetyAdvices: "",
+    StorageInstructions: "",
     productImage: null,
+    // New required fields
+    ColdChain: "",
+    GST: "",
+    admin_id: admin?.id || "", // Fixed from admin store, not shown in UI
+    // Additional backend fields
+    DiscountedPrice: null,
+    DiscountedPercentage: 0,
+    productLength: 20,
+    productBreadth: 20,
+    productHeight: 5,
+    productWeight: 0.4,
+    subCategoryType: "",
+    Coupons: null,
   });
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
@@ -71,17 +91,15 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       [field]: value,
     }));
   };
+
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
-    const newFiles = Array.from(files);
-    setSelectedImages((prev) => [...prev, ...newFiles]);
-
-    const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
-    setImagePreviews((prev) => [...prev, ...newPreviews]);
+    const file = files[0];
+    setSelectedImages([file]);
+    setImagePreviews([URL.createObjectURL(file)]);
   };
-
   const removeImage = (index: number) => {
     setSelectedImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
@@ -89,62 +107,95 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
   const handleReset = () => {
     setFormData({
-      productName: "",
+      ProductName: "",
       SKU: "",
       Category: "",
       Subcategory: "",
-      brand: "",
-      manufacturer: "",
-      mrp: null,
-      sellingPrice: null,
-      stockQuantity: null,
-      description: "",
+      ManufacturerName: "",
+      CostPrice: null,
+      SellingPrice: null,
+      StockAvailableInInventory: null,
+      ProductInformation: "",
       Composition: "",
       dosageForm: "",
       ProductStrength: "",
       PackageSize: "",
       schedule: "",
-      taxRate: 0,
       Type: "",
+      tax: 0,
       HSN_Code: "",
       storageConditions: "",
-      shelfLife: 0,
-      prescriptionRequired: false,
+      // shelfLife: 0,
+      PrescriptionRequired: false,
       featuredProduct: false,
-      activeProduct: true,
-      safetyDescription: "",
-      storageDescription: "",
+      active: true,
+      SafetyAdvices: "",
+      StorageInstructions: "",
       productImage: null,
+      ColdChain: "",
+      GST: "",
+      admin_id: admin?.id || "", // Keep admin_id in reset but hidden from UI
+      DiscountedPrice: null,
+      DiscountedPercentage: 0,
+      productLength: 20,
+      productBreadth: 20,
+      productHeight: 5,
+      productWeight: 0.4,
+      subCategoryType: "",
+      Coupons: null,
     });
     setSelectedImages([]);
   };
 
   const handleSubmit = async () => {
     try {
+      // Calculate discount percentage
+      const discountPercentage =
+        formData.CostPrice !== null &&
+        formData.CostPrice > 0 &&
+        formData.SellingPrice !== null
+          ? Math.round(
+              ((formData.CostPrice - formData.SellingPrice) /
+                formData.CostPrice) *
+                100
+            )
+          : 0;
+
       if (isEditMode && onUpdateProduct) {
         const productJSON = {
           ...formData,
+          admin_id: admin?.id,
           id: productToEdit?.id,
-          discount:
-            formData.mrp !== null && formData.mrp > 0
-              ? Math.round(
-                  ((formData.mrp - (formData.sellingPrice ?? 0)) /
-                    formData.mrp) *
-                    100
-                )
-              : 0,
-          status: formData.activeProduct ? "Active" : "Inactive",
+          DiscountedPercentage: discountPercentage,
+          DiscountedPrice: formData.SellingPrice,
+          status: formData.active ? "Active" : "Inactive",
         };
+        console.log(productJSON, "productJson");
         onUpdateProduct(productJSON);
         toast.success("Product updated successfully");
       } else {
         console.log("Final Data Sent to Backend:", {
-          formData,
+          formData: {
+            ...formData,
+            DiscountedPercentage: discountPercentage,
+            DiscountedPrice: formData.SellingPrice,
+          },
           selectedImages,
         });
-        const result = await addProductAPI(formData, selectedImages);
+
+        // Pass form data and selected images separately
+        const result = await addProductAPI(
+          {
+            ...formData,
+            admin_id: admin?.id, // Make sure admin_id is included
+            DiscountedPercentage: discountPercentage,
+            DiscountedPrice: formData.SellingPrice,
+          },
+          selectedImages // This is the array of File objects
+        );
+
         onAddProduct(result);
-        console.log("This is my Uploaded data", result);
+        console.log("Product added successfully:", result);
         toast.success("Product added successfully!");
       }
 
@@ -161,7 +212,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       );
     }
   };
-
   if (!isOpen) return null;
 
   return (

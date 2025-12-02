@@ -45,7 +45,7 @@ export const ProductCard: React.FC<{
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isModalOpen2, setModalOpen] = useState(false);
+  const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [isRelationshipsModalOpen, setIsRelationshipsModalOpen] =
     useState(false);
 
@@ -86,61 +86,83 @@ export const ProductCard: React.FC<{
   const handleEdit = (product: Product) => {
     const productFormData: ProductFormData = {
       id: product.id,
-      productName: product.name,
+      // Basic Information
+      ProductName: product.name,
       SKU: product.sku,
       Category: product.category,
       Subcategory: product.subcategory,
-      brand: product.brand || "",
-      manufacturer: product.manufacturer || "",
-      mrp: product.mrp,
-      sellingPrice: product.sellingPrice,
-      stockQuantity: product.stock,
-      description: product.description || "",
-      Composition: product.composition || "",
+      Type: product.Type || "",
+      ManufacturerName: product.manufacturer || product.ManufacturerName || "",
+      CostPrice: product.CostPrice || product.mrp,
+      SellingPrice: product.SellingPrice || product.sellingPrice,
+      StockAvailableInInventory:
+        product.StockAvailableInInventory || product.stock,
+      subCategoryType: product.subCategoryType || "",
+
+      // Product Details
+      ProductInformation:
+        product.ProductInformation || product.description || "",
+      SafetyAdvices: product.SafetyAdvices || product.saftyDescription || "",
+      StorageInstructions:
+        product.StorageInstructions || product.storageDescription || "",
+      Composition: product.Composition || product.composition || "",
       dosageForm: product.dosageForm || "",
       ProductStrength: product.ProductStrength || "",
       PackageSize: product.PackageSize || "",
-      Type: product.Type || "",
+      productImage: product.productImage || null,
+
+      // Settings
       schedule: product.schedule || "",
-      taxRate: product.taxRate || 0,
-      HSN_Code: product.hsnCode || "",
+      tax: product.tax || product.taxRate || 0,
+      HSN_Code: product.HSN_Code || product.hsnCode || "",
       storageConditions: product.storageConditions || "",
-      shelfLife: product.shelfLife || 0,
-      prescriptionRequired: product.prescriptionRequired || false,
-      featuredProduct: product.featured || false,
-      activeProduct: product.status === "Active",
-      safetyDescription: product.saftyDescription || "",
-      storageDescription: product.storageDescription || "",
-      productImage:
-        typeof product.productImage === "object" &&
-        product.productImage instanceof File
-          ? product.productImage
-          : null,
+      // shelfLife: product.shelfLife || 0,
+      PrescriptionRequired:
+        product.PrescriptionRequired || product.prescriptionRequired || false,
+      featuredProduct: product.featuredProduct || product.featured || false,
+      active: product.active || product.status === "Active",
+      ColdChain: product.ColdChain || "",
+      GST: product.GST || "",
+      admin_id: product.admin_id || "",
+
+      // Product dimensions
+      productLength: product.productLength || 20,
+      productBreadth: product.productBreadth || 20,
+      productHeight: product.productHeight || 5,
+      productWeight: product.productWeight || 0.4,
+
+      // Calculated fields
+      DiscountedPrice: product.DiscountedPrice || product.sellingPrice,
+      DiscountedPercentage:
+        product.DiscountedPercentage || product.discount || 0,
+
+      // Optional fields
+      Substitutes: product.Substitutes || [],
+      SimilarProducts: product.SimilarProducts || [],
+      Coupons: product.Coupons || null,
     };
 
     setProductToEdit(productFormData);
-    setModalOpen(true);
+    setEditModalOpen(true);
   };
 
   const handleManageRelationships = () => {
     setIsRelationshipsModalOpen(true);
   };
 
-  function handleAdd(product: ProductFormData): void {
-    throw new Error("Function not implemented.");
-  }
-
   const handleUpdate = async (productData: ProductFormData): Promise<void> => {
     try {
       if (product.id) {
         await onEdit(product.id, productData);
-        setModalOpen(false);
+        setEditModalOpen(false);
         setProductToEdit(null);
       }
     } catch (error) {
       console.error("Error updating product:", error);
+      throw error; // Re-throw to handle in the modal
     }
   };
+
   const handleRelationshipsUpdate = (data: {
     substitutes: string[];
     similarProducts: string[];
@@ -195,7 +217,10 @@ export const ProductCard: React.FC<{
             {product.name}
           </div>
           <div className="text-[10px] text-gray-500">
-            {product.code} | {product.prescriptionRequired ? "Rx" : "No Rx "}
+            {product.code} |{" "}
+            {product.PrescriptionRequired || product.prescriptionRequired
+              ? "Rx"
+              : "No Rx "}
           </div>
           <div className="mt-2">
             <div className="flex gap-2 mb-1">
@@ -252,14 +277,14 @@ export const ProductCard: React.FC<{
         </div>
       </td>
       <td className="px-4 py-4 font-medium text-gray-900 text-[12px]">
-        ₹{product.mrp.toFixed(2)}
+        ₹{product.CostPrice ? product.CostPrice : product.mrp}
       </td>
       <td className="px-4 py-4 font-medium text-gray-900 text-[12px]">
-        ₹{product.sellingPrice.toFixed(2)}
+        ₹{product.SellingPrice ? product.SellingPrice : product.sellingPrice}
       </td>
       <td className="px-4 py-4">
         <span className="px-2 py-1 text-[8px] bg-[#B3DCE8] text-[#161D1F] rounded">
-          {product.discount}% OFF
+          {product.DiscountedPercentage || product.discount}% OFF
         </span>
       </td>
       <td className="px-4 py-4">
@@ -275,12 +300,14 @@ export const ProductCard: React.FC<{
         <div className="flex flex-col gap-2">
           <span
             className={`px-3 py-1 text-[8px] ${
-              product.status === "Active" ? "bg-[#34C759]" : "bg-[#FF3B30]"
+              product.active || product.status === "Active"
+                ? "bg-[#34C759]"
+                : "bg-[#FF3B30]"
             } text-white rounded-lg text-center`}
           >
-            {product.status}
+            {product.active ? "Active" : product.status}
           </span>
-          {product.featured && (
+          {(product.featuredProduct || product.featured) && (
             <span className="px-3 py-1 text-[8px] text-[#F2994A] rounded-lg text-center border border-[#F2994A]">
               Featured
             </span>
@@ -357,12 +384,12 @@ export const ProductCard: React.FC<{
           />
 
           <AddProductModal
-            isOpen={isModalOpen2}
+            isOpen={isEditModalOpen}
             onClose={() => {
-              setModalOpen(false);
+              setEditModalOpen(false);
               setProductToEdit(null);
             }}
-            onAddProduct={handleAdd}
+            onAddProduct={() => {}}
             onUpdateProduct={handleUpdate}
             productToEdit={productToEdit}
             isEditMode={!!productToEdit}

@@ -25,15 +25,15 @@ const CustomerInformationTab: React.FC = () => {
     const newErrors = { ...errors };
 
     switch (field) {
-      case "customerId":
-        if (!value.trim()) {
-          newErrors.customerId = "Customer ID is required";
-        } else if (value.trim().length < 3) {
-          newErrors.customerId = "Customer ID must be at least 3 characters";
-        } else {
-          delete newErrors.customerId;
-        }
-        break;
+      // case "customerId":
+      //   if (!value.trim()) {
+      //     newErrors.customerId = "Customer ID is required";
+      //   } else if (value.trim().length < 3) {
+      //     newErrors.customerId = "Customer ID must be at least 3 characters";
+      //   } else {
+      //     delete newErrors.customerId;
+      //   }
+      //   break;
 
       case "name":
         if (!value.trim()) {
@@ -115,7 +115,7 @@ const CustomerInformationTab: React.FC = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-[#161D1F] mb-2">
-              Customer ID <RequiredStar />
+              Customer ID
             </label>
             <input
               type="text"

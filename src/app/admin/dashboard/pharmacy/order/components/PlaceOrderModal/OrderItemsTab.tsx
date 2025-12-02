@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Plus, Trash2, Search, X } from "lucide-react";
-import { getProductsWithPagination } from "../../../product/services/getProductService";
+import { getProductsWithPagination } from "../../../../pharmacy/product/services/ProductService";
 import { useAdminStore } from "@/app/store/adminStore";
-import { OrderItem, Product } from "../../types/types";
+import { CreateOrderItem, OrderItem, Product } from "../../types/types";
 import Image from "next/image";
 import { useOrderStore } from "../../store/placeOrderStore";
 
@@ -191,7 +191,7 @@ const OrderItemsTab: React.FC = () => {
       );
       updateOrderItems(updatedItems);
     } else {
-      const newItem: OrderItem = {
+      const newItem: CreateOrderItem = {
         productId: product.productId,
         quantity: 1,
         sellingPrice: product.SellingPrice,

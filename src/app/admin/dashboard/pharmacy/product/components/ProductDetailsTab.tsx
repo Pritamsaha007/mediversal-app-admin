@@ -52,10 +52,10 @@ export const ProductDetailsTab = ({
             Upload Images
             <input
               type="file"
-              accept="image/*"
-              multiple
-              onChange={onImageChange}
+              id="image-upload"
               className="hidden"
+              accept=".jpg,.jpeg,.png"
+              onChange={onImageChange}
             />
           </label>
         </div>
@@ -87,36 +87,36 @@ export const ProductDetailsTab = ({
 
       <div>
         <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
-          Description
+          <span className="text-red-500">*</span> Product Information
         </label>
         <textarea
-          placeholder="Enter product description"
-          value={formData.description}
-          onChange={(e) => onInputChange("description", e.target.value)}
+          placeholder="Enter product information"
+          value={formData.ProductInformation}
+          onChange={(e) => onInputChange("ProductInformation", e.target.value)}
           rows={4}
           className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none resize-none"
         />
       </div>
       <div>
         <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
-          Safty Advice
+          <span className="text-red-500">*</span> Safety Advice
         </label>
         <textarea
           placeholder="Enter Safety Advice"
-          value={formData.safetyDescription}
-          onChange={(e) => onInputChange("safetyDescription", e.target.value)}
+          value={formData.SafetyAdvices}
+          onChange={(e) => onInputChange("SafetyAdvices", e.target.value)}
           rows={4}
           className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none resize-none"
         />
       </div>
       <div>
         <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
-          Storage & Special Instructions
+          <span className="text-red-500">*</span> Storage Instructions
         </label>
         <textarea
-          placeholder="Enter Storage & Special Instructions"
-          value={formData.storageDescription}
-          onChange={(e) => onInputChange("storageDescription", e.target.value)}
+          placeholder="Enter Storage Instructions"
+          value={formData.StorageInstructions}
+          onChange={(e) => onInputChange("StorageInstructions", e.target.value)}
           rows={4}
           className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none resize-none"
         />
@@ -125,7 +125,7 @@ export const ProductDetailsTab = ({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
-            Composition
+            <span className="text-red-500">*</span> Composition
           </label>
           <input
             type="text"
