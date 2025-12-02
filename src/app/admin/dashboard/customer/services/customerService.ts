@@ -94,6 +94,7 @@ export class CustomerService {
         total_spent: customer.total_spent ?? 0,
         total_orders: customer.total_orders || "0",
       }));
+      console.log("Fetched customers:", sanitizedCustomers);
 
       return {
         success: response.data.success,
