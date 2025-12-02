@@ -63,19 +63,6 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
         {/* Left Sidebar - Customer Details */}
         <div className="w-96 bg-white h-full overflow-y-auto">
           <div className="p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-[#161D1F]">
-                Customer Details
-              </h2>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
             {/* Customer Info Card */}
             <div className="mb-6">
               <div className="flex items-center gap-4 mb-4">
