@@ -193,7 +193,7 @@ const Sidebar = () => {
       subItems: [
         {
           name: "Delivery Riders",
-          link: "/admin/dashboard/rider/delivery",
+          link: "/admin/dashboard/rider/deliveryRiders",
         },
         {
           name: "Bookings",

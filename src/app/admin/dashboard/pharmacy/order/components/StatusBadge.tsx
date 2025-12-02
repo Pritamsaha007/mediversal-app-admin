@@ -23,8 +23,9 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
     Pending: "bg-yellow-100 text-yellow-800",
     Failed: "bg-red-100 text-red-800",
     Refund: "bg-orange-100 text-orange-800",
-    completed: "bg-red-100 text-green-800",
-    "Not Provided": "bg-yellow-100 text-yellow-800",
+    Completed: "bg-green-100 text-green-800",
+    "Not Provided": "bg-yellow-100 text-blue-800",
+    "In Progress": "bg-yellow-100 text-yellow-800",
     "ON GOING": "bg-cyan-100 text-cyan-800",
   };
 

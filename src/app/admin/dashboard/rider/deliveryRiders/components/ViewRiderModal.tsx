@@ -13,27 +13,7 @@ import {
   User,
   CreditCard,
 } from "lucide-react";
-
-interface DeliveryRider {
-  id: string;
-  name: string;
-  email: string;
-  is_deleted: boolean;
-  license_no: string;
-  pin_code_id: string;
-  joining_date: string;
-  vehicle_name: string;
-  aadhar_number: string;
-  mobile_number: string;
-  pin_code_value: string;
-  service_city_id: string;
-  vehicle_type_id: string;
-  license_image_url: string;
-  profile_image_url: string;
-  service_city_name: string;
-  is_available_status: "active" | "inactive";
-  is_poi_verified_status: "approved" | "pending" | "rejected";
-}
+import { DeliveryRider } from "../../types";
 
 interface ViewRiderModalProps {
   isOpen: boolean;
@@ -239,7 +219,7 @@ export const ViewRiderModal: React.FC<ViewRiderModalProps> = ({
                           Service PIN:
                         </div>
                         <div className="text-xs  text-[#161D1F]">
-                          {rider.pin_code_value}
+                          {rider.pin_codes}
                         </div>
                       </div>
                     </div>

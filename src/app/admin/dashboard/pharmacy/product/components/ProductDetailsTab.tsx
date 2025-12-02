@@ -52,10 +52,10 @@ export const ProductDetailsTab = ({
             Upload Images
             <input
               type="file"
-              accept="image/*"
-              multiple
-              onChange={onImageChange}
+              id="image-upload"
               className="hidden"
+              accept=".jpg,.jpeg,.png"
+              onChange={onImageChange}
             />
           </label>
         </div>

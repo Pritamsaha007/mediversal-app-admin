@@ -38,6 +38,7 @@ export const addProductAPI = async (
     const formData = new FormData();
     const { token } = useAdminStore.getState();
 
+    // Append all product data fields
     formData.append("admin_id", productData.admin_id || "1");
     formData.append("ProductName", productData.ProductName || "");
     formData.append("CostPrice", productData.CostPrice?.toString() || "0");
@@ -60,7 +61,6 @@ export const addProductAPI = async (
       productData.PrescriptionRequired ? "Yes" : "No"
     );
     formData.append("ColdChain", productData.ColdChain || "No");
-
     formData.append(
       "ManufacturerName",
       productData.ManufacturerName || "Generic Manufacturer"
@@ -69,7 +69,6 @@ export const addProductAPI = async (
       "Composition",
       productData.Composition || "Standard Composition"
     );
-
     formData.append(
       "ProductInformation",
       productData.ProductInformation || "Product Information"
@@ -82,10 +81,8 @@ export const addProductAPI = async (
       "StorageInstructions",
       productData.StorageInstructions || "Store in cool, dry place"
     );
-
     formData.append("Substitutes", "Generic Substitutes Available");
     formData.append("SimilarProducts", "Similar Products Available");
-
     formData.append("GST", productData.GST || "18");
     formData.append("Coupons", "5");
     formData.append(
@@ -98,7 +95,6 @@ export const addProductAPI = async (
     formData.append("ProductStrength", productData.ProductStrength || "");
     formData.append("featuredProduct", productData.featuredProduct ? "1" : "0");
     formData.append("active", productData.active ? "1" : "0");
-
     formData.append(
       "productLength",
       productData.productLength?.toString() || "20"
@@ -115,26 +111,24 @@ export const addProductAPI = async (
       "productWeight",
       productData.productWeight?.toString() || "0.4"
     );
-
     formData.append("subCategoryType", productData.subCategoryType || "");
     formData.append("tax", productData.tax?.toString() || "0");
     formData.append("dosageForm", productData.dosageForm || "");
     formData.append("schedule", productData.schedule || "");
     formData.append("storageConditions", productData.storageConditions || "");
-    formData.append("shelfLife", productData.shelfLife?.toString() || "0");
     formData.append(
       "DiscountedPercentage",
       productData.DiscountedPercentage?.toString() || "0"
     );
 
-    if (imageFiles && imageFiles.length > 0) {
-      imageFiles.forEach((file, index) => {
-        formData.append(`images`, file);
-      });
+    if (imageFiles.length > 0) {
+      formData.append("images", imageFiles[0]);
     }
 
-    for (const [k, v] of formData.entries()) {
-      console.log(k, v);
+    // Debug: Log FormData contents
+    console.log("FormData contents:");
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
     }
 
     const response = await axios.post(

@@ -147,6 +147,14 @@ export class OrderService {
   }
 
   static getOrderStatus(order: Order): string {
+    const city = order.billing_city?.trim().toLowerCase();
+
+    const isRiderCity = ["patna", "begusarai"].includes(city || "");
+
+    if (isRiderCity) {
+      return order.rider_delivery_status || "Not Provided";
+    }
+
     return order.deliverystatus || "Not Provided";
   }
 

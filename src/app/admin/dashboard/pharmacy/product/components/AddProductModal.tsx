@@ -94,15 +94,12 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
-    const newFiles = Array.from(files);
-    setSelectedImages((prev) => [...prev, ...newFiles]);
-
-    const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
-    setImagePreviews((prev) => [...prev, ...newPreviews]);
+    const file = files[0];
+    setSelectedImages([file]);
+    setImagePreviews([URL.createObjectURL(file)]);
   };
-
   const removeImage = (index: number) => {
     setSelectedImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
@@ -168,7 +165,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
         const productJSON = {
           ...formData,
           admin_id: admin?.id,
-
           id: productToEdit?.id,
           DiscountedPercentage: discountPercentage,
           DiscountedPrice: formData.SellingPrice,
@@ -186,17 +182,20 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           },
           selectedImages,
         });
-        console.log(formData, "kin");
+
+        // Pass form data and selected images separately
         const result = await addProductAPI(
           {
             ...formData,
+            admin_id: admin?.id, // Make sure admin_id is included
             DiscountedPercentage: discountPercentage,
             DiscountedPrice: formData.SellingPrice,
           },
-          selectedImages
+          selectedImages // This is the array of File objects
         );
+
         onAddProduct(result);
-        console.log("This is my Uploaded data", result);
+        console.log("Product added successfully:", result);
         toast.success("Product added successfully!");
       }
 
@@ -213,7 +212,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       );
     }
   };
-
   if (!isOpen) return null;
 
   return (

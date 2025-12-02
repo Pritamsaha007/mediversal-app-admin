@@ -13,6 +13,7 @@ import {
   Trash2,
   Eye,
   PlusIcon,
+  Bike,
 } from "lucide-react";
 import { Order, FilterOptions, SortOption } from "./types/types";
 import { OrderService } from "./services";
@@ -23,6 +24,9 @@ import OrderActionDropdown from "./components/OrderActionDropdown";
 import PrescriptionModal from "./components/OrderSummary";
 import Pagination from "@/app/components/common/pagination";
 import PlaceOrderModal from "./components/PlaceOrderModal/PlaceOrderModal";
+import AssignRiderModal from "../../rider/components/AddRiderModal";
+import DeliveryOrder from "../../rider/types";
+import toast from "react-hot-toast";
 
 const Orders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,7 +57,9 @@ const Orders: React.FC = () => {
   const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
   const [selectedOrderForPrescription, setSelectedOrderForPrescription] =
     useState<Order | null>(null);
-
+  const [isAssignRiderModalOpen, setIsAssignRiderModalOpen] = useState(false);
+  const [selectedOrderForRider, setSelectedOrderForRider] =
+    useState<Order | null>(null);
   // Calculate if there are more pages available
   const hasMore = (currentPage + 1) * itemsPerPage < allOrdersForStats.length;
 
@@ -226,6 +232,35 @@ const Orders: React.FC = () => {
     setOpenDropdown(null);
   };
 
+  const getRiderDeliveryStatus = (
+    status: string
+  ): "Pending" | "In Progress" | "Completed" | "Cancelled" => {
+    switch (status.toLowerCase()) {
+      case "delivered":
+        return "Completed";
+      case "cancelled":
+        return "Cancelled";
+      case "out for delivery":
+      case "on going":
+      case "shipped":
+        return "In Progress";
+      default:
+        return "Pending";
+    }
+  };
+  const handleCloseRiderModal = () => {
+    setIsAssignRiderModalOpen(false);
+    setSelectedOrderForRider(null);
+  };
+
+  const handleRiderAssignmentSuccess = () => {
+    toast.success("Rider assigned successfully!");
+    fetchOrders(true);
+  };
+  const handleOpenRiderModal = (order: Order) => {
+    setSelectedOrderForRider(order);
+    setIsAssignRiderModalOpen(true);
+  };
   const handleSortChange = (sort: SortOption) => {
     console.log("Sort changed to:", sort);
     setSortBy(sort);
@@ -320,7 +355,8 @@ const Orders: React.FC = () => {
 
   const stats = OrderService.generateOrderStats(allOrdersForStats);
 
-  console.log("Current orders:", orders.length, "Total count:", totalCount);
+  console.log("Current orders:", orders, "Total count:", totalCount);
+  console.log(orders.map((t) => t.rider_delivery_status));
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
@@ -541,6 +577,7 @@ const Orders: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-xs text-[#161D1F]">
                         <div className="flex flex-col items-start">
                           {OrderService.formatDate(order.created_date)}
+
                           <span className="text-[10px] text-[#899193] mt-1">
                             {order.deliverystatus}
                           </span>
@@ -565,19 +602,33 @@ const Orders: React.FC = () => {
                           status={OrderService.getOrderStatus(order)}
                         />
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-[#161D1F]">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-[#161D1F] flex items-center gap-2">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => {
                               setSelectedOrderForPrescription(order);
                               setPrescriptionModalOpen(true);
                             }}
-                            className="p-1 text-gray-500 hover:text-blue-500"
+                            className="p-1 text-gray-500 hover:text-[#0088B1]"
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                         </div>
+                        {(order.billing_city?.trim().toLowerCase() ===
+                          "patna" ||
+                          order.billing_city?.trim().toLowerCase() ===
+                            "begusarai") && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleOpenRiderModal(order)}
+                              className="p-1 text-gray-500 hover:text-[#0088B1]"
+                              title="Assign Rider"
+                            >
+                              <Bike className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -608,6 +659,38 @@ const Orders: React.FC = () => {
               onClose={() => setIsPlaceOrderModalOpen(false)}
               onOrderCreated={handleOrderCreated}
             />
+            {selectedOrderForRider && (
+              <AssignRiderModal
+                isOpen={isAssignRiderModalOpen}
+                onClose={handleCloseRiderModal}
+                order={{
+                  id: selectedOrderForRider.id || "",
+                  items: (selectedOrderForRider.order_items || []).map(
+                    (item) => ({
+                      qty: item.quantity || 1,
+                      name: item.productName || "Product",
+                    })
+                  ),
+                  amount: selectedOrderForRider.totalorderamount,
+                  billing_city: selectedOrderForRider.billing_city || "",
+                  billing_state: selectedOrderForRider.billing_state || "",
+                  customer_phone: selectedOrderForRider.customerphone || "",
+                  billing_country: selectedOrderForRider.billing_country || "",
+                  billing_pincode: selectedOrderForRider.billing_pincode || "",
+                  billing_address_1:
+                    selectedOrderForRider.billing_address_2 || "",
+                  billing_address_2:
+                    selectedOrderForRider.billing_address_2 || "",
+                  billing_last_name:
+                    selectedOrderForRider.billing_last_name || "",
+                  billing_first_name: selectedOrderForRider.customername || "",
+                  rider_delivery_status: getRiderDeliveryStatus(
+                    selectedOrderForRider.deliverystatus || ""
+                  ),
+                }}
+                onAssignmentSuccess={handleRiderAssignmentSuccess}
+              />
+            )}
           </div>
         </div>
       </div>

@@ -1,55 +1,25 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import StatusBadge from "../../home-care/components/StatusBadge";
-import StatsCard from "../../home-care/components/StatsCard";
 import {
   Search,
   ChevronDown,
   Plus,
-  Settings,
-  Activity,
-  Users,
   Eye,
   Edit,
   Trash2,
   Bike,
-  Car,
-  UserCheck,
   Box,
-  Percent,
   BadgePercent,
 } from "lucide-react";
 import toast from "react-hot-toast";
-// import { AddRiderModal } from "./components/AddRider";
 import { ViewRiderModal } from "./components/ViewRiderModal";
 import { AddRiderModal } from "./components/CreateNewModal";
+import { DeliveryRider, RidersStats } from "../types";
 
-interface DeliveryRider {
-  id: string;
-  name: string;
-  email: string;
-  is_deleted: boolean;
-  license_no: string;
-  pin_code_id: string;
-  joining_date: string;
-  vehicle_name: string;
-  aadhar_number: string;
-  mobile_number: string;
-  pin_code_value: string;
-  service_city_id: string;
-  vehicle_type_id: string;
-  license_image_url: string;
-  profile_image_url: string;
-  service_city_name: string;
-  is_available_status: "active" | "inactive";
-  is_poi_verified_status: "approved" | "pending" | "rejected";
-}
-
-interface RidersStats {
-  totalRiders: number;
-  activeRiders: number;
-  verifiedRiders: number;
-}
+import { useAdminStore } from "@/app/store/adminStore";
+import StatusBadge from "../../home-care/components/StatusBadge";
+import StatsCard from "../../home-care/components/StatsCard";
+import { deleteRider, getRidersStats, searchRider } from "../services";
 
 const DeliveryRiders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -68,68 +38,42 @@ const DeliveryRiders: React.FC = () => {
     null
   );
   const [editingRider, setEditingRider] = useState<DeliveryRider | null>(null);
-
-  // Mock data - replace with actual API calls
-  const mockRiders: DeliveryRider[] = [
-    {
-      id: "eea59bbf-d9e3-4425-9335-0a26e3796507",
-      name: "Mohan Driver",
-      email: "mohan.rao@mediversal.in",
-      is_deleted: false,
-      license_no: "BR-0920202020",
-      pin_code_id: "2d442ff5-859f-417f-8891-9fdb6cede3e7",
-      joining_date: "2025-11-23",
-      vehicle_name: "Scooter",
-      aadhar_number: "123412341234",
-      mobile_number: "9876543220",
-      pin_code_value: "801109",
-      service_city_id: "28e02e45-99ca-46ff-b817-c125a39ca8a2",
-      vehicle_type_id: "8f05abf0-b428-4f36-b5ad-5769e16bf68a",
-      license_image_url: "https://shorturl.at/MDRkT",
-      profile_image_url: "https://shorturl.at/CP3gn",
-      service_city_name: "Patna",
-      is_available_status: "active",
-      is_poi_verified_status: "approved",
-    },
-  ];
+  const { token } = useAdminStore();
 
   const statusOptions = ["All Status", "Active", "Inactive"];
-  const verificationOptions = [
-    "All Verification",
-    "Approved",
-    "Pending",
-    "Rejected",
-  ];
 
-  const generateStats = (): RidersStats => {
-    const activeRidersList = riders.filter((r) => !r.is_deleted);
-    const totalRiders = activeRidersList.length;
-    const activeRiders = activeRidersList.filter(
-      (r) => r.is_available_status === "active"
-    ).length;
-    const verifiedRiders = activeRidersList.filter(
-      (r) => r.is_poi_verified_status === "approved"
-    ).length;
-
-    return {
-      totalRiders,
-      activeRiders,
-      verifiedRiders,
-    };
-  };
-
-  const stats = generateStats();
+  const stats = getRidersStats(riders);
 
   const fetchRiders = async () => {
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
+
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setRiders(mockRiders);
-      setFilteredRiders(mockRiders.filter((rider) => !rider.is_deleted));
-    } catch (error) {
+      const payload = {
+        start: 0,
+        max: 100,
+        search: searchTerm || null,
+        filter_active:
+          selectedStatus === "Active"
+            ? true
+            : selectedStatus === "Inactive"
+            ? false
+            : null,
+        sort_by: "name",
+        sort_order: "ASC" as const,
+      };
+
+      const ridersData = await searchRider(payload, token);
+      setRiders(ridersData);
+      console.log(riders, "riders");
+      setFilteredRiders(ridersData);
+      console.log(riders, "riders");
+    } catch (error: any) {
       console.error("Error fetching riders:", error);
-      toast.error("Failed to load delivery riders");
+      toast.error(error.message || "Failed to load delivery riders");
     } finally {
       setLoading(false);
     }
@@ -138,30 +82,17 @@ const DeliveryRiders: React.FC = () => {
   useEffect(() => {
     fetchRiders();
   }, []);
-
+  console.log(riders, "riders");
   useEffect(() => {
-    let filtered = riders.filter((rider) => !rider.is_deleted);
-
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (rider) =>
-          rider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          rider.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          rider.mobile_number.includes(searchTerm) ||
-          rider.aadhar_number.includes(searchTerm)
-      );
+    if (searchTerm || selectedStatus !== "All Status") {
+      const debounceTimer = setTimeout(() => {
+        fetchRiders();
+      }, 500);
+      return () => clearTimeout(debounceTimer);
+    } else {
+      setFilteredRiders(riders);
     }
-
-    if (selectedStatus !== "All Status") {
-      filtered = filtered.filter((rider) =>
-        selectedStatus === "Active"
-          ? rider.is_available_status === "active"
-          : rider.is_available_status === "inactive"
-      );
-    }
-
-    setFilteredRiders(filtered);
-  }, [searchTerm, selectedStatus, riders]);
+  }, [searchTerm, selectedStatus]);
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -169,7 +100,7 @@ const DeliveryRiders: React.FC = () => {
   };
 
   const handleBulkDelete = async () => {
-    if (selectedRiders.length === 0) return;
+    if (!token || selectedRiders.length === 0) return;
 
     const confirmed = await new Promise<boolean>((resolve) => {
       const toastId = toast(
@@ -210,20 +141,19 @@ const DeliveryRiders: React.FC = () => {
     if (confirmed) {
       setLoading(true);
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Delete each rider sequentially
+        for (const riderId of selectedRiders) {
+          await deleteRider(riderId, token);
+        }
 
-        const updatedRiders = riders.filter(
-          (rider) => !selectedRiders.includes(rider.id)
-        );
-        setRiders(updatedRiders);
-        setFilteredRiders(updatedRiders.filter((rider) => !rider.is_deleted));
+        // Refresh the list
+        await fetchRiders();
 
         toast.success(`${selectedRiders.length} riders deleted successfully!`);
         setSelectedRiders([]);
       } catch (error: any) {
         console.error("Error deleting riders:", error);
-        toast.error("Failed to delete some riders");
+        toast.error(error.message || "Failed to delete some riders");
       } finally {
         setLoading(false);
       }
@@ -246,21 +176,13 @@ const DeliveryRiders: React.FC = () => {
     }
   };
 
-  const handleAddRider = (newRider: DeliveryRider) => {
-    setRiders([...riders, newRider]);
-    setFilteredRiders([
-      ...riders.filter((rider) => !rider.is_deleted),
-      newRider,
-    ]);
+  const handleAddRider = async () => {
+    await fetchRiders(); // Refresh the list
     toast.success("Rider added successfully!");
   };
 
-  const handleUpdateRider = (updatedRider: DeliveryRider) => {
-    const updatedRiders = riders.map((rider) =>
-      rider.id === updatedRider.id ? updatedRider : rider
-    );
-    setRiders(updatedRiders);
-    setFilteredRiders(updatedRiders.filter((rider) => !rider.is_deleted));
+  const handleUpdateRider = async () => {
+    await fetchRiders(); // Refresh the list
     toast.success("Rider updated successfully!");
   };
 
@@ -277,6 +199,11 @@ const DeliveryRiders: React.FC = () => {
         setShowAddRiderModal(true);
         break;
       case "delete":
+        if (!token) {
+          toast.error("Authentication required");
+          return;
+        }
+
         const confirmed = await new Promise<boolean>((resolve) => {
           const toastId = toast(
             (t) => (
@@ -312,17 +239,17 @@ const DeliveryRiders: React.FC = () => {
 
         if (confirmed) {
           try {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            setLoading(true);
+            await deleteRider(rider.id, token);
 
-            const updatedRiders = riders.filter((r) => r.id !== rider.id);
-            setRiders(updatedRiders);
-            setFilteredRiders(updatedRiders.filter((r) => !r.is_deleted));
+            // Refresh the list
+            await fetchRiders();
 
             toast.success("Rider deleted successfully!");
           } catch (error: any) {
             console.error("Error deleting rider:", error);
-            toast.error("Failed to delete rider");
+            toast.error(error.message || "Failed to delete rider");
+            setLoading(false);
           }
         }
         break;
@@ -334,13 +261,11 @@ const DeliveryRiders: React.FC = () => {
   const getVehicleIcon = (vehicleType: string) => {
     switch (vehicleType.toLowerCase()) {
       case "motorcycle":
-        return <Bike className="w-4 h-4" />;
       case "scooter":
-        return <Bike className="w-4 h-4" />;
-      case "car":
-        return <Car className="w-4 h-4" />;
       case "bicycle":
         return <Bike className="w-4 h-4" />;
+      case "car":
+        return <Bike className="w-4 h-4" />; // You might want a Car icon
       default:
         return <Bike className="w-4 h-4" />;
     }
@@ -379,7 +304,7 @@ const DeliveryRiders: React.FC = () => {
               } text-[#F8F8F8]`}
             >
               <Plus className="w-3 h-3" />
-              {loading ? "Loading..." : "New Rider"}
+              {loading ? "Loading..." : "Add New Rider"}
             </button>
             {selectedRiders.length > 0 && (
               <button
@@ -404,21 +329,18 @@ const DeliveryRiders: React.FC = () => {
             stats={stats.totalRiders}
             icon={<Bike className="w-5 h-5" />}
             color="text-[#0088b1]"
-            //subtitle={`${stats.activeRiders} Active`}
           />
           <StatsCard
             title="Total Deliveries"
             stats="54"
             icon={<Box className="w-5 h-5" />}
             color="text-[#0088b1]"
-            //subtitle="Active at locations"
           />
           <StatsCard
             title="Verified Riders"
             stats={stats.verifiedRiders}
             icon={<BadgePercent className="w-5 h-5" />}
             color="text-[#0088b1]"
-            //subtitle="1 Pending"
           />
         </div>
 
@@ -632,8 +554,7 @@ const DeliveryRiders: React.FC = () => {
           setShowAddRiderModal(false);
           setEditingRider(null);
         }}
-        onAddRider={handleAddRider}
-        onUpdateRider={handleUpdateRider}
+        onSuccess={editingRider ? handleUpdateRider : handleAddRider}
         editRider={editingRider}
       />
 
@@ -644,7 +565,13 @@ const DeliveryRiders: React.FC = () => {
           setSelectedRider(null);
         }}
         rider={selectedRider}
-        onEdit={handleUpdateRider}
+        onEdit={() => {
+          if (selectedRider) {
+            setEditingRider(selectedRider);
+            setShowViewRiderModal(false);
+            setShowAddRiderModal(true);
+          }
+        }}
       />
     </div>
   );
