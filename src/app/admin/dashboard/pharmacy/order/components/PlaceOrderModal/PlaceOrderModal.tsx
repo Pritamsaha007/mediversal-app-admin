@@ -84,7 +84,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
   const validateCustomerTab = (): boolean => {
     const errors: string[] = [];
 
-    if (!customerInfo.customerId.trim()) errors.push("Customer ID is required");
+    // if (!customerInfo.customerId.trim()) errors.push("Customer ID is required");
     if (!customerInfo.name.trim()) errors.push("Customer name is required");
     if (!customerInfo.age.trim()) errors.push("Age is required");
     if (!customerInfo.phone.trim()) errors.push("Phone number is required");
