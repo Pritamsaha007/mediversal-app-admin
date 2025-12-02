@@ -271,10 +271,21 @@ export const updateConsultationStatus = async (
   }
 };
 
-export async function getRTMToken(userId: string, token: string) {
+export async function getChatToken(
+  consultationId: string,
+  token: string
+): Promise<{
+  success: boolean;
+  data: { userId: string; chatToken: string; expireIn: number };
+}> {
+  // Use consultationId directly as userId or extract it based on your logic
+  const userId = consultationId; // Adjust this based on your actual userId logic
+
   const url = new URL(
-    `${HOMECARE_API_BASE_URL}/api/clinic/consultation/rtm-token/${userId}`
+    `${HOMECARE_API_BASE_URL}/api/clinic/consultation/chat-token/${userId}`
   );
+
+  console.log("Fetching chat token for user:", userId);
 
   const response = await fetch(url.toString(), {
     method: "GET",
@@ -286,10 +297,13 @@ export async function getRTMToken(userId: string, token: string) {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    console.error("Chat token error:", errorData);
     throw new Error(
       errorData?.message || `HTTP error! status: ${response.status}`
     );
   }
 
-  return await response.json();
+  const responseData = await response.json();
+  console.log("Chat Token API response:", responseData);
+  return responseData;
 }

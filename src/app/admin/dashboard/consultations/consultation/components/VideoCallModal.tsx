@@ -21,6 +21,8 @@ import AgoraRTC, {
   ICameraVideoTrack,
   IMicrophoneAudioTrack,
 } from "agora-rtc-sdk-ng";
+import { getChatToken } from "../service";
+import AgoraChat from "agora-chat";
 
 interface VideoCallModalProps {
   isOpen: boolean;
@@ -61,7 +63,9 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState("");
-
+  const AGORA_CHAT_APP_KEY = "411397938#1602152";
+  const chatClient = useRef<any>(null);
+  const [isChatLoggedIn, setIsChatLoggedIn] = useState(false);
   const localVideoRef = useRef<HTMLDivElement>(null);
   const remoteVideoRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -112,7 +116,6 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
     });
   };
 
-  // Auto-start call when modal opens
   useEffect(() => {
     if (isOpen && !isCallActive && !isLoading) {
       initializeCall();
@@ -140,12 +143,14 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
         });
         setClient(agoraClient);
 
-        // Set up event listeners
         agoraClient.on("user-published", async (user, mediaType) => {
           await agoraClient.subscribe(user, mediaType);
 
-          if (mediaType === "video" && remoteVideoRef.current) {
-            user.videoTrack?.play(remoteVideoRef.current);
+          if (mediaType === "video") {
+            setRemoteUsers((prevUsers) => {
+              const exists = prevUsers.find((u) => u.uid === user.uid);
+              return exists ? prevUsers : [...prevUsers, user];
+            });
           }
           if (mediaType === "audio") {
             user.audioTrack?.play();
@@ -172,18 +177,22 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
         const videoTrack = await AgoraRTC.createCameraVideoTrack();
         const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
 
+        // Publish tracks first
+        await agoraClient.publish([videoTrack, audioTrack]);
+
+        // Then set state and play
         setLocalVideoTrack(videoTrack);
         setLocalAudioTrack(audioTrack);
 
-        // Play local video
-        if (localVideoRef.current) {
-          videoTrack.play(localVideoRef.current);
-        }
-
-        // Publish tracks
-        await agoraClient.publish([videoTrack, audioTrack]);
+        // Play local video immediately after setting state
+        setTimeout(() => {
+          if (localVideoRef.current && videoTrack) {
+            videoTrack.play(localVideoRef.current);
+          }
+        }, 100);
 
         setIsCallActive(true);
+        await initializeChat();
         toast.success("Call connected successfully!");
       }
     } catch (error) {
@@ -194,8 +203,34 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
     }
   };
 
+  const initializeChat = async () => {
+    if (!token) return;
+
+    try {
+      const userId = consultationId.substring(0, 6).toUpperCase();
+      const response = await getChatToken(userId, token);
+      console.log("Chat token response:", response);
+
+      if (response.success) {
+        chatClient.current.open({
+          user: response.data.userId,
+          accessToken: response.data.chatToken,
+        });
+        console.log("Chat initialized for user:", response.data.userId);
+      }
+    } catch (error) {
+      console.error("Error initializing chat:", error);
+      toast.error("Failed to initialize chat");
+    }
+  };
+
   const endCall = async () => {
     try {
+      if (chatClient.current && isChatLoggedIn) {
+        chatClient.current.close();
+        setIsChatLoggedIn(false);
+      }
+
       if (localVideoTrack) {
         localVideoTrack.close();
         setLocalVideoTrack(null);
@@ -248,16 +283,30 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
     setIsChatOpen(!isChatOpen);
   };
 
-  const sendMessage = () => {
-    if (messageInput.trim()) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        sender: "doctor",
-        text: messageInput,
-        timestamp: new Date(),
-      };
-      setMessages([...messages, newMessage]);
-      setMessageInput("");
+  const sendMessage = async () => {
+    if (messageInput.trim() && isChatLoggedIn) {
+      try {
+        const msgObj = AgoraChat.message.create({
+          chatType: "singleChat",
+          type: "txt",
+          to: paitentId.substring(0, 6).toUpperCase(),
+          msg: messageInput,
+        });
+
+        await chatClient.current.send(msgObj);
+
+        const newMessage: Message = {
+          id: Date.now().toString(),
+          sender: "doctor",
+          text: messageInput,
+          timestamp: new Date(),
+        };
+        setMessages([...messages, newMessage]);
+        setMessageInput("");
+      } catch (error) {
+        console.error("Error sending message:", error);
+        toast.error("Failed to send message");
+      }
     }
   };
 
@@ -270,12 +319,61 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
 
   useEffect(() => {
     return () => {
-      // Cleanup when component unmounts
       if (localVideoTrack) localVideoTrack.close();
       if (localAudioTrack) localAudioTrack.close();
       if (client) client.leave();
     };
   }, []);
+
+  useEffect(() => {
+    chatClient.current = new AgoraChat.connection({
+      appKey: AGORA_CHAT_APP_KEY,
+    });
+
+    chatClient.current.addEventHandler("connection&message", {
+      onConnected: () => {
+        setIsChatLoggedIn(true);
+        console.log("Chat connected successfully");
+      },
+      onDisconnected: () => {
+        setIsChatLoggedIn(false);
+        console.log("Chat disconnected");
+      },
+      onTextMessage: (msg: any) => {
+        const newMessage: Message = {
+          id: Date.now().toString() + Math.random(),
+          sender: msg.from === consultationId ? "doctor" : "patient",
+          text: msg.msg,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, newMessage]);
+      },
+      onError: (err: any) => {
+        console.error("Chat error:", err);
+      },
+    });
+
+    return () => {
+      if (chatClient.current) {
+        chatClient.current.close();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (localVideoTrack && localVideoRef.current) {
+      localVideoTrack.play(localVideoRef.current);
+    }
+  }, [localVideoTrack]);
+
+  useEffect(() => {
+    if (remoteUsers.length > 0 && remoteVideoRef.current) {
+      const remoteUser = remoteUsers[0];
+      if (remoteUser.videoTrack) {
+        remoteUser.videoTrack.play(remoteVideoRef.current);
+      }
+    }
+  }, [remoteUsers]);
 
   if (!isOpen) return null;
 
@@ -313,7 +411,6 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
               </button>
             </div>
           </div>
-
           {/* Video Area */}
           <div className="flex-1 relative bg-black">
             {!isCallActive ? (
@@ -355,7 +452,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
                 {/* Remote video (main) */}
                 <div
                   ref={remoteVideoRef}
-                  className="w-full h-full bg-gray-900 flex items-center justify-center"
+                  className="w-full h-full bg-black flex items-center justify-center"
                 >
                   {remoteUsers.length === 0 && (
                     <div className="text-center text-white">
@@ -375,12 +472,12 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
                 {/* Local video (picture-in-picture) */}
                 <div
                   ref={localVideoRef}
-                  className="absolute bottom-[-90px] right-6 w-45 h-48 bg-gray-800 rounded-xl overflow-hidden shadow-2xl border-2 border-gray-700"
+                  className="absolute bottom-4 right-4 w-40 h-50 bg-gray-800 rounded-xl overflow-hidden shadow-2xl border-2 border-[#0088B1]"
                 >
                   {!isVideoEnabled && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
                       <div className="text-center">
-                        <VideoOff className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                        <VideoOff className="w-10 h-10 text-gray-400 mx-auto mb-2" />
                         <p className="text-white text-sm font-medium">
                           Camera Off
                         </p>
@@ -444,6 +541,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
                       : "bg-gray-700 hover:bg-gray-600 text-white"
                   }`}
                   title="Toggle chat"
+                  disabled={!isChatLoggedIn}
                 >
                   <MessageSquare className="w-6 h-6" />
                 </button>
@@ -500,7 +598,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
                         <div
                           className={`rounded-2xl px-4 py-3 ${
                             message.sender === "doctor"
-                              ? "bg-blue-600 text-white"
+                              ? "bg-[#0088B1] text-white"
                               : "bg-gray-100 text-gray-900"
                           }`}
                         >
@@ -539,16 +637,16 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Type a message..."
-                    className="w-full px-4 py-3 pr-12 bg-gray-100 border-0 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-4 text-black py-3 pr-12 bg-gray-100 border-0 rounded-full focus:outline-none focus:ring-2 focus:ring-[#0088B1] text-sm"
                   />
-                  <button className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-200 rounded-full transition-colors">
+                  {/* <button className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-200 rounded-full transition-colors">
                     <Smile className="w-5 h-5 text-gray-500" />
-                  </button>
+                  </button> */}
                 </div>
                 <button
                   onClick={sendMessage}
                   disabled={!messageInput.trim()}
-                  className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                  className="p-3 bg-[#0088B1] hover:bg-[#006f8a] text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   <Send className="w-5 h-5" />
                 </button>

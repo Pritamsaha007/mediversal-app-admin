@@ -151,8 +151,8 @@ const Sidebar = () => {
         },
 
         // {
-        //   name: "Orders",
-        //   link: "/admin/dashboard/consultations/orders",
+        //   name: "Chat Test",
+        //   link: "/admin/dashboard/consultations/test",
         // },
       ],
     },
