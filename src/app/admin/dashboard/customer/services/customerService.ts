@@ -1,14 +1,19 @@
-// services/customerService.ts
 import axios, { AxiosInstance, AxiosError } from "axios";
 import { useAdminStore } from "@/app/store/adminStore";
 import {
+  ConsultationOrder,
+  CustomerDetailResponse,
+  HomecareOrder,
+  LabTestBooking,
+  PharmacyOrder,
   SearchCustomersRequest,
   SearchCustomersResponse,
   CustomerMetricsResponse,
   Customer,
   CreateCustomerRequest,
   CreateCustomerResponse,
-} from "../type/customerTypes";
+  CustomerDetail,
+} from "../type/customerDetailTypes";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -324,6 +329,122 @@ export class CustomerService {
       }
       throw new Error("An unexpected error occurred while creating customer");
     }
+  }
+
+  /**
+   * Fetch doctor consultation orders for a customer
+   */
+  static async getConsultationOrders(
+    customerId: string
+  ): Promise<ConsultationOrder[]> {
+    try {
+      const apiClient = createApiClient();
+      const response = await apiClient.post<CustomerDetailResponse>(
+        "/api/clinic/consultations",
+        { customer_id: customerId }
+      );
+
+      return response.data.consultations || [];
+    } catch (error) {
+      console.error("Failed to fetch consultation orders:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch pharmacy orders for a customer
+   */
+  static async getPharmacyOrders(customerId: string): Promise<PharmacyOrder[]> {
+    try {
+      const apiClient = createApiClient();
+      const response = await apiClient.post<CustomerDetailResponse>(
+        "/api/order/CustomerId",
+        { customerId: customerId }
+      );
+
+      return (response.data.orders as PharmacyOrder[]) || [];
+    } catch (error) {
+      console.error("Failed to fetch pharmacy orders:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch homecare orders for a customer
+   */
+  static async getHomecareOrders(customerId: string): Promise<HomecareOrder[]> {
+    try {
+      const apiClient = createApiClient();
+      const response = await apiClient.post<CustomerDetailResponse>(
+        "/api/homecare/orders",
+        { customer_id: customerId }
+      );
+
+      return (response.data.orders as HomecareOrder[]) || [];
+    } catch (error) {
+      console.error("Failed to fetch homecare orders:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch lab test bookings for a customer
+   */
+  static async getLabTestBookings(
+    customerId: string
+  ): Promise<LabTestBooking[]> {
+    try {
+      const apiClient = createApiClient();
+      const response = await apiClient.post<CustomerDetailResponse>(
+        "/api/labtest/booking/search",
+        { customer_id: customerId }
+      );
+
+      return (response.data.orders as LabTestBooking[]) || [];
+    } catch (error) {
+      console.error("Failed to fetch lab test bookings:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch all orders for a customer
+   */
+  static async getAllCustomerOrders(customerId: string) {
+    const [consultations, pharmacy, homecare, labTests] = await Promise.all([
+      this.getConsultationOrders(customerId),
+      this.getPharmacyOrders(customerId),
+      this.getHomecareOrders(customerId),
+      this.getLabTestBookings(customerId),
+    ]);
+
+    return {
+      consultations,
+      pharmacy,
+      homecare,
+      labTests,
+    };
+  }
+
+  /**
+   * Format age display
+   */
+  static formatAge(age?: {
+    years: number;
+    months: number;
+    days: number;
+  }): string {
+    if (!age) return "N/A";
+    return `${age.years} yrs. | ${age.months} months`;
+  }
+
+  /**
+   * Get medical history tags
+   */
+  static getMedicalHistory(customer: CustomerDetail): string[] {
+    // This should come from the customer data if available
+    // For now, return empty array as it's not in the provided data structure
+    return [];
   }
 }
 
