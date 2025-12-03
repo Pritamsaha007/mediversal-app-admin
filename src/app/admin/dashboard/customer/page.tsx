@@ -24,13 +24,13 @@ const StatsCard: React.FC<{
   icon: React.ReactNode;
   color: string;
 }> = ({ title, stats, icon, color }) => (
-  <div className="bg-white rounded-lg border border-[#E5E8E9] p-4">
+  <div className="bg-white p-4 rounded-lg border border-gray-200">
     <div className="flex items-center justify-between">
       <div>
-        <p className="text-[12px] text-[#899193] mb-1">{title}</p>
-        <p className="text-[20px] font-semibold text-[#161D1F]">{stats}</p>
+        <p className="text-[12px] shadow-2xs text-[#899193] mb-1">{title}</p>
+        <p className="text-[12px] font-semibold text-[#161D1F]">{stats}</p>
       </div>
-      <div className={`${color} bg-opacity-10 p-3 rounded-lg`}>{icon}</div>
+      <div className={`${color}`}>{icon}</div>
     </div>
   </div>
 );
@@ -186,11 +186,11 @@ const CustomerCatalog: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-[20px] font-semibold text-[#161D1F]">
-                Customer Catalog
+                User Management & Order Analytics
               </h1>
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-[#0088B1] text-white text-xs px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#006f8e]"
+                className="bg-[#0088B1] text-white text-[10px] px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#006f8e]"
               >
                 + New Customer
               </button>
@@ -201,8 +201,8 @@ const CustomerCatalog: React.FC = () => {
               <StatsCard
                 title="Total Customers"
                 stats={metricsLoading ? "..." : metrics?.total_customers || "0"}
-                icon={<Users className="w-5 h-5" />}
-                color="text-blue-500"
+                icon={<Users className="w-4 h-4" />}
+                color="text-[#0088b1]"
               />
               <StatsCard
                 title="Active Customers"
@@ -211,17 +211,17 @@ const CustomerCatalog: React.FC = () => {
                     ? "..."
                     : metrics?.total_active_customers || "0"
                 }
-                icon={<UserCheck className="w-5 h-5" />}
-                color="text-green-500"
+                icon={<UserCheck className="w-4 h-4" />}
+                color="text-[#0088b1]"
               />
               <StatsCard
                 title="Total Orders"
                 stats={metricsLoading ? "..." : metrics?.total_orders || "0"}
-                icon={<ShoppingCart className="w-5 h-5" />}
-                color="text-purple-500"
+                icon={<ShoppingCart className="w-4 h-4" />}
+                color="text-[#0088b1]"
               />
               <StatsCard
-                title="Total Spend YTD"
+                title="Total Revenue"
                 stats={
                   metricsLoading
                     ? "..."
@@ -229,8 +229,8 @@ const CustomerCatalog: React.FC = () => {
                         parseFloat(metrics?.net_revenue || "0")
                       )
                 }
-                icon={<DollarSign className="w-5 h-5" />}
-                color="text-emerald-500"
+                icon={<DollarSign className="w-4 h-4" />}
+                color="text-[#0088b1]"
               />
             </div>
 
@@ -240,20 +240,20 @@ const CustomerCatalog: React.FC = () => {
                 <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#899193]" />
                 <input
                   type="text"
-                  placeholder="Search by customers"
+                  placeholder="Search customers..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm text-[#161D1F] placeholder:text-[#B0B6B8]"
+                  className="w-full pl-10 pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8]"
                 />
               </div>
               <div className="flex gap-2">
-                <button className="flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-sm text-[#161D1F] hover:bg-gray-50">
+                <button className="flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50">
                   <ArrowUpDown className="w-4 h-4" />
                   Sort
                 </button>
                 <button
                   onClick={handleExport}
-                  className="flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-sm text-[#161D1F] hover:bg-gray-50"
+                  className="flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50"
                 >
                   <Download className="w-4 h-4" />
                   Export
@@ -265,13 +265,13 @@ const CustomerCatalog: React.FC = () => {
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-red-800 text-sm">{error}</span>
+                  <span className="text-red-800 text-[12px]">{error}</span>
                   <button
                     onClick={() => {
                       setError(null);
                       fetchCustomers(searchTerm, currentPage * itemsPerPage);
                     }}
-                    className="text-red-600 hover:text-red-800 underline text-sm"
+                    className="text-red-600 hover:text-red-800 underline text-[12px]"
                   >
                     Retry
                   </button>
@@ -284,9 +284,6 @@ const CustomerCatalog: React.FC = () => {
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-[16px] font-medium text-[#161D1F]">
                   All Customers
-                  <span className="text-[8px] text-[#899193] font-normal ml-2">
-                    {totalCount} customers found
-                  </span>
                 </h3>
               </div>
 
@@ -294,17 +291,6 @@ const CustomerCatalog: React.FC = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F]">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                          checked={
-                            customers.length > 0 &&
-                            selectedCustomers.length === customers.length
-                          }
-                          onChange={(e) => handleSelectAll(e.target.checked)}
-                        />
-                      </th>
                       <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F]">
                         Name
                       </th>
@@ -333,7 +319,7 @@ const CustomerCatalog: React.FC = () => {
                       <tr>
                         <td
                           colSpan={6}
-                          className="px-6 py-12 text-center text-[#899193] text-sm"
+                          className="px-6 py-12 text-center text-[#899193] text-[12px]"
                         >
                           No customers found
                         </td>
@@ -347,31 +333,18 @@ const CustomerCatalog: React.FC = () => {
                             setSelectedCustomer(customer as CustomerDetail)
                           }
                         >
-                          <td className="px-4 py-4">
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                              checked={selectedCustomers.includes(customer.id)}
-                              onChange={(e) =>
-                                handleSelectCustomer(
-                                  customer.id,
-                                  e.target.checked
-                                )
-                              }
-                            />
-                          </td>
                           <td className="px-6 py-4">
-                            <div className="text-sm font-medium text-[#161D1F]">
+                            <div className="text-[12px] font-medium text-[#161D1F]">
                               {CustomerService.getFullName(customer)}
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="text-sm text-[#161D1F]">
+                            <div className="text-[12px] text-[#161D1F]">
                               {customer.email || "N/A"}
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="text-sm text-[#161D1F]">
+                            <div className="text-[12px] text-[#161D1F]">
                               {customer.phone_number || "N/A"}
                             </div>
                           </td>
@@ -379,7 +352,7 @@ const CustomerCatalog: React.FC = () => {
                             <StatusBadge status={customer.status} />
                           </td>
                           <td className="px-6 py-4">
-                            <div className="text-sm font-medium text-[#161D1F]">
+                            <div className="text-[12px] font-medium text-[#161D1F]">
                               {CustomerService.formatCurrency(
                                 customer.total_spent
                               )}
@@ -394,7 +367,7 @@ const CustomerCatalog: React.FC = () => {
                 {/* Pagination */}
                 {!loading && customers.length > 0 && (
                   <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
-                    <div className="text-sm text-[#899193]">
+                    <div className="text-[12px] text-[#899193]">
                       Showing{" "}
                       {Math.min(currentPage * itemsPerPage + 1, totalCount)} to{" "}
                       {Math.min((currentPage + 1) * itemsPerPage, totalCount)}{" "}
@@ -406,7 +379,7 @@ const CustomerCatalog: React.FC = () => {
                           setCurrentPage((prev) => Math.max(0, prev - 1))
                         }
                         disabled={!hasPrevious}
-                        className={`px-4 py-2 text-sm border border-[#E5E8E9] rounded-lg ${
+                        className={`px-4 py-2 text-[12px] border border-[#E5E8E9] rounded-lg ${
                           hasPrevious
                             ? "text-[#161D1F] hover:bg-gray-50"
                             : "text-[#B0B6B8] cursor-not-allowed"
@@ -417,7 +390,7 @@ const CustomerCatalog: React.FC = () => {
                       <button
                         onClick={() => setCurrentPage((prev) => prev + 1)}
                         disabled={!hasMore}
-                        className={`px-4 py-2 text-sm border border-[#E5E8E9] rounded-lg ${
+                        className={`px-4 py-2 text-[12px] border border-[#E5E8E9] rounded-lg ${
                           hasMore
                             ? "text-[#161D1F] hover:bg-gray-50"
                             : "text-[#B0B6B8] cursor-not-allowed"

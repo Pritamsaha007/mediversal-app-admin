@@ -33,35 +33,31 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = ({
       id: "pharmacy" as const,
       label: "Pharmacy",
       icon: <Package className="w-4 h-4" />,
-      count: orderData.pharmacy.length,
     },
     {
       id: "homecare" as const,
       label: "Homecare",
       icon: <Heart className="w-4 h-4" />,
-      count: orderData.homecare.length,
     },
     {
       id: "consultation" as const,
       label: "Doctor Consultation",
       icon: <Stethoscope className="w-4 h-4" />,
-      count: orderData.consultations.length,
     },
     {
       id: "labtest" as const,
       label: "Pathology Tests",
       icon: <TestTube className="w-4 h-4" />,
-      count: orderData.labTests.length,
     },
   ];
 
   const getStatusBadgeColor = (status: string) => {
     const statusLower = status?.toLowerCase();
     if (statusLower === "delivered" || statusLower === "completed") {
-      return "bg-[#34C759] text-white";
+      return "bg-[#42A570] text-white";
     }
     if (statusLower === "in-progress" || statusLower === "pending") {
-      return "bg-[#FFB800] text-white";
+      return "bg-[#FFD700] text-white";
     }
     if (statusLower === "cancelled") {
       return "bg-[#EB5757] text-white";
@@ -108,9 +104,6 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = ({
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-[#161D1F]">
-                <input type="checkbox" className="h-4 w-4 rounded" />
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#161D1F]">
                 Order ID
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-[#161D1F]">
@@ -129,12 +122,12 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = ({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {orders.map((order: any) => (
-              <tr key={order.id || order.order_id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">
-                  <input type="checkbox" className="h-4 w-4 rounded" />
+              <tr key={order.order_id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 text-[10px] text-[#161D1F]">
+                  {order.id?.slice(0, 6).toUpperCase()}
                 </td>
-                <td className="px-6 py-4 text-sm text-[#161D1F]">{order.id}</td>
-                <td className="px-6 py-4 text-sm text-[#161D1F]">
+
+                <td className="px-6 py-4 text-[10px] text-[#161D1F]">
                   {CustomerService.formatDate(
                     order.orderdate ||
                       order.order_date ||
@@ -144,7 +137,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = ({
                 </td>
                 <td className="px-6 py-4">
                   {activeTab === "pharmacy" && order.order_items && (
-                    <div className="text-sm text-[#161D1F]">
+                    <div className="text-[10px] text-[#161D1F]">
                       {order.order_items.map((item: any) => (
                         <div key={item.sku || item.productName}>
                           • {item.productName}
@@ -153,12 +146,12 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = ({
                     </div>
                   )}
                   {activeTab === "homecare" && (
-                    <div className="text-sm text-[#161D1F]">
+                    <div className="text-[10px] text-[#161D1F]">
                       {order.homecare_service_name}
                     </div>
                   )}
                   {activeTab === "consultation" && (
-                    <div className="text-sm text-[#161D1F]">
+                    <div className="text-[10px] text-[#161D1F]">
                       <div>{order.doc_name}</div>
                       <div className="text-xs text-[#899193]">
                         {order.doc_specialization?.specialization}
@@ -166,21 +159,21 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = ({
                     </div>
                   )}
                   {activeTab === "labtest" && (
-                    <div className="text-sm text-[#161D1F]">
+                    <div className="text-[10px] text-[#161D1F]">
                       {order.labtestnames.join(", ") || "Lab Tests"}
                     </div>
                   )}
                 </td>
                 <td className="px-6 py-4">
                   <span
-                    className={`inline-flex items-center px-3 py-1 rounded text-xs font-medium ${getStatusBadgeColor(
+                    className={`inline-flex items-center px-3 py-1 rounded text-[8px] font-medium ${getStatusBadgeColor(
                       order.status || order.deliverystatus || order.order_status
                     )}`}
                   >
                     {order.status || order.deliverystatus || order.order_status}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm font-medium text-[#161D1F]">
+                <td className="px-6 py-4 text-[10px] font-medium text-[#161D1F]">
                   {CustomerService.formatCurrency(
                     parseFloat(
                       order.totalorderamount ||
@@ -202,10 +195,10 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = ({
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-[#161D1F] mb-2">
+        <h2 className="text-[16px] font-medium text-[#161D1F] mb-2">
           Order History by Service
         </h2>
-        <p className="text-sm text-[#899193]">
+        <p className="text-[12px] text-[#899193]">
           Choose a user from the list to view their complete profile and order
           history
         </p>
@@ -217,7 +210,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = ({
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-1 rounded-lg text-[10px] font-medium whitespace-nowrap ${
               activeTab === tab.id
                 ? "bg-[#0088B1] text-white"
                 : "bg-white text-[#161D1F] border border-gray-200"
@@ -225,7 +218,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = ({
           >
             {tab.icon}
             {tab.label}
-            {tab.count > 0 && (
+            {/* {tab.count > 0 && (
               <span
                 className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
                   activeTab === tab.id
@@ -235,7 +228,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = ({
               >
                 {tab.count}
               </span>
-            )}
+            )} */}
           </button>
         ))}
       </div>

@@ -1,6 +1,19 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { X, User, Phone, Mail, MapPin, Calendar, Activity } from "lucide-react";
+import {
+  X,
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Calendar,
+  Activity,
+  IdCard,
+  Package,
+  IndianRupee,
+  ReceiptIndianRupee,
+  ArrowLeft,
+} from "lucide-react";
 import { CustomerService } from "../services/customerService";
 import CustomerOrderHistory from "./CustomerOrderHistory";
 import {
@@ -52,21 +65,28 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
   return (
     <>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-[#161D1F]">
-          Customer Details
-        </h2>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-md hover:bg-gray-100"
+          >
+            <ArrowLeft className="w-4 h-4 text-gray-700" />
+          </button>
+
+          <h2 className="text-xl font-semibold text-[#161D1F]">
+            User Management & Order Analytics
+          </h2>
+        </div>
       </div>
+
       <div className="h-full bg-gray-50 flex">
         {/* Left Sidebar - Customer Details */}
-        <div className="w-96 bg-white h-full overflow-y-auto">
+        <div className="w-96 bg-white border border-[#D3D7D8] rounded-xl h-full overflow-y-auto">
           <div className="p-6">
             {/* Customer Info Card */}
-            <div className="mb-6">
+            <div className="mb-6 relative">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 bg-[#0088B1] rounded-full flex items-center justify-center text-white text-xl font-semibold">
+                <div className="w-16 h-16 bg-[#E8F4F7] text-[#161D1F] rounded-full flex items-center justify-center text-xl font-semibold">
                   {customer.first_name?.charAt(0) || ""}
                   {customer.last_name?.charAt(0) || ""}
                 </div>
@@ -74,60 +94,67 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
                   <h3 className="text-lg font-semibold text-[#161D1F]">
                     {CustomerService.getFullName(customer)}
                   </h3>
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded text-xs font-medium ${
-                      customer.status?.toLowerCase() === "active"
-                        ? "bg-[#34C759] text-white"
-                        : "bg-[#EB5757] text-white"
-                    }`}
-                  >
-                    {customer.status || "Unknown"}
-                  </span>
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-3 text-sm">
+                      <Mail className="w-4 h-4 text-[#899193]" />
+                      <span className="text-[#161D1F]">
+                        {customer.email || "N/A"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <Phone className="w-4 h-4 text-[#899193]" />
+                      <span className="text-[#161D1F]">
+                        {customer.phone_number || "N/A"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-
-              {/* Contact Info */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm">
-                  <Mail className="w-4 h-4 text-[#899193]" />
-                  <span className="text-[#161D1F]">
-                    {customer.email || "N/A"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Phone className="w-4 h-4 text-[#899193]" />
-                  <span className="text-[#161D1F]">
-                    {customer.phone_number || "N/A"}
-                  </span>
-                </div>
+                <span
+                  className={`absolute top-0 right-0 px-2 py-1 rounded text-[10px] font-medium ${
+                    customer.status?.toLowerCase() === "active"
+                      ? "bg-[#34C759] text-white"
+                      : "bg-[#EB5757] text-white"
+                  }`}
+                >
+                  {customer.status || "Unknown"}
+                </span>
               </div>
             </div>
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="w-4 h-4 text-[#0088B1]" />
-                  <p className="text-xs text-[#899193]">Member Since</p>
+              <div className="bg-white rounded-lg p-4 col-span-2 border border-[#D3D7D8] flex items-center">
+                <div className="flex items-start gap-2 flex-col">
+                  <p className="text-[10px] text-[#899193]">Member Since</p>
+                  <p className="text-sm font-semibold text-[#161D1F]">
+                    {CustomerService.formatDate(customer.membership_date)}
+                  </p>
                 </div>
-                <p className="text-sm font-semibold text-[#161D1F]">
-                  {CustomerService.formatDate(customer.membership_date)}
-                </p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Activity className="w-4 h-4 text-[#34C759]" />
-                  <p className="text-xs text-[#899193]">Total Orders</p>
+                <div className="items-center ml-auto p-2 bg-[#E8F4F7] rounded-full">
+                  <IdCard className="w-4 h-4 text-[#0088B1]" />
                 </div>
-                <p className="text-sm font-semibold text-[#161D1F]">
-                  {customer.total_orders}
-                </p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4 col-span-2">
-                <p className="text-xs text-[#899193] mb-2">Total Spent</p>
-                <p className="text-lg font-semibold text-[#161D1F]">
-                  {CustomerService.formatCurrency(customer.total_spent)}
-                </p>
+              <div className="bg-white rounded-lg p-4 col-span-2 border border-[#D3D7D8] flex items-center">
+                <div className="flex items-start gap-2 flex-col">
+                  <p className="text-[10px] text-[#899193]">Total Orders</p>
+                  <p className="text-sm font-semibold text-[#161D1F]">
+                    {customer.total_orders}
+                  </p>
+                </div>
+                <div className="items-center ml-auto p-2 bg-[#E8F4F7] rounded-full">
+                  <Package className="w-4 h-4 text-[#0088B1]" />
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-4 col-span-2 border border-[#D3D7D8] flex items-center">
+                <div className="flex items-start gap-2 flex-col">
+                  <p className="text-[10px] text-[#899193]">Total Spent</p>
+                  <p className="text-sm font-semibold text-[#161D1F]">
+                    {CustomerService.formatCurrency(customer.total_spent)}
+                  </p>
+                </div>
+                <div className="items-center ml-auto p-2 bg-[#E8F4F7] rounded-full">
+                  <ReceiptIndianRupee className="w-4 h-4 text-[#0088B1]" />
+                </div>
               </div>
             </div>
 
@@ -138,10 +165,13 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
               </h4>
 
               <div className="flex items-start gap-3">
-                <User className="w-5 h-5 text-[#0088B1] mt-1" />
+                <div className="p-2 bg-[#E8F4F7] rounded-lg">
+                  <User className="w-5 h-5 text-[#0088B1]" />
+                </div>
+
                 <div>
-                  <p className="text-xs text-[#899193]">Age & Gender</p>
-                  <p className="text-sm text-[#161D1F]">
+                  <p className="text-[10px] text-[#899193]">Age & Gender</p>
+                  <p className="text-[10px] font-medium text-[#161D1F]">
                     {CustomerService.formatAge(customer.age)} |{" "}
                     {customer.gender || "N/A"}
                   </p>
@@ -150,10 +180,12 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
 
               {customer.birthday && (
                 <div className="flex items-start gap-3">
-                  <Calendar className="w-5 h-5 text-[#0088B1] mt-1" />
+                  <div className="p-2 bg-[#E8F4F7] rounded-lg">
+                    <Calendar className="w-5 h-5 text-[#0088B1]" />
+                  </div>{" "}
                   <div>
-                    <p className="text-xs text-[#899193]">Birthday</p>
-                    <p className="text-sm text-[#161D1F]">
+                    <p className="text-[10px] text-[#899193]">Birthday</p>
+                    <p className="text-[10px] font-medium text-[#161D1F]">
                       {CustomerService.formatDate(customer.birthday)}
                     </p>
                   </div>
@@ -178,7 +210,7 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
         </div>
 
         {/* Right Side - Order History */}
-        <div className="flex-1 bg-gray-50 overflow-y-auto">
+        <div className="flex-1 bg-white overflow-y-auto border border-[#D3D7D8] rounded-xl ml-4">
           <CustomerOrderHistory
             orderData={orderData}
             loading={loading}
