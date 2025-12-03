@@ -195,7 +195,6 @@ const CustomerCatalog: React.FC = () => {
       ) : (
         <div className="min-h-screen bg-gray-50 p-2">
           <div className="max-w-7xl mx-auto">
-            {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-[20px] font-semibold text-[#161D1F]">
                 User Management & Order Analytics
@@ -214,7 +213,6 @@ const CustomerCatalog: React.FC = () => {
                 </p>
               </div>
             )}
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
               <StatsCard
                 title="Total Customers"
@@ -252,7 +250,6 @@ const CustomerCatalog: React.FC = () => {
               />
             </div>
 
-            {/* Search and Actions */}
             <div className="flex flex-col md:flex-row gap-4 mb-4">
               <div className="flex-1 relative">
                 <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#899193]" />

@@ -346,13 +346,17 @@ export class CustomerService {
     };
   }
   static formatAge(age?: {
-    years: number;
-    months: number;
-    days: number;
+    years?: number;
+    months?: number;
+    days?: number;
   }): string {
-    if (!age) return "N/A";
+    if (!age || age.years === undefined || age.months === undefined) {
+      return "N/A";
+    }
+
     return `${age.years} yrs. | ${age.months} months`;
   }
+
   static getMedicalHistory(customer: CustomerDetail): string[] {
     return [];
   }
