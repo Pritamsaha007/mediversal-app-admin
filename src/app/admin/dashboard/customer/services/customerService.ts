@@ -26,7 +26,6 @@ const getAuthHeaders = () => {
     }),
   };
 };
-
 const createApiClient = (): AxiosInstance => {
   const client = axios.create({
     baseURL: API_BASE_URL,
@@ -62,14 +61,7 @@ const createApiClient = (): AxiosInstance => {
 
   return client;
 };
-
 export class CustomerService {
-  /**
-   * @param search - Search term
-   * @param start - Start index for pagination
-   * @param max - Maximum number of results
-   * @returns Promise with customer data
-   */
   static async searchCustomers(
     search: string = "",
     start: number = 0,
@@ -122,11 +114,6 @@ export class CustomerService {
       throw new Error("An unexpected error occurred while fetching customers");
     }
   }
-
-  /**
-   * Fetch customer metrics/statistics
-   * @returns Promise with metrics data
-   */
   static async getCustomerMetrics(): Promise<CustomerMetricsResponse> {
     try {
       const apiClient = createApiClient();
@@ -156,12 +143,6 @@ export class CustomerService {
       throw new Error("An unexpected error occurred while fetching metrics");
     }
   }
-
-  /**
-   * Format currency for display
-   * @param amount - Amount to format
-   * @returns Formatted currency string
-   */
   static formatCurrency(amount: number | null): string {
     if (amount === null || amount === undefined) {
       return "₹ 0.00";
@@ -172,12 +153,6 @@ export class CustomerService {
       maximumFractionDigits: 2,
     })}`;
   }
-
-  /**
-   * Format date for display
-   * @param dateString - ISO date string
-   * @returns Formatted date string
-   */
   static formatDate(dateString: string): string {
     if (!dateString) return "N/A";
 
@@ -192,40 +167,17 @@ export class CustomerService {
       return "Invalid Date";
     }
   }
-
-  /**
-   * Get full name of customer
-   * @param customer - Customer object
-   * @returns Full name
-   */
   static getFullName(customer: Customer): string {
     const firstName = customer.first_name || "";
     const lastName = customer.last_name || "";
     return `${firstName} ${lastName}`.trim() || "Unknown Customer";
   }
-
-  /**
-   * Check if customer is active
-   * @param customer - Customer object
-   * @returns Boolean indicating active status
-   */
   static isActive(customer: Customer): boolean {
     return customer.status?.toLowerCase() === "active";
   }
-
-  /**
-   * Calculate customer lifetime value
-   * @param customer - Customer object
-   * @returns LTV value
-   */
   static getLifetimeValue(customer: Customer): number {
     return customer.total_spent ?? 0;
   }
-
-  /**
-   * Export customers to CSV
-   * @param customers - Array of customers
-   */
   static exportToCSV(customers: Customer[]): void {
     if (customers.length === 0) {
       alert("No customers to export");
@@ -282,7 +234,6 @@ export class CustomerService {
     link.click();
     document.body.removeChild(link);
   }
-
   static async createCustomer(
     data: Partial<CreateCustomerRequest>
   ): Promise<CreateCustomerResponse> {
@@ -330,10 +281,6 @@ export class CustomerService {
       throw new Error("An unexpected error occurred while creating customer");
     }
   }
-
-  /**
-   * Fetch doctor consultation orders for a customer
-   */
   static async getConsultationOrders(
     customerId: string
   ): Promise<ConsultationOrder[]> {
@@ -350,10 +297,6 @@ export class CustomerService {
       return [];
     }
   }
-
-  /**
-   * Fetch pharmacy orders for a customer
-   */
   static async getPharmacyOrders(customerId: string): Promise<PharmacyOrder[]> {
     try {
       const apiClient = createApiClient();
@@ -368,10 +311,6 @@ export class CustomerService {
       return [];
     }
   }
-
-  /**
-   * Fetch homecare orders for a customer
-   */
   static async getHomecareOrders(customerId: string): Promise<HomecareOrder[]> {
     try {
       const apiClient = createApiClient();
@@ -386,10 +325,6 @@ export class CustomerService {
       return [];
     }
   }
-
-  /**
-   * Fetch lab test bookings for a customer
-   */
   static async getLabTestBookings(
     customerId: string
   ): Promise<LabTestBooking[]> {
@@ -406,10 +341,6 @@ export class CustomerService {
       return [];
     }
   }
-
-  /**
-   * Fetch all orders for a customer
-   */
   static async getAllCustomerOrders(customerId: string) {
     const [consultations, pharmacy, homecare, labTests] = await Promise.all([
       this.getConsultationOrders(customerId),
@@ -425,10 +356,6 @@ export class CustomerService {
       labTests,
     };
   }
-
-  /**
-   * Format age display
-   */
   static formatAge(age?: {
     years: number;
     months: number;
@@ -437,13 +364,7 @@ export class CustomerService {
     if (!age) return "N/A";
     return `${age.years} yrs. | ${age.months} months`;
   }
-
-  /**
-   * Get medical history tags
-   */
   static getMedicalHistory(customer: CustomerDetail): string[] {
-    // This should come from the customer data if available
-    // For now, return empty array as it's not in the provided data structure
     return [];
   }
 }
