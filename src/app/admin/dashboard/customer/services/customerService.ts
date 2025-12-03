@@ -356,7 +356,6 @@ export class CustomerService {
 
     return `${age.years} yrs. | ${age.months} months`;
   }
-
   static getMedicalHistory(customer: CustomerDetail): string[] {
     return [];
   }
