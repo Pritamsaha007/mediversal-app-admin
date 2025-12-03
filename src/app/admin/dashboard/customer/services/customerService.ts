@@ -65,51 +65,40 @@ export class CustomerService {
   static async searchCustomers(
     search: string = "",
     start: number = 0,
-    max: number = 20
+    max: number = 20,
+    retries: number = 2
   ): Promise<SearchCustomersResponse> {
     try {
       const apiClient = createApiClient();
-
       const requestBody: SearchCustomersRequest = {
         search: search.trim(),
         start,
         max,
       };
-
       const response = await apiClient.post<SearchCustomersResponse>(
         "/api/customer/search",
         requestBody
       );
-
       const sanitizedCustomers = response.data.customers.map((customer) => ({
         ...customer,
-        email: customer.email || "",
-        phone_number: customer.phone_number || "",
-        city: customer.city || "",
-        state: customer.state || "",
-        country: customer.country || "",
+        email: customer.email ?? "",
+        phone_number: customer.phone_number ?? "",
+        city: customer.city ?? "",
+        state: customer.state ?? "",
+        country: customer.country ?? "",
         total_spent: customer.total_spent ?? 0,
-        total_orders: customer.total_orders || "0",
+        total_orders: customer.total_orders ?? "0",
+        status: customer.status ?? "Inactive",
       }));
-      console.log("Fetched customers:", sanitizedCustomers);
-
       return {
         success: response.data.success,
         customers: sanitizedCustomers,
         total_count: response.data.total_count || 0,
       };
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const errorMessage =
-          error.response?.data?.message ||
-          error.message ||
-          "Failed to fetch customers";
-        console.error("Failed to search customers:", {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          error: error.response?.data,
-        });
-        throw new Error(errorMessage);
+      if (retries > 0 && axios.isAxiosError(error) && !error.response) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        return this.searchCustomers(search, start, max, retries - 1);
       }
       throw new Error("An unexpected error occurred while fetching customers");
     }

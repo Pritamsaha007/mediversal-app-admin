@@ -12,11 +12,10 @@ import {
 import { CustomerService } from "./services/customerService";
 import CreateCustomerModal from "./components/CreateCustomerModal";
 import CustomerDetailView from "./components/CustomerDetailView";
-import {
-  CustomerDetail,
-  Customer,
-  CustomerMetrics,
-} from "./type/customerDetailTypes";
+import { Customer, CustomerDetail } from "./type/customerDetailTypes";
+import { useCustomerStore } from "./store/customerStore";
+import TableSkeleton from "./components/TableSkeleton";
+import CustomerRow from "./components/CustomerRow";
 
 const StatsCard: React.FC<{
   title: string;
@@ -49,30 +48,55 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
 };
 
 const CustomerCatalog: React.FC = () => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [metrics, setMetrics] = useState<CustomerMetrics | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [metricsLoading, setMetricsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const itemsPerPage = 20;
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [selectedCustomer, setSelectedCustomer] =
     useState<CustomerDetail | null>(null);
+  const [apiError, setApiError] = useState<{
+    type: "metrics" | "customers" | null;
+    message: string;
+  }>({ type: null, message: "" });
+  const {
+    customers,
+    setCustomers,
+    metrics,
+    setMetrics,
+    currentPage,
+    setCurrentPage,
+    totalCount,
+    setTotalCount,
+    searchTerm,
+    setSearchTerm,
+    loading,
+    setLoading,
+    metricsLoading,
+    setMetricsLoading,
+    error,
+    setError,
+    resetPagination,
+  } = useCustomerStore();
 
   const fetchMetrics = async () => {
     try {
       setMetricsLoading(true);
+      setApiError({ type: null, message: "" });
       const response = await CustomerService.getCustomerMetrics();
       if (response.success && response.metrics.length > 0) {
         setMetrics(response.metrics[0]);
+      } else {
+        setApiError({
+          type: "metrics",
+          message: "Unable to load customer metrics. Showing default values.",
+        });
       }
     } catch (err) {
       console.error("Failed to fetch metrics:", err);
+      setApiError({
+        type: "metrics",
+        message: "Failed to connect to server. Please check your connection.",
+      });
     } finally {
       setMetricsLoading(false);
     }
@@ -109,13 +133,17 @@ const CustomerCatalog: React.FC = () => {
     }
   }, []);
 
+  const handleCustomerClick = useCallback((customer: Customer) => {
+    setSelectedCustomer(customer as CustomerDetail);
+  }, []);
+
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
     searchTimeoutRef.current = setTimeout(() => {
-      setCurrentPage(0);
+      resetPagination();
       fetchCustomers(searchTerm.trim(), 0);
     }, 500);
 
@@ -124,7 +152,7 @@ const CustomerCatalog: React.FC = () => {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchTerm, fetchCustomers]);
+  }, [searchTerm, fetchCustomers, resetPagination]);
 
   useEffect(() => {
     if (currentPage > 0) {
@@ -135,22 +163,6 @@ const CustomerCatalog: React.FC = () => {
   useEffect(() => {
     fetchMetrics();
   }, []);
-
-  const handleSelectCustomer = (customerId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCustomers([...selectedCustomers, customerId]);
-    } else {
-      setSelectedCustomers(selectedCustomers.filter((id) => id !== customerId));
-    }
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedCustomers(customers.map((c) => c.id));
-    } else {
-      setSelectedCustomers([]);
-    }
-  };
 
   const handleExport = () => {
     if (customers.length === 0) {
@@ -195,12 +207,18 @@ const CustomerCatalog: React.FC = () => {
                 + New Customer
               </button>
             </div>
-
+            {apiError.type && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <p className="text-yellow-800 text-[12px]">
+                  {apiError.message}
+                </p>
+              </div>
+            )}
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
               <StatsCard
                 title="Total Customers"
-                stats={metricsLoading ? "..." : metrics?.total_customers || "0"}
+                stats={metricsLoading ? "..." : metrics?.total_customers ?? "0"}
                 icon={<Users className="w-4 h-4" />}
                 color="text-[#0088b1]"
               />
@@ -209,14 +227,14 @@ const CustomerCatalog: React.FC = () => {
                 stats={
                   metricsLoading
                     ? "..."
-                    : metrics?.total_active_customers || "0"
+                    : metrics?.total_active_customers ?? "0"
                 }
                 icon={<UserCheck className="w-4 h-4" />}
                 color="text-[#0088b1]"
               />
               <StatsCard
                 title="Total Orders"
-                stats={metricsLoading ? "..." : metrics?.total_orders || "0"}
+                stats={metricsLoading ? "..." : metrics?.total_orders ?? "0"}
                 icon={<ShoppingCart className="w-4 h-4" />}
                 color="text-[#0088b1]"
               />
@@ -226,7 +244,7 @@ const CustomerCatalog: React.FC = () => {
                   metricsLoading
                     ? "..."
                     : CustomerService.formatCurrency(
-                        parseFloat(metrics?.net_revenue || "0")
+                        parseFloat(metrics?.net_revenue ?? "0")
                       )
                 }
                 icon={<DollarSign className="w-4 h-4" />}
@@ -310,66 +328,43 @@ const CustomerCatalog: React.FC = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {loading ? (
-                      <tr>
-                        <td colSpan={6} className="px-6 py-12 text-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0088B1] mx-auto"></div>
-                        </td>
-                      </tr>
+                      <TableSkeleton rows={5} columns={5} />
                     ) : customers.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={6}
-                          className="px-6 py-12 text-center text-[#899193] text-[12px]"
-                        >
-                          No customers found
+                        <td colSpan={5} className="px-6 py-12 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                            <Users className="w-12 h-12 text-gray-300 mb-3" />
+                            <p className="text-[14px] font-medium text-[#161D1F] mb-1">
+                              No Customers Found
+                            </p>
+                            <p className="text-[12px] text-[#899193]">
+                              {searchTerm
+                                ? "Try adjusting your search criteria"
+                                : "Start by adding your first customer"}
+                            </p>
+                          </div>
                         </td>
                       </tr>
                     ) : (
                       customers.map((customer) => (
-                        <tr
+                        <CustomerRow
                           key={customer.id}
-                          className="hover:bg-gray-50 cursor-pointer"
-                          onClick={() =>
-                            setSelectedCustomer(customer as CustomerDetail)
-                          }
-                        >
-                          <td className="px-6 py-4">
-                            <div className="text-[12px] font-medium text-[#161D1F]">
-                              {CustomerService.getFullName(customer)}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-[12px] text-[#161D1F]">
-                              {customer.email || "N/A"}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-[12px] text-[#161D1F]">
-                              {customer.phone_number || "N/A"}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <StatusBadge status={customer.status} />
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-[12px] font-medium text-[#161D1F]">
-                              {CustomerService.formatCurrency(
-                                customer.total_spent
-                              )}
-                            </div>
-                          </td>
-                        </tr>
+                          customer={customer}
+                          onClick={() => handleCustomerClick(customer)}
+                        />
                       ))
                     )}
                   </tbody>
                 </table>
 
-                {/* Pagination */}
                 {!loading && customers.length > 0 && (
                   <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
                     <div className="text-[12px] text-[#899193]">
                       Showing{" "}
-                      {Math.min(currentPage * itemsPerPage + 1, totalCount)} to{" "}
+                      {customers.length === 0
+                        ? 0
+                        : currentPage * itemsPerPage + 1}{" "}
+                      to{" "}
                       {Math.min((currentPage + 1) * itemsPerPage, totalCount)}{" "}
                       of {totalCount} customers
                     </div>
@@ -379,10 +374,10 @@ const CustomerCatalog: React.FC = () => {
                           setCurrentPage((prev) => Math.max(0, prev - 1))
                         }
                         disabled={!hasPrevious}
-                        className={`px-4 py-2 text-[12px] border border-[#E5E8E9] rounded-lg ${
+                        className={`px-4 py-2 text-[12px] border border-[#E5E8E9] rounded-lg transition-colors ${
                           hasPrevious
                             ? "text-[#161D1F] hover:bg-gray-50"
-                            : "text-[#B0B6B8] cursor-not-allowed"
+                            : "text-[#B0B6B8] cursor-not-allowed bg-gray-50"
                         }`}
                       >
                         Previous
@@ -390,10 +385,10 @@ const CustomerCatalog: React.FC = () => {
                       <button
                         onClick={() => setCurrentPage((prev) => prev + 1)}
                         disabled={!hasMore}
-                        className={`px-4 py-2 text-[12px] border border-[#E5E8E9] rounded-lg ${
+                        className={`px-4 py-2 text-[12px] border border-[#E5E8E9] rounded-lg transition-colors ${
                           hasMore
                             ? "text-[#161D1F] hover:bg-gray-50"
-                            : "text-[#B0B6B8] cursor-not-allowed"
+                            : "text-[#B0B6B8] cursor-not-allowed bg-gray-50"
                         }`}
                       >
                         Next
@@ -404,12 +399,6 @@ const CustomerCatalog: React.FC = () => {
               </div>
             </div>
           </div>
-          {selectedCustomer && (
-            <CustomerDetailView
-              customer={selectedCustomer}
-              onClose={() => setSelectedCustomer(null)}
-            />
-          )}
           <CreateCustomerModal
             isOpen={isCreateModalOpen}
             onClose={() => setIsCreateModalOpen(false)}
