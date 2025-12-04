@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 
-import StatsCard from "../../home-care/components/StatsCard";
+import StatsCard from "../../../../components/common/StatsCard";
 import {
   Search,
   ChevronDown,
@@ -86,15 +86,6 @@ const BookingsManagement: React.FC = () => {
 
   const [orderStatuses, setOrderStatuses] = useState<OrderStatusEnum[]>([]);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
-
-  const statusOptions = [
-    "All Status",
-    "Completed",
-    "Pending",
-    "In Progress",
-    "Cancelled",
-    "Scheduled",
-  ];
 
   const fetchOrderStatuses = async () => {
     try {
@@ -529,7 +520,7 @@ const BookingsManagement: React.FC = () => {
 
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search by booking ID, patient name, test name..."

@@ -119,7 +119,6 @@ const ProductCatalog: React.FC = () => {
     toast.success(`Exported ${productsToExport.length} products to PDF`);
   };
 
-  // Change in ProductCatalog.tsx
   const handleAddProduct = async (productData: ProductFormData) => {
     console.log("New product added:", productData);
     setIsModalOpen(false);
@@ -129,7 +128,7 @@ const ProductCatalog: React.FC = () => {
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
     setCategoryDropdownOpen(false);
-    // Reset pagination when category changes
+
     setCurrentPage(0);
   };
 
@@ -230,11 +229,9 @@ const ProductCatalog: React.FC = () => {
     }
   };
 
-  // Calculate hasMore for simple Pagination component
   const totalItems = statistics.activeProducts + statistics.inactiveProducts;
   const hasMore = (currentPage + 1) * itemsPerPage < totalItems;
 
-  // Pagination handlers for simple Pagination component
   const handleNextPage = async () => {
     if (hasMore && !loading) {
       const nextPage = currentPage + 1;
@@ -270,7 +267,6 @@ const ProductCatalog: React.FC = () => {
       return tabMatch;
     });
 
-    // Apply sorting
     if (sortBy !== "Sort") {
       filtered = [...filtered].sort((a, b) => {
         switch (sortBy) {
@@ -376,7 +372,6 @@ const ProductCatalog: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-2">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
             Product Catalog
@@ -391,7 +386,7 @@ const ProductCatalog: React.FC = () => {
             </button>
           </div>
         </div>
-        {/* Stats Cards */}
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
           <StatsCard
             title="Total Products"
@@ -450,10 +445,10 @@ const ProductCatalog: React.FC = () => {
             </div>
           </div>
         )}
-        {/* Search and Filters */}
+
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search by name, SKU, brand or category"
