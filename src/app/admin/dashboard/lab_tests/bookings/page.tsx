@@ -691,9 +691,10 @@ const BookingsManagement: React.FC = () => {
                               </>
                             ) : (
                               <>
-                                {booking.status.charAt(0).toUpperCase() +
-                                  booking.status.slice(1).toLowerCase()}
-
+                                {booking?.status
+                                  ? booking.status.charAt(0).toUpperCase() +
+                                    booking.status.slice(1).toLowerCase()
+                                  : "Unknown"}
                                 <ChevronDown className="w-3 h-3 ml-1" />
                               </>
                             )}
