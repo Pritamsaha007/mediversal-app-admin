@@ -1,4 +1,3 @@
-// components/StatusBadge.tsx
 import React from "react";
 
 interface StatusBadgeProps {
@@ -23,17 +22,20 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
     Pending: "bg-yellow-100 text-yellow-800",
     Failed: "bg-red-100 text-red-800",
     Refund: "bg-orange-100 text-orange-800",
+    Confirmed: "bg-orange-100 text-orange-800",
     Completed: "bg-green-100 text-green-800",
-    "Not Provided": "bg-yellow-100 text-blue-800",
+    "Not Provided": "bg-amber-100 text-amber-800",
     "In Progress": "bg-yellow-100 text-yellow-800",
     "ON GOING": "bg-cyan-100 text-cyan-800",
+    "Not Needed": "bg-yellow-100 text-yellow-800",
+    "Not Assigned": "bg-red-100 text-red-800",
   };
 
   return (
     <span
-      className={`px-2 py-1 text-[8px] font-medium rounded-full ${
+      className={`px-3 py-1 text-[10px] font-medium rounded-full ${
         statusColors[status as keyof typeof statusColors] ||
-        "bg-gray-100 text-gray-800"
+        "bg-sky-100 text-sky-700"
       }`}
     >
       {status}

@@ -10,6 +10,12 @@ import {
   Bike,
   Box,
   BadgePercent,
+  MoreVertical,
+  Check,
+  X,
+  UserCheck,
+  UserX,
+  Car,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { ViewRiderModal } from "./components/ViewRiderModal";
@@ -17,20 +23,23 @@ import { AddRiderModal } from "./components/CreateNewModal";
 import { DeliveryRider, RidersStats } from "../types";
 
 import { useAdminStore } from "@/app/store/adminStore";
-import StatusBadge from "../../home-care/components/StatusBadge";
-import StatsCard from "../../home-care/components/StatsCard";
-import { deleteRider, getRidersStats, searchRider } from "../services";
+import StatusBadge from "../../../../components/common/StatusBadge";
+import StatsCard from "../../../../components/common/StatsCard";
+import {
+  deleteRider,
+  getRidersStats,
+  searchRider,
+  updateRiderPOI,
+} from "../services";
 
 const DeliveryRiders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [riders, setRiders] = useState<DeliveryRider[]>([]);
   const [filteredRiders, setFilteredRiders] = useState<DeliveryRider[]>([]);
-  const [openDropdown, setOpenDropdown] = useState<null | "status">(null);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [selectedRiders, setSelectedRiders] = useState<string[]>([]);
-  const [riderActionDropdown, setRiderActionDropdown] = useState<number | null>(
-    null
-  );
+
   const [loading, setLoading] = useState(false);
   const [showAddRiderModal, setShowAddRiderModal] = useState(false);
   const [showViewRiderModal, setShowViewRiderModal] = useState(false);
@@ -68,9 +77,7 @@ const DeliveryRiders: React.FC = () => {
 
       const ridersData = await searchRider(payload, token);
       setRiders(ridersData);
-      console.log(riders, "riders");
       setFilteredRiders(ridersData);
-      console.log(riders, "riders");
     } catch (error: any) {
       console.error("Error fetching riders:", error);
       toast.error(error.message || "Failed to load delivery riders");
@@ -82,7 +89,7 @@ const DeliveryRiders: React.FC = () => {
   useEffect(() => {
     fetchRiders();
   }, []);
-  console.log(riders, "riders");
+
   useEffect(() => {
     if (searchTerm || selectedStatus !== "All Status") {
       const debounceTimer = setTimeout(() => {
@@ -97,6 +104,69 @@ const DeliveryRiders: React.FC = () => {
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
     setOpenDropdown(null);
+  };
+
+  const updateRiderPOIStatus = async (riderId: string, isApproved: boolean) => {
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    setRiders((prevRiders) =>
+      prevRiders.map((rider) =>
+        rider.id === riderId
+          ? {
+              ...rider,
+              is_poi_verified_status: isApproved ? "approved" : "pending",
+            }
+          : rider
+      )
+    );
+
+    setFilteredRiders((prevFilteredRiders) =>
+      prevFilteredRiders.map((rider) =>
+        rider.id === riderId
+          ? {
+              ...rider,
+              is_poi_verified_status: isApproved ? "approved" : "pending",
+            }
+          : rider
+      )
+    );
+
+    toast.success(
+      `Rider ${isApproved ? "approved" : "disapproved"} successfully!`
+    );
+
+    try {
+      await updateRiderPOI(riderId, isApproved, token);
+    } catch (error: any) {
+      console.error("Error updating rider POI status:", error);
+
+      setRiders((prevRiders) =>
+        prevRiders.map((rider) =>
+          rider.id === riderId
+            ? {
+                ...rider,
+                is_poi_verified_status: isApproved ? "pending" : "approved",
+              }
+            : rider
+        )
+      );
+
+      setFilteredRiders((prevFilteredRiders) =>
+        prevFilteredRiders.map((rider) =>
+          rider.id === riderId
+            ? {
+                ...rider,
+                is_poi_verified_status: isApproved ? "pending" : "approved",
+              }
+            : rider
+        )
+      );
+
+      toast.error(error.message || "Failed to update rider status");
+    }
   };
 
   const handleBulkDelete = async () => {
@@ -141,18 +211,30 @@ const DeliveryRiders: React.FC = () => {
     if (confirmed) {
       setLoading(true);
       try {
-        // Delete each rider sequentially
+        // Update local state immediately
+        setRiders((prevRiders) =>
+          prevRiders.filter((rider) => !selectedRiders.includes(rider.id))
+        );
+        setFilteredRiders((prevFilteredRiders) =>
+          prevFilteredRiders.filter(
+            (rider) => !selectedRiders.includes(rider.id)
+          )
+        );
+
+        // Show success message
+        toast.success(`${selectedRiders.length} riders deleted successfully!`);
+
+        // Make API calls in background
         for (const riderId of selectedRiders) {
           await deleteRider(riderId, token);
         }
 
-        // Refresh the list
-        await fetchRiders();
-
-        toast.success(`${selectedRiders.length} riders deleted successfully!`);
+        // Clear selection
         setSelectedRiders([]);
       } catch (error: any) {
         console.error("Error deleting riders:", error);
+        // If error occurs, we should refresh from server
+        await fetchRiders();
         toast.error(error.message || "Failed to delete some riders");
       } finally {
         setLoading(false);
@@ -177,18 +259,16 @@ const DeliveryRiders: React.FC = () => {
   };
 
   const handleAddRider = async () => {
-    await fetchRiders(); // Refresh the list
+    await fetchRiders();
     toast.success("Rider added successfully!");
   };
 
   const handleUpdateRider = async () => {
-    await fetchRiders(); // Refresh the list
+    await fetchRiders();
     toast.success("Rider updated successfully!");
   };
 
   const handleRiderAction = async (action: string, rider: DeliveryRider) => {
-    setRiderActionDropdown(null);
-
     switch (action) {
       case "view":
         setSelectedRider(rider);
@@ -197,6 +277,12 @@ const DeliveryRiders: React.FC = () => {
       case "edit":
         setEditingRider(rider);
         setShowAddRiderModal(true);
+        break;
+      case "approve":
+        await updateRiderPOIStatus(rider.id, true);
+        break;
+      case "disapprove":
+        await updateRiderPOIStatus(rider.id, false);
         break;
       case "delete":
         if (!token) {
@@ -239,17 +325,20 @@ const DeliveryRiders: React.FC = () => {
 
         if (confirmed) {
           try {
-            setLoading(true);
-            await deleteRider(rider.id, token);
-
-            // Refresh the list
-            await fetchRiders();
+            setRiders((prevRiders) =>
+              prevRiders.filter((r) => r.id !== rider.id)
+            );
+            setFilteredRiders((prevFilteredRiders) =>
+              prevFilteredRiders.filter((r) => r.id !== rider.id)
+            );
 
             toast.success("Rider deleted successfully!");
+
+            await deleteRider(rider.id, token);
           } catch (error: any) {
             console.error("Error deleting rider:", error);
+            await fetchRiders();
             toast.error(error.message || "Failed to delete rider");
-            setLoading(false);
           }
         }
         break;
@@ -257,26 +346,28 @@ const DeliveryRiders: React.FC = () => {
         break;
     }
   };
-
   const getVehicleIcon = (vehicleType: string) => {
     switch (vehicleType.toLowerCase()) {
       case "motorcycle":
       case "scooter":
       case "bicycle":
-        return <Bike className="w-4 h-4" />;
+        return <Bike className="w-4 h-4" color="#0088B1" />;
       case "car":
-        return <Bike className="w-4 h-4" />; // You might want a Car icon
+        return <Car className="w-4 h-4" color="#0088B1" />;
       default:
-        return <Bike className="w-4 h-4" />;
+        return <Bike className="w-4 h-4" color="#0088B1" />;
     }
   };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (!target.closest(".dropdown-toggle")) {
+
+      if (
+        !target.closest(".dropdown-toggle") &&
+        !target.closest(".dropdown-menu")
+      ) {
         setOpenDropdown(null);
-        setRiderActionDropdown(null);
       }
     };
 
@@ -346,7 +437,7 @@ const DeliveryRiders: React.FC = () => {
 
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search by rider name, email, mobile, aadhar..."
@@ -354,36 +445,6 @@ const DeliveryRiders: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
-          </div>
-          <div className="flex gap-3">
-            <div className="relative">
-              <button
-                onClick={() =>
-                  setOpenDropdown(openDropdown === "status" ? null : "status")
-                }
-                className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-3 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
-              >
-                {selectedStatus}
-                <ChevronDown className="w-5 h-5" />
-              </button>
-              {openDropdown === "status" && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                  {statusOptions.map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusChange(status)}
-                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
-                        selectedStatus === status
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-[#161D1F]"
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
@@ -518,22 +579,53 @@ const DeliveryRiders: React.FC = () => {
                         <StatusBadge status={rider.is_available_status} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">
-                        <div className="flex items-center gap-2 justify-end">
+                        <div className="flex items-center gap-2 justify-end relative">
                           <button
                             onClick={() => handleRiderAction("view", rider)}
-                            className="p-1 text-gray-500 hover:text-blue-500"
+                            className="p-1 text-gray-500 hover:text-[#0088B1]"
+                            title="View Rider"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleRiderAction("edit", rider)}
-                            className="p-1 text-gray-500 hover:text-blue-500"
+                            className="p-1 text-gray-500 hover:text-[#0088B1]"
+                            title="Edit Rider"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
+                          {rider.is_poi_verified_status !== "approved" && (
+                            <button
+                              onClick={() => {
+                                handleRiderAction("approve", rider);
+                                setOpenDropdown(null);
+                              }}
+                              title="Approve Rider"
+                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left hover:bg-gray-100 text-green-600"
+                            >
+                              <UserCheck className="w-4 h-4" />
+                            </button>
+                          )}
+                          {rider.is_poi_verified_status === "approved" && (
+                            <button
+                              onClick={() => {
+                                handleRiderAction("disapprove", rider);
+                                setOpenDropdown(null);
+                              }}
+                              title="Disapprove Rider"
+                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left hover:bg-gray-100 text-orange-600"
+                            >
+                              <UserX className="w-4 h-4" />
+                            </button>
+                          )}
+
                           <button
-                            onClick={() => handleRiderAction("delete", rider)}
-                            className="p-1 text-[#F44336] hover:text-red-500"
+                            onClick={() => {
+                              handleRiderAction("delete", rider);
+                              setOpenDropdown(null);
+                            }}
+                            title="Delete Rider"
+                            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left hover:bg-gray-100 text-red-600"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

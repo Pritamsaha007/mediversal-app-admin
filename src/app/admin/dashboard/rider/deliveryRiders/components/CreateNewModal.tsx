@@ -63,7 +63,6 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
 
   const { token } = useAdminStore();
 
-  // Fetch service cities and vehicles on mount
   useEffect(() => {
     if (isOpen && token) {
       loadServiceCities();
@@ -71,12 +70,10 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
     }
   }, [isOpen, token]);
 
-  // IMPORTANT: This useEffect should populate form when editRider changes
   useEffect(() => {
     if (editRider && isOpen) {
-      console.log("Editing rider data:", editRider); // Debug log
+      console.log("Editing rider data:", editRider);
 
-      // Set form data from editRider
       setFormData({
         name: editRider.name || "",
         email: editRider.email || "",

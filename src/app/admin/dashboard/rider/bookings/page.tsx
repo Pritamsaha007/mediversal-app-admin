@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
 import { useAdminStore } from "@/app/store/adminStore";
-import StatusBadge from "../../home-care/components/StatusBadge";
-import StatsCard from "../../home-care/components/StatsCard";
+import StatusBadge from "../../../../components/common/StatusBadge";
+import StatsCard from "../../../../components/common/StatsCard";
 import {
   Search,
   ChevronDown,
@@ -65,7 +65,6 @@ const RiderBooking: React.FC = () => {
 
   const { token } = useAdminStore();
 
-  // Debounce function for search
   const debounce = (func: Function, wait: number) => {
     let timeout: NodeJS.Timeout;
     return (...args: any[]) => {
@@ -74,7 +73,6 @@ const RiderBooking: React.FC = () => {
     };
   };
 
-  // Fetch all riders on component mount
   useEffect(() => {
     if (token) {
       fetchAllRiders();
@@ -82,13 +80,12 @@ const RiderBooking: React.FC = () => {
     }
   }, [token]);
 
-  // Search orders when searchTerm changes (with debounce)
   useEffect(() => {
     const searchTimer = setTimeout(() => {
       if (selectedRider && token) {
         fetchRiderOrders(selectedRider, true);
       }
-    }, 500); // 500ms debounce
+    }, 500);
 
     return () => clearTimeout(searchTimer);
   }, [searchTerm, selectedStatus]);
@@ -136,7 +133,6 @@ const RiderBooking: React.FC = () => {
     }
   };
 
-  // Filter riders locally when searching
   useEffect(() => {
     if (riderSearch.trim() === "") {
       setRiders(allRiders);
@@ -250,7 +246,6 @@ const RiderBooking: React.FC = () => {
     );
   };
 
-  // Fetch orders when rider changes or page changes
   useEffect(() => {
     if (selectedRider && token) {
       fetchRiderOrders(selectedRider);
@@ -300,7 +295,6 @@ const RiderBooking: React.FC = () => {
     setUpdatingOrderId(orderId);
 
     try {
-      // Update local state immediately for instant feedback
       setOrders(
         orders.map((order) => {
           if (order.id === orderId) {
@@ -313,7 +307,6 @@ const RiderBooking: React.FC = () => {
         })
       );
 
-      // Update rider stats locally
       updateRiderStats(selectedRider, {
         total_in_progress_delivery:
           (selectedRiderData?.stats.total_in_progress_delivery || 0) + 1,
@@ -325,10 +318,9 @@ const RiderBooking: React.FC = () => {
 
       toast.success("Delivery started!");
 
-      // Call API in background
       const payload = {
         id: orderId,
-        order_status: "Ship",
+        //order_status: "In Progress",
         rider_staff_id: selectedRider,
         rider_delivery_status_id: inProgressStatusId,
       };
@@ -337,14 +329,14 @@ const RiderBooking: React.FC = () => {
         .then((response) => {
           if (!response.success) {
             toast.error(response.message || "Failed to update on server");
-            // Revert local changes if API fails
+
             fetchRiderOrders(selectedRider, true);
           }
         })
         .catch((error) => {
           console.error("Error updating order:", error);
           toast.error("Failed to sync with server");
-          // Revert local changes
+
           fetchRiderOrders(selectedRider, true);
         })
         .finally(() => {
@@ -354,7 +346,7 @@ const RiderBooking: React.FC = () => {
       console.error("Error starting delivery:", error);
       toast.error(error.message || "Failed to start delivery");
       setUpdatingOrderId(null);
-      // Revert on error
+
       fetchRiderOrders(selectedRider, true);
     }
   };
@@ -374,7 +366,6 @@ const RiderBooking: React.FC = () => {
     setUpdatingOrderId(orderId);
 
     try {
-      // Update local state immediately for instant feedback
       setOrders(
         orders.map((order) => {
           if (order.id === orderId) {
@@ -387,7 +378,6 @@ const RiderBooking: React.FC = () => {
         })
       );
 
-      // Update rider stats locally
       updateRiderStats(selectedRider, {
         total_completed_delivery:
           (selectedRiderData?.stats.total_completed_delivery || 0) + 1,
@@ -399,10 +389,9 @@ const RiderBooking: React.FC = () => {
 
       toast.success("Order marked as delivered!");
 
-      // Call API in background
       const payload = {
         id: orderId,
-        order_status: "Completed",
+        //order_status: "Completed",
         rider_staff_id: selectedRider,
         rider_delivery_status_id: completedStatusId,
       };
@@ -411,14 +400,14 @@ const RiderBooking: React.FC = () => {
         .then((response) => {
           if (!response.success) {
             toast.error(response.message || "Failed to update on server");
-            // Revert local changes if API fails
+
             fetchRiderOrders(selectedRider, true);
           }
         })
         .catch((error) => {
           console.error("Error updating order:", error);
           toast.error("Failed to sync with server");
-          // Revert local changes
+
           fetchRiderOrders(selectedRider, true);
         })
         .finally(() => {
@@ -428,7 +417,7 @@ const RiderBooking: React.FC = () => {
       console.error("Error marking as delivered:", error);
       toast.error(error.message || "Failed to mark as delivered");
       setUpdatingOrderId(null);
-      // Revert on error
+
       fetchRiderOrders(selectedRider, true);
     }
   };
@@ -447,7 +436,6 @@ const RiderBooking: React.FC = () => {
 
   const selectedRiderData = riders.find((rider) => rider.id === selectedRider);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -462,12 +450,10 @@ const RiderBooking: React.FC = () => {
     };
   }, []);
 
-  // Handle order search input with debounce
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
-  // Handle status filter change
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
     setOpenDropdown(null);
@@ -483,7 +469,6 @@ const RiderBooking: React.FC = () => {
           </h1>
         </div>
 
-        {/* Rider Search Section */}
         <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
           <div className="relative">
             <label className="block text-xs font-medium text-gray-700 mb-2">
@@ -501,7 +486,7 @@ const RiderBooking: React.FC = () => {
                 value={riderSearch}
                 onChange={(e) => setRiderSearch(e.target.value)}
                 placeholder="Search rider by name..."
-                className="w-full pl-10 pr-10 py-2.5 text-sm border border-[#E5E8E9] bg-[#F8F8F8] rounded-lg placeholder-[#B0B6B8] outline-none focus:border-gray-400"
+                className="w-full pl-10 pr-10 py-2.5 text-sm border border-[#E5E8E9] bg-[#F8F8F8] rounded-lg placeholder-gray-500 outline-none focus:border-gray-400 text-gray-700"
                 disabled={loadingRiders}
               />
               {loadingRiders && (
@@ -511,7 +496,6 @@ const RiderBooking: React.FC = () => {
               )}
             </div>
 
-            {/* Rider Selection Dropdown */}
             {riderSearch && riders.length > 0 && (
               <div className="absolute left-0 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 z-20 max-h-60 overflow-y-auto">
                 <div className="py-1">
@@ -540,13 +524,12 @@ const RiderBooking: React.FC = () => {
             )}
           </div>
 
-          {/* Selected Rider Info */}
           {selectedRiderData && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <div className="mt-4 p-3 bg-[#E8F4F7] rounded-lg border border-blue-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white rounded-lg border border-blue-200">
-                    <User className="w-5 h-5 text-blue-600" />
+                    <User className="w-5 h-5 text-[#0088B1]" />
                   </div>
                   <div>
                     <div className="text-sm font-semibold text-gray-900">
@@ -564,7 +547,7 @@ const RiderBooking: React.FC = () => {
                           earnings
                         </span>
                         <span className="flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3 text-green-600" />
+                          <CheckCircle className="w-3 h-3 text-[#0088B1]" />
                           {
                             selectedRiderData.stats.total_completed_delivery
                           }{" "}
@@ -575,23 +558,21 @@ const RiderBooking: React.FC = () => {
                   </div>
                 </div>
                 {loadingOrders && (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#0088B1]"></div>
                 )}
               </div>
             </div>
           )}
 
-          {/* Loading state for initial riders load */}
           {loadingRiders && !selectedRiderData && (
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#0088B1]"></div>
                 <span className="text-sm text-gray-600">Loading riders...</span>
               </div>
             </div>
           )}
 
-          {/* No riders state */}
           {!loadingRiders && riders.length === 0 && !riderSearch && (
             <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
               <div className="text-sm text-yellow-800">
@@ -602,10 +583,8 @@ const RiderBooking: React.FC = () => {
           )}
         </div>
 
-        {/* Main Content - Only show when a rider is selected */}
         {selectedRiderData && (
           <>
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
               <StatsCard
                 title="Total Earnings"
@@ -627,7 +606,6 @@ const RiderBooking: React.FC = () => {
               />
             </div>
 
-            {/* Orders Search and Filter */}
             <div className="flex flex-col md:flex-row gap-4 mb-4">
               <div className="flex-1 relative">
                 <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
@@ -645,7 +623,7 @@ const RiderBooking: React.FC = () => {
                   </div>
                 )}
               </div>
-              <div className="flex gap-3">
+              {/* <div className="flex gap-3">
                 <div className="relative">
                   <button
                     onClick={() =>
@@ -677,10 +655,9 @@ const RiderBooking: React.FC = () => {
                     </div>
                   )}
                 </div>
-              </div>
+              </div> */}
             </div>
 
-            {/* Orders Table */}
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-[16px] font-medium text-[#161D1F]">
@@ -740,9 +717,7 @@ const RiderBooking: React.FC = () => {
                         <tr key={order.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-xs font-medium text-[#161D1F]">
-                              {order.id.length > 8
-                                ? `${order.id.slice(0, 8)}...`
-                                : order.id}
+                              {order.id.slice(0, 8).toUpperCase()}
                             </div>
                           </td>
                           <td className="px-6 py-4">
@@ -874,7 +849,6 @@ const RiderBooking: React.FC = () => {
                 </table>
               </div>
 
-              {/* Pagination */}
               {orders.length > 0 && (
                 <Pagination
                   currentPage={currentPage}

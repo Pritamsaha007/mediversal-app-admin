@@ -20,13 +20,23 @@ import { OrderService } from "./services";
 import { StatsCard } from "./components/StatsCard";
 import StatusBadge from "./components/StatusBadge";
 import OrderActionDropdown from "./components/OrderActionDropdown";
-
 import PrescriptionModal from "./components/OrderSummary";
 import Pagination from "@/app/components/common/pagination";
 import PlaceOrderModal from "./components/PlaceOrderModal/PlaceOrderModal";
 import AssignRiderModal from "../../rider/components/AddRiderModal";
 import DeliveryOrder from "../../rider/types";
 import toast from "react-hot-toast";
+import { updateOrderRiderInfo } from "../../rider/services";
+import { useAdminStore } from "@/app/store/adminStore";
+import { getOrderStatus } from "../../home-care/booking/services";
+interface OrderStatusEnum {
+  id: string;
+  slno: number;
+  code: string;
+  value: string;
+  description: string | null;
+  metadata: any | null;
+}
 
 const Orders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,27 +63,19 @@ const Orders: React.FC = () => {
   const actionDropdownRef = useRef<HTMLDivElement>(null);
   const [isPlaceOrderModalOpen, setIsPlaceOrderModalOpen] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
+  const { token } = useAdminStore();
   const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
   const [selectedOrderForPrescription, setSelectedOrderForPrescription] =
     useState<Order | null>(null);
   const [isAssignRiderModalOpen, setIsAssignRiderModalOpen] = useState(false);
   const [selectedOrderForRider, setSelectedOrderForRider] =
     useState<Order | null>(null);
-  // Calculate if there are more pages available
-  const hasMore = (currentPage + 1) * itemsPerPage < allOrdersForStats.length;
 
-  // Debug pagination
-  console.log("Pagination Debug:", {
-    currentPage,
-    itemsPerPage,
-    ordersOnPage: orders.length,
-    totalCount,
-    hasMore,
-    calculation: `(${currentPage + 1} * ${itemsPerPage}) = ${
-      (currentPage + 1) * itemsPerPage
-    } < ${totalCount}`,
-  });
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [openStatusDropdown, setOpenStatusDropdown] = useState<string | null>(
+    null
+  );
+  const [orderStatuses, setOrderStatuses] = useState<OrderStatusEnum[]>([]);
 
   const statusOptions = [
     "All Statuses",
@@ -106,8 +108,27 @@ const Orders: React.FC = () => {
     "By Order Status",
     "By Payment Status",
   ];
+  const fetchOrderStatuses = async () => {
+    try {
+      const response = await getOrderStatus(token);
+      if (response.success) {
+        const relevantStatuses = (response.roles as OrderStatusEnum[]).filter(
+          (status) =>
+            [
+              "PENDING",
+              "CONFIRMED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED",
+            ].includes(status.value)
+        );
+        setOrderStatuses(relevantStatuses);
+      }
+    } catch (err) {
+      console.error("Failed to fetch order statuses:", err);
+    }
+  };
 
-  // Map sort options to API parameters
   const getSortParams = (sortOption: SortOption) => {
     switch (sortOption) {
       case "Order Total (Low to High)":
@@ -127,6 +148,86 @@ const Orders: React.FC = () => {
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-800 ";
+      case "IN_PROGRESS":
+        return "bg-blue-100 text-blue-800 ";
+      case "COMPLETED":
+        return "bg-green-100 text-green-800";
+      case "CANCELLED":
+        return "bg-red-100 text-red-800";
+      case "CONFIRMED":
+        return "bg-orange-100 text-orange-800";
+      default:
+        return "bg-sky-100 text-sky-700 ";
+    }
+  };
+
+  const handleRiderStatusChange = async (order: Order, newStatus: string) => {
+    if (!order.id) return;
+
+    const orderId = order.id.toString();
+    const currentStatus = OrderService.getOrderStatus(order);
+
+    if (currentStatus === newStatus) {
+      setOpenStatusDropdown(null);
+      return;
+    }
+
+    setOrders((prevOrders) =>
+      prevOrders.map((o) =>
+        o.id === order.id ? { ...o, deliverystatus: newStatus } : o
+      )
+    );
+
+    setOpenStatusDropdown(null);
+
+    setUpdatingStatus(orderId);
+
+    try {
+      const payload = {
+        id: orderId,
+        order_status: newStatus,
+        rider_staff_id: "",
+        rider_delivery_status_id: "",
+      };
+
+      setTimeout(async () => {
+        try {
+          const response = await updateOrderRiderInfo(payload, token);
+
+          if (response.success) {
+            setUpdatingStatus(null);
+            toast.success("Status updated successfully!");
+          } else {
+            setOrders((prevOrders) =>
+              prevOrders.map((o) =>
+                o.id === order.id
+                  ? {
+                      ...o,
+                      rider_delivery_status: currentStatus,
+                    }
+                  : o
+              )
+            );
+            throw new Error(response.message || "Update failed");
+          }
+        } catch (error) {
+          console.error("Failed to update status:", error);
+          setUpdatingStatus(null);
+          toast.error("Failed to update status. Reverted to previous state.");
+        }
+      }, 0);
+    } catch (error) {
+      console.error("Error in status update:", error);
+      setUpdatingStatus(null);
+    }
+  };
+  const getCurrentStatus = (order: Order): string => {
+    return order.deliverystatus;
+  };
   const fetchOrders = async (resetPage: boolean = false) => {
     try {
       setLoading(true);
@@ -145,16 +246,9 @@ const Orders: React.FC = () => {
         payment: selectedPayment === "All Payments" ? "" : selectedPayment,
       };
 
-      console.log("Fetching orders with params:", params);
       const { orders: fetchedOrders, totalCount: total } =
         await OrderService.fetchOrders(params);
 
-      console.log(
-        "API Response - Orders:",
-        fetchedOrders.length,
-        "Total Count:",
-        total
-      );
       setOrders(fetchedOrders);
       setTotalCount(total);
 
@@ -168,11 +262,10 @@ const Orders: React.FC = () => {
     }
   };
 
-  // Fetch all orders for stats (without pagination)
   const fetchAllOrdersForStats = async () => {
     try {
       const { orders: allOrders } = await OrderService.fetchOrders({
-        max: 10000, // Large number to get all orders
+        max: 10000,
         start: 0,
       });
       setAllOrdersForStats(allOrders);
@@ -181,7 +274,6 @@ const Orders: React.FC = () => {
     }
   };
 
-  // Debounced search
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -189,7 +281,7 @@ const Orders: React.FC = () => {
 
     searchTimeoutRef.current = setTimeout(() => {
       fetchOrders(true);
-    }, 500); // 500ms debounce
+    }, 500);
 
     return () => {
       if (searchTimeoutRef.current) {
@@ -198,22 +290,39 @@ const Orders: React.FC = () => {
     };
   }, [searchTerm]);
 
-  // Fetch orders when filters change
   useEffect(() => {
     fetchOrders(true);
+
+    fetchOrderStatuses();
   }, [selectedStatus, selectedPayment, sortBy]);
 
-  // Fetch orders when page changes
   useEffect(() => {
-    if (currentPage > 0) {
+    if (!loading) {
       fetchOrders(false);
     }
   }, [currentPage]);
 
-  // Initial fetch
   useEffect(() => {
     fetchOrders(true);
     fetchAllOrdersForStats();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".status-dropdown")) {
+        setOpenStatusDropdown(null);
+      }
+      if (!target.closest(".dropdown-toggle")) {
+        setOpenDropdown(null);
+        setOrderActionDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const handleExportPDF = () => {
@@ -248,6 +357,7 @@ const Orders: React.FC = () => {
         return "Pending";
     }
   };
+
   const handleCloseRiderModal = () => {
     setIsAssignRiderModalOpen(false);
     setSelectedOrderForRider(null);
@@ -257,10 +367,12 @@ const Orders: React.FC = () => {
     toast.success("Rider assigned successfully!");
     fetchOrders(true);
   };
+
   const handleOpenRiderModal = (order: Order) => {
     setSelectedOrderForRider(order);
     setIsAssignRiderModalOpen(true);
   };
+
   const handleSortChange = (sort: SortOption) => {
     console.log("Sort changed to:", sort);
     setSortBy(sort);
@@ -326,21 +438,6 @@ const Orders: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".dropdown-toggle")) {
-        setOpenDropdown(null);
-        setOrderActionDropdown(null);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
   const handleNextPage = () => {
     if (hasMore && !loading) {
       setCurrentPage((prev) => prev + 1);
@@ -354,10 +451,7 @@ const Orders: React.FC = () => {
   };
 
   const stats = OrderService.generateOrderStats(allOrdersForStats);
-
-  console.log("Current orders:", orders, "Total count:", totalCount);
-  console.log(orders.map((t) => t.rider_delivery_status));
-
+  const hasMore = (currentPage + 1) * itemsPerPage < stats.totalOrders;
   return (
     <div className="min-h-screen bg-gray-50 p-2">
       <div className="max-w-7xl mx-auto">
@@ -418,7 +512,7 @@ const Orders: React.FC = () => {
 
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search by order ID, customer name, or product"
@@ -516,6 +610,9 @@ const Orders: React.FC = () => {
                     Order Status
                   </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                    Assigned Rider
+                  </th>
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -523,14 +620,14 @@ const Orders: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center">
+                    <td colSpan={9} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
                     </td>
                   </tr>
                 ) : orders.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={9}
                       className="px-6 py-12 text-center text-gray-500"
                     >
                       No orders found
@@ -577,7 +674,6 @@ const Orders: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-xs text-[#161D1F]">
                         <div className="flex flex-col items-start">
                           {OrderService.formatDate(order.created_date)}
-
                           <span className="text-[10px] text-[#899193] mt-1">
                             {order.deliverystatus}
                           </span>
@@ -598,37 +694,125 @@ const Orders: React.FC = () => {
                       </td>
 
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge
-                          status={OrderService.getOrderStatus(order)}
-                        />
+                        {OrderService.requiresRiderDropdown(order) ? (
+                          <div className="relative status-dropdown">
+                            <button
+                              onClick={() =>
+                                setOpenStatusDropdown(
+                                  openStatusDropdown === order.id?.toString()
+                                    ? null
+                                    : order.id?.toString() || null
+                                )
+                              }
+                              disabled={updatingStatus === order.id?.toString()}
+                              className={`px-3 py-1 rounded-full text-[10px] font-medium ${getStatusColor(
+                                getCurrentStatus(order)
+                              )} flex items-center gap-1 hover:opacity-80 transition-opacity disabled:opacity-50 min-w-[100px] justify-center`}
+                              style={{ minHeight: "24px" }}
+                            >
+                              {updatingStatus === order.id?.toString() ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                                  <span className="ml-1">Updating...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="truncate">
+                                    {getCurrentStatus(order)}
+                                  </span>
+                                  <ChevronDown className="w-3 h-3 flex-shrink-0" />
+                                </>
+                              )}
+                            </button>
+
+                            {openStatusDropdown === order.id?.toString() && (
+                              <div className="absolute left-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+                                <div className="py-1">
+                                  {orderStatuses.map((status) => (
+                                    <div
+                                      key={status.id}
+                                      onClick={() =>
+                                        handleRiderStatusChange(
+                                          order,
+                                          status.value
+                                        )
+                                      }
+                                      className="w-full px-3 py-2 text-left text-[10px] text-[#161D1F] hover:bg-gray-50 transition-colors cursor-pointer"
+                                    >
+                                      {status.value}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <StatusBadge
+                            status={OrderService.getOrderStatus(order)}
+                          />
+                        )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-[#161D1F] flex items-center gap-2">
-                        <div className="flex items-center gap-2">
+
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-xs text-[#161D1F] font-medium">
+                          <StatusBadge
+                            status={(() => {
+                              const city = order.billing_city
+                                ?.trim()
+                                .toLowerCase();
+                              const isRiderCity = [
+                                "patna",
+                                "begusarai",
+                              ].includes(city || "");
+
+                              if (isRiderCity) {
+                                return (
+                                  order.rider_staff_name?.trim() ||
+                                  "Not Assigned"
+                                );
+                              }
+
+                              return "Not Needed";
+                            })()}
+                          />
+                        </div>
+                      </td>
+
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-[#161D1F]">
+                        <div className="flex flex-col items-start gap-1">
                           <button
                             onClick={() => {
                               setSelectedOrderForPrescription(order);
                               setPrescriptionModalOpen(true);
                             }}
-                            className="p-1 text-gray-500 hover:text-[#0088B1]"
+                            className="p-1 text-gray-500 hover:text-[#0088B1] flex items-center gap-1"
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />
+                            <span className="text-[10px]">Details</span>
                           </button>
-                        </div>
-                        {(order.billing_city?.trim().toLowerCase() ===
-                          "patna" ||
-                          order.billing_city?.trim().toLowerCase() ===
-                            "begusarai") && (
-                          <div className="flex items-center gap-2">
+                          {(order.billing_city?.trim().toLowerCase() ===
+                            "patna" ||
+                            order.billing_city?.trim().toLowerCase() ===
+                              "begusarai") && (
                             <button
                               onClick={() => handleOpenRiderModal(order)}
-                              className="p-1 text-gray-500 hover:text-[#0088B1]"
+                              className="p-1 text-gray-500 hover:text-[#0088B1] flex items-center gap-1"
                               title="Assign Rider"
                             >
                               <Bike className="w-4 h-4" />
+                              {order.rider_staff_name != null ? (
+                                <span className="text-[10px]">
+                                  Change Rider
+                                </span>
+                              ) : (
+                                <span className="text-[10px]">
+                                  Assign Rider
+                                </span>
+                              )}
                             </button>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

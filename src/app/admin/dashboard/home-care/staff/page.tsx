@@ -320,7 +320,6 @@ const StaffManagement: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-2">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
             Staff Management
@@ -333,7 +332,7 @@ const StaffManagement: React.FC = () => {
               <Plus className="w-3 h-3" />
               Add Staff
             </button>
-            {/* Add this after the "Add Staff" button in your header */}
+
             {selectedStaff.length > 0 && (
               <button
                 onClick={handleBulkDelete}
@@ -347,10 +346,9 @@ const StaffManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search by name, department, or position"
@@ -392,7 +390,6 @@ const StaffManagement: React.FC = () => {
           </div> */}
         </div>
 
-        {/* Staff Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden h-screen max-h-screen flex flex-col">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
@@ -510,14 +507,14 @@ const StaffManagement: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleStaffAction("view", staff)}
-                            className="p-1 text-gray-500 hover:text-blue-500"
+                            className="p-1 text-gray-500 hover:text-[#0088B1]"
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleStaffAction("edit", staff)}
-                            className="p-1 text-gray-500 hover:text-green-500"
+                            className="p-1 text-gray-500 hover:text-[#0088B1]"
                             title="Edit Staff"
                           >
                             <Edit className="w-4 h-4" />

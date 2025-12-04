@@ -319,7 +319,7 @@ const BookingManagement: React.FC = () => {
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSearch();
               }}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 text-[12px] rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent placeholder:text-gray-400 text-black"
+              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
 

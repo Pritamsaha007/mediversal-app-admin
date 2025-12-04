@@ -371,7 +371,6 @@ const ReportsManagement: React.FC = () => {
             <div className="flex justify-between items-center p-4 border-b">
               <h3 className="text-lg font-semibold">Report Preview</h3>
               <div className="flex items-center gap-4">
-                {/* Image Controls */}
                 {isImage(previewUrl) && (
                   <div className="flex items-center gap-2">
                     <button
@@ -486,7 +485,7 @@ const ReportsManagement: React.FC = () => {
 
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search by patient name, booking ID, test names..."

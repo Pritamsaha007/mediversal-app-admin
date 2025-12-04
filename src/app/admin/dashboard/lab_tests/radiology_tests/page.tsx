@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import StatusBadge from "../../home-care/components/StatusBadge";
-import StatsCard from "../../home-care/components/StatsCard";
+import StatusBadge from "../../../../components/common/StatusBadge";
+import StatsCard from "../../../../components/common/StatsCard";
 import {
   Search,
   ChevronDown,
@@ -413,7 +413,7 @@ const RadiologyTests: React.FC = () => {
 
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search by test name, code..."
@@ -559,19 +559,22 @@ const RadiologyTests: React.FC = () => {
                         <div className="flex items-center gap-2 justify-end">
                           <button
                             onClick={() => handleTestAction("view", test)}
-                            className="p-1 text-gray-500 hover:text-blue-500"
+                            className="p-1 text-gray-500 hover:text-[#0088B1]"
+                            title="View Test"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleTestAction("edit", test)}
-                            className="p-1 text-gray-500 hover:text-blue-500"
+                            className="p-1 text-gray-500 hover:text-[#0088B1]"
+                            title="Edit Test"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleTestAction("delete", test)}
                             className="p-1 text-[#F44336] hover:text-red-500"
+                            title="Delete Test"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

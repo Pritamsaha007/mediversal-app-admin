@@ -470,14 +470,39 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         <h4 className="text-xs font-medium text-[#161D1F] mb-3">
           Upload Health Package Image
         </h4>
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-          <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-          <p className="text-xs text-gray-600 mb-2">
-            Drag and drop your new image here or click to browse
-          </p>
-          <p className="text-[12px] text-gray-500 mb-4">
-            (supported file format .jpg, .jpeg, .png)
-          </p>
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#0088B1] transition-colors">
+          {formData.image_url ? (
+            <div className="flex flex-col items-center">
+              <div className="relative mb-3">
+                <img
+                  src={formData.image_url}
+                  alt="Test preview"
+                  className="w-48 h-32 object-contain border border-gray-200 rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...formData, image_url: "" });
+                  }}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-gray-600 mb-2">Image uploaded</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-xs text-gray-600 mb-2">
+                Drag and drop your new image here or click to browse
+              </p>
+              <p className="text-[12px] text-gray-500 mb-4">
+                (supported file format .jpg, .jpeg, .png)
+              </p>
+            </div>
+          )}
+
           <input
             type="file"
             id="image-upload"
@@ -487,9 +512,13 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           />
           <label
             htmlFor="image-upload"
-            className="inline-block px-4 py-2 bg-[#0088B1] text-white text-xs rounded-lg cursor-pointer hover:bg-[#00729A]"
+            className={`inline-block px-4 py-2 ${
+              formData.image_url
+                ? "bg-gray-600 text-white hover:bg-gray-700"
+                : "bg-[#0088B1] text-white hover:bg-[#00729A]"
+            } text-xs rounded-lg cursor-pointer transition-colors`}
           >
-            Select File
+            {formData.image_url ? "Change Image" : "Select File"}
           </label>
         </div>
       </div>

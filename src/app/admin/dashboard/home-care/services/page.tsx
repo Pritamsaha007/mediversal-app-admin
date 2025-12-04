@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import StatusBadge from "../components/StatusBadge";
-import StatsCard from "../components/StatsCard";
+import StatusBadge from "../../../../components/common/StatusBadge";
+import StatsCard from "../../../../components/common/StatsCard";
 import ManageOfferingsModal from "./components/ManageOfferingsModal";
 import AddServiceModal from "./components/AddServiceModal";
 import { getHomecareServices, deleteHomecareService } from "./service";
@@ -422,16 +422,15 @@ const Services: React.FC = () => {
           />
         </div>
 
-        {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search by services name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-xs"
+              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
           {/* <div className="flex gap-3">
@@ -577,14 +576,16 @@ const Services: React.FC = () => {
                             Manage Offerings
                           </span>
                           <button
-                            className="p-1 text-gray-500 hover:text-blue-500"
+                            className="p-1 text-gray-500 hover:text-[#0088B1]"
                             onClick={() => handleManageOfferings(service)}
+                            title="View Service"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleServiceAction("edit", service)}
-                            className="p-1 text-gray-500 hover:text-blue-500"
+                            className="p-1 text-gray-500 hover:text-[#0088B1]"
+                            title="Edit Service"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
@@ -593,6 +594,7 @@ const Services: React.FC = () => {
                               handleServiceAction("delete", service)
                             }
                             className="p-1 text-[#F44336] hover:text-red-500"
+                            title="Delete Service"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

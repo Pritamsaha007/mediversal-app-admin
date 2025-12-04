@@ -9,7 +9,6 @@ import {
   updateOrderRiderInfo,
 } from "../services";
 import { useAdminStore } from "@/app/store/adminStore";
-// Assuming you have an auth context
 
 interface AssignRiderModalProps {
   isOpen: boolean;
@@ -26,6 +25,7 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Riders");
+  const [selectedCity, setSelectedCity] = useState("All Cities");
   const [assignedRider, setAssignedRider] = useState<{
     rider: DeliveryRider;
   } | null>(null);
@@ -34,7 +34,10 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
   const [saving, setSaving] = useState(false);
 
   const categories = ["All Riders", "Motorcycle", "Scooter", "Bicycle"];
+  const cityOptions = ["All Cities", "Patna", "Begusarai"];
+
   const { token } = useAdminStore();
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -69,7 +72,6 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
     }
   };
 
-  // Fetch riders based on search and filters
   const fetchRiders = async () => {
     if (!token) {
       toast.error("Authentication required");
@@ -84,7 +86,7 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
         start: 0,
         max: 50,
         is_deleted: false,
-        is_available_status: "active", // Only show available riders
+        is_available_status: "active",
       };
 
       const ridersData = await searchRider(payload, token);
@@ -92,31 +94,34 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
     } catch (error: any) {
       console.error("Error fetching riders:", error);
       toast.error("Failed to load riders");
-      setRiders([]); // Set empty array on error
+      setRiders([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Search debounce effect
   useEffect(() => {
     if (isOpen) {
       const timer = setTimeout(() => {
         fetchRiders();
-      }, 500); // Debounce search
+      }, 500);
 
       return () => clearTimeout(timer);
     }
   }, [searchTerm, isOpen, token]);
 
-  // Filter riders based on category
   const filteredRiders = riders.filter((rider) => {
     const matchesCategory =
       selectedCategory === "All Riders" ||
       getVehicleType(rider.vehicle_type_id, rider.vehicle_name) ===
         selectedCategory;
 
-    return matchesCategory;
+    const matchesCity =
+      selectedCity === "All Cities" ||
+      (rider.service_city_name &&
+        rider.service_city_name.toLowerCase() === selectedCity.toLowerCase());
+
+    return matchesCategory && matchesCity;
   });
 
   const handleAssign = (rider: DeliveryRider) => {
@@ -147,7 +152,6 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
     try {
       const payload = {
         id: order.id,
-
         rider_staff_id: assignedRider.rider.id,
         rider_delivery_status_id: RiderStatus.roles[0].id,
       };
@@ -173,18 +177,16 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
     return assignedRider?.rider.id === riderId;
   };
 
-  // Reset and fetch riders when modal opens
   useEffect(() => {
     if (isOpen) {
       setAssignedRider(null);
       setSearchTerm("");
       setSelectedCategory("All Riders");
-
+      setSelectedCity("All Cities");
       fetchRiders();
     }
   }, [isOpen]);
 
-  // Click outside handler (optional - could be moved to modal container)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -216,6 +218,9 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
               </p>
               <p className="text-xs text-white mt-1">
                 {order?.billing_first_name}
+              </p>
+              <p className="text-xs text-white mt-1">
+                City: {order?.billing_city || "Unknown"}
               </p>
             </div>
           </div>
@@ -273,6 +278,9 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
                         ).getFullYear() - new Date().getFullYear()}{" "}
                         yrs exp.
                       </span>
+                      <span className="text-xs text-gray-500">
+                        • {assignedRider.rider.service_city_name || "No city"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -299,7 +307,6 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
           </div>
         )}
 
-        {/* Search and Riders List - Matches Phlebotomist Modal structure */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-6">
             <div className="relative">
@@ -330,6 +337,22 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
                   }`}
                 >
                   {category}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {cityOptions.map((city) => (
+                <button
+                  key={city}
+                  onClick={() => setSelectedCity(city)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
+                    selectedCity === city
+                      ? "bg-[#50B57F] text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {city}
                 </button>
               ))}
             </div>
@@ -382,6 +405,9 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
                                   rider.vehicle_type_id,
                                   rider.vehicle_name
                                 )}
+                              </span>
+                              <span className="text-xs text-[#0088b1]">
+                                {rider.service_city_name || "No city"}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 mt-1">
@@ -451,7 +477,6 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
           </div>
         </div>
 
-        {/* Footer - Matches Phlebotomist Modal */}
         <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
           <button
             onClick={onClose}
