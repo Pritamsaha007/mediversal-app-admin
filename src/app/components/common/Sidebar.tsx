@@ -62,6 +62,16 @@ const Sidebar = () => {
       ],
     },
     {
+      name: "User Analytics",
+      icon: <BookUser size={18} />,
+      subItems: [
+        {
+          name: "All Customers",
+          link: "/admin/dashboard/customer",
+        },
+      ],
+    },
+    {
       name: "Pharmacy",
       icon: <PillIcon size={18} />,
       subItems: [
@@ -199,16 +209,6 @@ const Sidebar = () => {
         {
           name: "Bookings",
           link: "/admin/dashboard/rider/bookings",
-        },
-      ],
-    },
-    {
-      name: "User Analytics",
-      icon: <BookUser size={18} />,
-      subItems: [
-        {
-          name: "All Customers",
-          link: "/admin/dashboard/customer",
         },
       ],
     },
