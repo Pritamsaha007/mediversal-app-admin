@@ -175,14 +175,6 @@ const CustomerCatalog: React.FC = () => {
   const hasMore =
     totalCount > (currentPage + 1) * itemsPerPage ||
     (totalCount === 0 && customers.length === itemsPerPage);
-  console.log("hasMore Debug:", {
-    currentPage,
-    itemsPerPage,
-    totalCount,
-    calculation: (currentPage + 1) * itemsPerPage,
-    hasMore,
-    customersLength: customers.length,
-  });
   const hasPrevious = currentPage > 0;
 
   return (
