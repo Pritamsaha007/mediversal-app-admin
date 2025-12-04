@@ -283,7 +283,7 @@ export const ProductCard: React.FC<{
         ₹{product.SellingPrice ? product.SellingPrice : product.sellingPrice}
       </td>
       <td className="px-4 py-4">
-        <span className="px-2 py-1 text-[8px] bg-[#B3DCE8] text-[#161D1F] rounded">
+        <span className="px-2 py-1 text-[8px] bg-[#B3DCE8] text-gray-500 rounded">
           {product.DiscountedPercentage || product.discount}% OFF
         </span>
       </td>
@@ -318,31 +318,33 @@ export const ProductCard: React.FC<{
         <div className="flex items-center gap-2 relative" ref={dropdownRef}>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="p-1 text-[#161D1F] hover:text-gray-700"
+            className="p-1 text-gray-500  hover:text-[#0088B1]"
+            title="View Product"
           >
-            <Eye className="w-4 h-4" strokeWidth={1} />
+            <Eye className="w-4 h-4" />
           </button>
 
           <button
             onClick={() => handleEdit(product)}
-            className="p-1 text-[#161D1F] hover:text-gray-700"
+            className="p-1 text-gray-500 hover:text-[#0088B1]"
+            title="Edit Product"
           >
-            <Edit className="w-4 h-4" strokeWidth={1} />
+            <Edit className="w-4 h-4" />
           </button>
 
           <button
             onClick={handleManageRelationships}
-            className="p-1 text-[#161D1F] hover:text-gray-700"
+            className="p-1 text-gray-500 hover:text-gray-700"
             title="Manage Product Relationships"
           >
-            <Link className="w-4 h-4" strokeWidth={1} />
+            <Link className="w-4 h-4" />
           </button>
 
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="p-1 text-gray-500 hover:text-gray-700"
           >
-            <MoreVertical className="w-4 h-4 text-[#161D1F]" strokeWidth={1} />
+            <MoreVertical className="w-4 h-4 text-gray-500" strokeWidth={1} />
           </button>
 
           {dropdownOpen && (

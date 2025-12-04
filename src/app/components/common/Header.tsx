@@ -98,13 +98,13 @@ const Header: React.FC<HeaderProps> = () => {
         </div>
 
         <div className="flex items-center space-x-6">
-          <button className="relative">
+          {/* <button className="relative">
             <Bell size={18} className="mr-2" color="#161D1F" />
             <span className="absolute top-0 right-0 flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-500 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-600"></span>
             </span>
-          </button>
+          </button> */}
 
           <div className="relative">
             <button
@@ -122,7 +122,7 @@ const Header: React.FC<HeaderProps> = () => {
             {isDropdownOpen && (
               <div className="absolute right-0 mt-2 w-40 bg-[#E8F4F7] rounded-md shadow-lg z-10">
                 <ul className="py-1 text-[#161D1F]">
-                  <li>
+                  {/* <li>
                     <a
                       href="#"
                       className="px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
@@ -139,7 +139,7 @@ const Header: React.FC<HeaderProps> = () => {
                       <Settings size={16} />
                       Settings
                     </a>
-                  </li>
+                  </li> */}
                   <li>
                     <button
                       onClick={handleLogout}

@@ -841,37 +841,107 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                     id="hospitalImage"
                     accept=".jpg,.jpeg,.png"
                   />
-                  <label htmlFor="hospitalImage" className="cursor-pointer">
-                    <div className="flex items-center justify-center mx-auto mb-4">
-                      <ImagePlus
-                        className="w-16 h-16 text-[#161D1F]"
-                        strokeWidth={1}
-                      />
-                    </div>
-                    <h3 className="text-[12px] font-medium text-[#161d1f] mb-2">
-                      Upload Hospital Image
-                    </h3>
-                    <p className="text-gray-500 mb-2 text-[10px]">
-                      {formData.image
-                        ? typeof formData.image === "object" &&
-                          "name" in formData.image
-                          ? formData.image.name
-                          : formData.image
-                        : "Drag and drop your image here or click to browse"}
-                    </p>
-                    <p className="text-[10px] text-gray-400">
+
+                  <label
+                    htmlFor="hospitalImage"
+                    className="cursor-pointer block"
+                  >
+                    {formData.image ? (
+                      <div className="flex flex-col items-center mb-6">
+                        <div className="relative">
+                          {typeof formData.image === "object" &&
+                          formData.image instanceof File ? (
+                            <>
+                              <img
+                                src={URL.createObjectURL(formData.image)}
+                                alt="Hospital preview"
+                                className="w-48 h-32 object-cover rounded-lg border-2 border-gray-200 mb-3"
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleFileUpload("image", null);
+                                }}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <img
+                                src={formData.image as string}
+                                alt="Hospital preview"
+                                className="w-48 h-32 object-cover rounded-lg border-2 border-gray-200 mb-3"
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleFileUpload("image", null);
+                                }}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                        <h3 className="text-[12px] font-medium text-[#161d1f] mb-1">
+                          Hospital Image
+                        </h3>
+                        <p className="text-gray-500 text-[10px]">
+                          {typeof formData.image === "object" &&
+                          formData.image instanceof File
+                            ? formData.image.name
+                            : "Image uploaded"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center mb-6">
+                        <ImagePlus
+                          className="w-16 h-16 text-[#161D1F] mb-3"
+                          strokeWidth={1}
+                        />
+                        <h3 className="text-[12px] font-medium text-[#161d1f] mb-2">
+                          Upload Hospital Image
+                        </h3>
+                        <p className="text-gray-500 mb-2 text-[10px]">
+                          Drag and drop your image here or click to browse
+                        </p>
+                      </div>
+                    )}
+
+                    <p className="text-[10px] text-gray-400 mt-2">
                       (supported file format .jpg, .jpeg, .png)
                     </p>
                   </label>
-                  {!formData.image && (
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      document.getElementById("hospitalImage")?.click()
+                    }
+                    className={`mt-4 text-[10px] px-6 py-2 border rounded-lg hover:bg-gray-50 transition-colors ${
+                      formData.image
+                        ? "border-gray-300 text-[#161D1F]"
+                        : "border-gray-300 text-[#161D1F] bg-gray-50"
+                    }`}
+                  >
+                    {formData.image ? "Change Image" : "Select File"}
+                  </button>
+
+                  {formData.image && (
                     <button
                       type="button"
-                      onClick={() =>
-                        document.getElementById("hospitalImage")?.click()
-                      }
-                      className="mt-4 text-[10px] px-6 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleFileUpload("image", null);
+                      }}
+                      className="mt-2 ml-2 text-[10px] px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                     >
-                      Select File
+                      Remove Image
                     </button>
                   )}
                 </div>

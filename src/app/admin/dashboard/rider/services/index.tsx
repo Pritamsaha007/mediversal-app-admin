@@ -291,3 +291,34 @@ export const updateOrderRiderInfo = async (
     );
   }
 };
+// Add this function to your services file
+export const updateRiderPOI = async (
+  riderId: string,
+  isApproved: boolean,
+  token: string
+): Promise<CreateRiderResponse> => {
+  try {
+    const payload = {
+      id: riderId,
+      is_POI_verified: isApproved,
+    };
+
+    const response = await axios.post(
+      `${RIDER_API_BASE_URL}/api/rider`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Error updating rider POI status:", error);
+    throw new Error(
+      error.response?.data?.message || "Failed to update rider POI status"
+    );
+  }
+};

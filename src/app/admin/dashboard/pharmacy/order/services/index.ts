@@ -11,6 +11,7 @@ import {
   ServiceabilityResponse,
 } from "../types/types";
 import { useAdminStore } from "@/app/store/adminStore";
+import { updateOrderRiderInfo } from "../../../rider/services";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const RAPID_SHYP_API_URL = process.env.NEXT_PUBLIC_RAPID_SHYP_API_URL;
@@ -147,17 +148,32 @@ export class OrderService {
   }
 
   static getOrderStatus(order: Order): string {
-    const city = order.billing_city?.trim().toLowerCase();
-
-    const isRiderCity = ["patna", "begusarai"].includes(city || "");
-
-    if (isRiderCity) {
-      return order.rider_delivery_status || "Not Provided";
-    }
-
     return order.deliverystatus || "Not Provided";
   }
+  static requiresRiderDropdown(order: Order): boolean {
+    const city = order.billing_city?.trim().toLowerCase();
+    return ["patna", "begusarai"].includes(city || "");
+  }
+  static async updateRiderDeliveryStatus(
+    orderId: string,
+    status: string,
+    token: string
+  ): Promise<void> {
+    try {
+      const payload = {
+        id: orderId,
+        order_status: status,
+        rider_staff_id: "",
+        rider_delivery_status_id: "",
+      };
 
+      // Call your API
+      await updateOrderRiderInfo(payload, token);
+    } catch (error) {
+      console.error("Failed to update rider delivery status:", error);
+      throw error;
+    }
+  }
   static filterOrders(orders: Order[], filters: FilterOptions): Order[] {
     return orders.filter((order) => {
       if (filters.searchTerm) {

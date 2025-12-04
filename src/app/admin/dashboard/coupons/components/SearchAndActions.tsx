@@ -50,7 +50,7 @@ export default function SearchAndActions({
           placeholder="Search by coupon code, discount..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-[12px] text-gray-700"
+          className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
         />
       </div>
       <div className="flex gap-3">
@@ -65,7 +65,7 @@ export default function SearchAndActions({
         </button> */}
         <button
           onClick={onAddCoupon}
-          className="flex items-center gap-2 text-[12px] px-4 py-2 text-[12px] bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors"
+          className="flex items-center gap-2 text-[12px] px-4 py-2  bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors"
         >
           <Plus className="w-4 h-4" />
           New Coupon

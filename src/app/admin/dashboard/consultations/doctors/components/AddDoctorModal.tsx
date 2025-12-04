@@ -399,7 +399,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           {activeTab === 0 && (
             <div className="space-y-8">
               <div className="flex flex-col items-center">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 h-auto w-full text-center hover:border-[#1BA3C7] transition-colors">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 h-auto w-full text-center hover:border-[#1BA3C7] transition-colors">
                   <input
                     type="file"
                     onChange={(e) =>
@@ -412,37 +412,108 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     id="doctorImage"
                     accept=".jpg,.jpeg,.png"
                   />
-                  <label htmlFor="doctorImage" className="cursor-pointer">
-                    <div className="flex items-center justify-center mx-auto mb-4">
-                      <ImagePlus
-                        className="w-16 h-16 text-[#161D1F]"
-                        strokeWidth={1}
-                      />
-                    </div>
-                    <h3 className="text-[12px] font-medium text-[#161d1f] mb-2">
-                      Upload Doctor Image
-                    </h3>
-                    <p className="text-gray-500 mb-2 text-[10px]">
-                      {formData.profile_image_url
-                        ? typeof formData.profile_image_url === "object" &&
-                          "name" in formData.profile_image_url
-                          ? formData.profile_image_url.name
-                          : formData.profile_image_url
-                        : "Drag and drop your new image here or click to browse"}
-                    </p>
-                    <p className="text-[10px] text-gray-400">
+
+                  <label htmlFor="doctorImage" className="cursor-pointer block">
+                    {formData.profile_image_url ? (
+                      <div className="flex flex-col items-center mb-4">
+                        <div className="relative">
+                          {typeof formData.profile_image_url === "object" &&
+                          formData.profile_image_url instanceof File ? (
+                            <>
+                              <img
+                                src={URL.createObjectURL(
+                                  formData.profile_image_url
+                                )}
+                                alt="Doctor preview"
+                                className="w-32 h-32 rounded-full object-cover border-2 border-gray-200 mb-2"
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleFileUpload("profile_image_url", null);
+                                }}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <img
+                                src={formData.profile_image_url as string}
+                                alt="Doctor preview"
+                                className="w-32 h-32 rounded-full object-cover border-2 border-gray-200 mb-2"
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleFileUpload("profile_image_url", null);
+                                }}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                        <h3 className="text-[12px] font-medium text-[#161d1f] mb-1">
+                          Doctor Image
+                        </h3>
+                        <p className="text-gray-500 text-[10px]">
+                          {typeof formData.profile_image_url === "object" &&
+                          formData.profile_image_url instanceof File
+                            ? formData.profile_image_url.name
+                            : "Image uploaded"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <ImagePlus
+                          className="w-16 h-16 text-[#161D1F] mb-3"
+                          strokeWidth={1}
+                        />
+                        <h3 className="text-[12px] font-medium text-[#161d1f] mb-2">
+                          Upload Doctor Image
+                        </h3>
+                        <p className="text-gray-500 mb-2 text-[10px]">
+                          Drag and drop your new image here or click to browse
+                        </p>
+                      </div>
+                    )}
+
+                    <p className="text-[10px] text-gray-400 mt-2">
                       (supported file format .jpg, .jpeg, .png)
                     </p>
                   </label>
-                  {!formData.profile_image_url && (
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      document.getElementById("doctorImage")?.click()
+                    }
+                    className={`mt-4 text-[10px] px-6 py-2 border rounded-lg hover:bg-gray-50 transition-colors ${
+                      formData.profile_image_url
+                        ? "border-gray-300 text-[#161D1F]"
+                        : "border-gray-300 text-[#161D1F] bg-gray-50"
+                    }`}
+                  >
+                    {formData.profile_image_url
+                      ? "Change Image"
+                      : "Select File"}
+                  </button>
+
+                  {formData.profile_image_url && (
                     <button
                       type="button"
-                      onClick={() =>
-                        document.getElementById("doctorImage")?.click()
-                      }
-                      className="mt-4 text-[10px] px-6 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleFileUpload("profile_image_url", null);
+                      }}
+                      className="mt-2 ml-2 text-[10px] px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                     >
-                      Select File
+                      Remove Image
                     </button>
                   )}
                 </div>

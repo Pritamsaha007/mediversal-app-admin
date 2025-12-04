@@ -12,8 +12,8 @@ import {
   Trash2,
   ArrowUpDown,
 } from "lucide-react";
-import StatsCard from "../../home-care/components/StatsCard";
-import StatusBadge from "../../home-care/components/StatusBadge";
+import StatsCard from "../../../../components/common/StatsCard";
+import StatusBadge from "../../../../components/common/StatusBadge";
 import toast from "react-hot-toast";
 import { AddPhlebotomistModal } from "./components/AddStaff";
 import { Phlebotomist, PhlebotomistAvailability } from "./type";
@@ -508,7 +508,7 @@ const PhlebotomistManagement: React.FC = () => {
 
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#161D1F]" />
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search by Phlebotomist name, License No..."
@@ -705,13 +705,15 @@ const PhlebotomistManagement: React.FC = () => {
                         <div className="flex items-center gap-2 justify-end">
                           <button
                             onClick={() => handleView(phlebotomist)}
-                            className="p-1 text-gray-500 hover:text-blue-500"
+                            className="p-1 text-gray-500 hover:text-[#0088B1]"
+                            title="View Phlebotomist"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleEdit(phlebotomist)}
-                            className="p-1 text-gray-500 hover:text-blue-500"
+                            className="p-1 text-gray-500 hover:text-[#0088B1]"
+                            title="Edit Phlebotomist"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
@@ -721,6 +723,7 @@ const PhlebotomistManagement: React.FC = () => {
                             }
                             className="p-1 text-[#F44336] hover:text-red-500"
                             disabled={loading}
+                            title="Delete Phlebotomist"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
