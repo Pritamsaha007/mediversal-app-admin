@@ -203,7 +203,7 @@ const Sidebar = () => {
       ],
     },
     {
-      name: "Customer",
+      name: "User Analytics",
       icon: <BookUser size={18} />,
       subItems: [
         {
