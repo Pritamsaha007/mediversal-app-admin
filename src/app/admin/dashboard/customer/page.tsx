@@ -114,7 +114,7 @@ const CustomerCatalog: React.FC = () => {
 
       if (response.success) {
         console.log("API Response:", {
-          customers_returned: response.customers.length,
+          customers_returned: response.customers,
           total_count: response.total_count,
           start: start,
           max: itemsPerPage,
