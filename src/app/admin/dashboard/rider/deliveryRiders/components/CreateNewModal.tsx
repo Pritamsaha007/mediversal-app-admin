@@ -82,7 +82,8 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
         license_no: editRider.license_no || "",
         vehicle_type_id: editRider.vehicle_type_id || "",
         service_city: editRider.service_city_id || "",
-        pin_code: editRider.pin_codes || [],
+
+        pin_code: [],
         joining_date:
           editRider.joining_date || new Date().toISOString().split("T")[0],
         is_available: editRider.is_available_status === "active",
@@ -96,18 +97,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
         setProfilePreview(editRider.profile_image_url);
       }
 
-      if (editRider.pin_codes && editRider.pin_codes.length > 0) {
-        const pincodeObjects: Pincode[] = editRider.pin_codes.map(
-          (pincodeStr: string, index: number) => ({
-            id: `edit-${index}-${pincodeStr}`,
-            pincode: pincodeStr,
-            district: "",
-            state: "",
-            city_id: editRider.service_city_id || "",
-          })
-        );
-        setSelectedPincodes(pincodeObjects);
-      }
+      setSelectedPincodes([]);
     } else {
       resetForm();
     }
@@ -404,7 +394,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
       !formData.vehicle_type_id ||
       !formData.license_no ||
       !formData.service_city ||
-      formData.pin_code.length === 0
+      (!editRider && formData.pin_code.length === 0)
     ) {
       toast.error("Please fill in all required fields");
       return;
@@ -950,7 +940,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
                 disabled={
                   loading ||
                   !formData.service_city ||
-                  formData.pin_code.length === 0
+                  (!editRider && formData.pin_code.length === 0)
                 }
                 className="px-6 py-2.5 bg-[#0088B1] text-white rounded-lg text-xs font-medium hover:bg-[#00729A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
