@@ -49,35 +49,58 @@ const OrderShipping: React.FC<OrderShippingProps> = ({ order }) => {
               <p className="text-gray-600 text-[10px]">Estimated Delivery</p>
               <div>
                 <div className="text-xs text-gray-800">
-                  {new Date(
-                    new Date(order.created_date).getTime() +
-                      3 * 24 * 60 * 60 * 1000
-                  ).toLocaleString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                  })}
+                  {(() => {
+                    const billingCity = order?.billing_city?.toLowerCase();
+
+                    const deliveryDays =
+                      billingCity === "patna" || billingCity === "begusarai"
+                        ? 1
+                        : 3;
+
+                    const deliveryDate = new Date(
+                      new Date(order.created_date).getTime() +
+                        deliveryDays * 24 * 60 * 60 * 1000
+                    );
+
+                    return deliveryDate.toLocaleString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    });
+                  })()}
                 </div>
               </div>
             </div>
+
             <div>
               <p className="text-gray-600 text-[10px]">Actual Delivery</p>
               <div>
                 <div className="text-xs text-gray-800">
-                  {new Date(
-                    new Date(order.created_date).getTime() +
-                      3 * 24 * 60 * 60 * 1000
-                  ).toLocaleString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                  })}
+                  {(() => {
+                    const billingCity = order?.billing_city?.toLowerCase();
+
+                    const deliveryDays =
+                      billingCity === "patna" || billingCity === "begusarai"
+                        ? 1
+                        : 3;
+
+                    const deliveryDate = new Date(
+                      new Date(order.created_date).getTime() +
+                        deliveryDays * 24 * 60 * 60 * 1000
+                    );
+
+                    return deliveryDate.toLocaleString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    });
+                  })()}
                 </div>
               </div>
             </div>

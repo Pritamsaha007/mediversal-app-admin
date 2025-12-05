@@ -548,8 +548,8 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
               onClick={() => setActiveCategory(category)}
               className={`flex-1 px-4 py-2 text-xs font-medium border-b-2 transition-colors ${
                 activeCategory === category
-                  ? "bg-black text-white"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "bg-[#4A5254] text-white rounded-md"
+                  : "border-transparent text-gray-500  hover:text-gray-700"
               }`}
             >
               {category}

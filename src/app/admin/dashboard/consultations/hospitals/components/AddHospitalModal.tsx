@@ -578,7 +578,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                 onClick={() => setActiveCategory(category)}
                 className={`flex-1 px-4 py-2 text-xs font-medium border-b-2 transition-colors ${
                   activeCategory === category
-                    ? "bg-black text-white"
+                    ? "bg-[#4A5254] text-white rounded-md"
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
