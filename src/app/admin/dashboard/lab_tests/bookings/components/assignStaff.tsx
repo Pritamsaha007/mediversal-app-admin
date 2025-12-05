@@ -275,9 +275,17 @@ export const AssignPhlebotomistModal: React.FC<
       <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-[#161D1F]">
-              Assign Phlebotomist
-            </h3>
+            <div className="flex justify-between">
+              <h3 className="text-sm font-semibold text-[#161D1F]">
+                Assign Phlebotomist
+              </h3>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-lg ml-4"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
             <div className="bg-[#0088B1] rounded-lg py-3 px-4 mt-3">
               <p className="text-sm font-semibold text-white">
                 Booking ID:{" "}
@@ -295,12 +303,6 @@ export const AssignPhlebotomistModal: React.FC<
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg ml-4"
-          >
-            <X className="w-5 h-5 text-gray-400" />
-          </button>
         </div>
 
         {assignedPhlebotomist && (
@@ -331,19 +333,6 @@ export const AssignPhlebotomistModal: React.FC<
                       <span className="text-xs text-gray-600">
                         {assignedPhlebotomist.phlebotomist.specialization_name}
                       </span>
-                      <span className="text-xs text-[#0088b1] flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {formatTime(
-                          assignedPhlebotomist.selectedSlot.start_time
-                        )}{" "}
-                        -{" "}
-                        {formatTime(assignedPhlebotomist.selectedSlot.end_time)}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {formatDate(
-                          assignedPhlebotomist.selectedSlot.slot_date
-                        )}
-                      </span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <div className="flex items-center gap-1">
@@ -361,6 +350,13 @@ export const AssignPhlebotomistModal: React.FC<
                     </div>
                   </div>
                 </div>
+                <span className="text-xs text-[#0088b1] flex items-center gap-1 flex-col">
+                  <div className="text-xs flex-col text-gray-500">
+                    {formatDate(assignedPhlebotomist.selectedSlot.slot_date)}
+                  </div>
+                  {formatTime(assignedPhlebotomist.selectedSlot.start_time)} -{" "}
+                  {formatTime(assignedPhlebotomist.selectedSlot.end_time)}
+                </span>
 
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-600">Status:</span>
@@ -421,7 +417,7 @@ export const AssignPhlebotomistModal: React.FC<
                 )}
               </h4>
 
-              <div className="space-y-4">
+              <div className="border border-gray-200 rounded-lg">
                 {loading ? (
                   <div className="text-center py-8 text-gray-500">
                     Loading available phlebotomists...
@@ -441,7 +437,7 @@ export const AssignPhlebotomistModal: React.FC<
                     return (
                       <div
                         key={phleboId}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                        className="flex items-center justify-between p-4 border border-gray-200 "
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 bg-[#E8F4F7] rounded-full flex items-center justify-center">
@@ -478,27 +474,22 @@ export const AssignPhlebotomistModal: React.FC<
                             </div>
                           </div>
                         </div>
-
+                        <div className="text-right">
+                          <span className="text-xs text-gray-600">
+                            Available Slots: {availableSlots.length}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-600">Status:</span>
+                          <span
+                            className={`px-3 py-1 ${getStatusColor(
+                              firstSlot.status
+                            )} text-white text-xs font-medium rounded`}
+                          >
+                            {firstSlot.status}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <span className="text-xs text-gray-600">
-                              Available Slots: {availableSlots.length}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-600">
-                              Status:
-                            </span>
-                            <span
-                              className={`px-3 py-1 ${getStatusColor(
-                                firstSlot.status
-                              )} text-white text-xs font-medium rounded`}
-                            >
-                              {firstSlot.status}
-                            </span>
-                          </div>
-
                           <div className="relative time-dropdown">
                             <button
                               onClick={() =>
@@ -517,14 +508,14 @@ export const AssignPhlebotomistModal: React.FC<
                                 availableSlots.length > 0 &&
                                 !isAssigned(phleboId) &&
                                 assignedPhlebotomist === null
-                                  ? "bg-[#0088B1] text-white hover:bg-[#00729A]"
-                                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                  ? " text-[#0088B1] "
+                                  : " text-gray-400 cursor-not-allowed"
                               }`}
                             >
                               {isAssigned(phleboId)
                                 ? "Assigned"
                                 : assignedPhlebotomist
-                                ? "Already Assigned"
+                                ? "Assign"
                                 : "Select Time"}
                             </button>
 

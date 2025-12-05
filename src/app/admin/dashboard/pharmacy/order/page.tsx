@@ -53,7 +53,7 @@ const Orders: React.FC = () => {
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [actionDropdownOpen, setActionDropdownOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [orderActionDropdown, setOrderActionDropdown] = useState<number | null>(
     null
   );

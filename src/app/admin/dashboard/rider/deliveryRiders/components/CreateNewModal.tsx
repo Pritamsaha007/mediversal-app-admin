@@ -229,7 +229,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
       setSelectedPincodes(updatedSelected);
       setFormData((prev) => ({
         ...prev,
-        pin_code: updatedSelected.map((p) => p.pincode),
+        pin_code: updatedSelected.map((p) => p.id),
       }));
     }
 
@@ -428,7 +428,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
         profileImageUrl = await uploadImageToServer(profileImage, "profiles");
       }
 
-      const payload: any = {
+      const payload: CreateRiderPayload = {
         name: formData.name,
         email: formData.email,
         mobile_number: formData.mobile_number,
@@ -437,8 +437,8 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
         license_image_url: licenseImageUrl,
         profile_image_url: profileImageUrl,
         vehicle_type_id: formData.vehicle_type_id,
-        service_city_id: formData.service_city,
-        pin_codes: formData.pin_code,
+        service_city: formData.service_city,
+        pin_code: formData.pin_code,
         joining_date: formData.joining_date,
         is_available: formData.is_available,
         is_POI_verified: formData.is_POI_verified,
@@ -470,8 +470,9 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-medium text-[#161D1F] mb-2">
-            * Full Name
+          <label className="flex items-center gap-1 text-xs font-medium text-[#161D1F] mb-2">
+            <span className="text-red-500">*</span>
+            <span>Full Name</span>
           </label>
           <input
             type="text"
@@ -486,7 +487,8 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
 
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
-            * Email ID
+            <span className="text-red-500">*</span>
+            <span>Email</span>
           </label>
           <input
             type="email"
@@ -501,7 +503,8 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
 
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
-            * Phone Number
+            <span className="text-red-500">*</span>
+            <span>Phone Number</span>
           </label>
           <input
             type="tel"
@@ -516,7 +519,8 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
 
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
-            * Aadhaar Number
+            <span className="text-red-500">*</span>
+            <span>Aadhar Number</span>
           </label>
           <input
             type="text"
@@ -531,7 +535,8 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
 
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
-            * Vehicle Type
+            <span className="text-red-500">*</span>
+            <span>Vehicle Type</span>
           </label>
           <div className="relative">
             <select
@@ -559,7 +564,8 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
 
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
-            * License Number
+            <span className="text-red-500">*</span>
+            <span>License Number</span>
           </label>
           <input
             type="text"
@@ -574,7 +580,8 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
 
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
-            * Service City/Town
+            <span className="text-red-500">*</span>
+            <span>Service City/Town</span>
           </label>
           <div className="relative">
             <select
@@ -600,7 +607,8 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
 
         <div className="md:col-span-2">
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
-            * Service PIN Codes
+            <span className="text-red-500">*</span>
+            <span>Service PIN Codes</span>
           </label>
 
           {selectedPincodes.length > 0 && (
@@ -670,7 +678,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
                 >
                   {availablePincodes.map((pincode) => {
                     const isSelected = selectedPincodes.some(
-                      (p) => p.pincode === pincode.pincode // Compare by pincode value
+                      (p) => p.pincode === pincode.pincode
                     );
                     return (
                       <div
@@ -709,7 +717,8 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
 
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
-            * Joining Date
+            <span className="text-red-500">*</span>
+            <span>Joining Date</span>
           </label>
           <input
             type="date"

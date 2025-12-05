@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { X, Search, Bike, Clock, Star } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { X, Search, ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 import DeliveryOrder, { DeliveryRider } from "../types";
 import {
@@ -9,6 +9,7 @@ import {
   updateOrderRiderInfo,
 } from "../services";
 import { useAdminStore } from "@/app/store/adminStore";
+import { useRiderAssignmentStore } from "../store/assignRiderStore";
 
 interface AssignRiderModalProps {
   isOpen: boolean;
@@ -26,17 +27,28 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Riders");
   const [selectedCity, setSelectedCity] = useState("All Cities");
-  const [assignedRider, setAssignedRider] = useState<{
-    rider: DeliveryRider;
-  } | null>(null);
   const [riders, setRiders] = useState<DeliveryRider[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
 
   const categories = ["All Riders", "Motorcycle", "Scooter", "Bicycle"];
   const cityOptions = ["All Cities", "Patna", "Begusarai"];
-
   const { token } = useAdminStore();
+
+  const {
+    assignments,
+    addAssignment,
+    removeAssignment,
+    getAssignment,
+    hasAssignment,
+  } = useRiderAssignmentStore();
+
+  const storedAssignment = getAssignment(order.id);
+  const [assignedRider, setAssignedRider] = useState<{
+    rider: DeliveryRider;
+  } | null>(storedAssignment ? { rider: storedAssignment.rider } : null);
 
   const getInitials = (name: string) => {
     return name
@@ -81,8 +93,6 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
     setLoading(true);
     try {
       const payload = {
-        search_rider: searchTerm || undefined,
-        search_license_no: searchTerm || undefined,
         start: 0,
         max: 50,
         is_deleted: false,
@@ -100,39 +110,42 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
     }
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      const timer = setTimeout(() => {
-        fetchRiders();
-      }, 500);
+  const filteredRiders = useMemo(() => {
+    return riders.filter((rider) => {
+      const matchesSearch =
+        searchTerm.trim() === "" ||
+        rider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        rider.license_no?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      return () => clearTimeout(timer);
-    }
-  }, [searchTerm, isOpen, token]);
+      const vehicleType = getVehicleType(
+        rider.vehicle_type_id,
+        rider.vehicle_name
+      );
+      const matchesCategory =
+        selectedCategory === "All Riders" || vehicleType === selectedCategory;
 
-  const filteredRiders = riders.filter((rider) => {
-    const matchesCategory =
-      selectedCategory === "All Riders" ||
-      getVehicleType(rider.vehicle_type_id, rider.vehicle_name) ===
-        selectedCategory;
+      const matchesCity =
+        selectedCity === "All Cities" ||
+        (rider.service_city_name &&
+          rider.service_city_name.toLowerCase() === selectedCity.toLowerCase());
 
-    const matchesCity =
-      selectedCity === "All Cities" ||
-      (rider.service_city_name &&
-        rider.service_city_name.toLowerCase() === selectedCity.toLowerCase());
-
-    return matchesCategory && matchesCity;
-  });
+      return matchesSearch && matchesCategory && matchesCity;
+    });
+  }, [riders, searchTerm, selectedCategory, selectedCity]);
 
   const handleAssign = (rider: DeliveryRider) => {
-    setAssignedRider({
-      rider,
-    });
+    const assignment = { rider };
+    setAssignedRider(assignment);
+
+    addAssignment(order.id, rider);
+
     toast.success(`Assigned ${rider.name}`);
   };
 
   const handleRemoveAssignment = () => {
     setAssignedRider(null);
+
+    removeAssignment(order.id);
   };
 
   const handleSaveAssignment = async () => {
@@ -160,6 +173,7 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
 
       if (response.success) {
         toast.success("Rider assigned successfully!");
+
         onAssignmentSuccess?.();
         onClose();
       } else {
@@ -179,13 +193,19 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setAssignedRider(null);
+      const storedAssignment = getAssignment(order.id);
+      if (storedAssignment) {
+        setAssignedRider({ rider: storedAssignment.rider });
+      } else {
+        setAssignedRider(null);
+      }
+
       setSearchTerm("");
       setSelectedCategory("All Riders");
       setSelectedCity("All Cities");
       fetchRiders();
     }
-  }, [isOpen]);
+  }, [isOpen, order.id]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -202,6 +222,24 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
     };
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    const handleClickOutsideDropdown = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (
+        !target.closest(".category-dropdown") &&
+        !target.closest(".city-dropdown")
+      ) {
+        setShowCategoryDropdown(false);
+        setShowCityDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutsideDropdown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutsideDropdown);
+    };
+  }, []);
+
   if (!isOpen) return null;
 
   return (
@@ -209,33 +247,47 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
       <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col modal-container">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-[#161D1F]">
-              Assign Delivery Rider
-            </h3>
+            <div className="flex justify-between">
+              <h3 className="text-sm font-semibold text-[#161D1F]">
+                Assign Delivery Rider
+              </h3>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-lg ml-4"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
             <div className="bg-[#0088B1] rounded-lg py-3 px-4 mt-3">
               <p className="text-sm font-semibold text-white">
                 Order ID: {order?.id || "ORD000004864"}
+                {storedAssignment && (
+                  <span className="text-xs ml-2 opacity-75">
+                    (Previously assigned:{" "}
+                    {storedAssignment.assignedAt
+                      ? new Date(storedAssignment.assignedAt).toLocaleString()
+                      : "Draft"}
+                    )
+                  </span>
+                )}
               </p>
-              <p className="text-xs text-white mt-1">
-                {order?.billing_first_name}
-              </p>
+
               <p className="text-xs text-white mt-1">
                 City: {order?.billing_city || "Unknown"}
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg ml-4"
-          >
-            <X className="w-5 h-5 text-gray-400" />
-          </button>
         </div>
 
         {assignedRider && (
           <div className="p-6 border-b border-gray-200">
             <h4 className="text-sm font-semibold text-[#161D1F] mb-3">
               Assigned Rider
+              {storedAssignment && (
+                <span className="text-xs text-gray-500 ml-2">
+                  (Saved draft)
+                </span>
+              )}
             </h4>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
@@ -254,37 +306,19 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
                     </div>
 
                     <div className="flex items-center gap-4 mt-1">
-                      <span className="text-xs text-gray-600">
-                        {getVehicleType(
-                          assignedRider.rider.vehicle_type_id,
-                          assignedRider.rider.vehicle_name
-                        )}
-                      </span>
                       <span className="text-xs text-[#0088b1] flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
                         {assignedRider.rider.license_no}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-xs font-medium text-gray-700">
-                          4.8
-                        </span>
-                      </div>
-                      <span className="text-xs text-gray-500">
-                        {new Date(
-                          assignedRider.rider.joining_date
-                        ).getFullYear() - new Date().getFullYear()}{" "}
-                        yrs exp.
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        • {assignedRider.rider.service_city_name || "No city"}
                       </span>
                     </div>
                   </div>
                 </div>
-
+                <span className="text-xs text-gray-600">
+                  Vehicle:{" "}
+                  {getVehicleType(
+                    assignedRider.rider.vehicle_type_id,
+                    assignedRider.rider.vehicle_name
+                  )}
+                </span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-600">Status:</span>
                   <span
@@ -325,36 +359,76 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
               )}
             </div>
 
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {categories.map((category) => (
+            <div className="flex gap-4">
+              <div className="relative category-dropdown">
                 <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
-                    selectedCategory === category
-                      ? "bg-[#0088B1] text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                  onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                  className="flex items-center justify-between w-full md:w-48 px-4 py-2 border border-gray-300 rounded-lg text-xs text-gray-700 bg-white hover:bg-gray-50"
                 >
-                  {category}
+                  <span>{selectedCategory}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${
+                      showCategoryDropdown ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
-              ))}
-            </div>
 
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {cityOptions.map((city) => (
+                {showCategoryDropdown && (
+                  <div className="absolute top-full left-0 mt-1 w-full md:w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                    {categories.map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => {
+                          setSelectedCategory(category);
+                          setShowCategoryDropdown(false);
+                        }}
+                        className={`w-full px-4 py-2 text-left text-xs  first:rounded-t-lg last:rounded-b-lg ${
+                          selectedCategory === category
+                            ? "bg-[#0088B1] text-white hover:bg-[#00729A]"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="relative city-dropdown">
                 <button
-                  key={city}
-                  onClick={() => setSelectedCity(city)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
-                    selectedCity === city
-                      ? "bg-[#50B57F] text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                  onClick={() => setShowCityDropdown(!showCityDropdown)}
+                  className="flex items-center justify-between w-full md:w-48 px-4 py-2 border border-gray-300 rounded-lg text-xs text-gray-700 bg-white hover:bg-gray-50"
                 >
-                  {city}
+                  <span>{selectedCity}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${
+                      showCityDropdown ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
-              ))}
+
+                {showCityDropdown && (
+                  <div className="absolute top-full left-0 mt-1 w-full md:w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                    {cityOptions.map((city) => (
+                      <button
+                        key={city}
+                        onClick={() => {
+                          setSelectedCity(city);
+                          setShowCityDropdown(false);
+                        }}
+                        className={`w-full px-4 py-2 text-left text-xs  first:rounded-t-lg last:rounded-b-lg ${
+                          selectedCity === city
+                            ? "bg-[#50B57F] text-white hover:bg-[#409469]"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
@@ -365,7 +439,7 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
                 </span>
               </h4>
 
-              <div className="space-y-4">
+              <div className="border border-gray-200 rounded-lg max-h-[500px] overflow-y-auto">
                 {loading && filteredRiders.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0088B1] mx-auto mb-2"></div>
@@ -381,94 +455,83 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
                     const alreadyAssigned = assignedRider && !assigned;
 
                     return (
-                      <div
-                        key={rider.id}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-[#E8F4F7] rounded-full flex items-center justify-center">
-                            <span className="text-black text-xs font-semibold">
-                              {getInitials(rider.name)}
-                            </span>
-                          </div>
-
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-xs font-semibold text-[#161D1F]">
-                                {rider.name}
-                              </h4>
-                            </div>
-
-                            <div className="flex items-center gap-4 mt-1">
-                              <span className="text-xs text-gray-600">
-                                {getVehicleType(
-                                  rider.vehicle_type_id,
-                                  rider.vehicle_name
-                                )}
-                              </span>
-                              <span className="text-xs text-[#0088b1]">
-                                {rider.service_city_name || "No city"}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <div className="flex items-center gap-1">
-                                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                <span className="text-xs font-medium text-gray-700">
-                                  4.8
+                      <>
+                        {!assigned && (
+                          <div
+                            key={rider.id}
+                            className="flex items-center justify-between p-4 border border-gray-200"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-[#E8F4F7] rounded-full flex items-center justify-center">
+                                <span className="text-black text-xs font-semibold">
+                                  {getInitials(rider.name)}
                                 </span>
                               </div>
-                              <span className="text-xs text-gray-500">
-                                {new Date(rider.joining_date).getFullYear() -
-                                  new Date().getFullYear()}{" "}
-                                yrs experience
+
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-xs font-semibold text-[#161D1F]">
+                                    {rider.name}
+                                  </h4>
+                                </div>
+
+                                <div className="flex items-center gap-4 mt-1">
+                                  <div className="text-right">
+                                    <span className="text-xs text-gray-600">
+                                      License: {rider.license_no}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <span className="text-xs text-gray-600">
+                              Vehicle:{" "}
+                              {getVehicleType(
+                                rider.vehicle_type_id,
+                                rider.vehicle_name
+                              )}
+                            </span>
+
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-600">
+                                Status:
+                              </span>
+                              <span
+                                className={`px-3 py-1 ${getStatusColor(
+                                  rider.is_available_status
+                                )} text-white text-xs font-medium rounded`}
+                              >
+                                {getStatusText(rider.is_available_status)}
                               </span>
                             </div>
-                          </div>
-                        </div>
 
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <span className="text-xs text-gray-600">
-                              License: {rider.license_no}
-                            </span>
+                            <div className="flex items-center gap-4">
+                              <button
+                                onClick={() => handleAssign(rider)}
+                                disabled={
+                                  rider.is_available_status !== "active" ||
+                                  alreadyAssigned ||
+                                  assigned
+                                }
+                                className={`px-6 py-2 rounded-lg text-xs font-medium ml-4 transition-colors ${
+                                  rider.is_available_status === "active" &&
+                                  !alreadyAssigned &&
+                                  !assigned
+                                    ? "text-[#0088B1]"
+                                    : "text-gray-400 cursor-not-allowed"
+                                }`}
+                              >
+                                {assigned
+                                  ? "Assigned"
+                                  : alreadyAssigned
+                                  ? "Assign"
+                                  : "Assign"}
+                              </button>
+                            </div>
                           </div>
-
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-600">
-                              Status:
-                            </span>
-                            <span
-                              className={`px-3 py-1 ${getStatusColor(
-                                rider.is_available_status
-                              )} text-white text-xs font-medium rounded`}
-                            >
-                              {getStatusText(rider.is_available_status)}
-                            </span>
-                          </div>
-
-                          <button
-                            onClick={() => handleAssign(rider)}
-                            disabled={
-                              rider.is_available_status !== "active" ||
-                              alreadyAssigned ||
-                              assigned
-                            }
-                            className={`px-6 py-2 rounded-lg text-xs font-medium ml-4 transition-colors ${
-                              rider.is_available_status === "active" &&
-                              !alreadyAssigned &&
-                              !assigned
-                                ? "bg-[#0088B1] text-white hover:bg-[#00729A]"
-                                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                            }`}
-                          >
-                            {assigned
-                              ? "Assigned"
-                              : alreadyAssigned
-                              ? "Already Assigned"
-                              : "Assign"}
-                          </button>
-                        </div>
-                      </div>
+                        )}
+                      </>
                     );
                   })
                 )}

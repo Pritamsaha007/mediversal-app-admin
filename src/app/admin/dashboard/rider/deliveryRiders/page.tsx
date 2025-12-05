@@ -89,7 +89,7 @@ const DeliveryRiders: React.FC = () => {
   useEffect(() => {
     fetchRiders();
   }, []);
-
+  console.log(riders, "riders");
   useEffect(() => {
     if (searchTerm || selectedStatus !== "All Status") {
       const debounceTimer = setTimeout(() => {
@@ -346,6 +346,7 @@ const DeliveryRiders: React.FC = () => {
         break;
     }
   };
+
   const getVehicleIcon = (vehicleType: string) => {
     switch (vehicleType.toLowerCase()) {
       case "motorcycle":
@@ -594,41 +595,63 @@ const DeliveryRiders: React.FC = () => {
                           >
                             <Edit className="w-4 h-4" />
                           </button>
-                          {rider.is_poi_verified_status !== "approved" && (
-                            <button
-                              onClick={() => {
-                                handleRiderAction("approve", rider);
-                                setOpenDropdown(null);
-                              }}
-                              title="Approve Rider"
-                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left hover:bg-gray-100 text-green-600"
-                            >
-                              <UserCheck className="w-4 h-4" />
-                            </button>
-                          )}
-                          {rider.is_poi_verified_status === "approved" && (
-                            <button
-                              onClick={() => {
-                                handleRiderAction("disapprove", rider);
-                                setOpenDropdown(null);
-                              }}
-                              title="Disapprove Rider"
-                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left hover:bg-gray-100 text-orange-600"
-                            >
-                              <UserX className="w-4 h-4" />
-                            </button>
-                          )}
 
-                          <button
-                            onClick={() => {
-                              handleRiderAction("delete", rider);
-                              setOpenDropdown(null);
-                            }}
-                            title="Delete Rider"
-                            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left hover:bg-gray-100 text-red-600"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="relative">
+                            <button
+                              onClick={() =>
+                                setOpenDropdown(
+                                  openDropdown === rider.id ? null : rider.id
+                                )
+                              }
+                              className="p-1 text-gray-500 hover:text-[#0088B1] dropdown-toggle"
+                              title="More options"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+
+                            {openDropdown === rider.id && (
+                              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200 dropdown-menu">
+                                <div className="py-1">
+                                  {rider.is_poi_verified_status !==
+                                    "approved" && (
+                                    <button
+                                      onClick={() => {
+                                        handleRiderAction("approve", rider);
+                                        setOpenDropdown(null);
+                                      }}
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-xs text-left hover:bg-gray-100 text-green-600"
+                                    >
+                                      <UserCheck className="w-4 h-4" />
+                                      Approve Rider
+                                    </button>
+                                  )}
+                                  {rider.is_poi_verified_status ===
+                                    "approved" && (
+                                    <button
+                                      onClick={() => {
+                                        handleRiderAction("disapprove", rider);
+                                        setOpenDropdown(null);
+                                      }}
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-xs text-left hover:bg-gray-100 text-orange-600"
+                                    >
+                                      <UserX className="w-4 h-4" />
+                                      Disapprove Rider
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => {
+                                      handleRiderAction("delete", rider);
+                                      setOpenDropdown(null);
+                                    }}
+                                    className="flex items-center gap-2 w-full px-4 py-2 text-xs text-left hover:bg-gray-100 text-red-600"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete Rider
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>

@@ -183,7 +183,7 @@ const RiderBooking: React.FC = () => {
         search: searchTerm || null,
         filter_status:
           selectedStatus !== "All Status"
-            ? (selectedStatus.toLowerCase().replace(" ", "") as any)
+            ? (selectedStatus.toLowerCase() as any)
             : null,
       };
 
@@ -274,9 +274,7 @@ const RiderBooking: React.FC = () => {
       case "CANCELLED":
         return "Cancelled";
       default:
-        return statusValue
-          .replace(/_/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase());
+        return statusValue;
     }
   };
 

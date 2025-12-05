@@ -16,6 +16,7 @@ import { Customer, CustomerDetail } from "./type/customerDetailTypes";
 import { useCustomerStore } from "./store/customerStore";
 import TableSkeleton from "./components/TableSkeleton";
 import CustomerRow from "./components/CustomerRow";
+import Pagination from "@/app/components/common/pagination";
 
 const StatsCard: React.FC<{
   title: string;
@@ -175,7 +176,16 @@ const CustomerCatalog: React.FC = () => {
   const hasMore =
     totalCount > (currentPage + 1) * itemsPerPage ||
     (totalCount === 0 && customers.length === itemsPerPage);
-  const hasPrevious = currentPage > 0;
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => prev + 1);
+  };
 
   return (
     <>
@@ -254,10 +264,10 @@ const CustomerCatalog: React.FC = () => {
                 />
               </div>
               <div className="flex gap-2">
-                <button className="flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50">
+                {/* <button className="flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50">
                   <ArrowUpDown className="w-4 h-4" />
                   Sort
-                </button>
+                </button> */}
                 <button
                   onClick={handleExport}
                   className="flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50"
@@ -268,7 +278,6 @@ const CustomerCatalog: React.FC = () => {
               </div>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between">
@@ -286,7 +295,6 @@ const CustomerCatalog: React.FC = () => {
               </div>
             )}
 
-            {/* Customer Table */}
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-[16px] font-medium text-[#161D1F]">
@@ -345,45 +353,16 @@ const CustomerCatalog: React.FC = () => {
                     )}
                   </tbody>
                 </table>
-
                 {!loading && customers.length > 0 && (
-                  <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
-                    <div className="text-[12px] text-[#899193]">
-                      Showing{" "}
-                      {customers.length === 0
-                        ? 0
-                        : currentPage * itemsPerPage + 1}{" "}
-                      to{" "}
-                      {Math.min((currentPage + 1) * itemsPerPage, totalCount)}{" "}
-                      of {totalCount} customers
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(0, prev - 1))
-                        }
-                        disabled={!hasPrevious}
-                        className={`px-4 py-2 text-[12px] border border-[#E5E8E9] rounded-lg transition-colors ${
-                          hasPrevious
-                            ? "text-[#161D1F] hover:bg-gray-50"
-                            : "text-[#B0B6B8] cursor-not-allowed bg-gray-50"
-                        }`}
-                      >
-                        Previous
-                      </button>
-                      <button
-                        onClick={() => setCurrentPage((prev) => prev + 1)}
-                        disabled={!hasMore}
-                        className={`px-4 py-2 text-[12px] border border-[#E5E8E9] rounded-lg transition-colors ${
-                          hasMore
-                            ? "text-[#161D1F] hover:bg-gray-50"
-                            : "text-[#B0B6B8] cursor-not-allowed bg-gray-50"
-                        }`}
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </div>
+                  <Pagination
+                    currentPage={currentPage}
+                    hasMore={hasMore}
+                    loading={loading}
+                    onPrevious={handlePreviousPage}
+                    onNext={handleNextPage}
+                    totalItems={customers.length}
+                    itemsPerPage={itemsPerPage}
+                  />
                 )}
               </div>
             </div>
