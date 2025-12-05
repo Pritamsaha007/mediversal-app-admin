@@ -270,3 +270,40 @@ export const updateConsultationStatus = async (
     throw error;
   }
 };
+
+export async function getChatToken(
+  consultationId: string,
+  token: string
+): Promise<{
+  success: boolean;
+  data: { userId: string; chatToken: string; expireIn: number };
+}> {
+  // Use consultationId directly as userId or extract it based on your logic
+  const userId = consultationId; // Adjust this based on your actual userId logic
+
+  const url = new URL(
+    `${HOMECARE_API_BASE_URL}/api/clinic/consultation/chat-token/${userId}`
+  );
+
+  console.log("Fetching chat token for user:", userId);
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error("Chat token error:", errorData);
+    throw new Error(
+      errorData?.message || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  const responseData = await response.json();
+  console.log("Chat Token API response:", responseData);
+  return responseData;
+}

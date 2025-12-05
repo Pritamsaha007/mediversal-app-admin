@@ -14,6 +14,7 @@ import {
   Phone,
   Laptop,
   Bike,
+  BookUser,
 } from "lucide-react";
 import MainMediversalLogo from "../../../../public/Mediversal 247 Logo.svg";
 import Image from "next/image";
@@ -57,6 +58,16 @@ const Sidebar = () => {
         {
           name: "Overview",
           link: "/admin/dashboard/overview",
+        },
+      ],
+    },
+    {
+      name: "User Analytics",
+      icon: <BookUser size={18} />,
+      subItems: [
+        {
+          name: "All Customers",
+          link: "/admin/dashboard/customer",
         },
       ],
     },
@@ -152,8 +163,8 @@ const Sidebar = () => {
         },
 
         // {
-        //   name: "Orders",
-        //   link: "/admin/dashboard/consultations/orders",
+        //   name: "Chat Test",
+        //   link: "/admin/dashboard/consultations/test",
         // },
       ],
     },
