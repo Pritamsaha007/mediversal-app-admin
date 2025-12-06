@@ -86,7 +86,7 @@ export const ProductCard: React.FC<{
   const handleEdit = (product: Product) => {
     const productFormData: ProductFormData = {
       id: product.id,
-      // Basic Information
+
       ProductName: product.name,
       SKU: product.sku,
       Category: product.category,
@@ -99,7 +99,6 @@ export const ProductCard: React.FC<{
         product.StockAvailableInInventory || product.stock,
       subCategoryType: product.subCategoryType || "",
 
-      // Product Details
       ProductInformation:
         product.ProductInformation || product.description || "",
       SafetyAdvices: product.SafetyAdvices || product.saftyDescription || "",
@@ -111,12 +110,11 @@ export const ProductCard: React.FC<{
       PackageSize: product.PackageSize || "",
       productImage: product.productImage || null,
 
-      // Settings
       schedule: product.schedule || "",
       tax: product.tax || product.taxRate || 0,
       HSN_Code: product.HSN_Code || product.hsnCode || "",
       storageConditions: product.storageConditions || "",
-      // shelfLife: product.shelfLife || 0,
+
       PrescriptionRequired:
         product.PrescriptionRequired || product.prescriptionRequired || false,
       featuredProduct: product.featuredProduct || product.featured || false,
@@ -125,18 +123,15 @@ export const ProductCard: React.FC<{
       GST: product.GST || "",
       admin_id: product.admin_id || "",
 
-      // Product dimensions
       productLength: product.productLength || 20,
       productBreadth: product.productBreadth || 20,
       productHeight: product.productHeight || 5,
       productWeight: product.productWeight || 0.4,
 
-      // Calculated fields
       DiscountedPrice: product.DiscountedPrice || product.sellingPrice,
       DiscountedPercentage:
         product.DiscountedPercentage || product.discount || 0,
 
-      // Optional fields
       Substitutes: product.Substitutes || [],
       SimilarProducts: product.SimilarProducts || [],
       Coupons: product.Coupons || null,
@@ -159,7 +154,7 @@ export const ProductCard: React.FC<{
       }
     } catch (error) {
       console.error("Error updating product:", error);
-      throw error; // Re-throw to handle in the modal
+      throw error;
     }
   };
 
@@ -326,7 +321,7 @@ export const ProductCard: React.FC<{
 
           <button
             onClick={() => handleEdit(product)}
-            className="p-1 text-gray-500 hover:text-[#0088B1]"
+            className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
             title="Edit Product"
           >
             <Edit className="w-4 h-4" />
@@ -334,7 +329,7 @@ export const ProductCard: React.FC<{
 
           <button
             onClick={handleManageRelationships}
-            className="p-1 text-gray-500 hover:text-gray-700"
+            className="p-1 text-gray-500 hover:text-gray-700 cursor-pointer"
             title="Manage Product Relationships"
           >
             <Link className="w-4 h-4" />
@@ -342,7 +337,8 @@ export const ProductCard: React.FC<{
 
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="p-1 text-gray-500 hover:text-gray-700"
+            className="p-1 text-gray-500 hover:text-gray-700 cursor-pointer"
+            title="More options"
           >
             <MoreVertical className="w-4 h-4 text-gray-500" strokeWidth={1} />
           </button>

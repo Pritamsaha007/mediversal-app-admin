@@ -172,7 +172,7 @@ export default function CouponsManagement() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
+    <div className="min-h-screen bg-gray-50 p-2">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-[16px] font-semibold text-[#161D1F]">Coupons</h1>

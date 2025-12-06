@@ -13,7 +13,6 @@ import {
 import { categories, sortOptions, tabs } from "./data/productCatalogData";
 import { AddProductModal } from "./components/AddProductModal";
 import { ProductCard } from "./components/ProductCard";
-import { StatsCard } from "./components/StatsCard";
 
 import { ProductFormData } from "./types/productForm.type";
 import toast from "react-hot-toast";
@@ -24,6 +23,7 @@ import { useProductStore } from "./store/productStore";
 import { useDebounce } from "./utils/useDebounce";
 import Pagination from "@/app/components/common/pagination";
 import { productService } from "./services/ProductService";
+import { StatsCard } from "@/app/components/common/StatsCard";
 
 const ProductCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -378,7 +378,7 @@ const ProductCatalog: React.FC = () => {
           </h1>
           <div className="flex gap-3">
             <button
-              className="flex items-center gap-2 text-[12px] px-4 py-2 bg-[#0088B1] text-[#F8F8F8] rounded-lg hover:bg-[#00729A]"
+              className="flex items-center gap-2 text-[12px] px-4 py-2 bg-[#0088B1] text-[#F8F8F8] rounded-lg hover:bg-[#00729A] cursor-pointer"
               onClick={() => setIsModalOpen(true)}
             >
               <Plus className="w-3 h-3" />
@@ -458,7 +458,6 @@ const ProductCatalog: React.FC = () => {
             />
           </div>
           <div className="flex gap-3">
-            {/* Category Dropdown */}
             <div className="relative" ref={categoryDropdownRef}>
               <button
                 onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
@@ -482,7 +481,6 @@ const ProductCatalog: React.FC = () => {
               )}
             </div>
 
-            {/* Sort Dropdown */}
             <div className="relative" ref={sortDropdownRef}>
               <button
                 onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
@@ -519,7 +517,7 @@ const ProductCatalog: React.FC = () => {
             </div>
           </div>
         </div>
-        {/* Tabs */}
+
         <div className="flex justify-between mb-4 bg-[#F8F8F8] rounded-lg">
           <div className="">
             {tabs.map((tab) => (
@@ -571,7 +569,7 @@ const ProductCatalog: React.FC = () => {
             )}
           </div>
         </div>
-        {/* Products Table */}
+
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
@@ -584,9 +582,9 @@ const ProductCatalog: React.FC = () => {
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+          <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
+            <table className="w-full relative">
+              <thead className="bg-gray-50 sticky top-0 z-20">
                 <tr>
                   <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     <input

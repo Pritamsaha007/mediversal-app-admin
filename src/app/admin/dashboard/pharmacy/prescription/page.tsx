@@ -10,7 +10,7 @@ import {
   ListOrdered,
   ShoppingBag,
 } from "lucide-react";
-import { StatsCard } from "./components/StatsCard";
+
 import { PrescriptionCard } from "./components/PrescriptionCard";
 import {
   dummyPrescriptions,
@@ -274,7 +274,7 @@ const PrescriptionManagement: React.FC = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
-          <StatsCard
+          {/* <StatsCard
             title="Total Prescription"
             stats={[
               { label: "Verified", value: statsData.verified },
@@ -298,8 +298,8 @@ const PrescriptionManagement: React.FC = () => {
             ]}
             icon={<Projector className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
-          />
-          <StatsCard
+          /> */}
+          {/* <StatsCard
             title="Refillable"
             stats={[{ label: "Refillable", value: statsData.refillable }]}
             icon={<ListOrdered className="h-5 w-5" />}
@@ -310,7 +310,7 @@ const PrescriptionManagement: React.FC = () => {
             stats={[{ label: "Digital", value: statsData.digitalSources }]}
             icon={<ShoppingBag className="h-5 w-5" />}
             color="text-[#0088B1] bg-[#E8F4F7] p-2 rounded-lg"
-          />
+          /> */}
         </div>
 
         {/* Search and Filters */}

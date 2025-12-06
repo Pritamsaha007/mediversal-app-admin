@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { Order, FilterOptions, SortOption } from "./types/types";
 import { OrderService } from "./services";
-import { StatsCard } from "./components/StatsCard";
 import StatusBadge from "./components/StatusBadge";
 import OrderActionDropdown from "./components/OrderActionDropdown";
 import PrescriptionModal from "./components/OrderSummary";
@@ -29,6 +28,8 @@ import toast from "react-hot-toast";
 import { updateOrderRiderInfo } from "../../rider/services";
 import { useAdminStore } from "@/app/store/adminStore";
 import { getOrderStatus } from "../../home-care/booking/services";
+import StatsCard from "@/app/components/common/StatsCard";
+
 interface OrderStatusEnum {
   id: string;
   slno: number;
@@ -459,7 +460,7 @@ const Orders: React.FC = () => {
           <h1 className="text-[20px] font-semibold text-[#161D1F]">Orders</h1>
           <button
             onClick={() => setIsPlaceOrderModalOpen(true)}
-            className="bg-[#0088B1] text-white text-xs px-4 py-2 rounded-lg flex items-center gap-2 mt-4 hover:bg-[#006f8e]"
+            className="bg-[#0088B1] text-white text-xs px-4 py-2 rounded-lg flex items-center gap-2 mt-4 hover:bg-[#006f8e] cursor-pointer"
           >
             <PlusIcon className="w-4 h-4" />
             Place New Order
@@ -471,25 +472,25 @@ const Orders: React.FC = () => {
             title="Total Orders"
             stats={stats.totalOrders}
             icon={<ShoppingCart className="w-5 h-5" />}
-            color="text-blue-500"
+            color="text-[#0088b1]"
           />
           <StatsCard
             title="Prescriptions Verification"
             stats={stats.prescriptionVerification}
             icon={<FileCheck className="w-5 h-5" />}
-            color="text-green-500"
+            color="text-[#0088b1]"
           />
           <StatsCard
             title="Revenue"
             stats={OrderService.formatCurrency(stats.totalRevenue)}
             icon={<DollarSign className="w-5 h-5" />}
-            color="text-emerald-500"
+            color="text-[#0088b1]"
           />
           <StatsCard
             title="Pending Delivery"
             stats={stats.pendingDelivery}
             icon={<Truck className="w-5 h-5" />}
-            color="text-orange-500"
+            color="text-[#0088b1]"
           />
         </div>
 
@@ -572,9 +573,9 @@ const Orders: React.FC = () => {
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+          <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
+            <table className="w-full relative">
+              <thead className="bg-gray-50 sticky top-0 z-20">
                 <tr>
                   <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     <input
@@ -707,7 +708,7 @@ const Orders: React.FC = () => {
                               disabled={updatingStatus === order.id?.toString()}
                               className={`px-3 py-1 rounded-full text-[10px] font-medium ${getStatusColor(
                                 getCurrentStatus(order)
-                              )} flex items-center gap-1 hover:opacity-80 transition-opacity disabled:opacity-50 min-w-[100px] justify-center`}
+                              )} flex items-center gap-1 hover:opacity-80 cursor-pointer transition-opacity disabled:opacity-50 min-w-[100px] justify-center`}
                               style={{ minHeight: "24px" }}
                             >
                               {updatingStatus === order.id?.toString() ? (
@@ -785,7 +786,7 @@ const Orders: React.FC = () => {
                               setSelectedOrderForPrescription(order);
                               setPrescriptionModalOpen(true);
                             }}
-                            className="p-1 text-gray-500 hover:text-[#0088B1] flex items-center gap-1"
+                            className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer flex items-center gap-1 "
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />
@@ -797,7 +798,7 @@ const Orders: React.FC = () => {
                               "begusarai") && (
                             <button
                               onClick={() => handleOpenRiderModal(order)}
-                              className="p-1 text-gray-500 hover:text-[#0088B1] flex items-center gap-1"
+                              className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer flex items-center gap-1"
                               title="Assign Rider"
                             >
                               <Bike className="w-4 h-4" />
@@ -819,16 +820,6 @@ const Orders: React.FC = () => {
                 )}
               </tbody>
             </table>
-
-            <Pagination
-              currentPage={currentPage}
-              hasMore={hasMore}
-              loading={loading}
-              onPrevious={handlePreviousPage}
-              onNext={handleNextPage}
-              totalItems={totalCount}
-              itemsPerPage={itemsPerPage}
-            />
 
             <PrescriptionModal
               isOpen={prescriptionModalOpen}
@@ -876,6 +867,15 @@ const Orders: React.FC = () => {
               />
             )}
           </div>
+          <Pagination
+            currentPage={currentPage}
+            hasMore={hasMore}
+            loading={loading}
+            onPrevious={handlePreviousPage}
+            onNext={handleNextPage}
+            totalItems={totalCount}
+            itemsPerPage={itemsPerPage}
+          />
         </div>
       </div>
     </div>

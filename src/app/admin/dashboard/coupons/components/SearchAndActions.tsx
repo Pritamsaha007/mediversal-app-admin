@@ -65,7 +65,7 @@ export default function SearchAndActions({
         </button> */}
         <button
           onClick={onAddCoupon}
-          className="flex items-center gap-2 text-[12px] px-4 py-2  bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors"
+          className="flex items-center gap-2 text-[12px] px-4 py-2  bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] cursor-pointer transition-colors"
         >
           <Plus className="w-4 h-4" />
           New Coupon

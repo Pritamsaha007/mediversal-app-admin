@@ -123,7 +123,8 @@ export default function CouponRow({
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="text-gray-400 hover:text-gray-600 p-1"
+            className="text-gray-400 hover:text-gray-600 cursor-pointer p-1"
+            title="More options"
           >
             <MoreVertical className="h-4 w-4" />
           </button>
@@ -135,7 +136,7 @@ export default function CouponRow({
                     onEdit(String(coupon.id));
                     setDropdownOpen(false);
                   }}
-                  className="flex items-center px-4 py-2 text-[12px] text-gray-700 hover:bg-gray-100 w-full text-left"
+                  className="flex items-center px-4 py-2 text-[12px] text-gray-700 hover:bg-gray-100 cursor-pointer w-full text-left"
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
@@ -145,7 +146,7 @@ export default function CouponRow({
                     onDelete(String(coupon.id));
                     setDropdownOpen(false);
                   }}
-                  className="flex items-center px-4 py-2 text-[12px] text-red-700 hover:bg-gray-100 w-full text-left"
+                  className="flex items-center px-4 py-2 text-[12px] text-red-700 hover:bg-gray-100 cursor-pointer w-full text-left"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete

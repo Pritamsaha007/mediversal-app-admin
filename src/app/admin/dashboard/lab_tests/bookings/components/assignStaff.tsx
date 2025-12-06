@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Search, Star, Clock, Calendar } from "lucide-react";
 import { useAdminStore } from "@/app/store/adminStore";
+
 import toast from "react-hot-toast";
 import {
   fetchPhleboSpecializations,
@@ -11,6 +12,7 @@ import {
   fetchAvailableSlots,
 } from "../../services";
 import { PhlebotomistSlot } from "../type";
+import { usePhlebotomistAssignmentStore } from "../../store/phleboStore";
 
 interface AssignPhlebotomistModalProps {
   isOpen: boolean;
@@ -38,6 +40,9 @@ export const AssignPhlebotomistModal: React.FC<
   const [openTimeDropdown, setOpenTimeDropdown] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const { token } = useAdminStore();
+
+  const { setAssignment, getAssignment, removeAssignment } =
+    usePhlebotomistAssignmentStore();
 
   const fetchSpecializations = async () => {
     setLoadingSpecializations(true);
@@ -142,16 +147,27 @@ export const AssignPhlebotomistModal: React.FC<
     const slots = groupedPhlebotomists[phleboId];
     const firstSlot = slots[0];
 
-    setAssignedPhlebotomist({
+    const assignment = {
       phlebotomist: firstSlot,
       selectedSlot: selectedSlot,
-    });
+    };
+
+    setAssignedPhlebotomist(assignment);
+
+    if (booking?.id) {
+      setAssignment(booking.id, assignment);
+    }
+
     toast.success(`Assigned ${firstSlot.phlebo_name}`);
     setOpenTimeDropdown(null);
   };
 
   const handleRemoveAssignment = () => {
     setAssignedPhlebotomist(null);
+
+    if (booking?.id) {
+      removeAssignment(booking.id);
+    }
   };
 
   const handleSaveAssignment = async () => {
@@ -177,10 +193,10 @@ export const AssignPhlebotomistModal: React.FC<
 
       if (response.success) {
         toast.success("Phlebotomist assigned successfully!");
+
         onAssignmentSuccess?.();
         onClose();
 
-        // Refresh the page after successful assignment
         setTimeout(() => {
           window.location.reload();
         }, 500);
@@ -233,10 +249,20 @@ export const AssignPhlebotomistModal: React.FC<
     if (isOpen) {
       fetchSpecializations();
       setSelectedDate(new Date().toISOString().split("T")[0]);
-      // Reset assigned phlebotomist when modal opens
-      setAssignedPhlebotomist(null);
+
+      if (booking?.id) {
+        const savedAssignment = getAssignment(booking.id);
+        if (savedAssignment) {
+          setAssignedPhlebotomist({
+            phlebotomist: savedAssignment.phlebotomist,
+            selectedSlot: savedAssignment.selectedSlot,
+          });
+        } else {
+          setAssignedPhlebotomist(null);
+        }
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, booking?.id]);
 
   useEffect(() => {
     if (isOpen && selectedDate) {

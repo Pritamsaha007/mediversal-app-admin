@@ -22,46 +22,13 @@ import {
 } from "lucide-react";
 import AddConsultationModal from "./components/AddConsultationModal";
 import ViewConsultationModal from "./components/ViewConsultationModal";
-import StatsCard from "./components/StatsCard";
 import { useAdminStore } from "@/app/store/adminStore";
 import { transformAPIToConsultation } from "./utils";
 import toast from "react-hot-toast";
 import VideoCallModal from "./components/VideoCallModal";
 import { Consultation } from "./types";
 import Pagination from "../../../../components/common/pagination";
-
-const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  if (!status) {
-    return (
-      <span className="inline-flex items-center justify-center px-2 py-1 rounded text-[10px] font-medium bg-gray-100 text-gray-800">
-        Unknown
-      </span>
-    );
-  }
-
-  const getStatusStyles = () => {
-    switch (status.toLowerCase()) {
-      case "completed":
-        return "bg-[#34C759] text-white";
-      case "scheduled":
-        return "bg-[#2F80ED] text-white";
-      case "in-progress":
-        return "bg-[#FF9500] text-white";
-      case "cancelled":
-        return "bg-[#FF3B30] text-white";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  return (
-    <span
-      className={`inline-flex items-center justify-center px-2 py-1 rounded text-[10px] font-medium ${getStatusStyles()}`}
-    >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
-};
+import StatsCard from "@/app/components/common/StatsCard";
 
 const ConsultationTypeBadge: React.FC<{ type: string }> = ({ type }) => {
   return (
@@ -576,22 +543,22 @@ const Consultations: React.FC = () => {
             title="Total Doctor Consultations"
             stats={stats.totalConsultations}
             subtitle={`Average rating - ${stats.avgRating}`}
-            icon={<Users className="w-6 h-6" />}
-            color="text-blue-500"
+            icon={<Users className="w-5 h-5" />}
+            color="text-[#0088B1]"
           />
           <StatsCard
             title="Booked Online"
             stats={stats.onlineConsultations}
             subtitle={`${stats.onlinePercentage}% of total doctors`}
-            icon={<Globe className="w-6 h-6" />}
-            color="text-green-500"
+            icon={<Globe className="w-5 h-5" />}
+            color="text-[#0088B1]"
           />
           <StatsCard
             title="Booked In-Person"
             stats={stats.inPersonConsultations}
             subtitle={`${stats.inPersonPercentage}% of total doctors`}
-            icon={<MapPin className="w-6 h-6" />}
-            color="text-purple-500"
+            icon={<MapPin className="w-5 h-5" />}
+            color="text-[#0088B1]"
           />
         </div>
 
@@ -676,9 +643,9 @@ const Consultations: React.FC = () => {
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+          <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
+            <table className="w-full relative">
+              <thead className="bg-gray-50 sticky top-0 z-20">
                 <tr>
                   <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     <input
@@ -858,7 +825,7 @@ const Consultations: React.FC = () => {
                         <div className="flex items-center gap-2 justify-end">
                           {consultation.consultationType === "online" && (
                             <button
-                              className="p-2 text-gray-400 hover:text-green-500"
+                              className="p-2 text-gray-400 hover:text-[#0088B1] cursor-pointer"
                               onClick={() => handleVideoCall(consultation)}
                               title="Start Video Call"
                             >
@@ -867,14 +834,14 @@ const Consultations: React.FC = () => {
                           )}
 
                           <button
-                            className="p-2 text-gray-400 hover:text-blue-500"
+                            className="p-2 text-gray-400 hover:text-[#0088B1] cursor-pointer "
                             onClick={() => handleViewConsultation(consultation)}
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            className="p-2 text-gray-400 hover:text-blue-500"
+                            className="p-2 text-gray-400 hover:text-[#0088B1] cursor-pointer"
                             onClick={() => handleEditConsultation(consultation)}
                             title="Edit Consultation"
                           >

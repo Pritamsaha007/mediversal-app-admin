@@ -363,7 +363,6 @@ const Services: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-2">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
             Services Management
@@ -375,7 +374,7 @@ const Services: React.FC = () => {
               className={`flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg ${
                 loading
                   ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-[#0088B1] hover:bg-[#00729A]"
+                  : "bg-[#0088B1] hover:bg-[#00729A] cursor-pointer"
               } text-[#F8F8F8]`}
             >
               <Plus className="w-3 h-3" />
@@ -400,25 +399,24 @@ const Services: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
           <StatsCard
             title="Total Services"
             stats={stats.totalServices}
             icon={<Settings className="w-5 h-5" />}
-            color="text-blue-500"
+            color="text-[#0088B1]"
           />
           <StatsCard
             title="Active Services"
             stats={stats.activeServices}
             icon={<Activity className="w-5 h-5" />}
-            color="text-green-500"
+            color="text-[#0088B1]"
           />
           <StatsCard
             title="Total Offerings"
             stats={stats.totalOfferings}
             icon={<Users className="w-5 h-5" />}
-            color="text-purple-500"
+            color="text-[#0088B1]"
           />
         </div>
 
@@ -466,7 +464,6 @@ const Services: React.FC = () => {
           </div> */}
         </div>
 
-        {/* Services Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
@@ -576,7 +573,7 @@ const Services: React.FC = () => {
                             Manage Offerings
                           </span>
                           <button
-                            className="p-1 text-gray-500 hover:text-[#0088B1]"
+                            className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
                             onClick={() => handleManageOfferings(service)}
                             title="View Service"
                           >
@@ -584,7 +581,7 @@ const Services: React.FC = () => {
                           </button>
                           <button
                             onClick={() => handleServiceAction("edit", service)}
-                            className="p-1 text-gray-500 hover:text-[#0088B1]"
+                            className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
                             title="Edit Service"
                           >
                             <Edit className="w-4 h-4" />
@@ -593,7 +590,7 @@ const Services: React.FC = () => {
                             onClick={() =>
                               handleServiceAction("delete", service)
                             }
-                            className="p-1 text-[#F44336] hover:text-red-500"
+                            className="p-1 text-[#F44336] hover:text-red-500 cursor-pointer"
                             title="Delete Service"
                           >
                             <Trash2 className="w-4 h-4" />
