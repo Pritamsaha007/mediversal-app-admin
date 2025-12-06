@@ -295,14 +295,17 @@ const CustomerCatalog: React.FC = () => {
               </div>
             )}
 
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div
+              className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col"
+              style={{ minHeight: "62vh", maxHeight: "62vh" }}
+            >
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-[16px] font-medium text-[#161D1F]">
                   All Customers
                 </h3>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto flex-1 overflow-y-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
@@ -353,7 +356,9 @@ const CustomerCatalog: React.FC = () => {
                     )}
                   </tbody>
                 </table>
-                {!loading && customers.length > 0 && (
+              </div>
+              {!loading && customers.length > 0 && (
+                <div className=" bg-white px-6">
                   <Pagination
                     currentPage={currentPage}
                     hasMore={hasMore}
@@ -363,8 +368,8 @@ const CustomerCatalog: React.FC = () => {
                     totalItems={customers.length}
                     itemsPerPage={itemsPerPage}
                   />
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
           <CreateCustomerModal

@@ -1,6 +1,12 @@
 "use client";
 import React, { useState } from "react";
-import { Package, Heart, Stethoscope, TestTube } from "lucide-react";
+import {
+  Package,
+  Heart,
+  Stethoscope,
+  TestTube,
+  HeartHandshake,
+} from "lucide-react";
 import { CustomerService } from "../services/customerService";
 import {
   ConsultationOrder,
@@ -34,7 +40,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
       {
         id: "homecare" as const,
         label: "Homecare",
-        icon: <Heart className="w-4 h-4" />,
+        icon: <HeartHandshake className="w-4 h-4" />,
       },
       {
         id: "consultation" as const,
@@ -117,7 +123,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
       }
 
       return (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto h-full">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -251,8 +257,8 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
     };
 
     return (
-      <div className="p-6">
-        <div className="mb-6">
+      <div className="h-full flex flex-col">
+        <div className="p-6 pb-4">
           <h2 className="text-[16px] font-medium text-[#161D1F] mb-2">
             Order History by Service
           </h2>
@@ -261,7 +267,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
             history
           </p>
         </div>
-        <div className="flex gap-2 mb-6 overflow-x-auto">
+        <div className="flex gap-2 px-6 pb-4 overflow-x-auto border-b border-gray-200">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -288,9 +294,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
             </button>
           ))}
         </div>
-        <div className="bg-white rounded-lg border border-gray-200">
-          {renderOrderList()}
-        </div>
+        <div className="flex-1 overflow-y-auto">{renderOrderList()}</div>
       </div>
     );
   }

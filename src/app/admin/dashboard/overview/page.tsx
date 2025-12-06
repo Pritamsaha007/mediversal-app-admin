@@ -115,8 +115,8 @@ export default function HealthcareDashboard() {
     try {
       setLoading(true);
       setError(null);
-
-      const [stats, aqi] = await Promise.all([
+      // add below for "const [stats, aqi]" for aqi
+      const [stats] = await Promise.all([
         dashboardService.getProductStatistics(),
         // aqiService
         //   .getAQI()
@@ -195,13 +195,13 @@ export default function HealthcareDashboard() {
         "Connect with certified doctors through secure video calls for medical advice and prescriptions.",
       color: "#059669",
     },
-    {
-      icon: Shield,
-      title: "Elder Care",
-      description:
-        "Specialized healthcare services designed for senior citizens with dedicated care coordinators.",
-      color: "#EA580C",
-    },
+    // {
+    //   icon: Shield,
+    //   title: "Elder Care",
+    //   description:
+    //     "Specialized healthcare services designed for senior citizens with dedicated care coordinators.",
+    //   color: "#EA580C",
+    // },
   ];
 
   // Show login required message if not authenticated
