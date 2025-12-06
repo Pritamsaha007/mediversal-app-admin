@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X, Calendar } from "lucide-react";
 import toast from "react-hot-toast";
 import { CustomerService } from "../services/customerService";
+import DropdownSelector from "../../../../components/ui/DropdownSelector";
 
 interface CreateCustomerModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
   onSuccess,
 }) => {
   const [loading, setLoading] = useState(false);
+  const [genderDropdownOpen, setGenderDropdownOpen] = useState(false);
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -182,17 +184,20 @@ const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
               <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
                 <span className="text-red-500">*</span> Gender
               </label>
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border text-[#161D1F] border-[#E5E8E9] rounded-lg focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-[10px] appearance-none bg-white"
-                required
-              >
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
+              <DropdownSelector
+                label=""
+                options={["Male", "Female", "Other"]}
+                selected={formData.gender}
+                placeholder="Select Gender"
+                open={genderDropdownOpen}
+                toggleOpen={() => setGenderDropdownOpen(!genderDropdownOpen)}
+                onSelect={(value) => {
+                  setFormData({
+                    ...formData,
+                    gender: value,
+                  });
+                }}
+              />
             </div>
           </div>
 
