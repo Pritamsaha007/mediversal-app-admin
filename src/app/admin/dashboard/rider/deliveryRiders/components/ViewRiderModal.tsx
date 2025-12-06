@@ -183,7 +183,7 @@ export const ViewRiderModal: React.FC<ViewRiderModalProps> = ({
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    {/* <div className="flex items-center gap-3">
                       <div className="flex flex-row items-center gap-3">
                         <div className="text-xs font-medium text-[#161D1F]">
                           Total Earnings:
@@ -202,7 +202,7 @@ export const ViewRiderModal: React.FC<ViewRiderModalProps> = ({
                           {riderStats.totalDeliveries}
                         </div>
                       </div>
-                    </div>
+                    </div> */}
                     <div className="flex items-center gap-3">
                       <div className="flex flex-row items-center gap-3">
                         <div className="text-xs font-medium text-[#161D1F]">

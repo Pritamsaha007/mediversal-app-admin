@@ -93,7 +93,7 @@ const BookingsManagement: React.FC = () => {
       if (response.success) {
         const relevantStatuses = (response.roles as OrderStatusEnum[]).filter(
           (status) =>
-            ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(
+            ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(
               status.value
             )
         );
@@ -496,7 +496,7 @@ const BookingsManagement: React.FC = () => {
             title="Today's Bookings"
             stats={stats.todaysBookings}
             icon={<Calendar className="w-5 h-5" />}
-            color="text-blue-500"
+            color="text-[#0088B1]"
           />
           <StatsCard
             title="Today's Revenue"
@@ -505,7 +505,7 @@ const BookingsManagement: React.FC = () => {
               maximumFractionDigits: 2,
             })}`}
             icon={<DollarSign className="w-5 h-5" />}
-            color="text-green-500"
+            color="text-[#0088B1]"
           />
           <StatsCard
             title="Total Revenue"
@@ -514,7 +514,7 @@ const BookingsManagement: React.FC = () => {
               maximumFractionDigits: 2,
             })}`}
             icon={<TrendingUp className="w-5 h-5" />}
-            color="text-purple-500"
+            color="text-[#0088B1]"
           />
         </div>
 
@@ -757,7 +757,7 @@ const BookingsManagement: React.FC = () => {
                                     : booking.id
                                 )
                               }
-                              className="p-1 text-gray-500 hover:text-blue-500"
+                              className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
                             >
                               <MoreHorizontal className="w-4 h-4" />
                             </button>
@@ -767,7 +767,7 @@ const BookingsManagement: React.FC = () => {
                                   <li>
                                     <button
                                       onClick={() => handleViewBooking(booking)}
-                                      className="w-full px-3 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                      className="w-full px-3 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-2"
                                     >
                                       <Eye className="w-3 h-3" />
                                       View Details
@@ -780,7 +780,7 @@ const BookingsManagement: React.FC = () => {
                                         onClick={() =>
                                           handleAssignPhlebotomist(booking)
                                         }
-                                        className="w-full px-3 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                        className="w-full px-3 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-2"
                                       >
                                         <UserPlus className="w-3 h-3" />
                                         Assign Phlebotomist

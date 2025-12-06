@@ -17,36 +17,7 @@ import { useCustomerStore } from "./store/customerStore";
 import TableSkeleton from "./components/TableSkeleton";
 import CustomerRow from "./components/CustomerRow";
 import Pagination from "@/app/components/common/pagination";
-
-const StatsCard: React.FC<{
-  title: string;
-  stats: string | number;
-  icon: React.ReactNode;
-  color: string;
-}> = ({ title, stats, icon, color }) => (
-  <div className="bg-white p-4 rounded-lg border border-gray-200">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-[12px] shadow-2xs text-[#899193] mb-1">{title}</p>
-        <p className="text-[12px] font-semibold text-[#161D1F]">{stats}</p>
-      </div>
-      <div className={`${color}`}>{icon}</div>
-    </div>
-  </div>
-);
-
-const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  const isActive = status?.toLowerCase() === "active";
-  return (
-    <span
-      className={`inline-flex items-center px-4 py-1 rounded text-[10px] font-medium ${
-        isActive ? "bg-[#34C759] text-white" : "bg-[#EB5757] text-white"
-      }`}
-    >
-      {status || "Unknown"}
-    </span>
-  );
-};
+import StatsCard from "@/app/components/common/StatsCard";
 
 const CustomerCatalog: React.FC = () => {
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
@@ -203,7 +174,7 @@ const CustomerCatalog: React.FC = () => {
               </h1>
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-[#0088B1] text-white text-[10px] px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#006f8e]"
+                className="bg-[#0088B1] text-white text-[10px] px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#006f8e] cursor-pointer"
               >
                 + New Customer
               </button>
@@ -219,7 +190,7 @@ const CustomerCatalog: React.FC = () => {
               <StatsCard
                 title="Total Customers"
                 stats={metricsLoading ? "..." : metrics?.total_customers ?? "0"}
-                icon={<Users className="w-4 h-4" />}
+                icon={<Users className="w-5 h-5" />}
                 color="text-[#0088b1]"
               />
               <StatsCard
@@ -229,13 +200,13 @@ const CustomerCatalog: React.FC = () => {
                     ? "..."
                     : metrics?.total_active_customers ?? "0"
                 }
-                icon={<UserCheck className="w-4 h-4" />}
+                icon={<UserCheck className="w-5 h-5" />}
                 color="text-[#0088b1]"
               />
               <StatsCard
                 title="Total Orders"
                 stats={metricsLoading ? "..." : metrics?.total_orders ?? "0"}
-                icon={<ShoppingCart className="w-4 h-4" />}
+                icon={<ShoppingCart className="w-5 h-5" />}
                 color="text-[#0088b1]"
               />
               <StatsCard
@@ -247,7 +218,7 @@ const CustomerCatalog: React.FC = () => {
                         parseFloat(metrics?.net_revenue ?? "0")
                       )
                 }
-                icon={<DollarSign className="w-4 h-4" />}
+                icon={<DollarSign className="w-5 h-5" />}
                 color="text-[#0088b1]"
               />
             </div>

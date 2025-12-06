@@ -13,7 +13,6 @@ import {
   Trash2,
 } from "lucide-react";
 import AddDoctorModal from "./components/AddDoctorModal";
-import StatsCard from "./components/StatsCards";
 import DoctorDetailsModal from "./components/DoctorDetailsModal";
 import {
   getDoctors,
@@ -29,6 +28,7 @@ import {
 import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
 import { Doctor, EnumItem, GetDoctorsParams } from "./types";
+import StatsCard from "@/app/components/common/StatsCard";
 
 const StatusBadge: React.FC<{ isOnline: boolean; isInPerson: boolean }> = ({
   isOnline,
@@ -386,7 +386,6 @@ const Doctors: React.FC = () => {
         dayNameToId[day.value] = day.id;
       });
 
-      // Validate that all days have mappings
       const hasInvalidDays = Object.keys(doctorData.availability).some(
         (dayName) =>
           doctorData.availability[dayName].length > 0 && !dayNameToId[dayName]
@@ -398,7 +397,6 @@ const Doctors: React.FC = () => {
         return;
       }
 
-      // Convert availability to doctor_slots format
       const doctorSlots = convertAvailabilityToSlots(
         doctorData.availability,
         dayNameToId
@@ -476,13 +474,12 @@ const Doctors: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
             Our Doctors
           </h1>
           <button
-            className="flex items-center text-[12px] gap-2 bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 transition-colors"
+            className="flex items-center text-[12px] gap-2 bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 cursor-pointer transition-colors"
             onClick={() => setShowAddDoctorModal(true)}
           >
             <Plus className="w-4 h-4" />
@@ -495,22 +492,22 @@ const Doctors: React.FC = () => {
             title="Total Doctors"
             stats={stats.totalDoctors}
             subtitle={`Average rating - ${stats.avgRating}`}
-            icon={<Users className="w-6 h-6" />}
-            color="text-blue-500"
+            icon={<Users className="w-5 h-5" />}
+            color="text-[#0088B1]"
           />
           <StatsCard
             title="Available Online"
             stats={stats.availableOnline}
             subtitle={`${stats.onlinePercentage}% of total doctors`}
-            icon={<Globe className="w-6 h-6" />}
-            color="text-green-500"
+            icon={<Globe className="w-5 h-5" />}
+            color="text-[#0088B1]"
           />
           <StatsCard
             title="Available In-Person"
             stats={stats.availableInPerson}
             subtitle={`${stats.inPersonPercentage}% of total doctors`}
-            icon={<MapPin className="w-6 h-6" />}
-            color="text-purple-500"
+            icon={<MapPin className="w-5 h-5" />}
+            color="text-[#0088B1]"
           />
         </div>
 
@@ -555,7 +552,6 @@ const Doctors: React.FC = () => {
           </div> */}
         </div>
 
-        {/* Doctors Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
@@ -630,7 +626,7 @@ const Doctors: React.FC = () => {
                           <div className="text-xs text-gray-500 mb-2">
                             {doctor.specializations}
                           </div>
-                          {/* Add this block for hospitals */}
+
                           {doctor.hospitalNames &&
                             doctor.hospitalNames.length > 0 && (
                               <div className="text-xs text-gray-500 mb-2">
@@ -658,21 +654,21 @@ const Doctors: React.FC = () => {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center gap-2 justify-end">
                           <button
-                            className="p-2 text-gray-400 hover:text-[#0088B1]"
+                            className="p-2 text-gray-400 hover:text-[#0088B1] cursor-pointer"
                             onClick={() => handleViewDoctor(doctor)}
                             title="View Doctor"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            className="p-2 text-gray-400 hover:text-[#0088B1]"
+                            className="p-2 text-gray-400 hover:text-[#0088B1] cursor-pointer"
                             onClick={() => handleEditDoctor(doctor)}
                             title="Edit Doctor"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            className="p-2 text-red-400 hover:text-red-500"
+                            className="p-2 text-red-400 hover:text-red-500 cursor-pointer"
                             onClick={() => handleDeleteDoctor(doctor)}
                             disabled={loading}
                             title="Delete Doctor"

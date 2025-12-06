@@ -91,14 +91,14 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        aria-label="More actions"
+        className="p-2 hover:bg-gray-100 cursor-pointer rounded-lg transition-colors"
+        title="More options"
       >
         <MoreVertical className="w-5 h-5 text-[#899193]" />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10 ">
           <div className="py-2">
             {menuItems.map((item, index) => {
               const IconComponent = item.icon;
@@ -106,7 +106,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                 <button
                   key={index}
                   onClick={item.onClick}
-                  className={`flex text-[12px] items-center gap-3 w-full px-4 py-2 text-left transition-colors ${item.className}`}
+                  className={`flex text-[12px] items-center gap-3 w-full px-4 py-2 text-left transition-colors ${item.className} hover-gray-500 cursor-pointer `}
                 >
                   <IconComponent className="w-4 h-4" />
                   {item.label}
