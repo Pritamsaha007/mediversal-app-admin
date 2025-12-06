@@ -467,31 +467,31 @@ const Orders: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
           <StatsCard
             title="Total Orders"
             stats={stats.totalOrders}
             icon={<ShoppingCart className="w-5 h-5" />}
             color="text-[#0088b1]"
           />
-          <StatsCard
+          {/* <StatsCard
             title="Prescriptions Verification"
             stats={stats.prescriptionVerification}
             icon={<FileCheck className="w-5 h-5" />}
             color="text-[#0088b1]"
-          />
+          /> */}
           <StatsCard
             title="Revenue"
             stats={OrderService.formatCurrency(stats.totalRevenue)}
             icon={<DollarSign className="w-5 h-5" />}
             color="text-[#0088b1]"
           />
-          <StatsCard
+          {/* <StatsCard
             title="Pending Delivery"
             stats={stats.pendingDelivery}
             icon={<Truck className="w-5 h-5" />}
             color="text-[#0088b1]"
-          />
+          /> */}
         </div>
 
         {error && (
@@ -519,7 +519,7 @@ const Orders: React.FC = () => {
               placeholder="Search by order ID, customer name, or product"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-xs"
+              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
         </div>
