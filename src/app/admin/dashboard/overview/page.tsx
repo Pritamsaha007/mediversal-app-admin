@@ -23,7 +23,7 @@ import { useAdminStore } from "@/app/store/adminStore";
 import dashboardService, {
   ProductStatistics,
 } from "./service/dashboardApiClient";
-import aqiService, { AQIData } from "./service/aqiService";
+// import aqiService, { AQIData } from "./service/aqiService";
 
 interface StatCardProps {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
@@ -99,7 +99,7 @@ export default function HealthcareDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { admin, logout, isLoggedIn } = useAdminStore();
-  const [aqiData, setAqiData] = useState<AQIData | null>(null);
+  // const [aqiData, setAqiData] = useState<AQIData | null>(null);
   const [aqiLoading, setAqiLoading] = useState(true);
   const [locationPermission, setLocationPermission] = useState<string | null>(
     null
@@ -118,26 +118,26 @@ export default function HealthcareDashboard() {
 
       const [stats, aqi] = await Promise.all([
         dashboardService.getProductStatistics(),
-        aqiService
-          .getAQI()
-          .then((data) => {
-            if (data.isDefaultLocation) {
-              setLocationPermission(
-                "Using default location. Enable location access for your area."
-              );
-            } else {
-              setLocationPermission(null);
-            }
-            return data;
-          })
-          .catch((err) => {
-            console.error("AQI fetch error:", err);
-            return null;
-          }),
+        // aqiService
+        //   .getAQI()
+        //   .then((data) => {
+        //     if (data.isDefaultLocation) {
+        //       setLocationPermission(
+        //         "Using default location. Enable location access for your area."
+        //       );
+        //     } else {
+        //       setLocationPermission(null);
+        //     }
+        //     return data;
+        //   })
+        //   .catch((err) => {
+        //     console.error("AQI fetch error:", err);
+        //     return null;
+        //   }),
       ]);
 
       setStatistics(stats);
-      setAqiData(aqi);
+      // setAqiData(aqi);
     } catch (err) {
       console.error("Dashboard fetch error:", err);
       setError(
