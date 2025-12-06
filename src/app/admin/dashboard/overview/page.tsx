@@ -13,12 +13,18 @@ import {
   BarChart3,
   RefreshCw,
   LogOut,
+  Wind,
   User,
+  Info,
+  Thermometer,
+  Droplets,
 } from "lucide-react";
 import { useAdminStore } from "@/app/store/adminStore";
 import dashboardService, {
   ProductStatistics,
 } from "./service/dashboardApiClient";
+import aqiService, { AQIData } from "./service/aqiService";
+
 interface StatCardProps {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   title: string;
@@ -93,6 +99,11 @@ export default function HealthcareDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { admin, logout, isLoggedIn } = useAdminStore();
+  const [aqiData, setAqiData] = useState<AQIData | null>(null);
+  const [aqiLoading, setAqiLoading] = useState(true);
+  const [locationPermission, setLocationPermission] = useState<string | null>(
+    null
+  );
 
   const fetchData = async () => {
     if (!dashboardService.isAuthenticated()) {
@@ -104,8 +115,29 @@ export default function HealthcareDashboard() {
     try {
       setLoading(true);
       setError(null);
-      const stats = await dashboardService.getProductStatistics();
+
+      const [stats, aqi] = await Promise.all([
+        dashboardService.getProductStatistics(),
+        aqiService
+          .getAQI()
+          .then((data) => {
+            if (data.isDefaultLocation) {
+              setLocationPermission(
+                "Using default location. Enable location access for your area."
+              );
+            } else {
+              setLocationPermission(null);
+            }
+            return data;
+          })
+          .catch((err) => {
+            console.error("AQI fetch error:", err);
+            return null;
+          }),
+      ]);
+
       setStatistics(stats);
+      setAqiData(aqi);
     } catch (err) {
       console.error("Dashboard fetch error:", err);
       setError(
@@ -113,6 +145,7 @@ export default function HealthcareDashboard() {
       );
     } finally {
       setLoading(false);
+      setAqiLoading(false);
     }
   };
 
@@ -192,7 +225,7 @@ export default function HealthcareDashboard() {
     <div className="min-h-screen bg-gray-50 p-1">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-2">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
@@ -229,7 +262,7 @@ export default function HealthcareDashboard() {
 
         {/* Error State */}
         {error && (
-          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mb-2 p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center">
               <AlertTriangle className="w-5 h-5 text-red-500 mr-3" />
               <div className="flex-1">
@@ -251,8 +284,8 @@ export default function HealthcareDashboard() {
         {/* Statistics */}
         {!error && (
           <>
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">
                 Product Statistics
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -287,9 +320,148 @@ export default function HealthcareDashboard() {
               </div>
             </div>
 
+            {/* Air Quality Index */}
+            {/* {!error && (
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                  Air Quality - {aqiData?.city || "Loading..."}
+                  {locationPermission && (
+                    <span className="ml-2 text-xs font-normal text-gray-500">
+                      ({locationPermission})
+                    </span>
+                  )}
+                </h2>
+                {aqiLoading ? (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="flex items-center justify-center">
+                      <RefreshCw className="w-5 h-5 animate-spin text-gray-400 mr-2" />
+                      <span className="text-gray-600">
+                        Loading air quality data...
+                      </span>
+                    </div>
+                  </div>
+                ) : aqiData ? (
+                  <div className="bg-white rounded-lg border border-[#0088B1] p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center flex-1">
+                        <div
+                          className="p-3 rounded-lg mr-4"
+                          style={{
+                            backgroundColor: `${
+                              aqiService.getAQILabel(aqiData.aqi).color
+                            }15`,
+                          }}
+                        >
+                          <Wind
+                            className="w-6 h-6"
+                            style={{
+                              color: aqiService.getAQILabel(aqiData.aqi).color,
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-1">
+                            <h3 className="text-xl font-bold text-gray-900">
+                              AQI {aqiData.aqi}
+                            </h3>
+                            <span
+                              className="px-2 py-0.5 rounded-full text-xs font-medium"
+                              style={{
+                                backgroundColor: `${
+                                  aqiService.getAQILabel(aqiData.aqi).color
+                                }15`,
+                                color: aqiService.getAQILabel(aqiData.aqi)
+                                  .color,
+                              }}
+                            >
+                              {aqiService.getAQILabel(aqiData.aqi).label}
+                            </span>
+                            <span className="flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">
+                              <span className="w-1.5 h-1.5 bg-red-600 rounded-full mr-1.5 animate-pulse"></span>
+                              LIVE
+                            </span>
+                            <div className="relative group">
+                              <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10">
+                                <p className="font-semibold mb-1">
+                                  Current AQI: {aqiData.aqi}/5
+                                </p>
+                                <p className="text-gray-300">
+                                  Based on World Air Quality Index (WAQI)
+                                  standard scale (0-500). Real-time data from
+                                  air quality monitoring stations.
+                                </p>
+                                <div className="absolute left-4 top-full w-2 h-2 bg-gray-900 transform rotate-45 -mt-1"></div>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {aqiService.getAQILabel(aqiData.aqi).message}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-6 ml-6">
+                        {aqiData.weather && (
+                          <>
+                            <div className="text-center">
+                              <div className="flex items-center justify-center mb-1">
+                                <Thermometer className="w-3.5 h-3.5 text-gray-500 mr-1" />
+                                <p className="text-xs text-gray-500">Temp</p>
+                              </div>
+                              <p className="text-lg font-bold text-gray-900">
+                                {aqiData.weather.temp}°C
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <div className="flex items-center justify-center mb-1">
+                                <Droplets className="w-3.5 h-3.5 text-gray-500 mr-1" />
+                                <p className="text-xs text-gray-500">
+                                  Humidity
+                                </p>
+                              </div>
+                              <p className="text-lg font-bold text-gray-900">
+                                {aqiData.weather.humidity}%
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <div className="flex items-center justify-center mb-1">
+                                <Wind className="w-3.5 h-3.5 text-gray-500 mr-1" />
+                                <p className="text-xs text-gray-500">Wind</p>
+                              </div>
+                              <p className="text-lg font-bold text-gray-900">
+                                {aqiData.weather.windSpeed} m/s
+                              </p>
+                            </div>
+                          </>
+                        )}
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500 mb-1">PM2.5</p>
+                          <p className="text-lg font-bold text-gray-900">
+                            {aqiData.components.pm2_5.toFixed(1)}
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500 mb-1">PM10</p>
+                          <p className="text-lg font-bold text-gray-900">
+                            {aqiData.components.pm10.toFixed(1)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <p className="text-gray-600 text-center">
+                      Unable to load air quality data
+                    </p>
+                  </div>
+                )}
+              </div>
+            )} */}
+
             {/* Services */}
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">
                 Our Services
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
