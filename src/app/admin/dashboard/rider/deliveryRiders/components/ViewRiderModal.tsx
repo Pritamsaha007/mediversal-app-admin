@@ -218,8 +218,10 @@ export const ViewRiderModal: React.FC<ViewRiderModalProps> = ({
                         <div className="text-xs font-medium text-[#161D1F] ">
                           Service PIN:
                         </div>
-                        <div className="text-xs  text-[#161D1F]">
-                          {rider.pin_codes}
+                        <div className="text-xs text-[#161D1F]">
+                          {Array.isArray(rider.pin_codes)
+                            ? rider.pin_codes.join(", ")
+                            : rider.pin_codes}
                         </div>
                       </div>
                     </div>
