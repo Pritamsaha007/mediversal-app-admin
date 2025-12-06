@@ -808,7 +808,7 @@ const RiderBooking: React.FC = () => {
                                     !riderStatuses.length ||
                                     updatingOrderId === order.id
                                   }
-                                  className="text-xs px-3 py-1 text-green-600 border border-green-600 hover:bg-green-50 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="text-xs px-3 py-1 text-green-600 border border-green-600 hover:bg-green-50 cursor-pointer rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   {updatingOrderId === order.id ? (
                                     <div className="flex items-center gap-1">
@@ -826,7 +826,7 @@ const RiderBooking: React.FC = () => {
                                     !riderStatuses.length ||
                                     updatingOrderId === order.id
                                   }
-                                  className="text-xs px-3 py-1 text-[#0088B1] border border-[#0088B1] hover:bg-blue-50 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="text-xs px-3 py-1 text-[#0088B1] border border-[#0088B1] hover:bg-blue-50 cursor-pointer rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   {updatingOrderId === order.id ? (
                                     <div className="flex items-center gap-1">

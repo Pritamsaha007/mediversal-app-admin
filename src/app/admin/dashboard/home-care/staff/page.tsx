@@ -225,10 +225,8 @@ const StaffManagement: React.FC = () => {
       try {
         setLoading(true);
 
-        // Delete all selected staff
         await Promise.all(selectedStaff.map((staffId) => deleteStaff(staffId)));
 
-        // Remove from local state
         setStaffList((prev) =>
           prev.filter((staff) => !selectedStaff.includes(staff.id))
         );
@@ -308,14 +306,12 @@ const StaffManagement: React.FC = () => {
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      // Add this cleanup for search timer
+
       if (searchDebounceTimer) {
         clearTimeout(searchDebounceTimer);
       }
     };
-  }, [searchDebounceTimer]); // Add searchDebounceTimer to dependencies
-
-  // Enhanced pagination component with items per page selector
+  }, [searchDebounceTimer]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
@@ -326,7 +322,7 @@ const StaffManagement: React.FC = () => {
           </h1>
           <div className="flex gap-3">
             <button
-              className="flex items-center gap-2 text-[12px] px-4 py-2 bg-[#0088B1] text-[#F8F8F8] rounded-lg hover:bg-[#00729A]"
+              className="flex items-center gap-2 text-[12px] px-4 py-2 bg-[#0088B1] text-[#F8F8F8] rounded-lg hover:bg-[#00729A] cursor-pointer"
               onClick={() => setIsModalOpen(true)}
             >
               <Plus className="w-3 h-3" />
@@ -507,21 +503,21 @@ const StaffManagement: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleStaffAction("view", staff)}
-                            className="p-1 text-gray-500 hover:text-[#0088B1]"
+                            className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleStaffAction("edit", staff)}
-                            className="p-1 text-gray-500 hover:text-[#0088B1]"
+                            className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
                             title="Edit Staff"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleStaffAction("delete", staff)}
-                            className="p-1 text-gray-500 hover:text-red-500"
+                            className="p-1 text-gray-500 hover:text-red-500 cursor-pointer"
                             title="Delete Staff"
                           >
                             <Trash2 className="w-4 h-4" />

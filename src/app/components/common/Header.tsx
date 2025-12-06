@@ -7,6 +7,7 @@ import {
   User,
   Settings,
   LogOut,
+  ChevronUp,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -115,8 +116,11 @@ const Header: React.FC<HeaderProps> = () => {
                 <User size={16} />
                 <span className="text-xs">{admin.name || "User"}</span>
               </div>
-
-              <ChevronDown size={16} className="ml-1" />
+              {isDropdownOpen ? (
+                <ChevronUp size={16} className="ml-1" />
+              ) : (
+                <ChevronDown size={16} className="ml-1" />
+              )}
             </button>
 
             {isDropdownOpen && (

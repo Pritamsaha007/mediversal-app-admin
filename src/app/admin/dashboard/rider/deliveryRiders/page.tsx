@@ -392,7 +392,7 @@ const DeliveryRiders: React.FC = () => {
               className={`flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg ${
                 loading
                   ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-[#0088B1] hover:bg-[#00729A]"
+                  : "bg-[#0088B1] hover:bg-[#00729A] cursor-pointer"
               } text-[#F8F8F8]`}
             >
               <Plus className="w-3 h-3" />
@@ -583,14 +583,14 @@ const DeliveryRiders: React.FC = () => {
                         <div className="flex items-center gap-2 justify-end relative">
                           <button
                             onClick={() => handleRiderAction("view", rider)}
-                            className="p-1 text-gray-500 hover:text-[#0088B1]"
+                            className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
                             title="View Rider"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleRiderAction("edit", rider)}
-                            className="p-1 text-gray-500 hover:text-[#0088B1]"
+                            className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
                             title="Edit Rider"
                           >
                             <Edit className="w-4 h-4" />
@@ -603,7 +603,7 @@ const DeliveryRiders: React.FC = () => {
                                   openDropdown === rider.id ? null : rider.id
                                 )
                               }
-                              className="p-1 text-gray-500 hover:text-[#0088B1] dropdown-toggle"
+                              className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer dropdown-toggle"
                               title="More options"
                             >
                               <MoreVertical className="w-4 h-4" />
@@ -619,7 +619,7 @@ const DeliveryRiders: React.FC = () => {
                                         handleRiderAction("approve", rider);
                                         setOpenDropdown(null);
                                       }}
-                                      className="flex items-center gap-2 w-full px-4 py-2 text-xs text-left hover:bg-gray-100 text-green-600"
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-xs text-left hover:bg-gray-100 cursor-pointer text-[#0088B1]"
                                     >
                                       <UserCheck className="w-4 h-4" />
                                       Approve Rider
@@ -632,7 +632,7 @@ const DeliveryRiders: React.FC = () => {
                                         handleRiderAction("disapprove", rider);
                                         setOpenDropdown(null);
                                       }}
-                                      className="flex items-center gap-2 w-full px-4 py-2 text-xs text-left hover:bg-gray-100 text-orange-600"
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-xs text-left hover:bg-gray-100 cursor-pointer text-amber-600"
                                     >
                                       <UserX className="w-4 h-4" />
                                       Disapprove Rider

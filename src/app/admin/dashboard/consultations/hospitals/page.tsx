@@ -356,7 +356,7 @@ const Hospitals: React.FC = () => {
             Hospital Management
           </h1>
           <button
-            className="flex items-center text-[12px] gap-2 bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 transition-colors"
+            className="flex items-center text-[12px] gap-2 bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 cursor-pointer transition-colors"
             onClick={() => setShowAddHospitalModal(true)}
           >
             <Plus className="w-4 h-4" />
@@ -364,7 +364,6 @@ const Hospitals: React.FC = () => {
           </button>
         </div>
 
-        {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -547,21 +546,21 @@ const Hospitals: React.FC = () => {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center gap-2 justify-end">
                           <button
-                            className="p-2 text-gray-400 hover:text-[#0088B1]"
+                            className="p-2 text-gray-400 hover:text-[#0088B1] cursor-pointer"
                             onClick={() => handleViewHospital(hospital)}
                             title="View Hostpital"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            className="p-2 text-gray-400 hover:text-[#0088B1]"
+                            className="p-2 text-gray-400 hover:text-[#0088B1] cursor-pointer"
                             onClick={() => handleEditHospital(hospital)}
                             title="Edit Hostpital"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            className="p-2 text-red-400 hover:text-red-500"
+                            className="p-2 text-red-400 hover:text-red-500 cursor-pointer"
                             onClick={() => handleDeleteHospital(hospital)}
                             title="Delete Hostpital"
                           >

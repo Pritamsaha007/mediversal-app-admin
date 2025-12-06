@@ -27,7 +27,6 @@ const AdminLoginCard: React.FC<AdminLoginCardProps> = ({ className = "" }) => {
       toast.loading("Logging in...", { id: "admin-login" });
       const response = await cognitoAdminLogin({ email, password });
 
-      // 👇 Add this line
       console.log("Cognito login response:", response);
 
       setAdminData(response);

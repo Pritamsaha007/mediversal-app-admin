@@ -62,9 +62,9 @@ export default function CouponTable({
 
   return (
     <div className="bg-white rounded-lg border border-gray-200/60 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
+        <table className="w-full relative">
+          <thead className="bg-gray-50 sticky top-0 z-20">
             <tr>
               <th scope="col" className="px-4 py-3">
                 <input
@@ -152,7 +152,6 @@ export default function CouponTable({
                 />
               ))
             ) : (
-              // Empty state
               <tr>
                 <td colSpan={8} className="px-6 py-12 text-center">
                   <div className="text-gray-500 text-center">
@@ -171,7 +170,6 @@ export default function CouponTable({
         </table>
       </div>
 
-      {/* Only show pagination when not loading and there are items */}
       {!isLoading && coupons.length > 0 && (
         <Pagination
           currentPage={currentPage}

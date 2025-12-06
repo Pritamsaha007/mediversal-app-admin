@@ -2,53 +2,36 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { PhlebotomistSlot } from "../bookings/type";
 
-interface PhlebotomistAssignment {
+interface AssignedPhlebotomist {
   phlebotomist: PhlebotomistSlot;
   selectedSlot: PhlebotomistSlot;
   bookingId: string;
   assignedAt: string;
 }
 
-interface PhlebotomistAssignmentStore {
-  assignments: Record<string, PhlebotomistAssignment>;
-
-  addAssignment: (
+interface PhlebotomistAssignmentState {
+  assignments: Record<string, AssignedPhlebotomist>;
+  setAssignment: (
     bookingId: string,
-    phlebotomist: PhlebotomistSlot,
-    selectedSlot: PhlebotomistSlot
+    assignment: Omit<AssignedPhlebotomist, "bookingId" | "assignedAt">
   ) => void;
-
+  getAssignment: (bookingId: string) => AssignedPhlebotomist | null;
   removeAssignment: (bookingId: string) => void;
-
-  getAssignment: (bookingId: string) => PhlebotomistAssignment | null;
-
-  hasAssignment: (bookingId: string) => boolean;
-
   clearAllAssignments: () => void;
-
-  updateAssignment: (
-    bookingId: string,
-    updates: Partial<PhlebotomistAssignment>
-  ) => void;
 }
 
 export const usePhlebotomistAssignmentStore =
-  create<PhlebotomistAssignmentStore>()(
+  create<PhlebotomistAssignmentState>()(
     persist(
       (set, get) => ({
         assignments: {},
 
-        addAssignment: (
-          bookingId: string,
-          phlebotomist: PhlebotomistSlot,
-          selectedSlot: PhlebotomistSlot
-        ) => {
+        setAssignment: (bookingId, assignment) => {
           set((state) => ({
             assignments: {
               ...state.assignments,
               [bookingId]: {
-                phlebotomist,
-                selectedSlot,
+                ...assignment,
                 bookingId,
                 assignedAt: new Date().toISOString(),
               },
@@ -56,48 +39,24 @@ export const usePhlebotomistAssignmentStore =
           }));
         },
 
-        removeAssignment: (bookingId: string) => {
-          set((state) => {
-            const { [bookingId]: removed, ...rest } = state.assignments;
-            return { assignments: rest };
-          });
-        },
-
-        getAssignment: (bookingId: string) => {
+        getAssignment: (bookingId) => {
           return get().assignments[bookingId] || null;
         },
 
-        hasAssignment: (bookingId: string) => {
-          return !!get().assignments[bookingId];
+        removeAssignment: (bookingId) => {
+          set((state) => {
+            const newAssignments = { ...state.assignments };
+            delete newAssignments[bookingId];
+            return { assignments: newAssignments };
+          });
         },
 
         clearAllAssignments: () => {
           set({ assignments: {} });
         },
-
-        updateAssignment: (
-          bookingId: string,
-          updates: Partial<PhlebotomistAssignment>
-        ) => {
-          set((state) => {
-            const existingAssignment = state.assignments[bookingId];
-            if (!existingAssignment) return state;
-
-            return {
-              assignments: {
-                ...state.assignments,
-                [bookingId]: {
-                  ...existingAssignment,
-                  ...updates,
-                },
-              },
-            };
-          });
-        },
       }),
       {
         name: "phlebotomist-assignments-storage",
-        partialize: (state) => ({ assignments: state.assignments }),
       }
     )
   );

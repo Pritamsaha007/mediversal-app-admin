@@ -491,7 +491,7 @@ const BookingManagement: React.FC = () => {
                             disabled={updatingStatus === booking.id}
                             className={`px-3 py-1 rounded-full text-[10px] font-medium ${getStatusColor(
                               booking.order_status
-                            )} flex items-center gap-1 hover:opacity-80 transition-opacity disabled:opacity-50`}
+                            )} flex items-center gap-1 hover:opacity-80 cursor-pointer transition-opacity disabled:opacity-50`}
                           >
                             {updatingStatus === booking.id ? (
                               <>
@@ -519,7 +519,7 @@ const BookingManagement: React.FC = () => {
                                         booking.customer_id
                                       )
                                     }
-                                    className="w-full px-3 py-2 text-left text-[10px] text-[#161D1F] hover:bg-gray-50 transition-colors"
+                                    className="w-full px-3 py-2 text-left text-[10px] text-[#161D1F] hover:bg-gray-50 cursor-pointer transition-colors"
                                   >
                                     {formatStatusDisplay(status.value)}
                                   </button>
