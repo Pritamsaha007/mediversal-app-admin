@@ -51,7 +51,7 @@ export type Order = {
   order_items: OrderItem[];
   prescription_id: string | null;
   prescriptionurl: string | null;
-  receipt_url: string | null;
+  receipt_url?: string;
   rider_staff_name: string | null;
   rider_delivery_status: string | null;
 };
