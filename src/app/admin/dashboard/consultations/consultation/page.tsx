@@ -378,6 +378,8 @@ const Consultations: React.FC = () => {
     const normalized = status?.toLowerCase() ?? "";
 
     switch (normalized) {
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 ";
       case "scheduled":
         return "bg-yellow-100 text-yellow-800";
       case "in-progress":

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { ChevronRight, Edit, Printer, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 
-import StatusBadge from "./StatusBadge";
 import OrderTabs from "./OrderSummary/OrderTabs";
 import OrderOverview from "./OrderSummary/OrderOverview";
 import OrderItems from "./OrderSummary/OrderItems";
@@ -12,6 +11,7 @@ import OrderHistory from "./OrderSummary/OrderHistory";
 import { Order } from "../types/types";
 import OrderPrescriptions from "./OrderSummary/OrderPrescriptions";
 import { CancelOrderRequest, cancelShiprocketOrder } from "../services";
+import StatusBadge from "@/app/components/common/StatusBadge";
 
 interface OrderDetailsModalProps {
   isOpen: boolean;
@@ -102,32 +102,30 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
           </button>
         </div>
 
-        {/* Tabs Navigation */}
         <OrderTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
-        {/* Tab Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-190px)] ">
           {renderTabContent()}
         </div>
 
-        {/* Modal Footer */}
         <div className="flex justify-end items-center p-6 border-t border-gray-200 bg-gray-50 mt-2">
           <div className="flex gap-2">
-            {order.deliverystatus != "Cancelled" && (
-              <button
-                onClick={handleCancel}
-                disabled={isSubmitting}
-                className="px-4 py-2 text-white border border-gray-300 rounded-lg bg-[#EB5757]  transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <span className="text-[10px]">Canceling...</span>
-                ) : (
-                  <>
-                    <span className="text-[10px]">Cancel Order</span>
-                  </>
-                )}
-              </button>
-            )}
+            {order.deliverystatus != "Cancelled" ||
+              (order.is_cancel_clicked && (
+                <button
+                  onClick={handleCancel}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-white border border-gray-300 rounded-lg bg-[#EB5757]  transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <span className="text-[10px]">Canceling...</span>
+                  ) : (
+                    <>
+                      <span className="text-[10px]">Cancel Order</span>
+                    </>
+                  )}
+                </button>
+              ))}
             <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center gap-2">
               <Printer className="w-3 h-3" />
               <span className="text-[10px]">Print</span>

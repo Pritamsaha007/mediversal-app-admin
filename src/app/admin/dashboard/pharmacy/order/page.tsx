@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Order, FilterOptions, SortOption } from "./types/types";
 import { OrderService } from "./services";
-import StatusBadge from "./components/StatusBadge";
+
 import OrderActionDropdown from "./components/OrderActionDropdown";
 import PrescriptionModal from "./components/OrderSummary";
 import Pagination from "@/app/components/common/pagination";
@@ -29,6 +29,7 @@ import { updateOrderRiderInfo } from "../../rider/services";
 import { useAdminStore } from "@/app/store/adminStore";
 import { getOrderStatus } from "../../home-care/booking/services";
 import StatsCard from "@/app/components/common/StatsCard";
+import StatusBadge from "@/app/components/common/StatusBadge";
 
 interface OrderStatusEnum {
   id: string;
@@ -158,6 +159,8 @@ const Orders: React.FC = () => {
       case "COMPLETED":
         return "bg-green-100 text-green-800";
       case "CANCELLED":
+        return "bg-red-100 text-red-800";
+      case "Cancelled":
         return "bg-red-100 text-red-800";
       case "CONFIRMED":
         return "bg-orange-100 text-orange-800";
@@ -706,8 +709,10 @@ const Orders: React.FC = () => {
                                 )
                               }
                               disabled={updatingStatus === order.id?.toString()}
-                              className={`px-3 py-1 rounded-full text-[10px] font-medium ${getStatusColor(
-                                getCurrentStatus(order)
+                              className={`px-2 py-1 rounded-full text-[10px] font-medium ${getStatusColor(
+                                order.is_cancel_clicked
+                                  ? "CANCELLED"
+                                  : getCurrentStatus(order)
                               )} flex items-center gap-1 hover:opacity-80 cursor-pointer transition-opacity disabled:opacity-50 min-w-[100px] justify-center`}
                               style={{ minHeight: "24px" }}
                             >
@@ -719,7 +724,9 @@ const Orders: React.FC = () => {
                               ) : (
                                 <>
                                   <span className="truncate">
-                                    {getCurrentStatus(order)}
+                                    {order.is_cancel_clicked
+                                      ? "CANCELLED"
+                                      : getCurrentStatus(order)}
                                   </span>
                                   <ChevronDown className="w-3 h-3 flex-shrink-0" />
                                 </>

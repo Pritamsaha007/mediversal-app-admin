@@ -34,13 +34,11 @@ export const ProductDetailsTab = ({
   };
   return (
     <div className="space-y-4">
-      {/* Upload Photo Section */}
       <div className="mb-4">
         <label className="block text-sm font-medium mb-2 text-[#161D1F]">
           Product Images
         </label>
 
-        {/* Drag-and-Drop Upload Box */}
         <div
           className="border-2 border-dashed border-gray-300 p-4 rounded-md text-center cursor-pointer hover:border-[#0088B1]"
           onDrop={handleDrop}
@@ -60,7 +58,6 @@ export const ProductDetailsTab = ({
           </label>
         </div>
 
-        {/* Image Preview */}
         {imagePreviews.length > 0 && (
           <div className="mt-4 grid grid-cols-6 gap-3 ">
             {imagePreviews.map((src, idx) => (

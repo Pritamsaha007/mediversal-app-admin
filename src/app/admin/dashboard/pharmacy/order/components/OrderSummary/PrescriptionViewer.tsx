@@ -19,18 +19,14 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Clean and parse the prescription URL
   const cleanPrescriptionUrl = (url: string): string => {
     if (!url) return "";
 
     try {
-      // Remove URL encoding
       let cleaned = decodeURIComponent(url);
 
-      // Remove JSON string wrapping like {"url"} or {url}
       cleaned = cleaned.replace(/^\{["']?|["']?\}$/g, "");
 
-      // Remove any remaining quotes
       cleaned = cleaned.replace(/^["']|["']$/g, "");
 
       return cleaned.trim();
@@ -43,7 +39,6 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
   const cleanedPrescription = cleanPrescriptionUrl(prescription);
 
   useEffect(() => {
-    // Log full URL to debug
     console.log("==== PRESCRIPTION URL DEBUG ====");
     console.log("Original URL:", prescription);
     console.log("Cleaned URL:", cleanedPrescription);
@@ -80,7 +75,6 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
     try {
       console.log("Starting download for:", cleanedPrescription);
 
-      // Method 1: Try direct fetch with blob
       const response = await fetch(cleanedPrescription, {
         method: "GET",
         headers: {
@@ -95,7 +89,6 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
 
-      // Extract filename from URL
       const urlObj = new URL(cleanedPrescription);
       const pathParts = urlObj.pathname.split("/");
       const filename =
@@ -109,7 +102,6 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
       document.body.appendChild(link);
       link.click();
 
-      // Cleanup
       setTimeout(() => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(blobUrl);
@@ -119,7 +111,6 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
     } catch (error) {
       console.error("Download failed:", error);
 
-      // Method 2: Fallback - try opening in new window
       try {
         const newWindow = window.open(cleanedPrescription, "_blank");
         if (!newWindow) {
@@ -146,7 +137,6 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
     setImageError(false);
   };
 
-  // Check if prescription URL is valid
   if (!cleanedPrescription || cleanedPrescription.trim() === "") {
     return (
       <div className="space-y-4">
@@ -170,7 +160,6 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
     <div className="space-y-4">
       <div className="relative bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
         <div className="relative h-80 flex items-center justify-center overflow-hidden">
-          {/* Loading Spinner */}
           {isLoading && !imageError && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
               <div className="text-center">
@@ -180,7 +169,6 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
             </div>
           )}
 
-          {/* Error State */}
           {imageError ? (
             <div className="flex flex-col items-center justify-center p-8 text-center max-w-lg">
               <div className="text-red-400 mb-3">
@@ -230,7 +218,6 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
               </div>
             </div>
           ) : (
-            /* Image Display */
             <img
               src={cleanedPrescription}
               alt="Prescription"
@@ -245,7 +232,6 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
           )}
         </div>
 
-        {/* Image Controls - Only show when image is loaded */}
         {!imageError && !isLoading && (
           <div className="absolute top-4 right-4 flex gap-2">
             <button

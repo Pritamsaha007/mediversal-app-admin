@@ -1,13 +1,11 @@
 import React from "react";
 import { Order } from "../../types/types";
-import StatusBadge from "./StatusBadge";
+import StatusBadge from "@/app/components/common/StatusBadge";
 
 interface OrderPaymentProps {
-  order?: Order | null; // made optional & nullable
+  order?: Order | null;
 }
-
 const OrderPayment: React.FC<OrderPaymentProps> = ({ order }) => {
-  // Safe currency formatter
   const formatCurrency = (amount?: number | string | null): string => {
     const value = Number(amount);
     return isNaN(value) ? "₹0.00" : `₹${value.toFixed(2)}`;
