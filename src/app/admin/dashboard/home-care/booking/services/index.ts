@@ -132,6 +132,7 @@ export async function getHomecareOfferings(
 
   return await response.json();
 }
+
 export async function getHomecareStaff(
   params: GetStaffParams = {},
   token: string

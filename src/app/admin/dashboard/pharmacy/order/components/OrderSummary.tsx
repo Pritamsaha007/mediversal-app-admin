@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { ChevronRight, Edit, Printer, X } from "lucide-react";
+import { Edit, Printer, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 import StatusBadge from "./StatusBadge";
