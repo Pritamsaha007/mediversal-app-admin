@@ -217,8 +217,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
             const uploadRequest = {
               bucketName,
-              folderPath: "products",
-              fileName: `${Date.now()}_${i}_${file.name}`,
+              folderPath: `products/${formData.ProductName}`,
+              fileName: `${file.name}`,
               fileContent,
             };
 

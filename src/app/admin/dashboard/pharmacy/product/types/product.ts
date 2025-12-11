@@ -37,7 +37,7 @@ export interface Product {
   ProductStrength: string;
   PackageSize: string;
   schedule: string;
-
+  image_url: string[];
   saftyDescription: string;
   SafetyAdvices: string;
   storageDescription: string;
