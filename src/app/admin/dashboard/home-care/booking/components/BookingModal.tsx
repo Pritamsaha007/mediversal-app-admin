@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { X, User, Phone, Edit } from "lucide-react";
+import { X, User, Phone, Edit, Printer } from "lucide-react";
 import AssignStaffModal from "./AssignStaffModal";
 import { AssignedStaff } from "../staffData";
 import {
@@ -9,6 +9,7 @@ import {
 } from "../types";
 import { useAdminStore } from "@/app/store/adminStore";
 import { getOrderById } from "../services";
+import toast from "react-hot-toast";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -36,13 +37,57 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isAssignStaffModalOpen, setIsAssignStaffModalOpen] = useState(false);
   const { token } = useAdminStore();
+  console.log(orderDetails, "orderDetails");
 
   useEffect(() => {
     if (isOpen && booking?.id && token) {
       fetchOrderDetails();
     }
   }, [isOpen, booking?.id, token]);
+
   if (!isOpen || !booking) return null;
+
+  const downloadAndPrintPDF = (url: string, orderId: string) => {
+    try {
+      const printFrame = document.createElement("iframe");
+      printFrame.style.position = "fixed";
+      printFrame.style.right = "0";
+      printFrame.style.bottom = "0";
+      printFrame.style.width = "0";
+      printFrame.style.height = "0";
+      printFrame.style.border = "none";
+      document.body.appendChild(printFrame);
+
+      printFrame.onload = () => {
+        setTimeout(() => {
+          try {
+            printFrame.contentWindow?.print();
+          } catch (e) {
+            console.error("Print error:", e);
+            window.open(url, "_blank");
+          }
+          setTimeout(() => {
+            document.body.removeChild(printFrame);
+          }, 1000);
+        }, 500);
+      };
+
+      printFrame.src = url;
+    } catch (error) {
+      console.error("Error printing receipt:", error);
+      toast.error("Failed to print receipt. Opening in new tab...");
+      window.open(url, "_blank");
+    }
+  };
+
+  const handlePrint = () => {
+    if (!orderDetails?.receipt_url) {
+      toast.error("Receipt not available");
+      return;
+    }
+
+    downloadAndPrintPDF(orderDetails.receipt_url, orderDetails.id);
+  };
 
   const fetchOrderDetails = async () => {
     if (!booking?.id) return;
@@ -139,8 +184,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
-      <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4">
+      <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] flex flex-col">
+        {/* Header - Fixed */}
+        <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-[16px] font-semibold text-[#161D1F]">
             Booking ID: {booking.id}
           </h2>
@@ -152,230 +198,236 @@ const BookingModal: React.FC<BookingModalProps> = ({
           </button>
         </div>
 
-        <div className="p-6 border-b">
-          <div className="flex gap-3">
-            <span
-              className={`px-3 py-1 rounded-full text-[10px] font-medium ${getorder_statusColor(
-                booking.order_status
-              )}`}
-            >
-              {booking.order_status}
-            </span>
-            <span
-              className={`px-3 py-1 rounded-full text-[10px] font-medium ${getPaymentColor(
-                booking.payment_status
-              )}`}
-            >
-              {booking.payment_status == "Refunded"
-                ? "Paid"
-                : booking.payment_status == "Paid"
-                ? "Paid"
-                : "Partial Payment"}
-            </span>
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="border-b pb-6">
+            <div className="flex gap-3">
+              <span
+                className={`px-3 py-1 rounded-full text-[10px] font-medium ${getorder_statusColor(
+                  booking.order_status
+                )}`}
+              >
+                {booking.order_status}
+              </span>
+              <span
+                className={`px-3 py-1 rounded-full text-[10px] font-medium ${getPaymentColor(
+                  booking.payment_status
+                )}`}
+              >
+                {booking.payment_status == "Refunded"
+                  ? "Paid"
+                  : booking.payment_status == "Paid"
+                  ? "Paid"
+                  : "Partial Payment"}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="rounded-lg p-6 border border-[#899193] bg-white">
+                <h3 className="text-[14px] font-semibold text-[#161D1F] mb-4">
+                  Patient Information
+                </h3>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] text-[#899193] mb-1">
+                        Patient Name
+                      </p>
+                      <p className="font-medium text-[12px] text-[#161D1F]">
+                        {parsedOrderDetails?.Patient_name ||
+                          orderDetails?.customer_details?.first_name +
+                            " " +
+                            orderDetails?.customer_details?.last_name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-[#899193] mb-1">
+                        Patient Age
+                      </p>
+                      <p className="font-medium text-[12px] text-[#161D1F]">
+                        {parsedOrderDetails?.Age || "Not specified"} Years
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] text-[#899193] mb-1">
+                        Patient Gender
+                      </p>
+                      <p className="font-medium text-[12px] text-[#161D1F]">
+                        Not specified
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-[#899193] mb-1">
+                        Phone Number
+                      </p>
+                      <p className="font-medium text-[12px] text-[#161D1F]">
+                        {contactLocation?.["Contact Number"] ||
+                          orderDetails?.customer_details?.phone_number ||
+                          "Not available"}
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[#899193] mb-1">Email</p>
+                    <p className="font-medium text-[12px] text-[#161D1F]">
+                      {orderDetails?.customer_details?.email || "Not available"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[#899193] mb-1">
+                      Service Address
+                    </p>
+                    <p className="font-medium text-[12px] text-[#161D1F]">
+                      {contactLocation?.["Service Address"] ||
+                        "Address not available"}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-6 pt-6 border-t">
+                  <h4 className="text-[14px] font-semibold text-[#161D1F] mb-4">
+                    Emergency Contact
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] text-[#899193] mb-1">
+                        Contact Name
+                      </p>
+                      <p className="font-medium text-[12px] text-[#161D1F]">
+                        {contactLocation?.["Contact Person Name"] ||
+                          "Not available"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-[#899193] mb-1">
+                        Emergency Contact
+                      </p>
+                      <p className="font-medium text-[12px] text-[#161D1F]">
+                        {contactLocation?.["Emergency Contact"] ||
+                          "Not available"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className=" rounded-lg p-6 border border-[#899193] bg-white">
+                <h3 className="text-[14px] font-semibold text-[#161D1F] mb-4">
+                  Booking Information
+                </h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[10px] text-[#899193] mb-1">
+                      Booking Amount
+                    </p>
+                    <p className="font-medium text-[12px] text-[#161D1F]">
+                      ₹
+                      {orderDetails?.order_total
+                        ? Number(orderDetails.order_total).toLocaleString()
+                        : booking.order_total.toLocaleString()}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] text-[#899193] mb-1">Scheduled</p>
+                    <p className="font-medium text-[12px] text-[#161D1F]">
+                      {contactLocation?.["Date & Time"] ||
+                        `${orderDetails?.schedule_in_days || 0} days, ${
+                          orderDetails?.schedule_in_hours || 0
+                        } hours`}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] text-[#899193] mb-1">Duration</p>
+                    <p className="font-medium text-[12px] text-[#161D1F]">
+                      {orderDetails?.schedule_in_days || 0} days
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] text-[#899193] mb-1">
+                      Current Medication
+                    </p>
+                    <p className="font-medium text-[12px] text-[#161D1F]">
+                      {medicalInfo?.["Current Medication"] || "Not specified"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[#899193] mb-1">
+                      Medical Condition
+                    </p>
+                    <p className="font-medium text-[12px] text-[#161D1F]">
+                      {medicalInfo?.["Medical Condition"] || "Not specified"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <h3 className="text-[14px] font-semibold text-[#161D1F] mb-4">
+                Service & Offering
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <span className="bg-cyan-600 text-white px-3 py-1 rounded text-[10px] font-medium">
+                      Service:{" "}
+                      {orderDetails?.service_details?.homecare_service_name}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <h4 className="font-semibold text-[12px] text-[#161D1F] mb-2">
+                    {
+                      orderDetails?.service_details
+                        ?.homecare_service_offering_name
+                    }
+                  </h4>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <h3 className="text-[10px] font-semibold text-[#161D1F] mb-4">
+                Assigned Staff
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-6">
+                {orderDetails?.staff_details &&
+                orderDetails.staff_details.length > 0 ? (
+                  <div>
+                    {orderDetails.staff_details.map(
+                      (staff: any, index: number) => (
+                        <p
+                          key={index}
+                          className="font-medium text-[10px] text-[#161D1F]"
+                        >
+                          {staff.name || "Staff Name Not Available"}
+                        </p>
+                      )
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-red-500 font-medium text-[10px]">
+                    No staff assigned
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="rounded-lg p-6 border border-[#899193] bg-white">
-              <h3 className="text-[14px] font-semibold text-[#161D1F] mb-4">
-                Patient Information
-              </h3>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[10px] text-[#899193] mb-1">
-                      Patient Name
-                    </p>
-                    <p className="font-medium text-[12px] text-[#161D1F]">
-                      {parsedOrderDetails?.Patient_name ||
-                        orderDetails?.customer_details?.first_name +
-                          " " +
-                          orderDetails?.customer_details?.last_name}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-[#899193] mb-1">
-                      Patient Age
-                    </p>
-                    <p className="font-medium text-[12px] text-[#161D1F]">
-                      {parsedOrderDetails?.Age || "Not specified"} Years
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[10px] text-[#899193] mb-1">
-                      Patient Gender
-                    </p>
-                    <p className="font-medium text-[12px] text-[#161D1F]">
-                      Not specified
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-[#899193] mb-1">
-                      Phone Number
-                    </p>
-                    <p className="font-medium text-[12px] text-[#161D1F]">
-                      {contactLocation?.["Contact Number"] ||
-                        orderDetails?.customer_details?.phone_number ||
-                        "Not available"}
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[10px] text-[#899193] mb-1">Email</p>
-                  <p className="font-medium text-[12px] text-[#161D1F]">
-                    {orderDetails?.customer_details?.email || "Not available"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-[#899193] mb-1">
-                    Service Address
-                  </p>
-                  <p className="font-medium text-[12px] text-[#161D1F]">
-                    {contactLocation?.["Service Address"] ||
-                      "Address not available"}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-6 pt-6 border-t">
-                <h4 className="text-[14px] font-semibold text-[#161D1F] mb-4">
-                  Emergency Contact
-                </h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[10px] text-[#899193] mb-1">
-                      Contact Name
-                    </p>
-                    <p className="font-medium text-[12px] text-[#161D1F]">
-                      {contactLocation?.["Contact Person Name"] ||
-                        "Not available"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-[#899193] mb-1">
-                      Emergency Contact
-                    </p>
-                    <p className="font-medium text-[12px] text-[#161D1F]">
-                      {contactLocation?.["Emergency Contact"] ||
-                        "Not available"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className=" rounded-lg p-6 border border-[#899193] bg-white">
-              <h3 className="text-[14px] font-semibold text-[#161D1F] mb-4">
-                Booking Information
-              </h3>
-
-              <div className="space-y-4">
-                <div>
-                  <p className="text-[10px] text-[#899193] mb-1">
-                    Booking Amount
-                  </p>
-                  <p className="font-medium text-[12px] text-[#161D1F]">
-                    ₹
-                    {orderDetails?.order_total
-                      ? Number(orderDetails.order_total).toLocaleString()
-                      : booking.order_total.toLocaleString()}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] text-[#899193] mb-1">Scheduled</p>
-                  <p className="font-medium text-[12px] text-[#161D1F]">
-                    {contactLocation?.["Date & Time"] ||
-                      `${orderDetails?.schedule_in_days || 0} days, ${
-                        orderDetails?.schedule_in_hours || 0
-                      } hours`}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] text-[#899193] mb-1">Duration</p>
-                  <p className="font-medium text-[12px] text-[#161D1F]">
-                    {orderDetails?.schedule_in_days || 0} days
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] text-[#899193] mb-1">
-                    Current Medication
-                  </p>
-                  <p className="font-medium text-[12px] text-[#161D1F]">
-                    {medicalInfo?.["Current Medication"] || "Not specified"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-[#899193] mb-1">
-                    Medical Condition
-                  </p>
-                  <p className="font-medium text-[12px] text-[#161D1F]">
-                    {medicalInfo?.["Medical Condition"] || "Not specified"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <h3 className="text-[14px] font-semibold text-[#161D1F] mb-4">
-              Service & Offering
-            </h3>
-            <div className="bg-gray-50 rounded-lg p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <span className="bg-cyan-600 text-white px-3 py-1 rounded text-[10px] font-medium">
-                    Service:{" "}
-                    {orderDetails?.service_details?.homecare_service_name}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <h4 className="font-semibold text-[12px] text-[#161D1F] mb-2">
-                  {
-                    orderDetails?.service_details
-                      ?.homecare_service_offering_name
-                  }
-                </h4>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <h3 className="text-[10px] font-semibold text-[#161D1F] mb-4">
-              Assigned Staff
-            </h3>
-            <div className="bg-gray-50 rounded-lg p-6">
-              {orderDetails?.staff_details &&
-              orderDetails.staff_details.length > 0 ? (
-                <div>
-                  {orderDetails.staff_details.map(
-                    (staff: any, index: number) => (
-                      <p
-                        key={index}
-                        className="font-medium text-[10px] text-[#161D1F]"
-                      >
-                        {staff.name || "Staff Name Not Available"}
-                      </p>
-                    )
-                  )}
-                </div>
-              ) : (
-                <p className="text-red-500 font-medium text-[10px]">
-                  No staff assigned
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-8 flex flex-wrap gap-4">
+        {/* Footer - Fixed with action buttons */}
+        <div className="p-6 border-t bg-white sticky bottom-0">
+          <div className="flex flex-wrap gap-4">
             <button
               onClick={() => setIsAssignStaffModalOpen(true)}
               className="flex items-center text-[10px] gap-2 bg-cyan-600 text-white px-6 py-3 rounded-lg hover:bg-cyan-700 transition-colors"
@@ -385,6 +437,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
             </button>
 
             <button
+              onClick={handlePrint}
+              className="flex items-center text-[10px] gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Printer className="w-3 h-3" />
+              Print
+            </button>
+            <button
               onClick={() =>
                 onContactPatient(contactLocation?.["Contact Number"])
               }
@@ -393,7 +452,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
               <Phone className="w-3 h-3" />
               Contact Patient
             </button>
-
             {/* <button
               onClick={() => onEditOrder(booking.id)}
               className="flex items-center text-[10px] gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"

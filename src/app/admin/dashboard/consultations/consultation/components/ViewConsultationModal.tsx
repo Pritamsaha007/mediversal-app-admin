@@ -1,13 +1,14 @@
 "use client";
 import React from "react";
-import { X } from "lucide-react";
-import { Consultation } from "../types";
+import { Printer, X } from "lucide-react";
+import { ConsultationAPI } from "../types";
+import toast from "react-hot-toast";
 
 interface ViewConsultationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  consultation: Consultation | null;
-  onEdit: (consultation: Consultation) => void;
+  consultation: ConsultationAPI | null;
+  onEdit: (consultation: ConsultationAPI) => void;
 }
 
 const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
@@ -17,6 +18,7 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
   onEdit,
 }) => {
   if (!isOpen || !consultation) return null;
+  console.log(consultation);
 
   const getStatusBadge = (status?: string | null) => {
     if (!status) {
@@ -45,6 +47,47 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
       </span>
     );
   };
+  const downloadAndPrintPDF = (url: string, orderId: string) => {
+    try {
+      const printFrame = document.createElement("iframe");
+      printFrame.style.position = "fixed";
+      printFrame.style.right = "0";
+      printFrame.style.bottom = "0";
+      printFrame.style.width = "0";
+      printFrame.style.height = "0";
+      printFrame.style.border = "none";
+      document.body.appendChild(printFrame);
+
+      printFrame.onload = () => {
+        setTimeout(() => {
+          try {
+            printFrame.contentWindow?.print();
+          } catch (e) {
+            console.error("Print error:", e);
+            window.open(url, "_blank");
+          }
+          setTimeout(() => {
+            document.body.removeChild(printFrame);
+          }, 1000);
+        }, 500);
+      };
+
+      printFrame.src = url;
+    } catch (error) {
+      console.error("Error printing receipt:", error);
+      toast.error("Failed to print receipt. Opening in new tab...");
+      window.open(url, "_blank");
+    }
+  };
+
+  const handlePrint = () => {
+    if (!consultation?.receipt_url) {
+      toast.error("Receipt not available");
+      return;
+    }
+
+    downloadAndPrintPDF(consultation.receipt_url, consultation.id);
+  };
 
   const getConsultationTypeBadge = (type: string) => {
     return (
@@ -60,14 +103,13 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
     );
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: string) => {
     return `Rs. ${amount}`;
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-[16px] font-medium text-[#161D1F]">
             View Scheduled Consultation
@@ -80,22 +122,20 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6">
-          {/* Patient Name and Booking Info */}
           <div className="mb-6">
             <h3 className="text-[14px] font-medium text-[#161D1F] mb-2">
-              {consultation.patientName}
+              {consultation.patient_name}
             </h3>
             <div className="flex items-center gap-2 text-[10px] text-gray-500 mb-4">
               <span>
                 Booking ID:
-                <span className="cursor-help" title={consultation.bookingId}>
-                  {consultation.bookingId}
+                <span className="cursor-help" title={consultation.id}>
+                  {consultation.id}
                 </span>
               </span>
               <span>|</span>
-              <span>{consultation.consultationLanguage}</span>
+              <span>{consultation.consultation_language}</span>
             </div>
 
             {/* Tags */}
@@ -104,7 +144,7 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
                 Tags:
               </span>
               <div className="flex gap-2">
-                {getConsultationTypeBadge(consultation.consultationType)}
+                {getConsultationTypeBadge(consultation.consultation_type)}
                 {getStatusBadge(consultation.status)}
               </div>
             </div>
@@ -122,7 +162,7 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
                     Patient Contact:{" "}
                   </span>
                   <span className="text-[10px] text-gray-600">
-                    {consultation.patientContact}
+                    {consultation.phone}
                   </span>
                 </div>
                 <div>
@@ -130,16 +170,16 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
                     Patient Email:{" "}
                   </span>
                   <span className="text-[10px] text-gray-600">
-                    {consultation.patientEmail}
+                    {consultation.email}
                   </span>
                 </div>
-                {consultation.aadhaarNumber && (
+                {consultation.aadhar_id && (
                   <div className="md:col-span-2">
                     <span className="text-[10px] font-medium text-[#161D1F]">
                       Aadhaar Number:
                     </span>
                     <span className="text-[10px] text-gray-600">
-                      {consultation.aadhaarNumber}
+                      {consultation.aadhar_id}
                     </span>
                   </div>
                 )}
@@ -157,8 +197,8 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
                     Consultation Date & Time:{" "}
                   </span>
                   <span className="text-[10px] text-gray-600">
-                    {consultation.consultationDate} |{" "}
-                    {consultation.consultationTime}
+                    {consultation.consultation_date} |{" "}
+                    {consultation.consultation_time}
                   </span>
                 </div>
                 <div>
@@ -166,7 +206,7 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
                     Appointed Doctor:{" "}
                   </span>
                   <span className="text-[10px] text-gray-600">
-                    {consultation.appointedDoctor}
+                    {consultation.doc_name}
                   </span>
                 </div>
                 <div>
@@ -174,7 +214,7 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
                     Duration:{" "}
                   </span>
                   <span className="text-[10px] text-gray-600">
-                    {consultation.duration} min.
+                    {consultation.session_duration_in_mins} min.
                   </span>
                 </div>
                 <div>
@@ -182,7 +222,7 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
                     Consultation Fee:{" "}
                   </span>
                   <span className="text-[10px] text-gray-600">
-                    {formatCurrency(consultation.consultationFee)}
+                    {formatCurrency(consultation.total_amount)}
                   </span>
                 </div>
                 <div>
@@ -190,20 +230,20 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
                     Payment Method:{" "}
                   </span>
                   <span className="text-[10px] text-gray-600">
-                    {consultation.paymentMethod}
+                    {consultation.payment_mode}
                   </span>
                 </div>
-                {consultation.hospital && (
+                {consultation.hospital_id && (
                   <div>
                     <span className="text-[10px] font-medium text-[#161D1F]">
                       Hospital:{" "}
                     </span>
                     <span className="text-[10px] text-gray-600">
-                      {consultation.hospital}
+                      {consultation.hospital_name}
                     </span>
                   </div>
                 )}
-                {consultation.hospitalLocation && (
+                {/* {consultation.hospitalLocation && (
                   <div className="md:col-span-2">
                     <span className="text-[10px] font-medium text-[#161D1F]">
                       Location:{" "}
@@ -212,25 +252,23 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
                       {consultation.hospitalLocation}
                     </span>
                   </div>
-                )}
+                )} */}
               </div>
             </div>
           </div>
 
-          {/* Specify Symptoms */}
-          {consultation.symptoms && (
+          {consultation.symptoms_desc && (
             <div className="mb-6">
               <h4 className="text-[10px] font-medium text-[#161D1F] mb-4">
                 Specify Symptoms:
               </h4>
               <p className="text-[10px] text-gray-600 leading-relaxed">
-                {consultation.symptoms}
+                {consultation.symptoms_desc}
               </p>
             </div>
           )}
 
-          {/* Action Button */}
-          <div className="flex justify-end pt-6 border-t border-gray-200">
+          {/* <div className="flex justify-end pt-6 border-t border-gray-200">
             <button
               onClick={() => {
                 onEdit(consultation);
@@ -240,6 +278,17 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
             >
               Edit
             </button>
+          </div> */}
+          <div className="p-6 border-t bg-white sticky bottom-0">
+            <div className="flex flex-wrap gap-4 justify-end">
+              <button
+                onClick={handlePrint}
+                className="flex items-center text-[10px] gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <Printer className="w-3 h-3" />
+                Print
+              </button>
+            </div>
           </div>
         </div>
       </div>

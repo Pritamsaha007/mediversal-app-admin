@@ -109,7 +109,7 @@ export const ProductCard: React.FC<{
       ProductStrength: product.ProductStrength || "",
       PackageSize: product.PackageSize || "",
       productImage: product.productImage || null,
-
+      image_url: product.image_url,
       schedule: product.schedule || "",
       tax: product.tax || product.taxRate || 0,
       HSN_Code: product.HSN_Code || product.hsnCode || "",

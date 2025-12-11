@@ -32,13 +32,12 @@ const CACHE_TTL = 5 * 60 * 1000;
 
 export const addProductAPI = async (
   productData: any,
-  imageFiles: File[] = []
+  imageUrls: string[] = []
 ) => {
   try {
-    const formData = new FormData();
     const { token } = useAdminStore.getState();
+    const formData = new FormData();
 
-    // Append all product data fields
     formData.append("admin_id", productData.admin_id || "1");
     formData.append("ProductName", productData.ProductName || "");
     formData.append("CostPrice", productData.CostPrice?.toString() || "0");
@@ -121,11 +120,16 @@ export const addProductAPI = async (
       productData.DiscountedPercentage?.toString() || "0"
     );
 
-    if (imageFiles.length > 0) {
-      formData.append("images", imageFiles[0]);
+    if (imageUrls.length > 0) {
+      formData.append("image_url", JSON.stringify(imageUrls));
+      console.log(
+        "Sending image_url as JSON string:",
+        JSON.stringify(imageUrls)
+      );
+    } else {
+      formData.append("image_url", "[]");
     }
 
-    // Debug: Log FormData contents
     console.log("FormData contents:");
     for (const [key, value] of formData.entries()) {
       console.log(`${key}:`, value);
@@ -154,7 +158,6 @@ export const addProductAPI = async (
     throw error;
   }
 };
-
 const getFromCache = (key: string) => {
   const item = productCache.get(key) as CacheItem | undefined;
   if (!item) return null;
