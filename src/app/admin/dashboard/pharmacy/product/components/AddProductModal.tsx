@@ -9,6 +9,7 @@ import { SettingsTab } from "./SettingsTab";
 import toast from "react-hot-toast";
 import { useAdminStore } from "@/app/store/adminStore";
 import { addProductAPI } from "../services/ProductService";
+import { uploadFile } from "../../../lab_tests/services";
 interface AddProductModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -35,6 +36,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [subcategoryDropdownOpen, setSubcategoryDropdownOpen] = useState(false);
   const [symptomsDropdownOpen, setSymptomsDropdownOpen] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const admin = useAdminStore((state) => state.admin);
 
@@ -43,7 +45,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       setFormData(productToEdit);
     }
   }, [isEditMode, productToEdit]);
-
+  const { token } = useAdminStore();
   const [formData, setFormData] = useState<ProductFormData>({
     ProductName: "",
     SKU: "",
@@ -63,6 +65,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     tax: 0,
     HSN_Code: "",
     storageConditions: "",
+    image_url: [],
     // shelfLife: 0,
     PrescriptionRequired: false,
     featuredProduct: false,
@@ -92,13 +95,23 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     }));
   };
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    const file = files[0];
-    setSelectedImages([file]);
-    setImagePreviews([URL.createObjectURL(file)]);
+    const fileArray = Array.from(files);
+
+    const maxFiles = 5;
+    if (fileArray.length > maxFiles) {
+      toast.error(`You can only upload up to ${maxFiles} images`);
+      return;
+    }
+
+    const previews = fileArray.map((file) => URL.createObjectURL(file));
+    setSelectedImages((prev) => [...prev, ...fileArray]);
+    setImagePreviews((prev) => [...prev, ...previews]);
   };
   const removeImage = (index: number) => {
     setSelectedImages((prev) => prev.filter((_, i) => i !== index));
@@ -125,6 +138,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       tax: 0,
       HSN_Code: "",
       storageConditions: "",
+      image_url: [],
       // shelfLife: 0,
       PrescriptionRequired: false,
       featuredProduct: false,
@@ -134,7 +148,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       productImage: null,
       ColdChain: "",
       GST: "",
-      admin_id: admin?.id || "", // Keep admin_id in reset but hidden from UI
+      admin_id: admin?.id || "",
       DiscountedPrice: null,
       DiscountedPercentage: 0,
       productLength: 20,
@@ -146,10 +160,91 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     });
     setSelectedImages([]);
   };
+  const fileToBase64 = async (fileUri: string): Promise<string> => {
+    try {
+      const response = await fetch(fileUri);
+      const blob = await response.blob();
 
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result?.toString().split(",")[1];
+          if (base64) {
+            resolve(base64);
+          } else {
+            reject(new Error("Failed to convert file to base64"));
+          }
+        };
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error("Error converting file to base64:", error);
+      throw error;
+    }
+  };
   const handleSubmit = async () => {
     try {
-      // Calculate discount percentage
+      let uploadedImageUrls: string[] = [];
+
+      if (selectedImages.length > 0) {
+        setUploadingImages(true);
+
+        for (let i = 0; i < selectedImages.length; i++) {
+          const file = selectedImages[i];
+          try {
+            if (!file.type.startsWith("image/")) {
+              toast.error("Please upload only image files.");
+              continue;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+              toast.error(`Image ${file.name} size should be less than 5MB.`);
+              continue;
+            }
+
+            const fileUri = URL.createObjectURL(file);
+            const fileContent = await fileToBase64(fileUri);
+
+            const bucketName =
+              process.env.NODE_ENV === "development"
+                ? process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_DEV
+                : process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_PROD;
+
+            if (!bucketName) {
+              throw new Error("S3 bucket name is not configured properly.");
+            }
+
+            const uploadRequest = {
+              bucketName,
+              folderPath: "products",
+              fileName: `${Date.now()}_${i}_${file.name}`,
+              fileContent,
+            };
+
+            const uploadRes = await uploadFile(token!, uploadRequest);
+            uploadedImageUrls.push(uploadRes.result);
+
+            URL.revokeObjectURL(fileUri);
+
+            console.log(`Uploaded image ${i + 1}: ${uploadRes.result}`);
+          } catch (error: any) {
+            console.error(`Failed to upload image ${file.name}:`, error);
+            toast.error(`Failed to upload ${file.name}: ${error.message}`);
+          }
+        }
+
+        setUploadingImages(false);
+      }
+
+      const allImageUrls = [
+        ...(formData.image_url || []),
+        ...uploadedImageUrls,
+      ];
+
+      console.log("All image URLs:", allImageUrls);
+      console.log("Current formData:", formData);
+
       const discountPercentage =
         formData.CostPrice !== null &&
         formData.CostPrice > 0 &&
@@ -169,47 +264,60 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           DiscountedPercentage: discountPercentage,
           DiscountedPrice: formData.SellingPrice,
           status: formData.active ? "Active" : "Inactive",
+          image_url: allImageUrls,
         };
-        console.log(productJSON, "productJson");
+
+        console.log("Product JSON for update:", productJSON);
         onUpdateProduct(productJSON);
         toast.success("Product updated successfully");
       } else {
-        console.log("Final Data Sent to Backend:", {
-          formData: {
-            ...formData,
-            DiscountedPercentage: discountPercentage,
-            DiscountedPrice: formData.SellingPrice,
-          },
-          selectedImages,
+        console.log("=== SUBMITTING NEW PRODUCT ===");
+        console.log("Image URLs to send:", allImageUrls);
+        console.log("Form data structure:", {
+          ...formData,
+          image_url: allImageUrls,
         });
 
-        // Pass form data and selected images separately
-        const result = await addProductAPI(
-          {
-            ...formData,
-            admin_id: admin?.id, // Make sure admin_id is included
-            DiscountedPercentage: discountPercentage,
-            DiscountedPrice: formData.SellingPrice,
-          },
-          selectedImages // This is the array of File objects
+        const completeProductData = {
+          ...formData,
+          admin_id: admin?.id,
+          DiscountedPercentage: discountPercentage,
+          DiscountedPrice: formData.SellingPrice,
+          image_url: allImageUrls,
+        };
+
+        console.log(
+          "Complete data being sent to addProductAPI:",
+          completeProductData
         );
 
+        const result = await addProductAPI(completeProductData, allImageUrls);
+
+        console.log("API Response:", result);
         onAddProduct(result);
-        console.log("Product added successfully:", result);
         toast.success("Product added successfully!");
       }
 
-      handleReset();
-      setSelectedImages([]);
-      setImagePreviews([]);
+      // Only reset if it's not edit mode (preserve data for editing)
+      if (!isEditMode) {
+        handleReset();
+      }
       onClose();
     } catch (error: any) {
-      console.error("Error submitting product:", error);
+      console.error("Error in handleSubmit:", error);
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data,
+      });
+
       toast.error(
         `Failed to ${isEditMode ? "update" : "add"} product: ${
           error.message || "Please try again."
         }`
       );
+    } finally {
+      setUploadingImages(false);
     }
   };
   if (!isOpen) return null;
@@ -220,7 +328,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >
       <div className="bg-white rounded-lg w-full max-w-3xl max-h-[80vh] overflow-y-scroll no-scrollbar ">
-        {/* Header */}
         <div className="flex items-center justify-between p-4 top-0 sticky bg-white z-10">
           <h2 className="text-[16px] font-semibold text-[#161D1F] ">
             {isEditMode ? "Edit Product" : "Add New Product"}
@@ -234,7 +341,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="flex p-1 bg-[#F8F8F8]">
           {["Basic Information", "Product Details", "Settings"].map((tab) => (
             <button
@@ -254,7 +360,6 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           ))}
         </div>
 
-        {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)] transition-all duration-300 ease-in-out">
           <div key={tabAnimationKey} className="animate-fade-in">
             {activeTab === "Basic Information" && (
@@ -301,7 +406,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             )}
           </div>
         </div>
-        {/* Footer */}
+
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
           <button
             onClick={handleReset}
@@ -328,7 +433,11 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               onClick={handleSubmit}
               className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[10px] rounded-lg hover:bg-[#00729A]"
             >
-              {isEditMode ? "Update Product" : "Add Product"}
+              {uploadingImages
+                ? "Uploading Images..."
+                : isEditMode
+                ? "Update Product"
+                : "Add Product"}
             </button>
           )}
         </div>

@@ -10,13 +10,13 @@ import {
 import { useAdminStore } from "@/app/store/adminStore";
 
 import toast from "react-hot-toast";
-import { Consultation, EnumItem } from "../types";
+import { ConsultationAPI, EnumItem } from "../types";
 
 interface AddConsultationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddConsultation: (consultation: ConsultationFormData) => void;
-  editingConsultation?: Consultation | null;
+  editingConsultation?: ConsultationAPI | null;
   initialConsultationType: "online" | "hospital";
 }
 interface ConsultationFormData {
@@ -24,7 +24,7 @@ interface ConsultationFormData {
   patientContact: string;
   patientEmail: string;
   aadhaarNumber?: string;
-  consultationType: "online" | "in-person";
+  consultationType: string;
   consultationDate: string;
   consultationTime: string;
   duration: number;
@@ -33,11 +33,11 @@ interface ConsultationFormData {
   hospital: string;
   hospitalId: string;
   consultationLanguage: string;
-  languageId: string;
+
   paymentMethod: string;
-  paymentModeId: string;
+
   paymentStatus: string;
-  paymentStatusId: string;
+
   symptoms?: string;
 }
 
@@ -62,11 +62,11 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
     hospital: "",
     hospitalId: "",
     consultationLanguage: "",
-    languageId: "",
+
     paymentMethod: "",
-    paymentModeId: "",
+
     paymentStatus: "pending",
-    paymentStatusId: "",
+
     symptoms: "",
   });
   const { token } = useAdminStore();
@@ -167,25 +167,25 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
   useEffect(() => {
     if (editingConsultation) {
       setFormData({
-        patientName: editingConsultation.patientName,
-        patientContact: editingConsultation.patientContact,
-        patientEmail: editingConsultation.patientEmail,
-        aadhaarNumber: editingConsultation.aadhaarNumber || "",
-        consultationType: editingConsultation.consultationType,
-        consultationDate: editingConsultation.consultationDate,
-        consultationTime: editingConsultation.consultationTime,
-        duration: editingConsultation.duration,
-        appointedDoctor: editingConsultation.appointedDoctor,
-        doctorId: editingConsultation.doctorId || "",
-        hospital: editingConsultation.hospital || "",
-        hospitalId: editingConsultation.hospitalId || "",
-        consultationLanguage: editingConsultation.consultationLanguage,
-        languageId: editingConsultation.languageId || "",
-        paymentMethod: editingConsultation.paymentMethod,
-        paymentModeId: editingConsultation.paymentModeId || "",
-        paymentStatus: editingConsultation.paymentStatus,
-        paymentStatusId: editingConsultation.statusId || "",
-        symptoms: editingConsultation.symptoms || "",
+        patientName: editingConsultation.patient_name,
+        patientContact: editingConsultation.phone,
+        patientEmail: editingConsultation.email,
+        aadhaarNumber: editingConsultation.aadhar_id || "",
+        consultationType: editingConsultation.consultation_type,
+        consultationDate: editingConsultation.consultation_date,
+        consultationTime: editingConsultation.consultation_time,
+        duration: editingConsultation.session_duration_in_mins,
+        appointedDoctor: editingConsultation.doc_name,
+        doctorId: editingConsultation.id || "",
+        hospital: editingConsultation.hospital_name || "",
+        hospitalId: editingConsultation.hospital_id || "",
+        consultationLanguage: editingConsultation.consultation_language,
+
+        paymentMethod: editingConsultation.payment_mode,
+
+        paymentStatus: editingConsultation.payment_status,
+
+        symptoms: editingConsultation.symptoms_desc || "",
       });
     } else {
       setFormData({
@@ -203,11 +203,11 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
         hospital: "",
         hospitalId: "",
         consultationLanguage: "",
-        languageId: "",
+
         paymentMethod: "",
-        paymentModeId: "",
+
         paymentStatus: "pending",
-        paymentStatusId: "",
+
         symptoms: "",
       });
     }
@@ -237,10 +237,6 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
         const selectedMode = enumData.paymentModes.find(
           (mode) => mode.id === value
         );
-        if (selectedMode) {
-          newData.paymentModeId = selectedMode.id;
-          newData.paymentMethod = selectedMode.value; // Store display value
-        }
       }
 
       // When language changes, also update the ID
@@ -248,19 +244,12 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
         const selectedLang = enumData.languages.find(
           (lang) => lang.id === value
         );
-        if (selectedLang) {
-          newData.languageId = selectedLang.id;
-          newData.consultationLanguage = selectedLang.value; // Store display value
-        }
       }
 
       if (field === "paymentStatus") {
         const selectedStatus = enumData.paymentStatuses.find(
           (status) => status.value === value
         );
-        if (selectedStatus) {
-          newData.paymentStatusId = selectedStatus.id;
-        }
       }
 
       return newData;
@@ -284,28 +273,35 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
     try {
       const consultationData = {
         ...(editingConsultation?.id && { id: editingConsultation.id }),
+
         date: formData.consultationDate,
         time: formData.consultationTime,
         session_duration_in_mins: formData.duration,
         customer_id: null,
         patient_name: formData.patientName.trim(),
-        phone: formData.patientContact.replace(/\D/g, ""), // Clean phone number
+        phone: formData.patientContact.replace(/\D/g, ""),
         email: formData.patientEmail.trim().toLowerCase(),
         date_of_birth: "1990-01-01",
+
         hospital_id:
           formData.consultationType === "in-person"
             ? formData.hospitalId
             : undefined,
+
         symptoms_desc: formData.symptoms?.trim() || "",
-        payment_mode: formData.paymentModeId || "",
+        payment_mode: formData.paymentMethod,
+        consultation_language_id: formData.consultationLanguage,
+
         total_amount: 500,
         service_fee_tax_amount: 50,
         paid_amount: 500,
         applied_coupons: null,
-        status: formData.paymentStatusId || "",
-        aadhar_id: formData.aadhaarNumber?.replace(/\D/g, "") || undefined, // Clean Aadhaar
-        consultation_language_id: formData.languageId || "",
+
+        aadhar_id: formData.aadhaarNumber?.replace(/\D/g, "") || undefined,
         staff_id: formData.doctorId || "",
+
+        // ⭐ REQUIRED FIELD (missing earlier)
+        status: editingConsultation ? editingConsultation.status : "scheduled",
       };
 
       await createOrUpdateConsultation(consultationData, token);
@@ -347,11 +343,11 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
       hospital: "",
       hospitalId: "",
       consultationLanguage: "",
-      languageId: "",
+
       paymentMethod: "",
-      paymentModeId: "",
+
       paymentStatus: "pending",
-      paymentStatusId: "",
+
       symptoms: "",
     });
   };
