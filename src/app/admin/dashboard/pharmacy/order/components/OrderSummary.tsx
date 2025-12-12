@@ -13,6 +13,8 @@ import { Order } from "../types/types";
 import OrderPrescriptions from "./OrderSummary/OrderPrescriptions";
 import { CancelOrderRequest, cancelShiprocketOrder } from "../services";
 import StatusBadge from "@/app/components/common/StatusBadge";
+import { updateOrderRiderInfo } from "../../../rider/services";
+import { useAdminStore } from "@/app/store/adminStore";
 
 interface OrderDetailsModalProps {
   isOpen: boolean;
@@ -59,6 +61,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   order,
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
+  const { token } = useAdminStore();
   React.useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "p") {
@@ -81,27 +84,57 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   if (!isOpen || !order) return null;
 
   const handleCancel = async () => {
-    try {
-      setIsSubmitting(true);
+    setIsSubmitting(true);
 
+    try {
       const cancellationReason = "Order Cancelled by admin";
 
-      const cancelData: CancelOrderRequest = {
-        orderId: order.id,
-        orderStatus: "Cancelled",
-        reason: cancellationReason,
-      };
+      setTimeout(async () => {
+        try {
+          let response;
 
-      const response = await cancelShiprocketOrder(cancelData);
-      order.deliverystatus = "Cancelled";
-      toast.success("Order cancelled successfully");
-      onClose();
-      console.log("ShipRocket cancellation response:", response);
+          if (
+            order.billing_city?.toLowerCase() === "patna" ||
+            order.billing_city?.toLowerCase() === "begusarai" ||
+            order.billing_pincode?.startsWith("8")
+          ) {
+            const payload = {
+              id: order.id,
+              order_status: "CANCELLED",
+              rider_staff_id: "",
+              rider_delivery_status_id: "",
+            };
+            console.log("local");
+            response = await updateOrderRiderInfo(payload, token);
+          } else {
+            const cancelData: CancelOrderRequest = {
+              orderId: order.id,
+              orderStatus: "Cancelled",
+              reason: cancellationReason,
+            };
+
+            response = await cancelShiprocketOrder(cancelData);
+          }
+
+          if (response) {
+            toast.success("Order cancelled successfully!");
+            onClose();
+          } else {
+            toast.error("Failed to cancel order");
+          }
+        } catch (error) {
+          console.error("Cancellation error:", error);
+
+          toast.error("Error cancelling order");
+          onClose();
+        } finally {
+          setIsSubmitting(false);
+        }
+      }, 0);
     } catch (error) {
-      console.error("Cancellation error:", error);
+      console.error("Initial cancellation setup error:", error);
 
-      onClose();
-    } finally {
+      toast.error("Error setting up cancellation");
       setIsSubmitting(false);
     }
   };
@@ -168,22 +201,36 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 
         <div className="flex justify-end items-center p-6 border-t border-gray-200 bg-gray-50 mt-2">
           <div className="flex gap-2">
-            {order.deliverystatus != "Cancelled" ||
-              (order.is_cancel_clicked && (
-                <button
-                  onClick={handleCancel}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 text-white border border-gray-300 rounded-lg bg-[#EB5757]  transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <span className="text-[10px]">Canceling...</span>
-                  ) : (
-                    <>
+            {order.billing_city?.toLowerCase() === "patna" ||
+            order.billing_city?.toLowerCase() === "begusarai" ||
+            order.billing_pincode?.startsWith("8")
+              ? order.deliverystatus !== "CANCELLED" && (
+                  <button
+                    onClick={handleCancel}
+                    disabled={isSubmitting}
+                    className="px-4 py-2 text-white border border-gray-300 rounded-lg bg-[#EB5757] transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <span className="text-[10px]">Canceling...</span>
+                    ) : (
                       <span className="text-[10px]">Cancel Order</span>
-                    </>
-                  )}
-                </button>
-              ))}
+                    )}
+                  </button>
+                )
+              : order.is_cancel_clicked === false && (
+                  <button
+                    onClick={handleCancel}
+                    disabled={isSubmitting}
+                    className="px-4 py-2 text-white border border-gray-300 rounded-lg bg-[#EB5757] transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <span className="text-[10px]">Canceling...</span>
+                    ) : (
+                      <span className="text-[10px]">Cancel Order</span>
+                    )}
+                  </button>
+                )}
+
             <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center gap-2">
               <Printer className="w-3 h-3" />
               <span className="text-[10px]">Print</span>

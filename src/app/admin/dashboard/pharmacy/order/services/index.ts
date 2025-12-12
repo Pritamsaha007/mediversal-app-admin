@@ -148,7 +148,11 @@ export class OrderService {
   }
 
   static getOrderStatus(order: Order): string {
-    return order.deliverystatus || "Not Provided";
+    if (order.is_cancel_clicked == true) {
+      return "Cancelled";
+    } else {
+      return order.deliverystatus || "Not Provided";
+    }
   }
   static requiresRiderDropdown(order: Order): boolean {
     const city = order.billing_city?.trim().toLowerCase();
