@@ -13,6 +13,7 @@ import AddStaffModal from "./components/AddStaffModal";
 import ViewStaffModal from "./components/ViewStaffModal";
 import { ApiStaff, Staff } from "./types";
 import { fetchStaff, deleteStaff } from "./service";
+import StatusBadge from "@/app/components/common/StatusBadge";
 
 const StaffManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -266,24 +267,6 @@ const StaffManagement: React.FC = () => {
     );
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusColors = {
-      Available: "bg-green-100 text-green-800",
-      "Not available": "bg-red-100 text-red-800",
-    };
-
-    return (
-      <span
-        className={`px-2 py-1 text-xs font-medium rounded-full text-[10px] ${
-          statusColors[status as keyof typeof statusColors] ||
-          "bg-gray-100 text-gray-800"
-        }`}
-      >
-        {status}
-      </span>
-    );
-  };
-
   const getDepartmentChip = (department: string) => {
     return (
       <span className="inline-block px-2 py-1 text-xs font-medium rounded-full mr-1 mb-1 bg-gray-100 text-gray-800 text-[10px]">
@@ -497,7 +480,7 @@ const StaffManagement: React.FC = () => {
                         {renderStars(staff.rating)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-[10px]">
-                        {getStatusBadge(staff.status)}
+                        <StatusBadge status={staff.status} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">
                         <div className="flex items-center gap-2">

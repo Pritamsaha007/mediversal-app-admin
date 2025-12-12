@@ -5,6 +5,7 @@ import { ProductDetailModal } from "./ProductDetailModal";
 import { ProductRelationshipsModal } from "./ManageProductRelationshipsModal";
 import { Eye, Edit, Link, MoreVertical, Pill } from "lucide-react";
 import { ProductFormData } from "../types/productForm.type";
+import StatusBadge from "@/app/components/common/StatusBadge";
 
 interface RelatedProduct {
   id: string;
@@ -291,24 +292,11 @@ export const ProductCard: React.FC<{
           {stockStatus.label}
         </span>
       </td>
-      <td className="px-4 py-4">
-        <div className="flex flex-col gap-2">
-          <span
-            className={`px-3 py-1 text-[8px] ${
-              product.active || product.status === "Active"
-                ? "bg-[#34C759]"
-                : "bg-[#FF3B30]"
-            } text-white rounded-lg text-center`}
-          >
-            {product.active ? "Active" : product.status}
-          </span>
-          {(product.featuredProduct || product.featured) && (
-            <span className="px-3 py-1 text-[8px] text-[#F2994A] rounded-lg text-center border border-[#F2994A]">
-              Featured
-            </span>
-          )}
-        </div>
+      <td className="px-4 py-4 items-center justify-center flex flex-col gap-2">
+        {product.active ? "Active" : <StatusBadge status="Active" />}
+        {product.featured && <StatusBadge status="Featured" />}
       </td>
+
       <td className="px-4 py-4">
         <div className="flex items-center gap-2 relative" ref={dropdownRef}>
           <button
