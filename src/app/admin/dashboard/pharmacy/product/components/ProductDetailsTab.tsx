@@ -54,6 +54,7 @@ export const ProductDetailsTab = ({
               className="hidden"
               accept=".jpg,.jpeg,.png"
               onChange={onImageChange}
+              multiple
             />
           </label>
         </div>

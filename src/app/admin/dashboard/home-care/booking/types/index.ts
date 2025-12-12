@@ -144,7 +144,7 @@ export interface ApiOrderResponse {
   order_status_name: string;
   homecare_service_name: string;
   customer_name: string;
-  recipt_url: string;
+  reciept_url: string;
   customer_details: {
     address_line1: string | null;
     address_line2: string | null;
@@ -173,6 +173,7 @@ export interface OrderDetailResponse {
     order_time: string;
     payment_status: string;
     order_status: string;
+    receipt_url: string;
     staff_details: any[];
     service_details: {
       homecare_service_id: string;

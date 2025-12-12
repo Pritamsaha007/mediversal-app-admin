@@ -23,10 +23,9 @@ import {
 import AddConsultationModal from "./components/AddConsultationModal";
 import ViewConsultationModal from "./components/ViewConsultationModal";
 import { useAdminStore } from "@/app/store/adminStore";
-import { transformAPIToConsultation } from "./utils";
 import toast from "react-hot-toast";
 import VideoCallModal from "./components/VideoCallModal";
-import { Consultation } from "./types";
+import { ConsultationAPI } from "./types";
 import Pagination from "../../../../components/common/pagination";
 import StatsCard from "@/app/components/common/StatsCard";
 
@@ -60,9 +59,9 @@ const Consultations: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [selectedConsultationType, setSelectedConsultationType] =
     useState("Consultation Type");
-  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [consultations, setConsultations] = useState<ConsultationAPI[]>([]);
   const [filteredConsultations, setFilteredConsultations] = useState<
-    Consultation[]
+    ConsultationAPI[]
   >([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [openDropdown, setOpenDropdown] = useState<null | "status" | "type">(
@@ -73,13 +72,13 @@ const Consultations: React.FC = () => {
   );
   const [showVideoCallModal, setShowVideoCallModal] = useState(false);
   const [selectedConsultationForCall, setSelectedConsultationForCall] =
-    useState<Consultation | null>(null);
+    useState<ConsultationAPI | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [editingConsultation, setEditingConsultation] =
-    useState<Consultation | null>(null);
+    useState<ConsultationAPI | null>(null);
   const [selectedConsultation, setSelectedConsultation] =
-    useState<Consultation | null>(null);
+    useState<ConsultationAPI | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showAddConsultationModal, setShowAddConsultationModal] =
     useState(false);
@@ -112,10 +111,10 @@ const Consultations: React.FC = () => {
   const generateStats = () => {
     const totalConsultations = consultations.length;
     const onlineConsultations = consultations.filter(
-      (c) => c.consultationType === "online"
+      (c) => c.consultation_type === "online"
     ).length;
     const inPersonConsultations = consultations.filter(
-      (c) => c.consultationType === "in-person"
+      (c) => c.consultation_type === "in-person"
     ).length;
     const avgRating = 4.3;
 
@@ -135,16 +134,16 @@ const Consultations: React.FC = () => {
     };
   };
 
-  const handleVideoCall = (consultation: Consultation) => {
+  const handleVideoCall = (consultation: ConsultationAPI) => {
     console.log("Video call clicked for consultation:", consultation);
     console.log("Consultation ID:", consultation.id);
     console.log("First 6 digits:", consultation.id.substring(0, 6));
-    console.log("Patient Name:", consultation.patientName);
-    console.log("Doctor Name:", consultation.appointedDoctor);
-    console.log("Consultation Type:", consultation.consultationType);
+    console.log("Patient Name:", consultation.patient_name);
+    console.log("Doctor Name:", consultation.doc_name);
+    console.log("Consultation Type:", consultation.consultation_type);
     console.log("Status:", consultation.status);
     try {
-      if (consultation.consultationType !== "online") {
+      if (consultation.consultation_type !== "ONLINE") {
         toast.error("Video calls are only available for online consultations");
         return;
       }
@@ -216,17 +215,13 @@ const Consultations: React.FC = () => {
       const response = await getConsultations(params, token);
       console.log(response, "consultations response");
 
-      const transformedData = response.consultations.map(
-        transformAPIToConsultation
-      );
+      setConsultations(response.consultations);
+      setFilteredConsultations(response.consultations);
 
-      setConsultations(transformedData);
-      setFilteredConsultations(transformedData);
+      setHasMore(response.consultations.length === itemsPerPage);
+      setTotalItems(response.consultations.length);
 
-      setHasMore(transformedData.length === itemsPerPage);
-      setTotalItems(transformedData.length);
-
-      if (searchTerm && transformedData.length === 0) {
+      if (searchTerm && response.consultations.length === 0) {
         toast("No consultations found matching your search");
       }
     } catch (error) {
@@ -263,7 +258,7 @@ const Consultations: React.FC = () => {
       setCurrentPage((prev) => prev + 1);
     }
   };
-
+  console.log(filteredConsultations, "filtred");
   const handlePreviousPage = () => {
     if (currentPage > 0 && !loading) {
       setCurrentPage((prev) => prev - 1);
@@ -426,7 +421,7 @@ const Consultations: React.FC = () => {
     }
   };
 
-  const handleViewConsultation = (consultation: Consultation) => {
+  const handleViewConsultation = (consultation: ConsultationAPI) => {
     try {
       setSelectedConsultation(consultation);
       setShowDetailsModal(true);
@@ -435,11 +430,11 @@ const Consultations: React.FC = () => {
     }
   };
 
-  const handleEditConsultation = (consultation: Consultation) => {
+  const handleEditConsultation = (consultation: ConsultationAPI) => {
     try {
       setEditingConsultation(consultation);
       setActiveConsultationType(
-        consultation.consultationType === "online" ? "online" : "hospital"
+        consultation.consultation_type === "online" ? "online" : "hospital"
       );
       setShowAddConsultationModal(true);
       toast("Editing consultation details");
@@ -717,23 +712,23 @@ const Consultations: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">
-                            {consultation.patientName}
+                            {consultation.patient_name}
                           </div>
                           <div className="text-[10px] text-gray-500 mb-2">
                             Booking ID:
                             <span
                               className="ml-1 cursor-help"
-                              title={consultation.bookingId}
+                              title={consultation.id}
                             >
-                              {consultation.bookingId}
+                              {consultation.id}
                             </span>
                           </div>
                           <div className="text-[10px] text-gray-500 mb-2">
-                            {consultation.patientContact}
+                            {consultation.phone}
                           </div>
                           <div className="flex items-center gap-4 text-[10px]">
                             <span className="px-2 py-1 text-[8px] text-[#0088B1] rounded border border-[#0088B1] hover:bg-[#0088B1] hover:text-white transition-colors">
-                              {consultation.consultationType === "online"
+                              {consultation.consultation_type === "ONLINE"
                                 ? "Online"
                                 : "In-Person"}
                             </span>
@@ -743,25 +738,25 @@ const Consultations: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <ConsultationTypeBadge
-                            type={consultation.consultationType}
+                            type={consultation.consultation_type}
                           />
-                          {consultation.consultationType === "in-person" && (
+                          {consultation.consultation_type === "in-person" && (
                             <div className="text-[10px] text-gray-500 mt-1">
-                              {consultation.hospitalLocation}
+                              {consultation.hospital_name}
                             </div>
                           )}
                           <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-2">
                             <HeartPlus className="w-3 h-3" />
-                            {consultation.appointedDoctor}
+                            {consultation.doc_name}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex bg-[#E8F4F7] rounded p-2 justify-center">
                           <div className="text-[10px] flex font-medium text-[#161D1F]">
-                            {consultation.consultationDate} |
+                            {consultation.consultation_date} |
                             <p className="text-[#0073A0] ml-1">
-                              {consultation.consultationTime}
+                              {consultation.consultation_time}
                             </p>
                           </div>
                         </div>
@@ -825,7 +820,7 @@ const Consultations: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center gap-2 justify-end">
-                          {consultation.consultationType === "online" && (
+                          {consultation.consultation_type === "ONLINE" && (
                             <button
                               className="p-2 text-gray-400 hover:text-[#0088B1] cursor-pointer"
                               onClick={() => handleVideoCall(consultation)}
@@ -842,13 +837,13 @@ const Consultations: React.FC = () => {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button
+                          {/* <button
                             className="p-2 text-gray-400 hover:text-[#0088B1] cursor-pointer"
                             onClick={() => handleEditConsultation(consultation)}
                             title="Edit Consultation"
                           >
                             <Edit className="w-4 h-4" />
-                          </button>
+                          </button> */}
                         </div>
                       </td>
                     </tr>
@@ -888,9 +883,9 @@ const Consultations: React.FC = () => {
         isOpen={showVideoCallModal}
         onClose={handleCloseVideoCall}
         consultationId={selectedConsultationForCall?.id || ""}
-        patientName={selectedConsultationForCall?.patientName || ""}
-        doctorName={selectedConsultationForCall?.appointedDoctor || ""}
-        doctorId={selectedConsultationForCall?.doctorId || ""}
+        patientName={selectedConsultationForCall?.patient_name || ""}
+        doctorName={selectedConsultationForCall?.doc_name || ""}
+        doctorId={selectedConsultationForCall?.doc_id || ""}
         paitentId={selectedConsultationForCall?.customer_id || ""}
       />
     </div>

@@ -5,10 +5,12 @@ import DropdownMenu from "./components/DropdownMenu";
 import BookingModal from "./components/BookingModal";
 import AddBookingModal from "./components/AddBookingModal";
 import AssignStaffModal from "./components/AssignStaffModal";
+
 import { useAdminStore } from "../../../../store/adminStore";
 import { ApiOrderResponse, DetailedBooking } from "./types";
 import { getHomecareOrders, getOrderStatus, updateOrder } from "./services";
 import toast from "react-hot-toast";
+import Pagination from "@/app/components/common/pagination";
 
 const statusOptions = [
   "All Status",
@@ -47,6 +49,15 @@ const formatStatusDisplay = (statusValue: string): string => {
   }
 };
 
+// Sort function for most recent first based on order_date
+const sortByMostRecent = (orders: ApiOrderResponse[]): ApiOrderResponse[] => {
+  return [...orders].sort((a, b) => {
+    const dateA = a.order_date ? new Date(a.order_date).getTime() : 0;
+    const dateB = b.order_date ? new Date(b.order_date).getTime() : 0;
+    return dateB - dateA; // Most recent first
+  });
+};
+
 const BookingManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
@@ -60,7 +71,7 @@ const BookingManagement: React.FC = () => {
   const [selectedBookingForStaff, setSelectedBookingForStaff] =
     useState<string>("");
   const { token } = useAdminStore();
-  const [apiBookings, setApiBookings] = useState<ApiOrderResponse[]>([]);
+  const [allBookings, setAllBookings] = useState<ApiOrderResponse[]>([]); // All fetched bookings
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedActualOrderId, setSelectedActualOrderId] =
@@ -70,6 +81,9 @@ const BookingManagement: React.FC = () => {
     null
   );
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 20;
 
   const fetchOrderStatuses = useCallback(async () => {
     try {
@@ -95,14 +109,15 @@ const BookingManagement: React.FC = () => {
       const payload = {
         customer_id: null,
         search: searchTerm || null,
-
         filter_order_status:
           statusFilter === "All Status" ? null : statusFilter,
       };
       const response = await getHomecareOrders(payload, token);
 
       if (response.success) {
-        setApiBookings(response.orders);
+        const sortedOrders = sortByMostRecent(response.orders || []);
+        setAllBookings(sortedOrders);
+        setCurrentPage(0);
       } else {
         setError("Failed to fetch orders.");
       }
@@ -112,7 +127,7 @@ const BookingManagement: React.FC = () => {
       setLoading(false);
     }
   }, [token, searchTerm, statusFilter]);
-
+  console.log(allBookings, "bookings");
   useEffect(() => {
     fetchOrders();
     fetchOrderStatuses();
@@ -121,6 +136,45 @@ const BookingManagement: React.FC = () => {
   const handleSearch = () => {
     fetchOrders();
   };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if ((currentPage + 1) * itemsPerPage < allBookings.length) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
+  const paginatedBookings = useMemo(() => {
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return allBookings.slice(startIndex, endIndex);
+  }, [allBookings, currentPage, itemsPerPage]);
+
+  const hasMore = useMemo(() => {
+    return (currentPage + 1) * itemsPerPage < allBookings.length;
+  }, [currentPage, allBookings.length, itemsPerPage]);
+
+  const totalItems = allBookings.length;
+
+  const filteredBookings = useMemo(() => {
+    if (!searchTerm) return paginatedBookings;
+
+    return paginatedBookings.filter((booking) => {
+      const idMatch = booking.id
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const nameMatch = booking.customer_name
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+      return idMatch || nameMatch;
+    });
+  }, [paginatedBookings, searchTerm]);
 
   const handleStatusChange = async (
     orderId: string,
@@ -140,16 +194,18 @@ const BookingManagement: React.FC = () => {
       const response = await updateOrder(updatePayload, token);
 
       if (response.success) {
-        setApiBookings((prev) =>
-          prev.map((order) =>
-            order.id === orderId
-              ? {
-                  ...order,
-                  order_status_id: statusId,
-                  order_status: statusValue,
-                  order_status_name: statusValue,
-                }
-              : order
+        setAllBookings((prev) =>
+          sortByMostRecent(
+            prev.map((order) =>
+              order.id === orderId
+                ? {
+                    ...order,
+                    order_status_id: statusId,
+                    order_status: statusValue,
+                    order_status_name: statusValue,
+                  }
+                : order
+            )
           )
         );
 
@@ -213,7 +269,7 @@ const BookingManagement: React.FC = () => {
   };
 
   const handleAssignStaff = (bookingId: string) => {
-    const booking = apiBookings.find((b) => b.id === bookingId);
+    const booking = allBookings.find((b) => b.id === bookingId);
     if (booking) {
       setSelectedBookingForStaff(bookingId);
       setSelectedActualOrderId(booking.id);
@@ -234,19 +290,21 @@ const BookingManagement: React.FC = () => {
   const handleEditOrder = (bookingId: string) => {};
 
   const handleUpdateAssignedStaff = (bookingId: string, staffs: any[]) => {
-    setApiBookings((prev) =>
-      prev.map((order) => {
-        if (order.id === bookingId) {
-          return {
-            ...order,
-            staff_details: staffs.map((staff) => ({
-              name: staff.name,
-              id: staff.id,
-            })),
-          };
-        }
-        return order;
-      })
+    setAllBookings((prev) =>
+      sortByMostRecent(
+        prev.map((order) => {
+          if (order.id === bookingId) {
+            return {
+              ...order,
+              staff_details: staffs.map((staff) => ({
+                name: staff.name,
+                id: staff.id,
+              })),
+            };
+          }
+          return order;
+        })
+      )
     );
 
     setIsAssignStaffModalOpen(false);
@@ -258,7 +316,7 @@ const BookingManagement: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedBookings(apiBookings.map((booking) => booking.id));
+      setSelectedBookings(paginatedBookings.map((booking) => booking.id));
     } else {
       setSelectedBookings([]);
     }
@@ -273,24 +331,11 @@ const BookingManagement: React.FC = () => {
   };
 
   const isAllSelected =
-    apiBookings.length > 0 && selectedBookings.length === apiBookings.length;
+    paginatedBookings.length > 0 &&
+    selectedBookings.length === paginatedBookings.length;
   const isIndeterminate =
-    selectedBookings.length > 0 && selectedBookings.length < apiBookings.length;
-
-  const filteredBookings = useMemo(() => {
-    if (!searchTerm) return apiBookings;
-
-    return apiBookings.filter((booking) => {
-      const idMatch = booking.id
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const nameMatch = booking.customer_name
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase());
-
-      return idMatch || nameMatch;
-    });
-  }, [apiBookings, searchTerm]);
+    selectedBookings.length > 0 &&
+    selectedBookings.length < paginatedBookings.length;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -324,7 +369,7 @@ const BookingManagement: React.FC = () => {
           </div>
 
           <div className="relative">
-            {/* <button
+            <button
               onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
               className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors min-w-[150px] justify-between"
             >
@@ -332,8 +377,8 @@ const BookingManagement: React.FC = () => {
                 {formatStatusDisplay(statusFilter)}
               </span>
               <ChevronDown className="w-4 h-4 text-[#899193]" />
-            </button> */}
-            {/* {isStatusDropdownOpen && (
+            </button>
+            {isStatusDropdownOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                 <div className="py-2">
                   {statusOptions.map((status) => (
@@ -343,7 +388,9 @@ const BookingManagement: React.FC = () => {
                         setStatusFilter(status);
                         setIsStatusDropdownOpen(false);
                         // Trigger fetch on status change
-                        if (status !== statusFilter) fetchOrders();
+                        if (status !== statusFilter) {
+                          // fetchOrders will be called via useEffect
+                        }
                       }}
                       className="w-full px-4 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 transition-colors"
                     >
@@ -358,7 +405,7 @@ const BookingManagement: React.FC = () => {
               className="ml-4 px-4 py-2 text-white bg-cyan-600 rounded-lg hover:bg-cyan-700 transition-colors text-[12px] hidden sm:block"
             >
               Apply
-            </button> */}
+            </button>
           </div>
         </div>
 
@@ -366,7 +413,7 @@ const BookingManagement: React.FC = () => {
           <h2 className="text-[16px] font-semibold text-[#161D1F]">
             All Bookings
             <span className="ml-2 text-[#899193] text-[14px] font-normal text-base">
-              {apiBookings.length} Bookings
+              {totalItems} Bookings
             </span>
           </h2>
         </div>
@@ -567,10 +614,22 @@ const BookingManagement: React.FC = () => {
                 </tbody>
               )}
             </table>
+
+            {allBookings.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                hasMore={hasMore}
+                loading={loading}
+                onPrevious={handlePreviousPage}
+                onNext={handleNextPage}
+                totalItems={currentPage + 1 * 20}
+                itemsPerPage={itemsPerPage}
+              />
+            )}
           </div>
         </div>
 
-        {apiBookings.length === 0 && !loading && !error && (
+        {allBookings.length === 0 && !loading && !error && (
           <div className="text-center py-12">
             <p className="text-[#899193] text-lg">
               No bookings found matching your criteria.

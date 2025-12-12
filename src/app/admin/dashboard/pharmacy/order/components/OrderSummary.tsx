@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import { ChevronRight, Edit, Printer, X } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -19,13 +20,63 @@ interface OrderDetailsModalProps {
   order: Order | null;
 }
 
+const downloadAndPrintPDF = (url: string, orderId: string) => {
+  try {
+    const printFrame = document.createElement("iframe");
+    printFrame.style.position = "fixed";
+    printFrame.style.right = "0";
+    printFrame.style.bottom = "0";
+    printFrame.style.width = "0";
+    printFrame.style.height = "0";
+    printFrame.style.border = "none";
+    document.body.appendChild(printFrame);
+
+    printFrame.onload = () => {
+      setTimeout(() => {
+        try {
+          printFrame.contentWindow?.print();
+        } catch (e) {
+          console.error("Print error:", e);
+          window.open(url, "_blank");
+        }
+        setTimeout(() => {
+          document.body.removeChild(printFrame);
+        }, 1000);
+      }, 500);
+    };
+
+    printFrame.src = url;
+  } catch (error) {
+    console.error("Error printing receipt:", error);
+    toast.error("Failed to print receipt. Opening in new tab...");
+    window.open(url, "_blank");
+  }
+};
+
 const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   isOpen,
   onClose,
   order,
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
+  React.useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+        e.preventDefault();
+        if (order?.receipt_url) {
+          handlePrint();
+        }
+      }
+    };
 
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyPress);
+    }
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [isOpen, order?.receipt_url]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   if (!isOpen || !order) return null;
 
@@ -72,13 +123,20 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
         return <OrderOverview order={order} />;
     }
   };
-
   const handleNextTab = () => {
     const tabs = ["overview", "items", "shipping", "payment", "history"];
     const currentIndex = tabs.indexOf(activeTab);
     if (currentIndex < tabs.length - 1) {
       setActiveTab(tabs[currentIndex + 1]);
     }
+  };
+  const handlePrint = () => {
+    if (!order?.receipt_url) {
+      toast.error("Receipt not available");
+      return;
+    }
+
+    downloadAndPrintPDF(order.receipt_url, order.id);
   };
 
   return (

@@ -32,7 +32,7 @@ export interface ProductFormData {
   ColdChain: string;
   GST: string;
   admin_id: string;
-
+  image_url: string[];
   productLength?: number;
   productBreadth?: number;
   productHeight?: number;
