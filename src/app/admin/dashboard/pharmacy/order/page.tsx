@@ -477,24 +477,24 @@ const Orders: React.FC = () => {
             icon={<ShoppingCart className="w-5 h-5" />}
             color="text-[#0088b1]"
           />
-          {/* <StatsCard
+          <StatsCard
             title="Prescriptions Verification"
             stats={stats.prescriptionVerification}
             icon={<FileCheck className="w-5 h-5" />}
             color="text-[#0088b1]"
-          /> */}
+          />
           <StatsCard
             title="Revenue"
             stats={OrderService.formatCurrency(stats.totalRevenue)}
             icon={<DollarSign className="w-5 h-5" />}
             color="text-[#0088b1]"
           />
-          {/* <StatsCard
+          <StatsCard
             title="Pending Delivery"
             stats={stats.pendingDelivery}
             icon={<Truck className="w-5 h-5" />}
             color="text-[#0088b1]"
-          /> */}
+          />
         </div>
 
         {error && (

@@ -335,29 +335,37 @@ export class OrderService {
 
   static generateOrderStats(orders: Order[]) {
     const totalOrders = orders.length;
-
-    // Calculate total revenue with better error handling
     const totalRevenue = orders.reduce((sum, order) => {
-      const orderAmount = Number(order.totalorderamount);
-      return sum + (isNaN(orderAmount) ? 0 : orderAmount);
+      const amount = Number(order.totalorderamount);
+      return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
 
-    // Count orders that are not delivered or cancelled
+    const cancelledAmount = orders.reduce((sum, order) => {
+      if (order.deliverystatus?.toUpperCase() === "CANCELLED") {
+        const amount = Number(order.totalorderamount);
+        return sum + (isNaN(amount) ? 0 : amount);
+      }
+      return sum;
+    }, 0);
+
+    const finalRevenue = totalRevenue - cancelledAmount;
+
     const pendingDelivery = orders.filter((order) => {
       const status = this.getOrderStatus(order);
-      return status !== "Delivered" && status !== "Cancelled";
+      return (
+        status.toLowerCase() !== "completed" &&
+        status.toLowerCase() !== "cancelled" &&
+        status.toLowerCase() != "delivered"
+      );
     }).length;
 
     const prescriptionVerification = orders.filter(
-      (order) =>
-        order.order_items &&
-        Array.isArray(order.totalorderamount) &&
-        order.order_items.length > 0
+      (order) => order.prescriptionurl !== null
     ).length;
 
     return {
       totalOrders,
-      totalRevenue: isNaN(totalRevenue) ? 0 : totalRevenue,
+      totalRevenue: isNaN(finalRevenue) ? 0 : finalRevenue,
       pendingDelivery,
       prescriptionVerification,
     };

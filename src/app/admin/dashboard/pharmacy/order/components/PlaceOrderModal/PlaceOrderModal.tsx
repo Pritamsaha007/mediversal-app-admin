@@ -30,6 +30,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
   const [activeTab, setActiveTab] = useState("customer");
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [tabErrors, setTabErrors] = useState<Record<string, string[]>>({});
+  const [isLocalDelivery, setIsLocalDelivery] = useState(false);
 
   const {
     resetOrder,
@@ -365,7 +366,12 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
           )}
 
           {activeTab === "customer" && <CustomerInformationTab />}
-          {activeTab === "shipping" && <ShippingDetailsTab />}
+          {activeTab === "shipping" && (
+            <ShippingDetailsTab
+              isLocalDelivery={isLocalDelivery}
+              onLocalDeliveryChange={setIsLocalDelivery}
+            />
+          )}
           {activeTab === "prescription" && <PrescriptionTab />}
           {activeTab === "items" && <OrderItemsTab />}
         </div>
