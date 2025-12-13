@@ -335,11 +335,20 @@ export class OrderService {
 
   static generateOrderStats(orders: Order[]) {
     const totalOrders = orders.length;
-
     const totalRevenue = orders.reduce((sum, order) => {
-      const orderAmount = Number(order.totalorderamount);
-      return sum + (isNaN(orderAmount) ? 0 : orderAmount);
+      const amount = Number(order.totalorderamount);
+      return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
+
+    const cancelledAmount = orders.reduce((sum, order) => {
+      if (order.deliverystatus?.toUpperCase() === "CANCELLED") {
+        const amount = Number(order.totalorderamount);
+        return sum + (isNaN(amount) ? 0 : amount);
+      }
+      return sum;
+    }, 0);
+
+    const finalRevenue = totalRevenue - cancelledAmount;
 
     const pendingDelivery = orders.filter((order) => {
       const status = this.getOrderStatus(order);
@@ -356,7 +365,7 @@ export class OrderService {
 
     return {
       totalOrders,
-      totalRevenue: isNaN(totalRevenue) ? 0 : totalRevenue,
+      totalRevenue: isNaN(finalRevenue) ? 0 : finalRevenue,
       pendingDelivery,
       prescriptionVerification,
     };
