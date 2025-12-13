@@ -710,9 +710,7 @@ const Orders: React.FC = () => {
                               }
                               disabled={updatingStatus === order.id?.toString()}
                               className={`px-2 py-1 rounded-full text-[10px] font-medium ${getStatusColor(
-                                order.is_cancel_clicked
-                                  ? "CANCELLED"
-                                  : getCurrentStatus(order)
+                                getCurrentStatus(order)
                               )} flex items-center gap-1 hover:opacity-80 cursor-pointer transition-opacity disabled:opacity-50 min-w-[100px] justify-center`}
                               style={{ minHeight: "24px" }}
                             >
@@ -724,9 +722,7 @@ const Orders: React.FC = () => {
                               ) : (
                                 <>
                                   <span className="truncate">
-                                    {order.is_cancel_clicked
-                                      ? "CANCELLED"
-                                      : getCurrentStatus(order)}
+                                    {getCurrentStatus(order)}
                                   </span>
                                   <ChevronDown className="w-3 h-3 flex-shrink-0" />
                                 </>
