@@ -3,11 +3,41 @@
 import React, { useState } from "react";
 import { useOrderStore } from "../../store/placeOrderStore";
 
-const ShippingDetailsTab: React.FC = () => {
+interface ShippingDetailsTabProps {
+  isLocalDelivery?: boolean;
+  onLocalDeliveryChange?: (isLocal: boolean) => void;
+}
+
+const ShippingDetailsTab: React.FC<ShippingDetailsTabProps> = ({
+  isLocalDelivery = false,
+  onLocalDeliveryChange,
+}) => {
   const [addressType, setAddressType] = useState("home");
   const [state, setState] = useState("");
+  const [isLocal, setIsLocal] = useState(isLocalDelivery);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { shippingInfo, updateShippingInfo } = useOrderStore();
+
+  const localCities = ["Patna", "Begusarai"];
+
+  const handleLocalDeliveryChange = (checked: boolean) => {
+    setIsLocal(checked);
+
+    // If local delivery is checked, auto-select Patna as city
+    if (checked && !shippingInfo.city) {
+      updateShippingInfo({ city: "Patna" });
+    }
+
+    // If local delivery is unchecked and city is one of local cities, clear it
+    if (!checked && localCities.includes(shippingInfo.city)) {
+      updateShippingInfo({ city: "" });
+    }
+
+    // Notify parent component if callback provided
+    if (onLocalDeliveryChange) {
+      onLocalDeliveryChange(checked);
+    }
+  };
 
   const handleInputChange = (field: string, value: string) => {
     updateShippingInfo({ [field]: value });
@@ -96,6 +126,26 @@ const ShippingDetailsTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-medium text-[#161D1F]">Shipping Addresses</h3>
+
+      <div className="mb-4 p-4 border border-[#E5E8E9] rounded-xl bg-gray-50">
+        <label className="flex items-center space-x-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isLocal}
+            onChange={(e) => handleLocalDeliveryChange(e.target.checked)}
+            className="h-5 w-5 accent-[#0088B1] rounded focus:ring-[#0088B1] border-gray-300"
+          />
+          <div>
+            <span className="text-sm font-medium text-[#161D1F]">
+              Local Delivery (Patna & Begusarai)
+            </span>
+            <p className="text-xs text-gray-500 mt-1">
+              Check this if the delivery is within Patna or Begusarai city
+              limits
+            </p>
+          </div>
+        </label>
+      </div>
 
       <div>
         <label className="block text-xs font-medium text-[#161D1F] mb-3">
@@ -186,14 +236,32 @@ const ShippingDetailsTab: React.FC = () => {
             <label className="block text-xs font-medium text-[#161D1F] mb-2">
               City/Town/Village <RequiredStar />
             </label>
-            <input
-              type="text"
-              placeholder="e.g., Patna"
-              value={shippingInfo.city}
-              onChange={(e) => handleInputChange("city", e.target.value)}
-              onBlur={(e) => handleBlur("city", e.target.value)}
-              className={getInputClassName("city")}
-            />
+
+            {isLocal ? (
+              <select
+                value={shippingInfo.city}
+                onChange={(e) => handleInputChange("city", e.target.value)}
+                onBlur={(e) => handleBlur("city", e.target.value)}
+                className={getInputClassName("city")}
+              >
+                <option value="">Select City</option>
+                {localCities.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="e.g., Patna"
+                value={shippingInfo.city}
+                onChange={(e) => handleInputChange("city", e.target.value)}
+                onBlur={(e) => handleBlur("city", e.target.value)}
+                className={getInputClassName("city")}
+              />
+            )}
+
             {errors.city && (
               <p className="text-red-500 text-xs mt-1">{errors.city}</p>
             )}
