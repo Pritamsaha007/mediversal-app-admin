@@ -231,7 +231,10 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                   </button>
                 )}
 
-            <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center gap-2">
+            <button
+              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center gap-2"
+              onClick={handlePrint}
+            >
               <Printer className="w-3 h-3" />
               <span className="text-[10px]">Print</span>
             </button>
