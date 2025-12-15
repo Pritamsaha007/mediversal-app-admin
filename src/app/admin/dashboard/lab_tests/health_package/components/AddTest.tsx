@@ -913,12 +913,12 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </button>
         </div>
 
-        <div className="flex border-b border-gray-200">
+        <div className="flex border-b border-gray-200 px-5">
           <button
             onClick={() => setActiveSection("basic")}
             className={`flex-1 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${
               activeSection === "basic"
-                ? "bg-[#0088B1] text-[#fff]"
+                ? "bg-[#0088B1] rounded-md text-[#fff]"
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
@@ -928,7 +928,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             onClick={() => setActiveSection("settings")}
             className={`flex-1 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${
               activeSection === "settings"
-                ? "bg-[#0088B1] text-[#fff]"
+                ? "bg-[#0088B1] rounded-md text-[#fff]"
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >

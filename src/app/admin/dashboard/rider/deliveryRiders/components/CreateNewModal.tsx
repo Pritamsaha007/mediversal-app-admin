@@ -741,13 +741,13 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
           </button>
         </div>
 
-        <div className="flex border-b border-gray-200">
+        <div className="flex border-b border-gray-200 px-5">
           <button
             onClick={() => setActiveTab("basic")}
             disabled={loading}
             className={`flex-1 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${
               activeTab === "basic"
-                ? "bg-[#0088B1] text-white"
+                ? "bg-[#0088B1] rounded-md text-white"
                 : "border-transparent text-gray-500 hover:text-gray-700 disabled:text-gray-400"
             }`}
           >

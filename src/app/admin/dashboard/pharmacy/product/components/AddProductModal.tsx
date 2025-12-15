@@ -349,7 +349,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 setActiveTab(tab);
                 setTabAnimationKey((prev) => prev + 1);
               }}
-              className={`px-6 py-2 text-[10px] font-medium transition-colors rounded ${
+              className={`px-6 py-2 text-[10px] font-medium transition-colors rounded-md ${
                 activeTab === tab
                   ? "bg-[#0088B1] text-[F8F8F8] "
                   : "text-[#161D1F] hover:text-gray-500 hover:bg-gray-50"

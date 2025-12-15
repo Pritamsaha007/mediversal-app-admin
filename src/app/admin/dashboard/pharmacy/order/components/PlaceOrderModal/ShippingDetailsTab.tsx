@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useOrderStore } from "../../store/placeOrderStore";
+import { Check, ChevronDown, MapPin } from "lucide-react";
 
 interface ShippingDetailsTabProps {
   isLocalDelivery?: boolean;
@@ -17,23 +18,21 @@ const ShippingDetailsTab: React.FC<ShippingDetailsTabProps> = ({
   const [isLocal, setIsLocal] = useState(isLocalDelivery);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { shippingInfo, updateShippingInfo } = useOrderStore();
+  const [isCityOpen, setIsCityOpen] = useState(false);
 
   const localCities = ["Patna", "Begusarai"];
 
   const handleLocalDeliveryChange = (checked: boolean) => {
     setIsLocal(checked);
 
-    // If local delivery is checked, auto-select Patna as city
     if (checked && !shippingInfo.city) {
       updateShippingInfo({ city: "Patna" });
     }
 
-    // If local delivery is unchecked and city is one of local cities, clear it
     if (!checked && localCities.includes(shippingInfo.city)) {
       updateShippingInfo({ city: "" });
     }
 
-    // Notify parent component if callback provided
     if (onLocalDeliveryChange) {
       onLocalDeliveryChange(checked);
     }
@@ -127,24 +126,44 @@ const ShippingDetailsTab: React.FC<ShippingDetailsTabProps> = ({
     <div className="space-y-6">
       <h3 className="text-lg font-medium text-[#161D1F]">Shipping Addresses</h3>
 
-      <div className="mb-4 p-4 border border-[#E5E8E9] rounded-xl bg-gray-50">
-        <label className="flex items-center space-x-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={isLocal}
-            onChange={(e) => handleLocalDeliveryChange(e.target.checked)}
-            className="h-5 w-5 accent-[#0088B1] rounded focus:ring-[#0088B1] border-gray-300"
-          />
-          <div>
-            <span className="text-sm font-medium text-[#161D1F]">
-              Local Delivery (Patna & Begusarai)
-            </span>
-            <p className="text-xs text-gray-500 mt-1">
-              Check this if the delivery is within Patna or Begusarai city
-              limits
-            </p>
+      <div className="mb-6 p-4 border border-[#E5E8E9] rounded-xl bg-gradient-to-r from-blue-50 to-gray-50 shadow-sm">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start space-x-3 flex-1">
+            <div className="mt-1">
+              <div
+                onClick={() => handleLocalDeliveryChange(!isLocal)}
+                className={`w-5 h-5 border-2 rounded-md flex items-center justify-center cursor-pointer transition-all duration-200
+      ${
+        isLocal
+          ? "bg-[#0088B1] border-[#0088B1]"
+          : "border-[#0088B1] hover:bg-blue-50"
+      }`}
+              >
+                {isLocal && <Check size={14} className="text-white" />}
+              </div>
+            </div>
+
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <MapPin className="w-4 h-4 text-[#0088B1]" />
+                <label
+                  htmlFor="localDelivery"
+                  className="text-sm font-semibold text-[#161D1F] cursor-pointer"
+                >
+                  Local Delivery Service
+                </label>
+                <span className="px-2 py-1 text-xs font-medium bg-[#0088B1] text-white rounded-full">
+                  Recommended
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 mt-2">
+                Select for fast delivery within Patna & Begusarai. Enjoy
+                same-day delivery, lower shipping costs, and dedicated local
+                support.
+              </p>
+            </div>
           </div>
-        </label>
+        </div>
       </div>
 
       <div>
@@ -232,39 +251,64 @@ const ShippingDetailsTab: React.FC<ShippingDetailsTabProps> = ({
         </div>
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-[#161D1F] mb-2">
-              City/Town/Village <RequiredStar />
-            </label>
+          <div className="space-y-4">
+            <div className="relative">
+              <label className="block text-xs font-medium text-[#161D1F] mb-2">
+                City/Town/Village <RequiredStar />
+              </label>
 
-            {isLocal ? (
-              <select
-                value={shippingInfo.city}
-                onChange={(e) => handleInputChange("city", e.target.value)}
-                onBlur={(e) => handleBlur("city", e.target.value)}
-                className={getInputClassName("city")}
-              >
-                <option value="">Select City</option>
-                {localCities.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                placeholder="e.g., Patna"
-                value={shippingInfo.city}
-                onChange={(e) => handleInputChange("city", e.target.value)}
-                onBlur={(e) => handleBlur("city", e.target.value)}
-                className={getInputClassName("city")}
-              />
-            )}
+              {isLocal ? (
+                <>
+                  <div
+                    className={`${getInputClassName(
+                      "city"
+                    )} cursor-pointer flex justify-between items-center`}
+                    onClick={() => setIsCityOpen((prev) => !prev)}
+                    onBlur={() => handleBlur("city", shippingInfo.city)}
+                    tabIndex={0}
+                  >
+                    <span
+                      className={
+                        shippingInfo.city ? "text-black" : "text-gray-400"
+                      }
+                    >
+                      {shippingInfo.city || "Select City"}
+                    </span>
+                    <ChevronDown size={14} />
+                  </div>
 
-            {errors.city && (
-              <p className="text-red-500 text-xs mt-1">{errors.city}</p>
-            )}
+                  {isCityOpen && (
+                    <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                      {localCities.map((city) => (
+                        <div
+                          key={city}
+                          onClick={() => {
+                            handleInputChange("city", city);
+                            setIsCityOpen(false);
+                          }}
+                          className="px-3 py-2 text-xs cursor-pointer hover:bg-gray-100 text-black"
+                        >
+                          {city}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="e.g., Patna"
+                  value={shippingInfo.city}
+                  onChange={(e) => handleInputChange("city", e.target.value)}
+                  onBlur={(e) => handleBlur("city", e.target.value)}
+                  className={getInputClassName("city")}
+                />
+              )}
+
+              {errors.city && (
+                <p className="text-red-500 text-xs mt-1">{errors.city}</p>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
