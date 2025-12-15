@@ -20,7 +20,6 @@ export const CouponModal: React.FC<CouponModalProps> = ({
   couponToEdit,
   isEditMode = false,
 }) => {
-  // Zustand store selectors
   const {
     formData,
     categoryDropdownOpen,
@@ -176,7 +175,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                     }
                     className={`flex-1 py-2 px-3 rounded-md border text-[10px] ${
                       formData.discount_type === "percentage"
-                        ? "bg-blue-100 border-blue-500 text-blue-700"
+                        ? "bg-[#0088B1]  text-white"
                         : "bg-white border-gray-300 text-gray-700"
                     }`}
                   >
@@ -187,7 +186,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                     onClick={() => handleInputChange("discount_type", "fixed")}
                     className={`flex-1 py-2 px-3 rounded-md border text-[10px] ${
                       formData.discount_type === "fixed"
-                        ? "bg-blue-100 border-blue-500 text-blue-700"
+                        ? "bg-[#0088B1]  text-white"
                         : "bg-white border-gray-300 text-gray-700"
                     }`}
                   >
@@ -197,7 +196,6 @@ export const CouponModal: React.FC<CouponModalProps> = ({
               </div>
             </div>
 
-            {/* Discount Value */}
             <div className="space-y-1">
               <label className="block text-[10px] font-medium text-[#161D1F]">
                 {formData.discount_type === "percentage"

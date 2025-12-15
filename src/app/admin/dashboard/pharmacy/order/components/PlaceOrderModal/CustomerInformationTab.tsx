@@ -2,12 +2,14 @@
 
 import React, { useState } from "react";
 import { useOrderStore } from "../../store/placeOrderStore";
+import { ChevronDown } from "lucide-react";
 
 const CustomerInformationTab: React.FC = () => {
   const [gender, setGender] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { customerInfo, updateCustomerInfo, validateCurrentTab } =
     useOrderStore();
+  const [isGenderOpen, setIsGenderOpen] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     updateCustomerInfo({ [field]: value });
@@ -200,32 +202,53 @@ const CustomerInformationTab: React.FC = () => {
             )}
           </div>
 
-          <div>
+          <div className="relative">
             <label className="block text-xs font-medium text-[#161D1F] mb-2">
               Gender <RequiredStar />
             </label>
-            <select
-              value={gender}
-              onChange={(e) => {
-                setGender(e.target.value);
-                handleInputChange("gender", e.target.value);
+
+            <div
+              tabIndex={0}
+              onClick={() => setIsGenderOpen((prev) => !prev)}
+              onBlur={() => {
+                setIsGenderOpen(false);
+                handleBlur("gender", customerInfo.gender);
               }}
-              onBlur={(e) => handleBlur("gender", e.target.value)}
-              className={getSelectClassName("gender")}
+              className={`${getSelectClassName(
+                "gender"
+              )} cursor-pointer flex justify-between items-center`}
             >
-              <option value="" className="text-gray-400">
-                Select Gender
-              </option>
-              <option value="male" className="text-[#161D1F]">
-                Male
-              </option>
-              <option value="female" className="text-[#161D1F]">
-                Female
-              </option>
-              <option value="other" className="text-[#161D1F]">
-                Other
-              </option>
-            </select>
+              <span
+                className={
+                  customerInfo.gender ? "text-[#161D1F]" : "text-gray-400"
+                }
+              >
+                {customerInfo.gender
+                  ? customerInfo.gender.charAt(0).toUpperCase() +
+                    customerInfo.gender.slice(1)
+                  : "Select Gender"}
+              </span>
+
+              <ChevronDown size={14} />
+            </div>
+
+            {isGenderOpen && (
+              <div className="absolute z-50 mt-1 w-full bg-white border border-[#E5E8E9] rounded-xl shadow-lg overflow-hidden">
+                {["male", "female", "other"].map((option) => (
+                  <div
+                    key={option}
+                    onMouseDown={() => {
+                      handleInputChange("gender", option);
+                      setIsGenderOpen(false);
+                    }}
+                    className="px-4 py-2 text-xs cursor-pointer hover:bg-gray-100 text-black"
+                  >
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                  </div>
+                ))}
+              </div>
+            )}
+
             {errors.gender && (
               <p className="text-red-500 text-xs mt-1">{errors.gender}</p>
             )}

@@ -243,7 +243,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
           giftwrap_charges: 0,
           transaction_charges: 0,
           total_discount: 0,
-          delivery_status: "Processing",
+          delivery_status: "PENDING",
           rapidshypShipmentId: null,
           rapidshypAwb: null,
           labelUrl: null,
@@ -341,8 +341,8 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-6 py-3 text-xs font-medium transition-all duration-200 flex-1 max-w-[200px] mx-1 first:ml-0 last:mr-0 ${
                   activeTab === tab.id
-                    ? "bg-[#0088B1] text-white rounded-t-lg border-b-2 border-[#0088B1]"
-                    : "text-[#899193] bg-gray-50 rounded-t-lg border-b-2 border-transparent hover:text-[#161D1F] hover:bg-gray-100"
+                    ? "bg-[#0088B1]  rounded-md text-white  border-b-2 border-[#0088B1]"
+                    : "text-[#899193]  rounded-md  border-b-2 border-transparent hover:text-[#161D1F] hover:bg-gray-100"
                 }`}
               >
                 {tab.label}

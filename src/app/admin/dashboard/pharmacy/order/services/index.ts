@@ -149,7 +149,7 @@ export class OrderService {
 
   static getOrderStatus(order: Order): string {
     if (order.is_cancel_clicked == true) {
-      return "Cancelled";
+      return "CANCELLED";
     } else {
       return order.deliverystatus || "Not Provided";
     }
