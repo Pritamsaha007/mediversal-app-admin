@@ -15,6 +15,8 @@ import {
   Laptop,
   Bike,
   BookUser,
+  Bell,
+  BellRing,
 } from "lucide-react";
 import MainMediversalLogo from "../../../../public/Mediversal 247 Logo.svg";
 import Image from "next/image";
@@ -209,6 +211,16 @@ const Sidebar = () => {
         {
           name: "Bookings",
           link: "/admin/dashboard/rider/bookings",
+        },
+      ],
+    },
+    {
+      name: "Push Notification",
+      icon: <BellRing size={18} />,
+      subItems: [
+        {
+          name: "Notifications",
+          link: "/admin/dashboard/push-notification",
         },
       ],
     },
