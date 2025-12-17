@@ -249,7 +249,7 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
                           {customer.first_name} {customer.last_name}
                         </div>
                         <div className="text-[10px] text-[#899193]">
-                          {customer.city}, {customer.state}
+                          {customer.city} {customer.state}
                         </div>
                       </button>
                     ))}

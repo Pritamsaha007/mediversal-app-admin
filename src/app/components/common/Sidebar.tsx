@@ -239,10 +239,11 @@ const Sidebar = () => {
       <div className="flex items-center justify-center h-[80px] p-10">
         <Image
           src={MainMediversalLogo}
-          alt="Doctor Illustration"
+          alt="Mediversal 247 Logo"
           width={400}
           height={200}
           className="w-full max-w-sm mx-auto"
+          priority
         />
       </div>
 

@@ -161,7 +161,6 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
       const response = await uploadImage(file, token);
       if (response.success && response.url) {
         updateFormData({ imageUrl: response.url });
-        toast.success("Image uploaded successfully");
       } else {
         toast.error("Failed to get image URL");
       }
