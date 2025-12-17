@@ -47,7 +47,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
             placeholder="https://example.com"
             value={formData.appUri}
             onChange={(e) => updateFormData({ appUri: e.target.value })}
-            className="w-full px-4 py-3 pr-10 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
+            className="w-full px-4 py-2 pr-10 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
           />
           <LinkIcon className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
         </div>
@@ -59,7 +59,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
         </label>
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-[#E5E8E9] rounded-xl p-8 text-center cursor-pointer hover:border-[#0088B1] transition-colors"
+          className="border-2 border-dashed border-[#E5E8E9] rounded-lg p-8 text-center cursor-pointer hover:border-[#0088B1] transition-colors"
         >
           <Upload className="w-8 h-8 mx-auto mb-3 text-gray-400" />
           <div className="text-[12px] text-[#161D1F] mb-1">

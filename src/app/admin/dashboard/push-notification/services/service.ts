@@ -104,12 +104,10 @@ export const uploadImage = async (
   token: string
 ): Promise<{ success: boolean; url: string }> => {
   try {
-    // Convert file to base64
     const base64Content = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
-        // Remove the data URL prefix (e.g., "data:image/png;base64,")
         const base64 = result.split(",")[1];
         resolve(base64);
       };
@@ -117,13 +115,11 @@ export const uploadImage = async (
       reader.readAsDataURL(file);
     });
 
-    // Determine bucket name - Next.js will automatically load the correct .env file
     const bucketName =
       process.env.NODE_ENV === "production"
         ? process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_PROD
         : process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_DEV;
 
-    // Generate unique filename
     const timestamp = Date.now();
     const fileExtension = file.name.split(".").pop();
     const fileName = `notification-${timestamp}.${fileExtension}`;

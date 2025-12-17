@@ -52,7 +52,9 @@ export const getUserGroupColor = (userGroup: string): string => {
   }
 };
 
-export const formatUserGroup = (userGroup: string): string => {
+export const formatUserGroup = (userGroup?: string | null): string => {
+  if (!userGroup) return "N/A";
+
   return userGroup
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())

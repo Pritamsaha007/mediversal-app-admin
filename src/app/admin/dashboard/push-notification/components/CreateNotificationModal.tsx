@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { CalendarClock, X } from "lucide-react";
 import {
   NotificationFormData,
   EnumItem,
@@ -35,7 +35,6 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
-  // Enums
   const [frequencies, setFrequencies] = useState<EnumItem[]>([]);
   const [userGroups, setUserGroups] = useState<EnumItem[]>([]);
   const [daysOfWeek, setDaysOfWeek] = useState<EnumItem[]>([]);
@@ -49,7 +48,7 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
     appUri: "",
     imageFile: null,
     imageUrl: "",
-    frequencyType: "ONCE",
+    frequencyType: "",
     frequencyTypeId: "",
     startDate: "",
     endDate: "",
@@ -341,9 +340,9 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl w-full max-w-6xl max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between px-6 py-4 ">
           <h2 className="text-[18px] font-semibold text-[#161D1F]">
             {editNotification ? "Edit" : "Create"} Push Notification
           </h2>
@@ -356,12 +355,12 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-200 px-6">
+        <div className="flex bg-[#F8F8F8] px-6">
           <button
             onClick={() => setActiveTab("basic")}
-            className={`px-6 py-3 text-[14px] font-medium transition-colors relative ${
+            className={`px-6 py-3 text-[10px] rounded-sm font-medium transition-colors relative ${
               activeTab === "basic"
-                ? "text-[#0088B1] border-b-2 border-[#0088B1]"
+                ? "text-white bg-[#0088B1] border-[#0088B1]"
                 : "text-[#899193] hover:text-[#161D1F]"
             }`}
           >
@@ -369,9 +368,9 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab("documents")}
-            className={`px-6 py-3 text-[14px] font-medium transition-colors relative ${
+            className={`px-6 py-3 text-[10px] rounded-sm font-medium transition-colors relative ${
               activeTab === "documents"
-                ? "text-[#0088B1] border-b-2 border-[#0088B1]"
+                ? "text-white bg-[#0088B1] border-[#0088B1]"
                 : "text-[#899193] hover:text-[#161D1F]"
             }`}
           >
@@ -379,9 +378,9 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab("frequency")}
-            className={`px-6 py-3 text-[14px] font-medium transition-colors relative ${
+            className={`px-6 py-3 text-[10px] rounded-sm font-medium transition-colors relative ${
               activeTab === "frequency"
-                ? "text-[#0088B1] border-b-2 border-[#0088B1]"
+                ? "text-white bg-[#0088B1] border-[#0088B1]"
                 : "text-[#899193] hover:text-[#161D1F]"
             }`}
           >
@@ -469,7 +468,7 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
               <button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="flex items-center gap-2 px-6 py-2 text-[12px] font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-6 py-2 text-[12px] font-medium bg-[#FF8000] text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -478,20 +477,8 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
                   </>
                 ) : (
                   <>
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                      />
-                    </svg>
-                    Send Now
+                    <CalendarClock className="w-4 h-4 text-white" />
+                    Schedule Notification
                   </>
                 )}
               </button>

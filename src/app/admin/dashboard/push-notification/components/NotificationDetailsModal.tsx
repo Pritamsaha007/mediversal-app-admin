@@ -78,7 +78,7 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-[18px] font-semibold text-[#161D1F]">
@@ -112,7 +112,7 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
             </div>
             <div className="flex gap-2">
               <span
-                className={`inline-flex items-center px-3 py-1 rounded text-[12px] font-medium ${getStatusColor(
+                className={`inline-flex items-center px-3 py-1 rounded text-[8px] font-medium ${getStatusColor(
                   notification.status
                 )}`}
               >
@@ -120,7 +120,7 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
                   notification.status.slice(1).toLowerCase()}
               </span>
               <span
-                className={`inline-flex items-center px-3 py-1 rounded text-[12px] font-medium border ${getUserGroupColor(
+                className={`inline-flex items-center px-3 py-1 rounded text-[8px] font-medium border ${getUserGroupColor(
                   notification.targeted_user_group_value
                 )}`}
               >
@@ -134,7 +134,7 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
             <div className="text-[12px] font-medium text-[#161D1F] mb-2">
               Message
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 text-[12px] text-[#161D1F] border border-gray-200">
+            <div className="bg-gray-50 rounded-lg p-2 text-[12px] text-[#161D1F] border border-gray-200">
               {notification.message_body}
             </div>
           </div>
@@ -144,7 +144,7 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
             <div className="text-[12px] font-medium text-[#161D1F] mb-2">
               Time Range
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
               <div className="flex gap-8">
                 <div>
                   <span className="text-[12px] text-green-600 font-medium">
@@ -173,7 +173,7 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
             <div className="text-[12px] font-medium text-[#161D1F] mb-2">
               Scheduled Days
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
               {renderScheduledDays()}
             </div>
           </div>
@@ -200,7 +200,7 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
               <div className="text-[12px] font-medium text-[#161D1F] mb-2">
                 Feature URI
               </div>
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
                 <a
                   href={notification.app_uri}
                   target="_blank"

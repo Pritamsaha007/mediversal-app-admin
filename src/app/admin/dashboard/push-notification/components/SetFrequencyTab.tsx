@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Calendar, Clock, Trash2 } from "lucide-react";
 import { NotificationFormData, EnumItem } from "../types/types";
 import DropdownSelector from "@/app/components/ui/DropdownSelector";
@@ -21,7 +21,7 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
   const [selectedDayForTime, setSelectedDayForTime] = useState<string>("");
   const [timeInputMode, setTimeInputMode] = useState<"repeat" | "new">("new");
 
-  const isOnce = formData.frequencyType === "ONCE";
+  const isOnce = formData.frequencyType === "ONE_TIME";
   const isDaily = formData.frequencyType === "DAILY";
   const isWeekly = formData.frequencyType === "WEEKLY";
   const isCustom = formData.frequencyType === "CUSTOM";
@@ -33,7 +33,6 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
         selectedDays: currentDays.filter((id) => id !== dayId),
       });
 
-      // Remove from custom schedule if exists
       if (formData.customSchedule[dayId]) {
         const newSchedule = { ...formData.customSchedule };
         delete newSchedule[dayId];
@@ -70,7 +69,7 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
     <div className="space-y-4">
       <div>
         <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
-          Frequency Type
+          <span className="text-red-500">*</span> Frequency Type
         </label>
         <DropdownSelector
           label=""
@@ -87,11 +86,20 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
                 frequencyTypeId: selected.id,
                 selectedDays: [],
                 customSchedule: {},
+                startDate: "",
+                endDate: "",
+                notificationTime: "",
               });
             }
           }}
         />
       </div>
+
+      {!formData.frequencyType && (
+        <div className="text-center py-8 text-[#899193] text-[12px]">
+          Please select a frequency type to continue
+        </div>
+      )}
 
       {/* Once Frequency */}
       {isOnce && (
@@ -112,9 +120,8 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
                   onChange={(e) =>
                     updateFormData({ startDate: e.target.value })
                   }
-                  className="w-full px-4 py-3 pr-10 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
+                  className="w-full px-4 py-2 pr-10 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
                 />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
             </div>
 
@@ -129,9 +136,8 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
                   onChange={(e) =>
                     updateFormData({ notificationTime: e.target.value })
                   }
-                  className="w-full px-4 py-3 pr-10 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
+                  className="w-full px-4 py-2 pr-10 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
                 />
-                <Clock className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
             </div>
           </div>
@@ -158,9 +164,8 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
                     updateFormData({ startDate: e.target.value })
                   }
                   placeholder="Choose Start Date"
-                  className="w-full px-4 py-3 pr-10 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
+                  className="w-full px-4 py-2 pr-10 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
                 />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
             </div>
 
@@ -174,9 +179,8 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
                   value={formData.endDate}
                   onChange={(e) => updateFormData({ endDate: e.target.value })}
                   placeholder="Choose End Date"
-                  className="w-full px-4 py-3 pr-10 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
+                  className="w-full px-4 py-2 pr-10 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
                 />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
             </div>
           </div>
@@ -192,9 +196,8 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
                 onChange={(e) =>
                   updateFormData({ notificationTime: e.target.value })
                 }
-                className="w-full px-4 py-3 pr-10 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
+                className="w-full px-4 py-2 pr-10 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
               />
-              <Clock className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
@@ -208,13 +211,13 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
                   key={day.id}
                   type="button"
                   onClick={() => handleDayToggle(day.id)}
-                  className={`px-4 py-3 rounded-lg text-[10px] font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-lg text-[10px] font-medium transition-colors ${
                     formData.selectedDays.includes(day.id)
                       ? "bg-[#4A5558] text-white"
                       : "bg-white text-[#161D1F] border border-[#E5E8E9] hover:border-[#0088B1]"
                   }`}
                 >
-                  {day.value}
+                  {day.value.substring(0, 3)}
                 </button>
               ))}
             </div>
@@ -222,6 +225,86 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
         </div>
       )}
 
+      {/* Weekly Frequency */}
+      {isWeekly && (
+        <div className="space-y-4">
+          <div className="text-[10px] text-[#899193] italic">
+            (Start date & time should be at-least 30 min. before schedule)
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
+                <span className="text-red-500">*</span> Start Date
+              </label>
+              <div className="relative">
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) =>
+                    updateFormData({ startDate: e.target.value })
+                  }
+                  placeholder="Choose Start Date"
+                  className="w-full px-4 py-2 pr-10 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
+                End Date
+              </label>
+              <div className="relative">
+                <input
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => updateFormData({ endDate: e.target.value })}
+                  placeholder="Choose End Date"
+                  className="w-full px-4 py-2 pr-10 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
+              <span className="text-red-500">*</span> Select Time
+            </label>
+            <div className="relative">
+              <input
+                type="time"
+                value={formData.notificationTime}
+                onChange={(e) =>
+                  updateFormData({ notificationTime: e.target.value })
+                }
+                className="w-full px-4 py-2 pr-10 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
+              <span className="text-red-500">*</span> Select Days
+            </label>
+            <div className="grid grid-cols-7 gap-2">
+              {daysOfWeek.map((day) => (
+                <button
+                  key={day.id}
+                  type="button"
+                  onClick={() => handleDayToggle(day.id)}
+                  className={`px-4 py-2 rounded-lg text-[10px] font-medium transition-colors ${
+                    formData.selectedDays.includes(day.id)
+                      ? "bg-[#4A5558] text-white"
+                      : "bg-white text-[#161D1F] border border-[#E5E8E9] hover:border-[#0088B1]"
+                  }`}
+                >
+                  {day.value.substring(0, 3)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       {/* Custom Frequency */}
       {isCustom && (
         <div className="space-y-4">
@@ -242,9 +325,8 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
                     updateFormData({ startDate: e.target.value })
                   }
                   placeholder="Choose Start Date"
-                  className="w-full px-4 py-3 pr-10 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
+                  className="w-full px-4 py-2 pr-10 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
                 />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
             </div>
 
@@ -258,9 +340,8 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
                   value={formData.endDate}
                   onChange={(e) => updateFormData({ endDate: e.target.value })}
                   placeholder="Choose End Date"
-                  className="w-full px-4 py-3 pr-10 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
+                  className="w-full px-4 py-2 pr-10 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
                 />
-                <Calendar className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
             </div>
           </div>
@@ -275,13 +356,13 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
                   key={day.id}
                   type="button"
                   onClick={() => handleDayToggle(day.id)}
-                  className={`px-4 py-3 rounded-lg text-[10px] font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-lg text-[10px] font-medium transition-colors ${
                     formData.selectedDays.includes(day.id)
                       ? "bg-[#4A5558] text-white"
                       : "bg-white text-[#161D1F] border border-[#E5E8E9] hover:border-[#0088B1]"
                   }`}
                 >
-                  {day.value}
+                  {day.value.substring(0, 3)}
                 </button>
               ))}
             </div>
@@ -289,6 +370,9 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
 
           {formData.selectedDays.length > 0 && (
             <div className="bg-[#F5F5F5] rounded-lg p-4 space-y-3">
+              <div className="text-[12px] font-medium text-[#161D1F] mb-3">
+                Set Custom Times for Selected Days
+              </div>
               <div className="space-y-2">
                 {formData.selectedDays.map((dayId) => (
                   <div key={dayId}>
@@ -391,4 +475,5 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
     </div>
   );
 };
+
 export default SetFrequencyTab;

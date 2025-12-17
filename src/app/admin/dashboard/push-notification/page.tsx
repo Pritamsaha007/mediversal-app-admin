@@ -16,6 +16,7 @@ import Pagination from "@/app/components/common/pagination";
 import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
 import NotificationDetailsModal from "./components/NotificationDetailsModal";
+import DropdownSelector from "@/app/components/ui/DropdownSelector";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -23,6 +24,7 @@ const Notifications: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All Notifications");
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>(
     []
   );
@@ -105,27 +107,6 @@ const Notifications: React.FC = () => {
     };
   }, []);
 
-  const handleSelectNotification = (
-    notificationId: string,
-    checked: boolean
-  ) => {
-    if (checked) {
-      setSelectedNotifications([...selectedNotifications, notificationId]);
-    } else {
-      setSelectedNotifications(
-        selectedNotifications.filter((id) => id !== notificationId)
-      );
-    }
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedNotifications(notifications.map((n) => n.id));
-    } else {
-      setSelectedNotifications([]);
-    }
-  };
-
   const handleDeleteNotification = async (notification: Notification) => {
     if (!token) return;
 
@@ -189,7 +170,7 @@ const Notifications: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-[20px] font-semibold text-[#161D1F]">
+          <h1 className="text-[16px] font-medium text-[#161D1F]">
             Push Notification Manager
           </h1>
           <button
@@ -204,30 +185,28 @@ const Notifications: React.FC = () => {
         {/* Search and Filter */}
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search by title, or notification ID..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
-              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
+              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:outline-none  text-[12px] "
             />
           </div>
           <div className="relative">
-            <select
-              value={selectedFilter}
-              onChange={(e) => {
-                setSelectedFilter(e.target.value);
+            <DropdownSelector
+              label=""
+              options={filterOptions}
+              selected={selectedFilter}
+              placeholder="Select Filter"
+              open={filterDropdownOpen}
+              toggleOpen={() => setFilterDropdownOpen(!filterDropdownOpen)}
+              onSelect={(value) => {
+                setSelectedFilter(value);
                 setCurrentPage(0);
               }}
-              className="px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] bg-white"
-            >
-              {filterOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+            />
           </div>
         </div>
 
@@ -246,17 +225,6 @@ const Notifications: React.FC = () => {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                      checked={
-                        selectedNotifications.length === notifications.length &&
-                        notifications.length > 0
-                      }
-                      onChange={(e) => handleSelectAll(e.target.checked)}
-                    />
-                  </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Notification ID
                   </th>
@@ -295,25 +263,10 @@ const Notifications: React.FC = () => {
                 ) : (
                   notifications.map((notification) => (
                     <tr key={notification.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                          checked={selectedNotifications.includes(
-                            notification.id
-                          )}
-                          onChange={(e) =>
-                            handleSelectNotification(
-                              notification.id,
-                              e.target.checked
-                            )
-                          }
-                        />
-                      </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
-                          <div className="text-xs font-medium text-[#161D1F]">
-                            {notification.id.substring(0, 12)}...
+                          <div className="text-[12px] font-medium text-[#161D1F]">
+                            {notification.id.substring(0, 8).toUpperCase()}
                           </div>
                           <span
                             className={`inline-flex items-center w-fit px-2 py-0.5 rounded text-[8px] font-medium border ${getUserGroupColor(
@@ -327,7 +280,7 @@ const Notifications: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-xs font-medium text-[#161D1F]">
+                        <div className="text-[10px] font-medium text-[#161D1F]">
                           {notification.message_title}
                         </div>
                       </td>
@@ -354,12 +307,14 @@ const Notifications: React.FC = () => {
                             )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        {renderScheduledDays(notification)}
+                      <td className="px-6 py-8">
+                        <div className="border border-[#E5E8E9] rounded-lg p-2 max-w-xs">
+                          {renderScheduledDays(notification)}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium ${getStatusColor(
+                          className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium ${getStatusColor(
                             notification.status
                           )}`}
                         >

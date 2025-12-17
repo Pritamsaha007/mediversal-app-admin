@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Search, X } from "lucide-react";
 import { NotificationFormData, EnumItem, Customer } from "../types/types";
 import { searchCustomers } from "../services/service";
@@ -24,6 +24,63 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
   const [searchLoading, setSearchLoading] = useState(false);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [userGroupDropdownOpen, setUserGroupDropdownOpen] = useState(false);
+  const [displayedCustomers, setDisplayedCustomers] = useState<Customer[]>([]);
+  const [customerPage, setCustomerPage] = useState(0);
+  const [hasMoreCustomers, setHasMoreCustomers] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const lastCustomerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (loadingMore) return;
+      if (observerRef.current) observerRef.current.disconnect();
+
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMoreCustomers) {
+          loadMoreCustomers();
+        }
+      });
+
+      if (node) observerRef.current.observe(node);
+    },
+    [loadingMore, hasMoreCustomers]
+  );
+
+  useEffect(() => {
+    if (targetType === "individual" && !customerSearch) {
+      loadInitialCustomers();
+    }
+  }, [targetType]);
+
+  const loadInitialCustomers = async () => {
+    try {
+      const response = await searchCustomers("", 0, 50, token);
+      if (response.success) {
+        setDisplayedCustomers(response.customers);
+        setHasMoreCustomers(response.customers.length === 50);
+        setCustomerPage(1);
+      }
+    } catch (error) {
+      console.error("Error loading customers:", error);
+    }
+  };
+
+  const loadMoreCustomers = async () => {
+    if (loadingMore || !hasMoreCustomers) return;
+
+    setLoadingMore(true);
+    try {
+      const response = await searchCustomers("", customerPage * 50, 50, token);
+      if (response.success) {
+        setDisplayedCustomers((prev) => [...prev, ...response.customers]);
+        setHasMoreCustomers(response.customers.length === 50);
+        setCustomerPage((prev) => prev + 1);
+      }
+    } catch (error) {
+      console.error("Error loading more customers:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     const delaySearch = setTimeout(() => {
@@ -86,7 +143,7 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
           placeholder="Please provide a suitable notification title"
           value={formData.title}
           onChange={(e) => updateFormData({ title: e.target.value })}
-          className="w-full px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
+          className="w-full px-4 py-2 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
         />
       </div>
 
@@ -99,7 +156,7 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
           value={formData.message}
           onChange={(e) => updateFormData({ message: e.target.value })}
           rows={4}
-          className="w-full px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] resize-none"
+          className="w-full px-4 py-2 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] resize-none"
         />
       </div>
 
@@ -114,8 +171,9 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
               type="radio"
               checked={targetType === "group"}
               onChange={() => handleTargetTypeChange("group")}
-              className="w-4 h-4 text-[#0088B1] focus:ring-[#0088B1]"
+              className="w-4 h-4 accent-[#0088B1] cursor-pointer"
             />
+
             <span className="text-[12px] text-[#161D1F]">User Group</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
@@ -123,8 +181,9 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
               type="radio"
               checked={targetType === "individual"}
               onChange={() => handleTargetTypeChange("individual")}
-              className="w-4 h-4 text-[#0088B1] focus:ring-[#0088B1]"
+              className="w-4 h-4 accent-[#0088B1] cursor-pointer"
             />
+
             <span className="text-[12px] text-[#161D1F]">Individual User</span>
           </label>
         </div>
@@ -150,7 +209,7 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
         ) : (
           <div>
             {formData.selectedCustomer ? (
-              <div className="flex items-center justify-between px-4 py-3 bg-[#E8F4F7] border border-[#0088B1] rounded-xl">
+              <div className="flex items-center justify-between px-4 py-2 bg-[#E8F4F7] border border-[#0088B1] rounded-lg">
                 <div>
                   <div className="text-[12px] font-medium text-[#161D1F]">
                     {formData.selectedCustomer.first_name}{" "}
@@ -176,7 +235,7 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
                   placeholder="Search customer by name..."
                   value={customerSearch}
                   onChange={(e) => setCustomerSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
+                  className="w-full pl-10 pr-4 py-2 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8] focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
                 />
                 {showCustomerDropdown && customers.length > 0 && (
                   <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -184,7 +243,7 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
                       <button
                         key={customer.id}
                         onClick={() => handleSelectCustomer(customer)}
-                        className="block w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-0"
+                        className="block w-full px-4 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-0"
                       >
                         <div className="text-[12px] font-medium text-[#161D1F]">
                           {customer.first_name} {customer.last_name}
