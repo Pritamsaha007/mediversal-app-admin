@@ -1,3 +1,4 @@
+import { EnumCodes, fetchEnums } from "@/app/service/enumService";
 import {
   CreateConsultationRequest,
   DoctorSearchResponse,
@@ -154,45 +155,45 @@ export async function searchDoctors(
   return await response.json();
 }
 
-export async function getEnumData(
-  code: string,
-  token: string
-): Promise<EnumResponse> {
-  const url = new URL(`${HOMECARE_API_BASE_URL}/api/lookup/enums`);
+// export async function getEnumData(
+//   code: string,
+//   token: string
+// ): Promise<EnumResponse> {
+//   const url = new URL(`${HOMECARE_API_BASE_URL}/api/lookup/enums`);
 
-  const body = {
-    code: code,
-  };
+//   const body = {
+//     code: code,
+//   };
 
-  console.log("Fetching enum data for code:", code);
+//   console.log("Fetching enum data for code:", code);
 
-  const response = await fetch(url.toString(), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+//   const response = await fetch(url.toString(), {
+//     method: "POST",
+//     headers: {
+//       Authorization: `Bearer ${token}`,
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify(body),
+//   });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData?.message || `HTTP error! status: ${response.status}`
-    );
-  }
+//   if (!response.ok) {
+//     const errorData = await response.json().catch(() => ({}));
+//     throw new Error(
+//       errorData?.message || `HTTP error! status: ${response.status}`
+//     );
+//   }
 
-  const responseData: EnumResponse = await response.json();
-  console.log("Enum API response for", code, ":", responseData);
-  return responseData;
-}
+//   const responseData: EnumResponse = await response.json();
+//   console.log("Enum API response for", code, ":", responseData);
+//   return responseData;
+// }
 
 export async function getConsultationEnumData(token: string) {
   try {
     const [paymentModes, paymentStatuses, languages] = await Promise.all([
-      getEnumData("PAYMENT_MODE", token),
-      getEnumData("PAYMENT_STATUS", token),
-      getEnumData("INDIAN_LANGUAGE", token),
+      fetchEnums(EnumCodes.PAYMENT_MODE, token),
+      fetchEnums(EnumCodes.PAYMENT_STATUS, token),
+      fetchEnums(EnumCodes.INDIAN_LANGUAGE, token),
     ]);
 
     return {
@@ -278,8 +279,7 @@ export async function getChatToken(
   success: boolean;
   data: { userId: string; chatToken: string; expireIn: number };
 }> {
-  // Use consultationId directly as userId or extract it based on your logic
-  const userId = consultationId; // Adjust this based on your actual userId logic
+  const userId = consultationId;
 
   const url = new URL(
     `${HOMECARE_API_BASE_URL}/api/clinic/consultation/chat-token/${userId}`

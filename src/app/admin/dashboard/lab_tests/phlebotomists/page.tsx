@@ -20,7 +20,6 @@ import { Phlebotomist, PhlebotomistAvailability } from "./type";
 import ViewPhlebotomistModal from "./components/ViewStaff";
 import { useAdminStore } from "@/app/store/adminStore";
 import {
-  EnumItem,
   fetchDays,
   fetchPhleboSpecializations,
   fetchServiceAreas,
@@ -29,6 +28,7 @@ import {
   SearchPhlebotomistsPayload,
   updatePhlebotomist,
 } from "../services/index";
+import { EnumItem } from "@/app/service/enumService";
 
 interface PhlebotomistStats {
   totalPhlebotomists: number;

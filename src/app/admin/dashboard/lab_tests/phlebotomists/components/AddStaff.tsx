@@ -10,7 +10,6 @@ import {
   fetchPhleboSpecializations,
   fetchServiceCities,
   fetchServiceAreas,
-  EnumItem,
 } from "../../services";
 import {
   CreatePhlebotomistPayload,
@@ -18,6 +17,7 @@ import {
   PhlebotomistAvailability,
   UpdatePhlebotomistPayload,
 } from "../type";
+import { EnumItem } from "@/app/service/enumService";
 
 interface PhlebotomistFormData {
   name: string;

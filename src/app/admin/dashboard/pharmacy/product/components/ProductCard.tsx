@@ -3,16 +3,19 @@ import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
 import { AddProductModal } from "./AddProductModal";
 import { ProductDetailModal } from "./ProductDetailModal";
 import { ProductRelationshipsModal } from "./ManageProductRelationshipsModal";
-import { Eye, Edit, Link, MoreVertical, Pill } from "lucide-react";
+import {
+  Eye,
+  Edit,
+  Link,
+  MoreVertical,
+  Pill,
+  Trash,
+  Delete,
+  Trash2,
+} from "lucide-react";
 import { ProductFormData } from "../types/productForm.type";
 import StatusBadge from "@/app/components/common/StatusBadge";
-
-interface RelatedProduct {
-  id: string;
-  name: string;
-  code: string;
-  manufacturer: string;
-}
+import { useRouter } from "next/navigation";
 
 export const ProductCard: React.FC<{
   product: Product;
@@ -23,12 +26,12 @@ export const ProductCard: React.FC<{
   onDelete: (id: string) => void;
   isSelected: boolean;
   onSelect: (id: string, selected: boolean) => void;
-  availableProducts?: RelatedProduct[];
+  availableProducts?: Product[];
   onUpdateRelationships?: (
     productId: string,
     data: {
-      substitutes: RelatedProduct[];
-      similarProducts: RelatedProduct[];
+      substitutes: Product[];
+      similarProducts: Product[];
     }
   ) => void;
 }> = ({
@@ -53,8 +56,13 @@ export const ProductCard: React.FC<{
   const [productToEdit, setProductToEdit] = useState<ProductFormData | null>(
     null
   );
+  const router = useRouter();
   const [showSubstitutes, setShowSubstitutes] = useState(false);
   const [showSimilar, setShowSimilar] = useState(false);
+  const handleRefresh = () => {
+    // Refresh the page using Next.js router
+    router.refresh();
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -82,60 +90,86 @@ export const ProductCard: React.FC<{
     return { label: stock, color: "" };
   };
 
-  const stockStatus = getStockStatus(product.stock);
+  const stockStatus = getStockStatus(product.StockAvailableInInventory);
 
   const handleEdit = (product: Product) => {
     const productFormData: ProductFormData = {
-      id: product.id,
+      id: product.productId,
 
-      ProductName: product.name,
-      SKU: product.sku,
-      Category: product.category,
-      Subcategory: product.subcategory,
+      ProductName: product.ProductName,
+      SKU: product.SKU,
+      Category: product.Category,
+      Subcategory: product.Subcategory,
       Type: product.Type || "",
-      ManufacturerName: product.manufacturer || product.ManufacturerName || "",
-      CostPrice: product.CostPrice || product.mrp,
-      SellingPrice: product.SellingPrice || product.sellingPrice,
-      StockAvailableInInventory:
-        product.StockAvailableInInventory || product.stock,
+      ManufacturerName: product.ManufacturerName,
+      CostPrice:
+        typeof product.CostPrice === "string"
+          ? parseFloat(product.CostPrice)
+          : product.CostPrice,
+      SellingPrice:
+        typeof product.SellingPrice === "string"
+          ? parseFloat(product.SellingPrice)
+          : product.SellingPrice,
+      StockAvailableInInventory: product.StockAvailableInInventory,
       subCategoryType: product.subCategoryType || "",
 
-      ProductInformation:
-        product.ProductInformation || product.description || "",
-      SafetyAdvices: product.SafetyAdvices || product.saftyDescription || "",
-      StorageInstructions:
-        product.StorageInstructions || product.storageDescription || "",
-      Composition: product.Composition || product.composition || "",
+      ProductInformation: product.ProductInformation,
+      SafetyAdvices: product.SafetyAdvices,
+      StorageInstructions: product.StorageInstructions,
+      Composition: product.Composition,
       dosageForm: product.dosageForm || "",
       ProductStrength: product.ProductStrength || "",
       PackageSize: product.PackageSize || "",
-      productImage: product.productImage || null,
-      image_url: product.image_url,
+      productImage: product.image_url?.[0] || null,
+      image_url: product.image_url || [],
       schedule: product.schedule || "",
-      tax: product.tax || product.taxRate || 0,
-      HSN_Code: product.HSN_Code || product.hsnCode || "",
+      tax:
+        typeof product.tax === "string" ? parseFloat(product.tax) : product.tax,
+      HSN_Code: product.HSN_Code || "",
       storageConditions: product.storageConditions || "",
 
-      PrescriptionRequired:
-        product.PrescriptionRequired || product.prescriptionRequired || false,
-      featuredProduct: product.featuredProduct || product.featured || false,
-      active: product.active || product.status === "Active",
-      ColdChain: product.ColdChain || "",
-      GST: product.GST || "",
-      admin_id: product.admin_id || "",
+      PrescriptionRequired: product.PrescriptionRequired,
+      featuredProduct: product.featuredProduct,
+      active: product.active,
+      ColdChain: product.ColdChain,
+      GST: product.GST,
 
-      productLength: product.productLength || 20,
-      productBreadth: product.productBreadth || 20,
-      productHeight: product.productHeight || 5,
-      productWeight: product.productWeight || 0.4,
+      productLength:
+        typeof product.productLength === "string"
+          ? parseFloat(product.productLength)
+          : product.productLength,
+      productBreadth:
+        typeof product.productBreadth === "string"
+          ? parseFloat(product.productBreadth)
+          : product.productBreadth,
+      productHeight:
+        typeof product.productHeight === "string"
+          ? parseFloat(product.productHeight)
+          : product.productHeight,
+      productWeight:
+        typeof product.productWeight === "string"
+          ? parseFloat(product.productWeight)
+          : product.productWeight,
 
-      DiscountedPrice: product.DiscountedPrice || product.sellingPrice,
+      DiscountedPrice:
+        typeof product.DiscountedPrice === "string"
+          ? parseFloat(product.DiscountedPrice)
+          : product.DiscountedPrice,
       DiscountedPercentage:
-        product.DiscountedPercentage || product.discount || 0,
+        typeof product.DiscountedPercentage === "string"
+          ? parseFloat(product.DiscountedPercentage)
+          : product.DiscountedPercentage,
 
-      Substitutes: product.Substitutes || [],
-      SimilarProducts: product.SimilarProducts || [],
-      Coupons: product.Coupons || null,
+      Substitutes:
+        product.substitutes?.map((sub) =>
+          typeof sub === "string" ? sub : sub.productId
+        ) || [],
+      SimilarProducts:
+        product.similarProducts?.map((sim) =>
+          typeof sim === "string" ? sim : sim.productId
+        ) || [],
+      Coupons: product.Coupons,
+      admin_id: "",
     };
 
     setProductToEdit(productFormData);
@@ -148,8 +182,8 @@ export const ProductCard: React.FC<{
 
   const handleUpdate = async (productData: ProductFormData): Promise<void> => {
     try {
-      if (product.id) {
-        await onEdit(product.id, productData);
+      if (product.productId) {
+        await onEdit(product.productId, productData);
         setEditModalOpen(false);
         setProductToEdit(null);
       }
@@ -164,38 +198,22 @@ export const ProductCard: React.FC<{
     similarProducts: string[];
   }) => {
     if (onUpdateRelationships) {
-      onUpdateRelationships(product.id, {
-        substitutes: data.substitutes.map((name) => ({
-          id: name,
-          name,
-          code: "",
-          manufacturer: "",
-        })),
-        similarProducts: data.similarProducts.map((name) => ({
-          id: name,
-          name,
-          code: "",
-          manufacturer: "",
-        })),
+      const substitutesProducts = availableProducts.filter((p) =>
+        data.substitutes.includes(p.productId)
+      );
+      const similarProducts = availableProducts.filter((p) =>
+        data.similarProducts.includes(p.productId)
+      );
+
+      onUpdateRelationships(product.productId, {
+        substitutes: substitutesProducts,
+        similarProducts: similarProducts,
       });
     }
   };
 
-  const currentSubstitutes: RelatedProduct[] =
-    product.Substitutes?.map((name) => ({
-      id: name,
-      name,
-      code: "",
-      manufacturer: product.manufacturer || "Unknown",
-    })) || [];
-
-  const currentSimilarProducts: RelatedProduct[] =
-    product.SimilarProducts?.map((name) => ({
-      id: name,
-      name,
-      code: "",
-      manufacturer: product.manufacturer || "Unknown",
-    })) || [];
+  const currentSubstitutes: Product[] = product.substitutes || [];
+  const currentSimilarProducts: Product[] = product.similarProducts || [];
 
   return (
     <tr className="border-y-1 hover:bg-gray-50 border-[#D3D7D8]">
@@ -203,20 +221,18 @@ export const ProductCard: React.FC<{
         <input
           type="checkbox"
           checked={isSelected}
-          onChange={(e) => onSelect(product.id, e.target.checked)}
+          onChange={(e) => onSelect(product.productId, e.target.checked)}
           className="w-4 h-4 text-blue-600 border-gray-300 rounded"
         />
       </td>
       <td className="px-4 py-4">
         <div>
           <div className="font-medium text-[12px] text-gray-900">
-            {product.name}
+            {product.ProductName}
           </div>
           <div className="text-[10px] text-gray-500">
-            {product.code} |{" "}
-            {product.PrescriptionRequired || product.prescriptionRequired
-              ? "Rx"
-              : "No Rx "}
+            {product.SKU || "N/A"} |{" "}
+            {product.PrescriptionRequired === "Yes" ? "Rx" : "No Rx"}
           </div>
           <div className="mt-2">
             <div className="flex gap-2 mb-1">
@@ -224,36 +240,47 @@ export const ProductCard: React.FC<{
                 onClick={() => setShowSubstitutes(!showSubstitutes)}
                 className="px-2 py-1 text-[8px] text-[#0088B1] rounded border border-[#0088B1] hover:bg-[#0088B1] hover:text-white transition-colors"
               >
-                {product.substitutesCount || 0} substitute(s){" "}
+                {product.substitutes?.length || 0} substitute(s){" "}
                 {showSubstitutes ? "▲" : "▼"}
               </button>
               <button
                 onClick={() => setShowSimilar(!showSimilar)}
                 className="px-2 py-1 text-[8px] text-[#9B51E0] rounded border border-[#9B51E0] hover:bg-[#9B51E0] hover:text-white transition-colors"
               >
-                {product.similarCount || 0} similar {showSimilar ? "▲" : "▼"}
+                {product.similarProducts?.length || 0} similar{" "}
+                {showSimilar ? "▲" : "▼"}
               </button>
             </div>
 
             {showSubstitutes &&
-              product.Substitutes &&
-              product.Substitutes.length > 0 && (
+              product.substitutes &&
+              product.substitutes.length > 0 && (
                 <div className="bg-blue-50 p-2 rounded text-[8px] text-gray-700 mb-1">
                   <strong>Substitutes:</strong>{" "}
-                  {product.Substitutes.slice(0, 3).join(", ")}
-                  {product.Substitutes.length > 3 &&
-                    ` +${product.Substitutes.length - 3} more`}
+                  {product.substitutes
+                    .slice(0, 3)
+                    .map((sub) =>
+                      typeof sub === "string" ? sub : sub.ProductName
+                    )
+                    .join(", ")}
+                  {product.substitutes.length > 3 &&
+                    ` +${product.substitutes.length - 3} more`}
                 </div>
               )}
 
             {showSimilar &&
-              product.SimilarProducts &&
-              product.SimilarProducts.length > 0 && (
+              product.similarProducts &&
+              product.similarProducts.length > 0 && (
                 <div className="bg-purple-50 p-2 rounded text-[8px] text-gray-700">
                   <strong>Similar:</strong>{" "}
-                  {product.SimilarProducts.slice(0, 3).join(", ")}
-                  {product.SimilarProducts.length > 3 &&
-                    ` +${product.SimilarProducts.length - 3} more`}
+                  {product.similarProducts
+                    .slice(0, 3)
+                    .map((sim) =>
+                      typeof sim === "string" ? sim : sim.ProductName
+                    )
+                    .join(", ")}
+                  {product.similarProducts.length > 3 &&
+                    ` +${product.similarProducts.length - 3} more`}
                 </div>
               )}
           </div>
@@ -264,23 +291,32 @@ export const ProductCard: React.FC<{
           <Pill className="w-4 h-4 text-gray-500" />
           <div>
             <div className="font-medium text-[10px] text-gray-900">
-              {product.category}
+              {product.Category}
             </div>
             <div className="text-sm text-gray-500 text-[8px]">
-              {product.subcategory}
+              {product.Subcategory}
             </div>
           </div>
         </div>
       </td>
       <td className="px-4 py-4 font-medium text-gray-900 text-[12px]">
-        ₹{product.CostPrice ? product.CostPrice : product.mrp}
+        ₹
+        {typeof product.CostPrice === "string"
+          ? product.CostPrice
+          : product.CostPrice?.toFixed(2)}
       </td>
       <td className="px-4 py-4 font-medium text-gray-900 text-[12px]">
-        ₹{product.SellingPrice ? product.SellingPrice : product.sellingPrice}
+        ₹
+        {typeof product.SellingPrice === "string"
+          ? product.SellingPrice
+          : product.SellingPrice?.toFixed(2)}
       </td>
       <td className="px-4 py-4">
         <span className="px-2 py-1 text-[8px] bg-[#B3DCE8] text-gray-500 rounded">
-          {product.DiscountedPercentage || product.discount}% OFF
+          {typeof product.DiscountedPercentage === "string"
+            ? product.DiscountedPercentage
+            : product.DiscountedPercentage?.toFixed(0)}
+          % OFF
         </span>
       </td>
       <td className="px-4 py-4">
@@ -293,8 +329,16 @@ export const ProductCard: React.FC<{
         </span>
       </td>
       <td className="px-4 py-4 items-center justify-center flex flex-col gap-2">
-        {product.active ? "Active" : <StatusBadge status="Active" />}
-        {product.featured && <StatusBadge status="Featured" />}
+        {product.active ? (
+          <StatusBadge status="Active" />
+        ) : (
+          <StatusBadge status="Inactive" />
+        )}
+        {product.featuredProduct ? (
+          <StatusBadge status="Featured" />
+        ) : (
+          <StatusBadge status="Not Featured" />
+        )}
       </td>
 
       <td className="px-4 py-4">
@@ -322,21 +366,28 @@ export const ProductCard: React.FC<{
           >
             <Link className="w-4 h-4" />
           </button>
-
           <button
+            onClick={() => onDelete(product.productId)}
+            className="p-1 text-gray-500 hover:text-gray-700 cursor-pointer"
+            title="Manage Product Relationships"
+          >
+            <Trash2 className="w-4 h-4" color="red" />
+          </button>
+
+          {/* <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="p-1 text-gray-500 hover:text-gray-700 cursor-pointer"
             title="More options"
           >
             <MoreVertical className="w-4 h-4 text-gray-500" strokeWidth={1} />
-          </button>
+          </button> */}
 
-          {dropdownOpen && (
+          {/* {dropdownOpen && (
             <div className="absolute right-0 top-8 z-20 w-36 bg-white border border-gray-200 rounded-2xl shadow-2xl">
               <button
                 onClick={() => {
                   setDropdownOpen(false);
-                  onUnfeature(product.id);
+                  onUnfeature(product.productId);
                 }}
                 className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left"
               >
@@ -345,7 +396,7 @@ export const ProductCard: React.FC<{
               <button
                 onClick={() => {
                   setDropdownOpen(false);
-                  onDeactivate(product.id);
+                  onDeactivate(product.productId);
                 }}
                 className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left"
               >
@@ -354,14 +405,14 @@ export const ProductCard: React.FC<{
               <button
                 onClick={() => {
                   setDropdownOpen(false);
-                  onDelete(product.id);
+                  onDelete(product.productId);
                 }}
                 className="block w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 text-left"
               >
                 Delete
               </button>
             </div>
-          )}
+          )} */}
 
           <ProductDetailModal
             isOpen={isModalOpen}
@@ -384,12 +435,13 @@ export const ProductCard: React.FC<{
           <ProductRelationshipsModal
             isOpen={isRelationshipsModalOpen}
             onClose={() => setIsRelationshipsModalOpen(false)}
-            productId={product.id}
-            productName={product.name}
+            productId={product.productId}
+            productName={product.ProductName}
             currentSubstitutes={currentSubstitutes}
             currentSimilarProducts={currentSimilarProducts}
             availableProducts={availableProducts}
             onSaveChanges={handleRelationshipsUpdate}
+            onRefresh={handleRefresh}
           />
         </div>
       </td>

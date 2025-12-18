@@ -30,29 +30,29 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         <h2 className="text-[16px] font-semibold text-[#161D1F] mb-2">
           Product Detail
         </h2>
-        <h3 className="text-[14px] text-[#161D1F]">{product.name}</h3>
+        <h3 className="text-[14px] text-[#161D1F]">{product.ProductName}</h3>
         <p className="text-[10px] text-[#899193]">
-          {product.code} &nbsp; | &nbsp; {product.manufacturer || "N/A"}
+          {product.Type} &nbsp; | &nbsp; {product.ManufacturerName || "N/A"}
         </p>
 
         <div className="flex flex-wrap gap-2 mt-3">
           <h1 className="text-[#161D1F] font-semibold text-[10px]">Tags:</h1>
-          {product.substitutesCount > 0 && (
+          {product.substitutes && product.substitutes.length > 0 && (
             <span className="border-[#0088B1] text-[#0088B1] border text-[8px] font-medium px-2 py-1 rounded">
-              {product.substitutesCount} Substitutes
+              {product.substitutes.length} Substitutes
             </span>
           )}
-          {product.similarCount > 0 && (
+          {product.similarProducts && product.similarProducts.length > 0 && (
             <span className="border-[#9B51E0] border text-[#9B51E0] text-[8px] font-medium px-2 py-1 rounded">
-              {product.similarCount} Similar
+              {product.similarProducts.length} Similar
             </span>
           )}
-          {product.status === "Active" && (
+          {product.active && (
             <span className="border-[#50B57F] border text-[#50B57F] text-[8px] font-medium px-2 py-1 rounded">
               Active
             </span>
           )}
-          {product.featured && (
+          {product.featuredProduct && (
             <span className="border-[#F2994A] border text-[#F2994A] text-[8px] font-medium px-2 py-1 rounded">
               Featured
             </span>
@@ -65,7 +65,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               Description:
             </span>
             <span className="text-[#161D1F] text-[10px]">
-              {product.description || "No1234 description available."}
+              {product.ProductInformation || "No1234 description available."}
             </span>
           </p>
           <p>
@@ -73,7 +73,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               Category:
             </span>
             <span className="text-[#161D1F] text-[10px]">
-              {product.category}
+              {product.Category}
             </span>
           </p>
         </div>
@@ -84,14 +84,18 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               Discount:
             </span>
             <span className="text-[#161D1F] text-[10px]">
-              {product.discount ? `${product.discount}% OFF` : "No Discount"}
+              {product.DiscountedPercentage
+                ? `${product.DiscountedPercentage}% OFF`
+                : "No Discount"}
             </span>
           </p>
           <p>
             <span className="text-[#161D1F] font-semibold text-[10px]">
               Stock:
             </span>
-            <span className="text-[#161D1F] text-[10px]">{product.stock}</span>
+            <span className="text-[#161D1F] text-[10px]">
+              {product.StockAvailableInInventory}
+            </span>
           </p>
         </div>
       </div>

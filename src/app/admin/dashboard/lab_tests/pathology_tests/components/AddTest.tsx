@@ -3,14 +3,10 @@ import React, { useEffect, useState } from "react";
 import { X, Upload, Plus, ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 import { PathologyTest } from "../types";
-import {
-  EnumItem,
-  fetchCategories,
-  fetchSampleTypes,
-  uploadFile,
-} from "../../services";
+import { fetchCategories, fetchSampleTypes, uploadFile } from "../../services";
 import { useAdminStore } from "@/app/store/adminStore";
 import { createPathologyTest, updatePathologyTest } from "../../services/index";
+import { EnumItem } from "@/app/service/enumService";
 
 interface AddTestModalProps {
   isOpen: boolean;
@@ -55,7 +51,8 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     "basic"
   );
   const { token } = useAdminStore();
-
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
   const [showReportTimeDropdown, setShowReportTimeDropdown] = useState(false);
   const [showSampleTypeDropdown, setShowSampleTypeDropdown] = useState(false);
   const [category_id, setCategory_id] = useState<string>("");
@@ -112,6 +109,9 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         inspection_parts_ids: editTest.inspection_parts_ids || [],
         related_lab_test_ids: editTest.related_lab_test_ids || [],
       });
+      if (editTest.image_url) {
+        setImagePreview(editTest.image_url);
+      }
     } else if (isOpen) {
       setFormData({
         name: "",
@@ -135,9 +135,17 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         inspection_parts_ids: [],
         related_lab_test_ids: [],
       });
+      setImagePreview("");
+      setSelectedImageFile(null);
     }
   }, [editTest, isOpen]);
-
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
   const handleAddInstruction = () => {
     if (newInstruction.trim()) {
       setFormData({
@@ -221,10 +229,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     });
     setShowReportTimeDropdown(false);
   };
-
-  const handleImageUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -239,12 +244,32 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         return;
       }
 
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+      setSelectedImageFile(file);
+
+      setFormData((prev) => ({
+        ...prev,
+        image_url: "",
+      }));
+
+      toast.success("Image selected for upload");
+    } catch (error: any) {
+      console.error("Image selection failed:", error);
+      toast.error(error.message || "Failed to select image");
+    }
+  };
+  const uploadImageAndGetUrl = async (): Promise<string> => {
+    if (!selectedImageFile) {
+      return formData.image_url;
+    }
+
+    try {
       setLoading(true);
 
-      const fileUri = URL.createObjectURL(file);
-
+      const fileUri = URL.createObjectURL(selectedImageFile);
       const fileContent = await fileToBase64(fileUri);
-      console.log(fileContent, "filecontent");
+
       const bucketName =
         process.env.NODE_ENV === "development"
           ? process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_DEV
@@ -257,25 +282,23 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       const uploadRequest = {
         bucketName,
         folderPath: "pathologyTest",
-        fileName: file.name,
+        fileName: selectedImageFile.name,
         fileContent,
       };
 
       const uploadRes = await uploadFile(token!, uploadRequest);
-      console.log(uploadRes, "res");
-      setFormData((prev) => ({
-        ...prev,
-        image_url: uploadRes.result,
-      }));
 
-      toast.success("Image uploaded successfully!");
+      URL.revokeObjectURL(fileUri);
+
+      return uploadRes.result;
     } catch (error: any) {
       console.error("Image upload failed:", error);
-      toast.error(error.message || "Failed to upload image");
+      throw new Error(error.message || "Failed to upload image");
     } finally {
       setLoading(false);
     }
   };
+
   const fileToBase64 = async (fileUri: string): Promise<string> => {
     try {
       const response = await fetch(fileUri);
@@ -311,6 +334,17 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
     setSubmitting(true);
     try {
+      let imageUrl = formData.image_url;
+
+      if (selectedImageFile) {
+        try {
+          imageUrl = await uploadImageAndGetUrl();
+        } catch (uploadError: any) {
+          toast.error("Failed to upload image: " + uploadError.message);
+          return;
+        }
+      }
+
       const payload = {
         name: formData.name,
         description: formData.description,
@@ -330,7 +364,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           formData.is_home_collection_available
         ),
         is_active: Boolean(formData.is_active),
-        image_url: formData.image_url || "",
+        image_url: imageUrl || "",
         modality_type_id: formData.modality_type_id || "",
         inspection_parts_ids: formData.inspection_parts_ids || [],
         related_lab_test_ids: formData.related_lab_test_ids || [],
@@ -400,6 +434,9 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         inspection_parts_ids: [],
         related_lab_test_ids: [],
       }));
+
+      setImagePreview("");
+      setSelectedImageFile(null);
     });
   };
 
@@ -427,17 +464,19 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           Upload Lab Test Image
         </h4>
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#0088B1] transition-colors">
-          {formData.image_url ? (
+          {imagePreview ? (
             <div className="flex flex-col items-center">
               <div className="relative mb-3">
                 <img
-                  src={formData.image_url}
+                  src={imagePreview}
                   alt="Test preview"
                   className="w-48 h-32 object-contain border border-gray-200 rounded-lg"
                 />
                 <button
                   type="button"
                   onClick={() => {
+                    setImagePreview("");
+                    setSelectedImageFile(null);
                     setFormData({ ...formData, image_url: "" });
                   }}
                   className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
@@ -445,7 +484,11 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-xs text-gray-600 mb-2">Image uploaded</p>
+              <p className="text-xs text-gray-600 mb-2">
+                {selectedImageFile
+                  ? "Image ready for upload"
+                  : "Image uploaded"}{" "}
+              </p>
             </div>
           ) : (
             <div className="flex flex-col items-center">
@@ -464,17 +507,17 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             id="image-upload"
             className="hidden"
             accept=".jpg,.jpeg,.png"
-            onChange={handleImageUpload}
+            onChange={handleImageSelect}
           />
           <label
             htmlFor="image-upload"
             className={`inline-block px-4 py-2 ${
-              formData.image_url
+              imagePreview
                 ? "bg-gray-600 text-white hover:bg-gray-700"
                 : "bg-[#0088B1] text-white hover:bg-[#00729A]"
             } text-xs rounded-lg cursor-pointer transition-colors`}
           >
-            {formData.image_url ? "Change Image" : "Select File"}
+            {imagePreview ? "Change Image" : "Select File"}
           </label>
         </div>
       </div>

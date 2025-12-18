@@ -1,3 +1,4 @@
+import { EnumCodes, fetchEnums } from "@/app/service/enumService";
 import {
   AvailableSlotsResponse,
   BookingDetailsResponse,
@@ -116,54 +117,6 @@ export async function deletePathologyTest(
     token
   );
 }
-export interface EnumItem {
-  id: string;
-  slno: number;
-  code: string;
-  value: string;
-  description: string | null;
-  metadata: any | null;
-}
-
-export interface EnumResponse {
-  success: boolean;
-  roles: EnumItem[];
-}
-
-export enum EnumCodes {
-  LAB_TEST_BODY_PARTS = "LAB_TEST_BODY_PARTS",
-  LAB_TEST_SAMPLE = "LAB_TEST_SAMPLE",
-  LAB_TEST_CATEGORY = "LAB_TEST_CATEGORY",
-  LAB_TEST_MODALITY = "LAB_TEST_MODALITY",
-  DAYS_IN_WEEK = "DAYS_IN_WEEK",
-  PHLEBO_SPECIALIZATION = "PHLEBO_SPECIALIZATION",
-  SERVICE_CITY = "SERVICE_CITY",
-  SERVICE_AREA = "SERVICE_AREA",
-}
-
-export async function fetchEnums(
-  code: EnumCodes,
-  token: string
-): Promise<EnumResponse> {
-  const response = await fetch(`${LAB_API_BASE_URL}/api/lookup/enums`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ code }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData?.message || `HTTP error! status: ${response.status}`
-    );
-  }
-
-  return await response.json();
-}
-
 export const fetchBodyParts = (token: string) =>
   fetchEnums(EnumCodes.LAB_TEST_BODY_PARTS, token);
 
@@ -183,6 +136,7 @@ export const fetchServiceCities = (token: string) =>
   fetchEnums(EnumCodes.SERVICE_CITY, token);
 export const fetchServiceAreas = (token: string) =>
   fetchEnums(EnumCodes.SERVICE_AREA, token);
+
 export interface SearchLabTestsPayload {
   start: number | null;
   max: number | null;

@@ -1,41 +1,42 @@
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { X, Search, Trash2 } from "lucide-react";
+import { Product } from "../types/product";
 import {
-  getProductsById,
-  removeProductRelationship,
-  updateProductRelationships,
-} from "@/app/admin/dashboard/pharmacy/product/services/productRelationship";
+  getProductsWithPaginationAPI,
+  clearProductCache,
+} from "../services/ProductService";
 import { useAdminStore } from "@/app/store/adminStore";
-
-interface RelatedProduct {
-  id: string;
-  name: string;
-  code: string;
-  manufacturer: string;
-}
+import {
+  manageProductRelations,
+  fetchRelationType,
+} from "../services/productRelationship"; // Adjust the import path
 
 interface ProductRelationshipsModalProps {
   isOpen: boolean;
   onClose: () => void;
   productName: string;
   productId: string;
-  currentSubstitutes: RelatedProduct[];
-  currentSimilarProducts: RelatedProduct[];
-  availableProducts?: RelatedProduct[];
+  currentSubstitutes: Product[];
+  currentSimilarProducts: Product[];
+  availableProducts?: Product[];
+  onRefresh?: () => void;
   onSaveChanges: (data: {
     substitutes: string[];
     similarProducts: string[];
   }) => void;
 }
 
-interface ProductData {
-  productId: number;
-  ProductName: string;
-  Type: string;
-  ManufacturerName: string;
-  similarProducts: RelatedProduct[];
-  substitutes: RelatedProduct[];
+interface PendingChanges {
+  toAdd: {
+    substitutes: string[];
+    similar: string[];
+  };
+  toRemove: {
+    substitutes: string[];
+    similar: string[];
+  };
 }
 
 export const ProductRelationshipsModal: React.FC<
@@ -49,62 +50,76 @@ export const ProductRelationshipsModal: React.FC<
   currentSimilarProducts = [],
   availableProducts = [],
   onSaveChanges,
+  onRefresh,
 }) => {
   const [activeTab, setActiveTab] = useState<"substitutes" | "similar">(
     "substitutes"
   );
-  console.log(productId, "main id");
-  const [substitutes, setSubstitutes] =
-    useState<RelatedProduct[]>(currentSubstitutes);
-  const [similarProducts, setSimilarProducts] = useState<RelatedProduct[]>(
+
+  const [substitutes, setSubstitutes] = useState<Product[]>(currentSubstitutes);
+  const [similarProducts, setSimilarProducts] = useState<Product[]>(
     currentSimilarProducts
   );
-  const [newlyAddedSubstitutes, setNewlyAddedSubstitutes] = useState<string[]>(
-    []
-  );
-  const [newlyAddedSimilarProducts, setNewlyAddedSimilarProducts] = useState<
-    string[]
-  >([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [productData, setProductData] = useState<ProductData | null>(null);
-  const [availableProductsList, setAvailableProductsList] = useState<
-    RelatedProduct[]
-  >([]);
+  const [availableProductsList, setAvailableProductsList] = useState<Product[]>(
+    []
+  );
   const [searchLoading, setSearchLoading] = useState(false);
   const [pagination, setPagination] = useState({
     currentPage: 0,
     hasMore: true,
     loading: false,
   });
+  const [relationTypes, setRelationTypes] = useState<{
+    similarId: string;
+    substituteId: string;
+  } | null>(null);
 
-  const getAuthHeaders = () => {
-    const { token } = useAdminStore.getState();
-    return {
-      "Content-Type": "application/json",
-      ...(token && {
-        Authorization: `Bearer ${token}`,
-      }),
-    };
-  };
+  const [pendingChanges, setPendingChanges] = useState<PendingChanges>({
+    toAdd: {
+      substitutes: [],
+      similar: [],
+    },
+    toRemove: {
+      substitutes: [],
+      similar: [],
+    },
+  });
 
-  const convertToRelatedProduct = (product: any): RelatedProduct => {
-    // Ensure we always have a valid ID
-    const productId =
-      product.id?.toString() || product.productId?.toString() || "";
+  const { token, admin } = useAdminStore();
 
-    if (!productId) {
-      console.warn("Product missing ID:", product);
+  const fetchRelationTypes = async () => {
+    try {
+      if (!token) {
+        console.error("No token available");
+        return;
+      }
+
+      const response = await fetchRelationType(token);
+
+      if (response.roles && Array.isArray(response.roles)) {
+        const similarId = response.roles[0]?.id;
+        const substituteId = response.roles[1]?.id;
+
+        if (similarId && substituteId) {
+          setRelationTypes({ similarId, substituteId });
+        } else {
+          console.error("Could not find relation type IDs in response");
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching relation types:", error);
+      toast.error("Failed to load relation types");
     }
-
-    return {
-      id: productId,
-      name: product.ProductName || "",
-      code: product.Type || product.SKU || "",
-      manufacturer: product.ManufacturerName || "",
-    };
   };
+
+  useEffect(() => {
+    if (isOpen && token) {
+      fetchRelationTypes();
+    }
+  }, [isOpen, token]);
 
   const searchAvailableProducts = async (
     query: string = "",
@@ -112,42 +127,35 @@ export const ProductRelationshipsModal: React.FC<
   ) => {
     try {
       setSearchLoading(true);
+      setError(null);
 
       const currentPage = loadMore ? pagination.currentPage + 1 : 0;
       const start = currentPage * 20;
 
       const filters = {
-        searchCategory: null,
         searchTerm: query.trim() || null,
+        product_id: null,
       };
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/Product/getProducts?start=${start}&max=20`,
-        {
-          method: "POST",
-          headers: getAuthHeaders(),
-          body: JSON.stringify(filters),
+      const response = await getProductsWithPaginationAPI(start, 20, filters);
+
+      if (response.success) {
+        const products = response.products || [];
+
+        if (loadMore) {
+          setAvailableProductsList((prev) => [...prev, ...products]);
+        } else {
+          setAvailableProductsList(products);
         }
-      );
 
-      const data = await response.json();
-      const products = data.products || [];
-
-      const convertedProducts = products.map((product: any) =>
-        convertToRelatedProduct(product)
-      );
-
-      if (loadMore) {
-        setAvailableProductsList((prev) => [...prev, ...convertedProducts]);
+        setPagination({
+          currentPage,
+          hasMore: products.length === 20,
+          loading: false,
+        });
       } else {
-        setAvailableProductsList(convertedProducts);
+        setError("Failed to fetch products");
       }
-
-      setPagination({
-        currentPage,
-        hasMore: convertedProducts.length === 20,
-        loading: false,
-      });
     } catch (error) {
       console.error("Error searching products:", error);
       setError("Failed to search products");
@@ -163,26 +171,29 @@ export const ProductRelationshipsModal: React.FC<
       setIsLoading(true);
       setError(null);
 
-      console.log("Fetching product data for ID:", productId);
-      const response = await getProductsById(productId);
-      console.log("Product data received:", response);
+      const filters = {
+        product_id: productId,
+        start: 0,
+        max: 1,
+      };
 
-      setProductData(response);
+      const response = await getProductsWithPaginationAPI(0, 1, filters);
 
-      if (response.substitutes && Array.isArray(response.substitutes)) {
-        const convertedSubstitutes = response.substitutes.map(
-          convertToRelatedProduct
-        );
-        setSubstitutes(convertedSubstitutes);
-        console.log("Converted substitutes:", convertedSubstitutes);
-      }
+      if (response.success && response.products?.[0]) {
+        const productData = response.products[0];
 
-      if (response.similarProducts && Array.isArray(response.similarProducts)) {
-        const convertedSimilarProducts = response.similarProducts.map(
-          convertToRelatedProduct
-        );
-        setSimilarProducts(convertedSimilarProducts);
-        console.log("Converted similar products:", convertedSimilarProducts);
+        if (productData.substitutes && Array.isArray(productData.substitutes)) {
+          setSubstitutes(productData.substitutes);
+        }
+
+        if (
+          productData.similarProducts &&
+          Array.isArray(productData.similarProducts)
+        ) {
+          setSimilarProducts(productData.similarProducts);
+        }
+      } else {
+        setError("Product not found");
       }
     } catch (err) {
       console.error("Error fetching product data:", err);
@@ -198,108 +209,267 @@ export const ProductRelationshipsModal: React.FC<
     if (isOpen) {
       fetchProductData();
       searchAvailableProducts("");
+
+      setPendingChanges({
+        toAdd: { substitutes: [], similar: [] },
+        toRemove: { substitutes: [], similar: [] },
+      });
     }
   }, [isOpen, productId]);
 
   const getFilteredAvailableProducts = () => {
     const currentList =
       activeTab === "substitutes" ? substitutes : similarProducts;
-    const currentIds = currentList.map((p) => p.id);
+    const currentIds = currentList.map((p) => p.productId);
 
     return availableProductsList.filter(
-      (product) => !currentIds.includes(product.id) && product.id !== productId
+      (product) =>
+        !currentIds.includes(product.productId) &&
+        product.productId !== productId &&
+        !pendingChanges.toAdd[
+          activeTab === "substitutes" ? "substitutes" : "similar"
+        ].includes(product.productId)
     );
   };
 
-  const handleAddProduct = (product: RelatedProduct) => {
+  const handleAddProduct = (product: Product) => {
+    if (!relationTypes) {
+      toast.error("Relation types not loaded yet");
+      return;
+    }
+
+    const productIdToAdd = product.productId;
+    const tabType = activeTab === "substitutes" ? "substitutes" : "similar";
+
+    const isMarkedForRemoval =
+      pendingChanges.toRemove[tabType].includes(productIdToAdd);
+
+    if (isMarkedForRemoval) {
+      setPendingChanges((prev) => ({
+        ...prev,
+        toRemove: {
+          ...prev.toRemove,
+          [tabType]: prev.toRemove[tabType].filter(
+            (id) => id !== productIdToAdd
+          ),
+        },
+      }));
+    } else {
+      setPendingChanges((prev) => ({
+        ...prev,
+        toAdd: {
+          ...prev.toAdd,
+          [tabType]: [...prev.toAdd[tabType], productIdToAdd],
+        },
+      }));
+    }
+
     if (activeTab === "substitutes") {
       setSubstitutes((prev) => [...prev, product]);
-
-      setNewlyAddedSubstitutes((prev) => [...prev, product.id]);
-      toast.success(`Substitute "${product.name}" added`);
     } else {
       setSimilarProducts((prev) => [...prev, product]);
-      setNewlyAddedSimilarProducts((prev) => [...prev, product.id]);
-      toast.success(`Similiar "${product.name}" added`);
     }
+
+    toast.success(
+      `Added "${product.ProductName}" as ${
+        activeTab === "substitutes" ? "substitute" : "similar product"
+      }`
+    );
   };
-  const handleRemoveProduct = async (itemIdToRemove: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
 
-      const isNewlyAdded =
-        activeTab === "substitutes"
-          ? newlyAddedSubstitutes.includes(itemIdToRemove)
-          : newlyAddedSimilarProducts.includes(itemIdToRemove);
-
-      if (!isNewlyAdded) {
-        // Only call API for existing relationships
-        const relationshipType =
-          activeTab === "substitutes" ? "substitutes" : "similar-products";
-        console.log(productId, relationshipType, itemIdToRemove, "payload");
-        await removeProductRelationship(
-          productId,
-          relationshipType,
-          itemIdToRemove
-        );
-      }
-
-      if (activeTab === "substitutes") {
-        console.log(itemIdToRemove, "remove");
-        setSubstitutes((prev) => prev.filter((p) => p.id !== itemIdToRemove));
-        setNewlyAddedSubstitutes((prev) =>
-          prev.filter((id) => id !== itemIdToRemove)
-        );
-        toast.success("Substitute removed");
-      } else {
-        setSimilarProducts((prev) =>
-          prev.filter((p) => p.id !== itemIdToRemove)
-        );
-        setNewlyAddedSimilarProducts((prev) =>
-          prev.filter((id) => id !== itemIdToRemove)
-        );
-        toast.success("Similar product removed");
-      }
-    } catch (err) {
-      console.error("Error removing relationship:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to remove relationship"
-      );
-    } finally {
-      setIsLoading(false);
+  const handleRemoveProduct = (productIdToRemove: string) => {
+    if (!relationTypes) {
+      toast.error("Relation types not loaded yet");
+      return;
     }
+
+    const tabType = activeTab === "substitutes" ? "substitutes" : "similar";
+
+    const isMarkedForAddition =
+      pendingChanges.toAdd[tabType].includes(productIdToRemove);
+
+    if (isMarkedForAddition) {
+      setPendingChanges((prev) => ({
+        ...prev,
+        toAdd: {
+          ...prev.toAdd,
+          [tabType]: prev.toAdd[tabType].filter(
+            (id) => id !== productIdToRemove
+          ),
+        },
+      }));
+    } else {
+      setPendingChanges((prev) => ({
+        ...prev,
+        toRemove: {
+          ...prev.toRemove,
+          [tabType]: [...prev.toRemove[tabType], productIdToRemove],
+        },
+      }));
+    }
+
+    if (activeTab === "substitutes") {
+      setSubstitutes((prev) =>
+        prev.filter((p) => p.productId !== productIdToRemove)
+      );
+    } else {
+      setSimilarProducts((prev) =>
+        prev.filter((p) => p.productId !== productIdToRemove)
+      );
+    }
+
+    toast.success(
+      `${
+        activeTab === "substitutes" ? "Substitute" : "Similar product"
+      } removed`
+    );
   };
 
   const handleSaveChanges = async () => {
+    if (!relationTypes) {
+      toast.error("Relation types not loaded yet");
+      return;
+    }
+
+    if (!admin?.id) {
+      toast.error("User ID not found");
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
 
-      const relationshipsData = {
-        substitutes: substitutes.map((p) => p.id),
-        similarProducts: similarProducts.map((p) => p.id),
-      };
+      const allResults = [];
 
-      await updateProductRelationships(productId, relationshipsData);
+      if (pendingChanges.toAdd.substitutes.length > 0) {
+        const result = await manageProductRelations({
+          product_id: productId,
+          similar_ids: null,
+          substitute_ids: pendingChanges.toAdd.substitutes,
+          remove_relation_type_id: null,
+          remove_related_ids: null,
+          is_delete: false,
+        });
+        allResults.push({ type: "add-substitutes", result });
+      }
 
-      setNewlyAddedSubstitutes([]);
-      setNewlyAddedSimilarProducts([]);
+      if (pendingChanges.toAdd.similar.length > 0) {
+        const result = await manageProductRelations({
+          product_id: productId,
+          similar_ids: pendingChanges.toAdd.similar,
+          substitute_ids: null,
+          remove_relation_type_id: null,
+          remove_related_ids: null,
+          is_delete: false,
+        });
+        allResults.push({ type: "add-similar", result });
+      }
 
-      onSaveChanges({
-        substitutes: substitutes.map((p) => p.id),
-        similarProducts: similarProducts.map((p) => p.id),
-      });
+      if (pendingChanges.toRemove.substitutes.length > 0) {
+        const result = await manageProductRelations({
+          product_id: productId,
+          similar_ids: null,
+          substitute_ids: null,
+          remove_relation_type_id: relationTypes.substituteId,
+          remove_related_ids: pendingChanges.toRemove.substitutes,
+          is_delete: true,
+        });
+        allResults.push({ type: "remove-substitutes", result });
+      }
 
-      onClose();
+      if (pendingChanges.toRemove.similar.length > 0) {
+        const result = await manageProductRelations({
+          product_id: productId,
+          similar_ids: null,
+          substitute_ids: null,
+          remove_relation_type_id: relationTypes.similarId,
+          remove_related_ids: pendingChanges.toRemove.similar,
+          is_delete: true,
+        });
+        allResults.push({ type: "remove-similar", result });
+      }
+
+      const allSuccessful = allResults.every((item) => item.result.success);
+
+      if (allSuccessful) {
+        await fetchProductData();
+
+        const finalSubstitutes = substitutes.filter(
+          (p) => !pendingChanges.toRemove.substitutes.includes(p.productId)
+        );
+        const finalSimilar = similarProducts.filter(
+          (p) => !pendingChanges.toRemove.similar.includes(p.productId)
+        );
+
+        const relationshipsData = {
+          substitutes: finalSubstitutes.map((p) => p.productId),
+          similarProducts: finalSimilar.map((p) => p.productId),
+        };
+
+        onSaveChanges(relationshipsData);
+
+        clearProductCache();
+
+        setPendingChanges({
+          toAdd: { substitutes: [], similar: [] },
+          toRemove: { substitutes: [], similar: [] },
+        });
+
+        toast.success("Relationships saved successfully");
+
+        onClose();
+        onRefresh && onRefresh();
+      } else {
+        const failedResults = allResults.filter((item) => !item.result.success);
+        const errorMessages = failedResults.map((item) => {
+          switch (item.type) {
+            case "add-substitutes":
+              return `Failed to add substitutes: ${item.result.message}`;
+            case "add-similar":
+              return `Failed to add similar products: ${item.result.message}`;
+            case "remove-substitutes":
+              return `Failed to remove substitutes: ${item.result.message}`;
+            case "remove-similar":
+              return `Failed to remove similar products: ${item.result.message}`;
+            default:
+              return item.result.message;
+          }
+        });
+        toast.error(`Failed to save changes: ${errorMessages.join(", ")}`);
+      }
     } catch (err) {
       console.error("Error saving relationships:", err);
-      setError(
+      toast.error(
         err instanceof Error ? err.message : "Failed to save relationships"
       );
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const hasPendingChanges = () => {
+    return (
+      pendingChanges.toAdd.substitutes.length > 0 ||
+      pendingChanges.toRemove.substitutes.length > 0 ||
+      pendingChanges.toAdd.similar.length > 0 ||
+      pendingChanges.toRemove.similar.length > 0
+    );
+  };
+
+  const getPendingCountForCurrentTab = () => {
+    const tabType = activeTab === "substitutes" ? "substitutes" : "similar";
+    const additions = pendingChanges.toAdd[tabType].length;
+    const removals = pendingChanges.toRemove[tabType].length;
+
+    if (additions > 0 && removals > 0) {
+      return `(+${additions}, -${removals})`;
+    } else if (additions > 0) {
+      return `(+${additions})`;
+    } else if (removals > 0) {
+      return `(-${removals})`;
+    }
+    return "";
   };
 
   if (!isOpen) return null;
@@ -308,21 +478,21 @@ export const ProductRelationshipsModal: React.FC<
     activeTab === "substitutes" ? substitutes : similarProducts;
   const filteredAvailableProducts = getFilteredAvailableProducts();
 
-  console.log(filteredAvailableProducts);
-
-  console.log(currentList, "current List");
-
   return (
     <div
       className="fixed inset-0 flex items-center justify-center z-50 p-4"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >
       <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-[16px] font-medium text-[#161D1F]">
             Manage Product Relationships:
             <span className="text-[#0088B1]"> {productName}</span>
+            {hasPendingChanges() && (
+              <span className="ml-2 text-sm text-amber-600 font-normal">
+                (Unsaved changes)
+              </span>
+            )}
           </h2>
           <button
             onClick={onClose}
@@ -333,20 +503,6 @@ export const ProductRelationshipsModal: React.FC<
           </button>
         </div>
 
-        {/* Error Display */}
-        {/* {error && (
-          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{error}</p>
-            <button
-              onClick={() => setError(null)}
-              className="mt-2 text-xs text-red-500 hover:text-red-700"
-            >
-              Dismiss
-            </button>
-          </div>
-        )} */}
-
-        {/* Tabs */}
         <div className="flex bg-gray-200 rounded mx-6 mt-4">
           <button
             onClick={() => setActiveTab("substitutes")}
@@ -357,7 +513,7 @@ export const ProductRelationshipsModal: React.FC<
                 : "text-[#899193] hover:text-gray-700"
             }`}
           >
-            Substitutes ({substitutes.length})
+            Substitutes ({substitutes.length}) {getPendingCountForCurrentTab()}
           </button>
           <button
             onClick={() => setActiveTab("similar")}
@@ -368,46 +524,86 @@ export const ProductRelationshipsModal: React.FC<
                 : "text-[#899193] hover:text-gray-700"
             }`}
           >
-            Similar Products ({similarProducts.length})
+            Similar Products ({similarProducts.length}){" "}
+            {getPendingCountForCurrentTab()}
           </button>
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-          {/* Current Items Section */}
           <div className="mb-6">
-            <h3 className="text-[12px] font-medium text-[#161D1F] mb-4">
-              Current{" "}
-              {activeTab === "substitutes" ? "Substitutes" : "Similar Products"}
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[12px] font-medium text-[#161D1F]">
+                Current{" "}
+                {activeTab === "substitutes"
+                  ? "Substitutes"
+                  : "Similar Products"}
+              </h3>
+            </div>
 
             {currentList.length > 0 ? (
               <div className="space-y-3">
-                {currentList.map((product) => (
-                  <div
-                    key={product.id}
-                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-                  >
-                    <div>
-                      <div className="font-medium text-[14px] text-[#161D1F]">
-                        {product.name}
-                      </div>
-                      <div className="text-sm text-[#899193]">
-                        {product.code} | {product.manufacturer}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleRemoveProduct(product.id)}
-                      disabled={isLoading}
-                      className="p-2 text-[#EB5757] hover:bg-red-50 rounded-full disabled:opacity-50"
+                {currentList.map((product) => {
+                  const isPendingRemoval =
+                    activeTab === "substitutes"
+                      ? pendingChanges.toRemove.substitutes.includes(
+                          product.productId
+                        )
+                      : pendingChanges.toRemove.similar.includes(
+                          product.productId
+                        );
+                  const isPendingAddition =
+                    activeTab === "substitutes"
+                      ? pendingChanges.toAdd.substitutes.includes(
+                          product.productId
+                        )
+                      : pendingChanges.toAdd.similar.includes(
+                          product.productId
+                        );
+
+                  return (
+                    <div
+                      key={product.productId}
+                      className={`flex items-center justify-between p-4 border rounded-lg ${
+                        isPendingRemoval
+                          ? "border-red-200 bg-red-50"
+                          : isPendingAddition
+                          ? "border-green-200 bg-green-50"
+                          : "border-gray-200"
+                      }`}
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+                      <div>
+                        <div className="font-medium text-[14px] text-[#161D1F]">
+                          {product.ProductName}
+                          {isPendingRemoval && (
+                            <span className="ml-2 text-xs text-red-600">
+                              (Will be removed)
+                            </span>
+                          )}
+                          {isPendingAddition && (
+                            <span className="ml-2 text-xs text-green-600">
+                              (New)
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-[#899193]">
+                          {product.SKU || product.Type || "N/A"} |{" "}
+                          {product.ManufacturerName}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveProduct(product.productId)}
+                        disabled={isLoading}
+                        className="p-2 text-[#EB5757] hover:bg-red-100 rounded-full disabled:opacity-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-[12px] text-[#899193] py-8 text-center">
-                No
+                No{" "}
                 {activeTab === "substitutes"
                   ? "substitutes"
                   : "similar products"}{" "}
@@ -416,58 +612,83 @@ export const ProductRelationshipsModal: React.FC<
             )}
           </div>
 
-          {/* Add New Items Section */}
           <div>
             <h3 className="text-[12px] font-medium text-[#161D1F] mb-4">
-              Add
+              Add{" "}
               {activeTab === "substitutes" ? "Substitutes" : "Similar Products"}
             </h3>
 
-            {/* Search */}
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search products..."
+                placeholder="Search products by name, SKU, or manufacturer..."
                 value={searchQuery}
                 onChange={(e) => {
                   const value = e.target.value;
                   setSearchQuery(value);
                   searchAvailableProducts(value);
                 }}
-                disabled={isLoading}
-                className="w-full pl-10 pr-4 py-3 text-[#333] placeholder-[#B0B6B8] border border-gray-300 rounded-lg focus:ring-2  focus:border-transparent disabled:opacity-50"
+                disabled={isLoading || searchLoading}
+                className="w-full pl-10 pr-4 py-3 text-[#333] placeholder-[#B0B6B8] border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent disabled:opacity-50"
               />
             </div>
 
-            {/* Available Products */}
             <div className="space-y-3">
               {filteredAvailableProducts.length > 0 ? (
                 <>
-                  {filteredAvailableProducts.map((product) => (
-                    <div
-                      key={product.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-                    >
-                      <div>
-                        <div className="font-medium text-[14px] text-[#161D1F]">
-                          {product.name}
-                        </div>
-                        <div className="text-sm text-[#899193]">
-                          {product.code} | {product.manufacturer}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleAddProduct(product)}
-                        disabled={isLoading}
-                        className="px-4 py-2 text-[12px] text-[#0891B2] hover:bg-[#0891B2] hover:text-white border border-[#0891B2] rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        Add
-                      </button>
-                    </div>
-                  ))}
+                  {filteredAvailableProducts.map((product) => {
+                    const isPendingAddition =
+                      activeTab === "substitutes"
+                        ? pendingChanges.toAdd.substitutes.includes(
+                            product.productId
+                          )
+                        : pendingChanges.toAdd.similar.includes(
+                            product.productId
+                          );
 
-                  {/* Load More Button */}
+                    return (
+                      <div
+                        key={product.productId}
+                        className={`flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 ${
+                          isPendingAddition
+                            ? "border-green-200 bg-green-50"
+                            : "border-gray-200"
+                        }`}
+                      >
+                        <div>
+                          <div className="font-medium text-[14px] text-[#161D1F]">
+                            {product.ProductName}
+                            {isPendingAddition && (
+                              <span className="ml-2 text-xs text-green-600">
+                                (Will be added)
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm text-[#899193]">
+                            {product.SKU || product.Type || "N/A"} |{" "}
+                            {product.ManufacturerName}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Category: {product.Category} | Stock:{" "}
+                            {product.StockAvailableInInventory}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleAddProduct(product)}
+                          disabled={isLoading || isPendingAddition}
+                          className={`px-4 py-2 text-[12px] rounded-lg transition-colors disabled:opacity-50 ${
+                            isPendingAddition
+                              ? "text-green-600 border border-green-600 bg-green-50"
+                              : "text-[#0891B2] hover:bg-[#0891B2] hover:text-white border border-[#0891B2]"
+                          }`}
+                        >
+                          {isPendingAddition ? "Added" : "Add"}
+                        </button>
+                      </div>
+                    );
+                  })}
+
                   {pagination.hasMore && (
                     <div className="flex justify-center pt-4">
                       <button
@@ -518,7 +739,7 @@ export const ProductRelationshipsModal: React.FC<
           </button>
           <button
             onClick={handleSaveChanges}
-            disabled={isLoading}
+            disabled={isLoading || !hasPendingChanges()}
             className="px-6 py-2 text-[12px] font-medium text-white bg-[#0891B2] hover:bg-[#0891B2]/90 rounded-lg disabled:opacity-50 flex items-center gap-2"
           >
             {isLoading ? (
