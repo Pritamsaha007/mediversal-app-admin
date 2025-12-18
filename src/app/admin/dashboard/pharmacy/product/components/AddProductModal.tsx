@@ -39,7 +39,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   const [uploadingImages, setUploadingImages] = useState(false);
 
   const admin = useAdminStore((state) => state.admin);
-
+  console.log(productToEdit, "edit prod");
   useEffect(() => {
     if (isEditMode && productToEdit) {
       setFormData(productToEdit);
@@ -66,18 +66,18 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     HSN_Code: "",
     storageConditions: "",
     image_url: [],
-    // shelfLife: 0,
-    PrescriptionRequired: false,
+
+    PrescriptionRequired: "",
     featuredProduct: false,
     active: true,
     SafetyAdvices: "",
     StorageInstructions: "",
     productImage: null,
-    // New required fields
+
     ColdChain: "",
     GST: "",
-    admin_id: admin?.id || "", // Fixed from admin store, not shown in UI
-    // Additional backend fields
+    admin_id: admin?.id || "",
+
     DiscountedPrice: null,
     DiscountedPercentage: 0,
     productLength: 20,
@@ -114,8 +114,16 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     setImagePreviews((prev) => [...prev, ...previews]);
   };
   const removeImage = (index: number) => {
+    URL.revokeObjectURL(imagePreviews[index]);
     setSelectedImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      image_url: prev.image_url?.filter((_, i) => i !== index),
+    }));
   };
 
   const handleReset = () => {
@@ -139,8 +147,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       HSN_Code: "",
       storageConditions: "",
       image_url: [],
-      // shelfLife: 0,
-      PrescriptionRequired: false,
+      PrescriptionRequired: "",
       featuredProduct: false,
       active: true,
       SafetyAdvices: "",
@@ -158,8 +165,17 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       subCategoryType: "",
       Coupons: null,
     });
+
+    imagePreviews.forEach((preview) => {
+      if (preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    });
+
     setSelectedImages([]);
+    setImagePreviews([]);
   };
+
   const fileToBase64 = async (fileUri: string): Promise<string> => {
     try {
       const response = await fetch(fileUri);
@@ -215,10 +231,17 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               throw new Error("S3 bucket name is not configured properly.");
             }
 
+            const timestamp = Date.now();
+            const safeProductName = formData.ProductName.replace(
+              /[^a-zA-Z0-9]/g,
+              "_"
+            );
+            const fileName = `${safeProductName}_${timestamp}_${i}_${file.name}`;
+
             const uploadRequest = {
               bucketName,
-              folderPath: `products/${formData.ProductName}`,
-              fileName: `${file.name}`,
+              folderPath: `products/${safeProductName}`,
+              fileName: fileName,
               fileContent,
             };
 
@@ -255,69 +278,42 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 100
             )
           : 0;
+      console.log("DEBUG - PrescriptionRequired before submit:", {
+        value: formData.PrescriptionRequired,
+        type: typeof formData.PrescriptionRequired,
+        timestamp: new Date().toISOString(),
+      });
 
       if (isEditMode && onUpdateProduct) {
         const productJSON = {
           ...formData,
-          admin_id: admin?.id,
-          id: productToEdit?.id,
+          image_url: allImageUrls,
           DiscountedPercentage: discountPercentage,
           DiscountedPrice: formData.SellingPrice,
           status: formData.active ? "Active" : "Inactive",
-          image_url: allImageUrls,
         };
 
-        console.log("Product JSON for update:", productJSON);
+        console.log("Product data for update:", productJSON);
         onUpdateProduct(productJSON);
-        toast.success("Product updated successfully");
       } else {
-        console.log("=== SUBMITTING NEW PRODUCT ===");
-        console.log("Image URLs to send:", allImageUrls);
-        console.log("Form data structure:", {
+        const productData = {
           ...formData,
-          image_url: allImageUrls,
-        });
-
-        const completeProductData = {
-          ...formData,
-          admin_id: admin?.id,
+          image_url: uploadedImageUrls,
           DiscountedPercentage: discountPercentage,
           DiscountedPrice: formData.SellingPrice,
-          image_url: allImageUrls,
         };
 
-        console.log(
-          "Complete data being sent to addProductAPI:",
-          completeProductData
-        );
-
-        const result = await addProductAPI(completeProductData, allImageUrls);
-
-        console.log("API Response:", result);
-        onAddProduct(result);
-        toast.success("Product added successfully!");
+        console.log("Product data for add:", productData);
+        onAddProduct(productData);
       }
 
-      // Only reset if it's not edit mode (preserve data for editing)
       if (!isEditMode) {
         handleReset();
       }
       onClose();
     } catch (error: any) {
       console.error("Error in handleSubmit:", error);
-      console.error("Error details:", {
-        message: error.message,
-        stack: error.stack,
-        response: error.response?.data,
-      });
-
-      toast.error(
-        `Failed to ${isEditMode ? "update" : "add"} product: ${
-          error.message || "Please try again."
-        }`
-      );
-    } finally {
-      setUploadingImages(false);
+      toast.error("Failed to process product");
     }
   };
   if (!isOpen) return null;
@@ -327,40 +323,42 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       className="fixed inset-0 flex items-center justify-center z-50 p-4"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >
-      <div className="bg-white rounded-lg w-full max-w-3xl max-h-[80vh] overflow-y-scroll no-scrollbar ">
-        <div className="flex items-center justify-between p-4 top-0 sticky bg-white z-10">
-          <h2 className="text-[16px] font-semibold text-[#161D1F] ">
-            {isEditMode ? "Edit Product" : "Add New Product"}
-          </h2>
+      <div className="bg-white rounded-lg w-full max-w-3xl max-h-[80vh] flex flex-col">
+        <div className="sticky top-0 bg-white z-20">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <h2 className="text-[16px] font-semibold text-[#161D1F] ">
+              {isEditMode ? "Edit Product" : "Add New Product"}
+            </h2>
 
-          <button
-            onClick={onClose}
-            className="text-[#161D1F] hover:text-gray-600"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex p-1 bg-[#F8F8F8]">
-          {["Basic Information", "Product Details", "Settings"].map((tab) => (
             <button
-              key={tab}
-              onClick={() => {
-                setActiveTab(tab);
-                setTabAnimationKey((prev) => prev + 1);
-              }}
-              className={`px-6 py-2 text-[10px] font-medium transition-colors rounded-md ${
-                activeTab === tab
-                  ? "bg-[#0088B1] text-[F8F8F8] "
-                  : "text-[#161D1F] hover:text-gray-500 hover:bg-gray-50"
-              }`}
+              onClick={onClose}
+              className="text-[#161D1F] hover:text-gray-600"
             >
-              {tab}
+              <X className="w-4 h-4" />
             </button>
-          ))}
+          </div>
+
+          <div className="flex p-1 bg-[#F8F8F8] border-b border-gray-200">
+            {["Basic Information", "Product Details", "Settings"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setTabAnimationKey((prev) => prev + 1);
+                }}
+                className={`px-6 py-2 text-[10px] font-medium transition-colors rounded-md ${
+                  activeTab === tab
+                    ? "bg-[#0088B1] text-[F8F8F8] "
+                    : "text-[#161D1F] hover:text-gray-500 hover:bg-gray-50"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)] transition-all duration-300 ease-in-out">
+        <div className="flex-1 overflow-y-auto p-6">
           <div key={tabAnimationKey} className="animate-fade-in">
             {activeTab === "Basic Information" && (
               <BasicInformationTab
@@ -382,6 +380,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 imagePreviews={imagePreviews}
                 onImageChange={handleImageChange}
                 onRemoveImage={removeImage}
+                onRemoveExistingImage={removeExistingImage}
                 onDrop={(files) => {
                   const newFiles = Array.from(files);
                   setSelectedImages((prev) => [...prev, ...newFiles]);
@@ -407,39 +406,42 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
-          <button
-            onClick={handleReset}
-            className="px-4 py-3 text-[10px] text-[#161D1F] hover:text-gray-900"
-          >
-            Reset
-          </button>
+        <div className="sticky bottom-0 bg-white border-t border-gray-200">
+          <div className="flex items-center justify-end gap-3 p-6">
+            <button
+              onClick={handleReset}
+              className="px-4 py-3 text-[10px] text-[#161D1F] hover:text-gray-900"
+            >
+              Reset
+            </button>
 
-          {activeTab !== "Settings" ? (
-            <button
-              onClick={() => {
-                if (activeTab === "Basic Information")
-                  setActiveTab("Product Details");
-                else if (activeTab === "Product Details")
-                  setActiveTab("Settings");
-                setTabAnimationKey((prev) => prev + 1);
-              }}
-              className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[10px] rounded-lg hover:bg-[#00729A]"
-            >
-              Next
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
-              className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[10px] rounded-lg hover:bg-[#00729A]"
-            >
-              {uploadingImages
-                ? "Uploading Images..."
-                : isEditMode
-                ? "Update Product"
-                : "Add Product"}
-            </button>
-          )}
+            {activeTab !== "Settings" ? (
+              <button
+                onClick={() => {
+                  if (activeTab === "Basic Information")
+                    setActiveTab("Product Details");
+                  else if (activeTab === "Product Details")
+                    setActiveTab("Settings");
+                  setTabAnimationKey((prev) => prev + 1);
+                }}
+                className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[10px] rounded-lg hover:bg-[#00729A]"
+              >
+                Next
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={uploadingImages}
+                className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[10px] rounded-lg hover:bg-[#00729A] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {uploadingImages
+                  ? "Saving..."
+                  : isEditMode
+                  ? "Update Product"
+                  : "Add Product"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

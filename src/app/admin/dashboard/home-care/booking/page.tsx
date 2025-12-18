@@ -368,7 +368,7 @@ const BookingManagement: React.FC = () => {
             />
           </div>
 
-          <div className="relative">
+          {/* <div className="relative">
             <button
               onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
               className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors min-w-[150px] justify-between"
@@ -406,7 +406,7 @@ const BookingManagement: React.FC = () => {
             >
               Apply
             </button>
-          </div>
+          </div> */}
         </div>
 
         <div className="mb-6">

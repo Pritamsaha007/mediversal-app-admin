@@ -13,17 +13,11 @@ import {
   BarChart3,
   RefreshCw,
   LogOut,
-  Wind,
   User,
-  Info,
-  Thermometer,
-  Droplets,
 } from "lucide-react";
 import { useAdminStore } from "@/app/store/adminStore";
-import dashboardService, {
-  ProductStatistics,
-} from "./service/dashboardApiClient";
-// import aqiService, { AQIData } from "./service/aqiService";
+import { getProductsWithPaginationAPI } from "../pharmacy/product/services/ProductService";
+import { Statistics } from "../pharmacy/product/types/product";
 
 interface StatCardProps {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
@@ -95,18 +89,17 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
 );
 
 export default function HealthcareDashboard() {
-  const [statistics, setStatistics] = useState<ProductStatistics | null>(null);
+  const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { admin, logout, isLoggedIn } = useAdminStore();
-  // const [aqiData, setAqiData] = useState<AQIData | null>(null);
   const [aqiLoading, setAqiLoading] = useState(true);
   const [locationPermission, setLocationPermission] = useState<string | null>(
     null
   );
 
   const fetchData = async () => {
-    if (!dashboardService.isAuthenticated()) {
+    if (!isLoggedIn) {
       setError("Please log in to view dashboard data");
       setLoading(false);
       return;
@@ -115,29 +108,30 @@ export default function HealthcareDashboard() {
     try {
       setLoading(true);
       setError(null);
-      // add below for "const [stats, aqi]" for aqi
-      const [stats] = await Promise.all([
-        dashboardService.getProductStatistics(),
-        // aqiService
-        //   .getAQI()
-        //   .then((data) => {
-        //     if (data.isDefaultLocation) {
-        //       setLocationPermission(
-        //         "Using default location. Enable location access for your area."
-        //       );
-        //     } else {
-        //       setLocationPermission(null);
-        //     }
-        //     return data;
-        //   })
-        //   .catch((err) => {
-        //     console.error("AQI fetch error:", err);
-        //     return null;
-        //   }),
-      ]);
 
-      setStatistics(stats);
-      // setAqiData(aqi);
+      const response = await getProductsWithPaginationAPI(0, 5, {});
+
+      if (!response.success) {
+        throw new Error("Failed to fetch statistics");
+      }
+
+      if (!response.statistics || response.statistics.length === 0) {
+        throw new Error("No statistics data received");
+      }
+
+      const stats = response.statistics[0];
+
+      const productStatistics: Statistics = {
+        activeproducts: stats.activeproducts,
+        inactiveproducts: stats.inactiveproducts,
+        instockproducts: stats.instockproducts,
+        outofstockproducts: stats.outofstockproducts,
+        featuredproducts: stats.featuredproducts,
+        nonfeaturedproducts: stats.nonfeaturedproducts,
+        totalcategories: stats.totalcategories,
+      };
+
+      setStatistics(productStatistics);
     } catch (err) {
       console.error("Dashboard fetch error:", err);
       setError(
@@ -195,13 +189,6 @@ export default function HealthcareDashboard() {
         "Connect with certified doctors through secure video calls for medical advice and prescriptions.",
       color: "#059669",
     },
-    // {
-    //   icon: Shield,
-    //   title: "Elder Care",
-    //   description:
-    //     "Specialized healthcare services designed for senior citizens with dedicated care coordinators.",
-    //   color: "#EA580C",
-    // },
   ];
 
   // Show login required message if not authenticated
@@ -260,7 +247,6 @@ export default function HealthcareDashboard() {
           </div>
         </div>
 
-        {/* Error State */}
         {error && (
           <div className="mb-2 p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center">
@@ -281,7 +267,6 @@ export default function HealthcareDashboard() {
           </div>
         )}
 
-        {/* Statistics */}
         {!error && (
           <>
             <div className="mb-4">
@@ -292,36 +277,50 @@ export default function HealthcareDashboard() {
                 <StatCard
                   icon={Package}
                   title="Active Products"
-                  value={statistics?.activeProducts}
+                  value={
+                    statistics?.activeproducts
+                      ? Number(statistics.activeproducts)
+                      : undefined
+                  }
                   color="#0088B1"
                   isLoading={loading}
                 />
                 <StatCard
                   icon={CheckCircle}
                   title="In Stock"
-                  value={statistics?.inStockProducts}
+                  value={
+                    statistics?.instockproducts
+                      ? Number(statistics.instockproducts)
+                      : undefined
+                  }
                   color="#22C55E"
                   isLoading={loading}
                 />
                 <StatCard
                   icon={Star}
                   title="Featured"
-                  value={statistics?.featuredProducts}
+                  value={
+                    statistics?.featuredproducts
+                      ? Number(statistics.featuredproducts)
+                      : undefined
+                  }
                   color="#F59E0B"
                   isLoading={loading}
                 />
                 <StatCard
                   icon={BarChart3}
                   title="Categories"
-                  value={statistics?.totalCategories}
+                  value={
+                    statistics?.totalcategories
+                      ? Number(statistics.totalcategories)
+                      : undefined
+                  }
                   color="#8B5CF6"
                   isLoading={loading}
                 />
               </div>
-            </div>
-
-            {/* Air Quality Index */}
-            {/* {!error && (
+              {/* Air Quality Index */}
+              {/* {!error && (
               <div className="mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 mb-2">
                   Air Quality - {aqiData?.city || "Loading..."}
@@ -458,8 +457,8 @@ export default function HealthcareDashboard() {
                 )}
               </div>
             )} */}
+            </div>
 
-            {/* Services */}
             <div className="mb-4">
               <h2 className="text-lg font-semibold text-gray-900 mb-2">
                 Our Services
@@ -479,7 +478,6 @@ export default function HealthcareDashboard() {
           </>
         )}
 
-        {/* Footer */}
         {!error && statistics && (
           <div className="text-center text-sm text-gray-500">
             <div className="inline-flex items-center space-x-2">

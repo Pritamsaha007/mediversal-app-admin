@@ -103,6 +103,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               order_status: "CANCELLED",
               rider_staff_id: "",
               rider_delivery_status_id: "",
+              cancellation_reason: cancellationReason,
             };
             console.log("local");
             response = await updateOrderRiderInfo(payload, token);

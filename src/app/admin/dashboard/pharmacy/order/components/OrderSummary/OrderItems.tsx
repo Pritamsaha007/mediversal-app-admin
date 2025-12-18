@@ -11,9 +11,9 @@ const OrderItems: React.FC<OrderItemsProps> = ({ order }) => {
   const { products } = useProductStore();
 
   const isPrescriptionRequired = (productId: Number) => {
-    const product = products.find((p) => Number(p.id) === productId);
+    const product = products.find((p) => Number(p.productId) === productId);
     console.log(product);
-    return product?.prescriptionRequired || false;
+    return product?.PrescriptionRequired || false;
   };
 
   return (

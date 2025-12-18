@@ -19,8 +19,8 @@ export const sortOptions = [
   "ProductName - Z to A",
   "SellingPrice - Low to High",
   "SellingPrice - High to Low",
-  "Stock Available - High to Low",
-  "Stock Available - Low to High",
+  // "Stock Available - High to Low",
+  // "Stock Available - Low to High",
 ];
 
 export const tabs = [
