@@ -261,7 +261,7 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
         )}
       </div>
 
-      <div className="bg-[#FFFBEA] border border-[#F59E0B] rounded-lg p-4">
+      {/* <div className="bg-[#FFFBEA] border border-[#F59E0B] rounded-lg p-4">
         <div className="flex gap-2">
           <span className="text-[#F59E0B] text-lg">💡</span>
           <div>
@@ -275,7 +275,7 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

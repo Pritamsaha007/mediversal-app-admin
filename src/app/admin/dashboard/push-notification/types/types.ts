@@ -11,7 +11,7 @@ export interface Notification {
   targeted_user_group_value: string;
   message_title: string;
   message_body: string;
-  app_uri: string;
+  app_uri?: string;
   image_url: string;
   schedule_id: string;
   frequency_type_id: string;
@@ -95,7 +95,7 @@ export interface CreateNotificationPayload {
   targeted_users_id: string;
   message_title: string;
   message_body: string;
-  app_uri: string;
+  app_uri?: string;
   image_url: string;
   schedule_id?: string | null;
   frequency_type_id: string;
@@ -116,7 +116,7 @@ export interface NotificationFormData {
   targetUserGroup: string;
   targetUserGroupId: string;
   selectedCustomer: Customer | null;
-  appUri: string;
+  appUri?: string;
   imageFile: File | null;
   imageUrl: string;
   frequencyType: string;

@@ -184,11 +184,11 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
               <div className="text-[12px] font-medium text-[#161D1F] mb-2">
                 Image
               </div>
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="rounded-lg p-2 border border-gray-200">
                 <img
                   src={notification.image_url}
                   alt="Notification"
-                  className="max-w-full h-auto rounded-lg"
+                  className="w-full h-[300px] object-cover"
                 />
               </div>
             </div>

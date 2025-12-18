@@ -138,7 +138,7 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
       targetUserGroup: notification.targeted_user_group_value,
       targetUserGroupId: notification.targeted_users_id,
       selectedCustomer: null,
-      appUri: notification.app_uri,
+      appUri: notification.app_uri || "",
       imageFile: null,
       imageUrl: notification.image_url,
       frequencyType: notification.frequency_value,
@@ -191,12 +191,6 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
       return false;
     }
 
-    if (!formData.appUri.trim()) {
-      toast.error("Please enter a feature URI");
-      setActiveTab("documents");
-      return false;
-    }
-
     if (!formData.startDate) {
       toast.error("Please select a start date");
       setActiveTab("frequency");
@@ -244,7 +238,7 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
       targeted_users_id: isUnicast ? "" : formData.targetUserGroupId,
       message_title: formData.title,
       message_body: formData.message,
-      app_uri: formData.appUri,
+      ...(formData.appUri?.trim() && { app_uri: formData.appUri.trim() }),
       image_url: formData.imageUrl,
       schedule_id: editNotification?.schedule_id || null,
       frequency_type_id: formData.frequencyTypeId,
@@ -314,7 +308,7 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
       );
     }
     if (activeTab === "documents") {
-      return formData.appUri.trim() !== "";
+      return true;
     }
     return true;
   };

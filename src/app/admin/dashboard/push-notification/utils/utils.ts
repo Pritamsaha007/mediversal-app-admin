@@ -53,7 +53,7 @@ export const getUserGroupColor = (userGroup: string): string => {
 };
 
 export const formatUserGroup = (userGroup?: string | null): string => {
-  if (!userGroup) return "N/A";
+  if (!userGroup) return "Single Users";
 
   return userGroup
     .split("_")

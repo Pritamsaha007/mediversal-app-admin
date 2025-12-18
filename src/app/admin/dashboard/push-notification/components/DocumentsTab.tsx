@@ -39,8 +39,9 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
     <div className="space-y-4">
       <div>
         <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
-          <span className="text-red-500">*</span> Add feature URI
+          Add URL <span className="text-[#899193]">(optional)</span>
         </label>
+
         <div className="relative">
           <input
             type="text"
@@ -93,7 +94,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
         )}
       </div>
 
-      <div className="bg-[#FFFBEA] border border-[#F59E0B] rounded-lg p-4">
+      {/* <div className="bg-[#FFFBEA] border border-[#F59E0B] rounded-lg p-4">
         <div className="flex gap-2">
           <span className="text-[#F59E0B] text-lg">💡</span>
           <div>
@@ -107,7 +108,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
