@@ -855,7 +855,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                               <img
                                 src={URL.createObjectURL(formData.image)}
                                 alt="Hospital preview"
-                                className="w-48 h-32 object-cover rounded-lg border-2 border-gray-200 mb-3"
+                                className="w-42 h-42 object-cover rounded-full border-2 border-gray-200 mb-3"
                               />
                               <button
                                 type="button"
@@ -873,7 +873,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                               <img
                                 src={formData.image as string}
                                 alt="Hospital preview"
-                                className="w-48 h-32 object-cover rounded-lg border-2 border-gray-200 mb-3"
+                                className="w-42 h-42 object-cover rounded-full border-2 border-gray-200 mb-3"
                               />
                               <button
                                 type="button"
