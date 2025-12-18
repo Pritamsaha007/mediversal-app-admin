@@ -220,10 +220,9 @@ const Notifications: React.FC = () => {
               </span>
             </h3>
           </div>
-
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[calc(100vh-400px)] overflow-y-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Notification ID

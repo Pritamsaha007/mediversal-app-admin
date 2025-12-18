@@ -101,7 +101,7 @@ const NotificationPreview: React.FC<NotificationPreviewProps> = ({
         <div className="space-y-2">
           <div className="bg-white rounded-t-[40px] shadow-2xl overflow-hidden relative">
             {/* Notch */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-8 bg-gray-500 rounded-b-3xl z-20" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-6 bg-gray-500 rounded-b-2xl z-20" />
 
             {/* Notification Card */}
             <div className="bg-gray-100 px-2 pb-1 pt-10">
