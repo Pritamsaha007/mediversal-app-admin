@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import StatusBadge from "../../../../components/common/StatusBadge";
 import StatsCard from "../../../../components/common/StatsCard";
 import ManageOfferingsModal from "./components/ManageOfferingsModal";
@@ -89,8 +89,7 @@ interface ServiceStats {
 const Services: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
-  const [services, setServices] = useState<Service[]>([]);
-  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
+  const [allServices, setAllServices] = useState<Service[]>([]);
   const [openDropdown, setOpenDropdown] = useState<null | "status">(null);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [serviceActionDropdown, setServiceActionDropdown] = useState<
@@ -108,11 +107,25 @@ const Services: React.FC = () => {
 
   const statusOptions = ["All Status", "Active", "Inactive"];
 
-  // Generate stats
-  const generateStats = (): ServiceStats => {
-    const totalServices = services.length;
-    const activeServices = services.filter((s) => s.status === "Active").length;
-    const totalOfferings = services.reduce((acc, service) => {
+  // Derived filtered services - No separate state needed
+  const filteredServices = useMemo(() => {
+    return allServices.filter((service) => {
+      const matchesSearch = service.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesStatus =
+        selectedStatus === "All Status" || service.status === selectedStatus;
+      return matchesSearch && matchesStatus;
+    });
+  }, [allServices, searchTerm, selectedStatus]);
+
+  // Generate stats from allServices
+  const stats: ServiceStats = useMemo(() => {
+    const totalServices = allServices.length;
+    const activeServices = allServices.filter(
+      (s) => s.status === "Active"
+    ).length;
+    const totalOfferings = allServices.reduce((acc, service) => {
       return acc + service.offerings.length;
     }, 0);
 
@@ -121,10 +134,8 @@ const Services: React.FC = () => {
       activeServices,
       totalOfferings,
     };
-  };
-  const stats = generateStats();
+  }, [allServices]);
 
-  // API fetch function
   const fetchServices = async () => {
     if (!isLoggedIn || !token) {
       toast.error("Please login to access services");
@@ -142,14 +153,15 @@ const Services: React.FC = () => {
         token
       );
 
-      console.log(response.services, "services");
-
       if (response.success) {
         const transformedServices = response.services.map(
           transformHomecareServiceToService
         );
-        setServices(transformedServices);
-        setFilteredServices(transformedServices);
+
+        setTimeout(() => {
+          setAllServices(transformedServices);
+          setLoading(false);
+        }, 0);
       } else {
         throw new Error("Failed to fetch services");
       }
@@ -157,17 +169,14 @@ const Services: React.FC = () => {
       console.error("Error fetching services:", err);
       const errorMessage = err.message || "Failed to fetch services";
       toast.error(errorMessage);
-    } finally {
       setLoading(false);
     }
   };
-  console.log(services, "new transformed");
   useEffect(() => {
     if (isLoggedIn && token) {
       fetchServices();
     } else {
-      setServices([]);
-      setFilteredServices([]);
+      setAllServices([]);
       if (!isLoggedIn) {
         toast.error("Please login to access services");
       }
@@ -261,15 +270,15 @@ const Services: React.FC = () => {
       setSelectedServices(selectedServices.filter((id) => id !== serviceId));
     }
   };
+
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedServices(
-        filteredServices.map((service) => service.id.toString())
-      );
+      setSelectedServices(filteredServices.map((service) => service.id));
     } else {
       setSelectedServices([]);
     }
   };
+
   const handleServiceAction = async (action: string, service: Service) => {
     setServiceActionDropdown(null);
 
@@ -340,11 +349,13 @@ const Services: React.FC = () => {
     await fetchServices();
     toast.success("Service list updated!");
   };
+
   const handleUpdateService = async (updatedService: Service) => {
     await fetchServices();
     setEditingService(null);
     toast.success("Service updated successfully!");
   };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -431,37 +442,6 @@ const Services: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
-          {/* <div className="flex gap-3">
-      
-            <div className="relative">
-              <button
-                onClick={() =>
-                  setOpenDropdown(openDropdown === "status" ? null : "status")
-                }
-                className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-3 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
-              >
-                {selectedStatus}
-                <ChevronDown className="w-5 h-5" />
-              </button>
-              {openDropdown === "status" && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                  {statusOptions.map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusChange(status)}
-                      className={`block w-full px-4 py-2 text-xs text-left hover:bg-gray-100 ${
-                        selectedStatus === status
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-[#161D1F]"
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div> */}
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -505,7 +485,6 @@ const Services: React.FC = () => {
                   <tr>
                     <td colSpan={4} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
-                      {/* <div className="text-gray-500">Loading services...</div> */}
                     </td>
                   </tr>
                 ) : filteredServices.length === 0 ? (

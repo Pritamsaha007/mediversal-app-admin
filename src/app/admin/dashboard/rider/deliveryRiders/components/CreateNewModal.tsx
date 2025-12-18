@@ -128,6 +128,26 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
     };
   }, [showPincodeDropdown]);
 
+  const handleRemoveLicenseImage = () => {
+    if (licensePreview) {
+      if (licensePreview.startsWith("blob:")) {
+        URL.revokeObjectURL(licensePreview);
+      }
+      setLicensePreview("");
+      setLicenseImage(null);
+    }
+  };
+
+  const handleRemoveProfileImage = () => {
+    if (profilePreview) {
+      if (profilePreview.startsWith("blob:")) {
+        URL.revokeObjectURL(profilePreview);
+      }
+      setProfilePreview("");
+      setProfileImage(null);
+    }
+  };
+
   const loadServiceCities = async () => {
     if (!token) return;
 
@@ -267,6 +287,13 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
       is_available: true,
       is_POI_verified: false,
     });
+    // Clean up image previews properly
+    if (licensePreview && licensePreview.startsWith("blob:")) {
+      URL.revokeObjectURL(licensePreview);
+    }
+    if (profilePreview && profilePreview.startsWith("blob:")) {
+      URL.revokeObjectURL(profilePreview);
+    }
     setLicensePreview("");
     setProfilePreview("");
     setLicenseImage(null);
@@ -410,10 +437,18 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
       let licenseImageUrl = editRider?.license_image_url || "";
       let profileImageUrl = editRider?.profile_image_url || "";
 
+      // Handle removed images - if preview is cleared, set empty string
+      if (!licensePreview && editRider?.license_image_url) {
+        licenseImageUrl = "";
+      }
+      if (!profilePreview && editRider?.profile_image_url) {
+        profileImageUrl = "";
+      }
+
+      // Upload new images if selected
       if (licenseImage) {
         licenseImageUrl = await uploadImageToServer(licenseImage, "licenses");
       }
-
       if (profileImage) {
         profileImageUrl = await uploadImageToServer(profileImage, "profiles");
       }
@@ -775,7 +810,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
                   <label className="block text-xs font-medium text-[#161D1F] mb-3">
                     Profile Photo
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#0088B1] transition-colors h-full">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#0088B1] transition-colors h-full relative">
                     {profilePreview ? (
                       <div className="flex flex-col items-center justify-center h-full">
                         <img
@@ -786,6 +821,23 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
                         <p className="text-xs text-gray-600 mb-2">
                           Profile photo uploaded
                         </p>
+                        <div className="flex gap-2 mt-2">
+                          <label
+                            htmlFor="profile-upload"
+                            className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 cursor-pointer transition-colors"
+                          >
+                            <Upload className="w-3 h-3 mr-1" />
+                            Change
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleRemoveProfileImage}
+                            className="inline-flex items-center px-3 py-1 bg-red-50 text-red-600 text-xs font-medium rounded-lg hover:bg-red-100 cursor-pointer transition-colors"
+                          >
+                            <X className="w-3 h-3 mr-1" />
+                            Remove
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center h-full">
@@ -806,13 +858,15 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
                       id="profile-upload"
                       accept="image/*"
                     />
-                    <label
-                      htmlFor="profile-upload"
-                      className="inline-flex items-center px-4 py-2 bg-[#0088B1] text-white text-xs font-medium rounded-lg hover:bg-[#00729A] cursor-pointer transition-colors"
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      Select File
-                    </label>
+                    {!profilePreview && (
+                      <label
+                        htmlFor="profile-upload"
+                        className="inline-flex items-center px-4 py-2 bg-[#0088B1] text-white text-xs font-medium rounded-lg hover:bg-[#00729A] cursor-pointer transition-colors"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Select File
+                      </label>
+                    )}
                   </div>
                 </div>
 
@@ -820,7 +874,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
                   <label className="block text-xs font-medium text-[#161D1F] mb-3">
                     Driving License
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#0088B1] transition-colors h-full">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#0088B1] transition-colors h-full relative">
                     {licensePreview ? (
                       <div className="flex flex-col items-center justify-center h-full">
                         <img
@@ -831,6 +885,23 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
                         <p className="text-xs text-gray-600 mb-2">
                           License uploaded
                         </p>
+                        <div className="flex gap-2 mt-2">
+                          <label
+                            htmlFor="license-upload"
+                            className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 cursor-pointer transition-colors"
+                          >
+                            <Upload className="w-3 h-3 mr-1" />
+                            Change
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleRemoveLicenseImage}
+                            className="inline-flex items-center px-3 py-1 bg-red-50 text-red-600 text-xs font-medium rounded-lg hover:bg-red-100 cursor-pointer transition-colors"
+                          >
+                            <X className="w-3 h-3 mr-1" />
+                            Remove
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center h-full">
@@ -851,13 +922,15 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
                       id="license-upload"
                       accept="image/*,.pdf"
                     />
-                    <label
-                      htmlFor="license-upload"
-                      className="inline-flex items-center px-4 py-2 bg-[#0088B1] text-white text-xs font-medium rounded-lg hover:bg-[#00729A] cursor-pointer transition-colors"
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      Select File
-                    </label>
+                    {!licensePreview && (
+                      <label
+                        htmlFor="license-upload"
+                        className="inline-flex items-center px-4 py-2 bg-[#0088B1] text-white text-xs font-medium rounded-lg hover:bg-[#00729A] cursor-pointer transition-colors"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Select File
+                      </label>
+                    )}
                   </div>
                 </div>
               </div>

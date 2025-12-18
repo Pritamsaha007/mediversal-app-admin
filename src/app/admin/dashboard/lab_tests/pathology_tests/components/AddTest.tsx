@@ -470,7 +470,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 <img
                   src={imagePreview}
                   alt="Test preview"
-                  className="w-48 h-32 object-contain border border-gray-200 rounded-lg"
+                  className="w-42 h-42 object-contain border border-gray-200 rounded-full"
                 />
                 <button
                   type="button"
