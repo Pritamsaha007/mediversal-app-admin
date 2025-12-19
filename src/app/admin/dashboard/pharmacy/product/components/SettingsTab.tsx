@@ -151,7 +151,7 @@ export const SettingsTab = ({
             )}
           </div>
         </div>
-        <div>
+        {/* <div>
           <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
             Storage Conditions
           </label>
@@ -186,7 +186,7 @@ export const SettingsTab = ({
               </div>
             )}
           </div>
-        </div>
+        </div> */}
       </div>
 
       <div className="space-y-3">
@@ -200,11 +200,14 @@ export const SettingsTab = ({
           <div className="flex items-start space-x-3 ">
             <input
               type="checkbox"
-              checked={formData.PrescriptionRequired}
+              checked={formData.PrescriptionRequired === "Yes"}
               onChange={(e) =>
-                onInputChange("PrescriptionRequired", e.target.checked)
+                onInputChange(
+                  "PrescriptionRequired",
+                  e.target.checked ? "Yes" : "No"
+                )
               }
-              className="mt-0.5"
+              className="mt-0.5 accent-[#0088B1]"
             />
             <div>
               <div className="font-medium text-[10px] text-[#161D1F]">
@@ -230,7 +233,7 @@ export const SettingsTab = ({
               onChange={(e) =>
                 onInputChange("featuredProduct", e.target.checked)
               }
-              className="mt-0.5"
+              className="mt-0.5 accent-[#0088B1]"
             />
             <div>
               <div className="font-medium text-[10px] text-[#161D1F]">

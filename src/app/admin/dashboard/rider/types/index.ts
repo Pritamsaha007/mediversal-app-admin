@@ -153,6 +153,7 @@ export interface UpdateRiderInfoPayload {
   order_status?: string;
   rider_staff_id: string;
   rider_delivery_status_id: string;
+  cancellation_reason?: string;
 }
 
 export interface UpdateRiderInfoResponse {

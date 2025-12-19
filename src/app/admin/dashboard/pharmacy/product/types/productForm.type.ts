@@ -26,11 +26,11 @@ export interface ProductFormData {
   HSN_Code: string;
   storageConditions: string;
   // shelfLife: number;
-  PrescriptionRequired: boolean;
+  PrescriptionRequired: string;
   featuredProduct: boolean;
   active: boolean;
   ColdChain: string;
-  GST: string;
+  GST: string | number;
   admin_id: string;
   image_url: string[];
   productLength?: number;

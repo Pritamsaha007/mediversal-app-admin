@@ -4,7 +4,6 @@ import {
   getConsultations,
   getConsultationEnumData,
   updateConsultationStatus,
-  getEnumData,
 } from "./service";
 
 import {
@@ -28,6 +27,7 @@ import VideoCallModal from "./components/VideoCallModal";
 import { ConsultationAPI } from "./types";
 import Pagination from "../../../../components/common/pagination";
 import StatsCard from "@/app/components/common/StatsCard";
+import { EnumCodes, fetchEnums } from "@/app/service/enumService";
 
 const ConsultationTypeBadge: React.FC<{ type: string }> = ({ type }) => {
   return (
@@ -175,7 +175,7 @@ const Consultations: React.FC = () => {
 
   const fetchConsultationStatuses = async () => {
     try {
-      const response = await getEnumData("ORDER_STATUS", token);
+      const response = await fetchEnums(EnumCodes.ORDER_STATUS, token);
       if (response) {
         const relevantStatuses = response.roles.filter(
           (status: ConsultationStatusEnum) =>

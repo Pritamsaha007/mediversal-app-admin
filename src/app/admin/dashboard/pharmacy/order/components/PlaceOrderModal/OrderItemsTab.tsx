@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Plus, Trash2, Search, X } from "lucide-react";
-import { getProductsWithPagination } from "../../../../pharmacy/product/services/ProductService";
+import { getProductsWithPaginationAPI } from "../../../../pharmacy/product/services/ProductService";
 import { useAdminStore } from "@/app/store/adminStore";
 import { CreateOrderItem, OrderItem, Product } from "../../types/types";
 import Image from "next/image";
@@ -89,22 +89,30 @@ const OrderItemsTab: React.FC = () => {
           return;
         }
 
-        const response = await getProductsWithPagination(
+        const response = await getProductsWithPaginationAPI(
           (page - 1) * pageSize,
           pageSize,
-          currentToken,
+
           {
             searchTerm: term.trim(),
           }
         );
 
-        if (response.data?.products) {
+        if (response.products) {
+          const transformedProducts = response.products.map((product: any) => ({
+            ...product,
+            description: product.description || "",
+            quantity: product.quantity || 0,
+            delivery: product.delivery || 0,
+            discountPercentage: product.discountPercentage || 0,
+          }));
+          
           if (page === 1) {
-            setSearchResults(response.data.products);
+            setSearchResults(transformedProducts);
           } else {
-            setSearchResults((prev) => [...prev, ...response.data.products]);
+            setSearchResults((prev) => [...prev, ...transformedProducts]);
           }
-          setHasMoreSearch(response.data.products.length === pageSize);
+          setHasMoreSearch(response.products.length === pageSize);
         } else {
           if (page === 1) {
             setSearchResults([]);

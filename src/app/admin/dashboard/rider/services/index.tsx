@@ -13,10 +13,10 @@ import {
   UpdateRiderInfoPayload,
   UpdateRiderInfoResponse,
 } from "../types";
+import { EnumCodes, EnumResponse, fetchEnums } from "@/app/service/enumService";
 
 const RIDER_API_BASE_URL = process.env.NEXT_PUBLIC_HOMECARE_API_BASE_URL;
 
-// Get stats from response if available
 export const getRidersStats = (riders: DeliveryRider[]) => {
   const activeRiders = riders.filter(
     (r) => r.is_available_status === "active" && !r.is_deleted
@@ -72,7 +72,6 @@ export const searchRider = async (
     );
 
     if (response.data.success) {
-      // Convert API response to DeliveryRider interface
       const riders = response.data.riders;
       return riders;
     }
@@ -160,48 +159,7 @@ export const getRiderById = async (
     throw new Error(error.response?.data?.message || "Failed to fetch rider");
   }
 };
-export interface EnumItem {
-  id: string;
-  slno: number;
-  code: string;
-  value: string;
-  description: string | null;
-  metadata: any | null;
-}
 
-export interface EnumResponse {
-  success: boolean;
-  roles: EnumItem[];
-}
-
-export enum EnumCodes {
-  SERVICE_CITY = "SERVICE_CITY",
-  DELIVERY_VEHICLE_TYPE = "DELIVERY_VEHICLE_TYPE",
-  RIDER_DELIVERY_STATUS = "RIDER_DELIVERY_STATUS",
-}
-
-export async function fetchEnums(
-  code: EnumCodes,
-  token: string
-): Promise<EnumResponse> {
-  const response = await fetch(`${RIDER_API_BASE_URL}/api/lookup/enums`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ code }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData?.message || `HTTP error! status: ${response.status}`
-    );
-  }
-
-  return await response.json();
-}
 export const fetchServiceCities = (token: string) =>
   fetchEnums(EnumCodes.SERVICE_CITY, token);
 
@@ -291,7 +249,7 @@ export const updateOrderRiderInfo = async (
     );
   }
 };
-// Add this function to your services file
+
 export const updateRiderPOI = async (
   riderId: string,
   isApproved: boolean,

@@ -15,6 +15,8 @@ import {
   Laptop,
   Bike,
   BookUser,
+  Bell,
+  BellRing,
 } from "lucide-react";
 import MainMediversalLogo from "../../../../public/Mediversal 247 Logo.svg";
 import Image from "next/image";
@@ -212,6 +214,16 @@ const Sidebar = () => {
         },
       ],
     },
+    {
+      name: "Push Notification",
+      icon: <BellRing size={18} />,
+      subItems: [
+        {
+          name: "Notifications",
+          link: "/admin/dashboard/push-notification",
+        },
+      ],
+    },
   ];
 
   const toggleMenu = (menuName: string) => {
@@ -227,10 +239,11 @@ const Sidebar = () => {
       <div className="flex items-center justify-center h-[80px] p-10">
         <Image
           src={MainMediversalLogo}
-          alt="Doctor Illustration"
+          alt="Mediversal 247 Logo"
           width={400}
           height={200}
           className="w-full max-w-sm mx-auto"
+          priority
         />
       </div>
 

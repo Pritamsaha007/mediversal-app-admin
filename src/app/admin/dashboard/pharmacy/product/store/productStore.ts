@@ -1,10 +1,14 @@
+// store/productStore.ts
 import { create } from "zustand";
-import { Product } from "@/app/admin/dashboard/pharmacy/product/types/product";
-import { productService } from "../services/ProductService";
+import { Product } from "../types/product";
 
-interface ProductState {
+interface ProductCache {
+  data: any;
+  timestamp: number;
+}
+
+interface ProductStoreState {
   products: Product[];
-  loadedChunks: Set<number>;
   statistics: {
     activeProducts: number;
     inactiveProducts: number;
@@ -16,22 +20,25 @@ interface ProductState {
   };
   loading: boolean;
   error: string | null;
-  fetchProducts: (
-    start: number,
-    max: number,
-    filters?: Record<string, any>
-  ) => Promise<void>;
-  getStatistics: () => Promise<void>;
-  refreshProducts: () => Promise<void>;
-  resetProducts: () => void;
-  updateProductInStore: (updatedProduct: Product) => void;
-  removeProductFromStore: (productId: string) => void;
-  addProductToStore: (newProduct: Product) => void;
+
+  // Cache management
+  cache: Map<string, ProductCache>;
+  setCache: (key: string, data: any) => void;
+  getCache: (key: string) => any | null;
+  clearCache: () => void;
+
+  // Store updaters
+  setProducts: (products: Product[]) => void;
+  setStatistics: (stats: any) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  updateProduct: (updatedProduct: Product) => void;
+  removeProduct: (productId: string) => void;
+  addProduct: (newProduct: Product) => void;
 }
 
-export const useProductStore = create<ProductState>((set, get) => ({
+export const useProductStore = create<ProductStoreState>((set, get) => ({
   products: [],
-  loadedChunks: new Set(),
   statistics: {
     activeProducts: 0,
     inactiveProducts: 0,
@@ -43,102 +50,83 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
   loading: false,
   error: null,
-  fetchProducts: async (
-    start: number,
-    max: number,
-    filters?: Record<string, any>
-  ) => {
-    const chunkId = Math.floor(start / max);
 
-    if (
-      get().loadedChunks.has(chunkId) &&
-      (!filters || Object.keys(filters).length === 0)
-    )
-      return;
+  // Cache with 5 minute TTL
+  cache: new Map(),
 
-    set({ loading: true, error: null });
-
-    try {
-      const { products: fetchedProducts, statistics } =
-        await productService.getAllProducts(start, max, filters || {});
-
-      set((state) => {
-        const newProducts =
-          filters && Object.keys(filters).length > 0
-            ? fetchedProducts
-            : [...state.products];
-
-        if (!filters || Object.keys(filters).length === 0) {
-          fetchedProducts.forEach((product, index) => {
-            newProducts[start + index] = product;
-          });
-        }
-
-        return {
-          products: newProducts,
-          loadedChunks: new Set(state.loadedChunks).add(chunkId),
-          statistics: statistics || state.statistics,
-          loading: false,
-        };
-      });
-    } catch (err) {
-      set({ error: "Failed to load products", loading: false });
-      throw err;
-    }
+  setCache: (key: string, data: any) => {
+    set((state) => ({
+      cache: new Map(state.cache).set(key, {
+        data,
+        timestamp: Date.now(),
+      }),
+    }));
   },
 
-  getStatistics: async () => {
-    try {
-      const statistics = await productService.getStatistics();
-      set({ statistics });
-    } catch (err) {
-      console.error("Error fetching statistics:", err);
+  getCache: (key: string) => {
+    const cached = get().cache.get(key);
+    if (!cached) return null;
+
+    // Check if cache is expired (5 minutes)
+    if (Date.now() - cached.timestamp > 5 * 60 * 1000) {
+      get().cache.delete(key);
+      return null;
     }
+
+    return cached.data;
   },
 
-  resetProducts: () => {
-    productService.clearCache();
+  clearCache: () => {
+    set({ cache: new Map() });
+  },
+
+  setProducts: (products: Product[]) => {
+    set({ products });
+  },
+
+  setStatistics: (stats: any) => {
     set({
-      products: [],
-      loadedChunks: new Set(),
-      loading: false,
-      error: null,
+      statistics: {
+        activeProducts: parseInt(stats.activeproducts) || 0,
+        inactiveProducts: parseInt(stats.inactiveproducts) || 0,
+        inStockProducts: parseInt(stats.instockproducts) || 0,
+        outOfStockProducts: parseInt(stats.outofstockproducts) || 0,
+        featuredProducts: parseInt(stats.featuredproducts) || 0,
+        nonfeaturedProducts: parseInt(stats.nonfeaturedproducts) || 0,
+        totalCategories: parseInt(stats.totalcategories) || 0,
+      },
     });
   },
-  updateProductInStore: (updatedProduct) => {
+
+  setLoading: (loading: boolean) => {
+    set({ loading });
+  },
+
+  setError: (error: string | null) => {
+    set({ error });
+  },
+
+  updateProduct: (updatedProduct: Product) => {
     set((state) => ({
       products: state.products.map((product) =>
-        product.id === updatedProduct.id
+        product.productId === updatedProduct.productId
           ? { ...product, ...updatedProduct }
           : product
       ),
     }));
   },
 
-  removeProductFromStore: (productId) => {
+  removeProduct: (productId: string) => {
     set((state) => ({
-      products: state.products.filter((product) => product.id !== productId),
-      statistics: {
-        ...state.statistics,
-        activeProducts: state.statistics.activeProducts - 1,
-      },
+      products: state.products.filter(
+        (product) => product.productId !== productId
+      ),
     }));
   },
 
-  addProductToStore: (newProduct) => {
+  addProduct: (newProduct: Product) => {
     set((state) => ({
       products: [newProduct, ...state.products],
-      statistics: {
-        ...state.statistics,
-        activeProducts: state.statistics.activeProducts + 1,
-      },
     }));
-  },
-
-  refreshProducts: async () => {
-    productService.clearCache();
-    set({ products: [], loadedChunks: new Set() });
-    const { fetchProducts, getStatistics } = get();
-    await Promise.all([fetchProducts(0, 20), getStatistics()]);
   },
 }));

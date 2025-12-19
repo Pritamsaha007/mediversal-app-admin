@@ -1,18 +1,22 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { EnumCodes, fetchEnums } from "@/app/service/enumService";
 import { useAdminStore } from "@/app/store/adminStore";
 
-export interface ProductRelationships {
-  similarProducts: string[];
-  substitutes: string[];
+interface ManageProductRelationsRequest {
+  product_id: string;
+  similar_ids: string[] | null;
+  substitute_ids: string[] | null;
+  remove_relation_type_id: string | null;
+  remove_related_ids: string[] | null;
+  is_delete: boolean;
+  created_by: string;
+  updated_by: string;
 }
 
-interface ProductData {
-  productId: number;
-  ProductName: string;
-  Type: string;
-  ManufacturerName: string;
-  similarProducts: any[];
-  substitutes: any[];
+interface ManageProductRelationsResponse {
+  success: boolean;
+  message?: string;
+  data?: any;
 }
 
 const getAuthHeaders = () => {
@@ -25,34 +29,37 @@ const getAuthHeaders = () => {
   };
 };
 
-export const updateProductRelationships = async (
-  productId: string,
-  relationships: Partial<ProductRelationships>
-): Promise<ProductRelationships> => {
+const getCurrentUserId = (): string => {
+  const { admin } = useAdminStore.getState();
+  return admin?.id;
+};
+
+export const manageProductRelations = async (
+  requestData: Omit<ManageProductRelationsRequest, "created_by" | "updated_by">
+): Promise<ManageProductRelationsResponse> => {
   try {
+    const { product_id } = requestData;
+
     if (
-      !productId ||
-      typeof productId !== "string" ||
-      productId.trim() === ""
+      !product_id ||
+      typeof product_id !== "string" ||
+      product_id.trim() === ""
     ) {
       throw new Error("Invalid product ID");
     }
 
-    if (!relationships || typeof relationships !== "object") {
-      throw new Error("Invalid relationships data");
-    }
+    const userId = getCurrentUserId();
 
-    const payload = {
-      similarProducts: Array.isArray(relationships.similarProducts)
-        ? relationships.similarProducts.filter((id) => id && id.trim() !== "")
-        : [],
-      substitutes: Array.isArray(relationships.substitutes)
-        ? relationships.substitutes.filter((id) => id && id.trim() !== "")
-        : [],
+    const payload: ManageProductRelationsRequest = {
+      ...requestData,
+      created_by: "",
+      updated_by: "",
     };
 
+    console.log("Sending payload to manage relations:", payload);
+
     const response = await fetch(
-      `${API_BASE_URL}/api/Product/relationships/${productId}`,
+      `${API_BASE_URL}/api/product/relations/manage`,
       {
         method: "POST",
         headers: getAuthHeaders(),
@@ -61,9 +68,18 @@ export const updateProductRelationships = async (
     );
 
     const responseData = await response.json();
-    console.log("Success response:", responseData);
+    console.log("Manage relations response:", responseData);
 
-    return responseData;
+    if (!response.ok) {
+      throw new Error(
+        responseData.message || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return {
+      success: true,
+      ...responseData,
+    };
   } catch (error) {
     console.error("API call failed:", error);
 
@@ -78,73 +94,55 @@ export const updateProductRelationships = async (
     }
 
     throw new Error(
-      "An unexpected error occurred while updating product relationships"
+      "An unexpected error occurred while managing product relationships"
     );
   }
 };
 
-export const getProductsById = async (
-  productId: string
-): Promise<ProductData> => {
-  try {
-    if (!productId) {
-      throw new Error("Invalid product ID");
-    }
-
-    const response = await fetch(
-      `${API_BASE_URL}/api/Product/getProductById/${productId}`,
-      {
-        method: "GET",
-        headers: getAuthHeaders(),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching product:", error);
-    throw error;
-  }
-};
-
-export const removeProductRelationship = async (
+export const addSimilarProducts = async (
   productId: string,
-  relationshipType: "similar-products" | "substitutes",
-  itemIdToRemove: string
-): Promise<{ success: boolean }> => {
-  try {
-    if (!productId) {
-      throw new Error("Invalid product ID");
-    }
-
-    if (!itemIdToRemove) {
-      throw new Error("Invalid item ID to remove");
-    }
-
-    const url = `${API_BASE_URL}/api/Product/${productId}/${relationshipType}/${itemIdToRemove}`;
-    console.log("Attempting to call DELETE endpoint:", url);
-
-    const response = await fetch(url, {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      let errorMsg = `HTTP error! status: ${response.status}`;
-      try {
-        const errorBody = await response.json();
-        errorMsg += ` - ${JSON.stringify(errorBody)}`;
-      } catch (e) {}
-      throw new Error(errorMsg);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error(`Error removing ${relationshipType} relationship:`, error);
-    throw error;
-  }
+  similarIds: string[],
+  relationTypeId: string
+): Promise<ManageProductRelationsResponse> => {
+  return manageProductRelations({
+    product_id: productId,
+    similar_ids: similarIds,
+    substitute_ids: null,
+    remove_relation_type_id: null,
+    remove_related_ids: null,
+    is_delete: false,
+  });
 };
+
+export const addSubstituteProducts = async (
+  productId: string,
+  substituteIds: string[],
+  relationTypeId: string
+): Promise<ManageProductRelationsResponse> => {
+  return manageProductRelations({
+    product_id: productId,
+    similar_ids: null,
+    substitute_ids: substituteIds,
+    remove_relation_type_id: null,
+    remove_related_ids: null,
+    is_delete: false,
+  });
+};
+
+export const removeProductRelations = async (
+  productId: string,
+  relationTypeId: string,
+  relatedIds: string[]
+): Promise<ManageProductRelationsResponse> => {
+  return manageProductRelations({
+    product_id: productId,
+    similar_ids: null,
+    substitute_ids: null,
+    remove_relation_type_id: relationTypeId,
+    remove_related_ids: relatedIds,
+    is_delete: true,
+  });
+};
+
+export const fetchRelationType = (token: string) =>
+  fetchEnums(EnumCodes.PRODUCT_RELATION_TYPE, token);
