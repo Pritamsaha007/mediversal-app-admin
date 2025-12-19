@@ -6,13 +6,13 @@ import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
 import {
   fetchPhleboSpecializations,
-  EnumItem,
   updateLabTestBooking,
   AvailableSlotsPayload,
   fetchAvailableSlots,
 } from "../../services";
 import { PhlebotomistSlot } from "../type";
 import { usePhlebotomistAssignmentStore } from "../../store/phleboStore";
+import { EnumItem } from "@/app/service/enumService";
 
 interface AssignPhlebotomistModalProps {
   isOpen: boolean;
