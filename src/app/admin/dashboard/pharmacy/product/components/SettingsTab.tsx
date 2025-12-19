@@ -207,7 +207,7 @@ export const SettingsTab = ({
                   e.target.checked ? "Yes" : "No"
                 )
               }
-              className="mt-0.5"
+              className="mt-0.5 accent-[#0088B1]"
             />
             <div>
               <div className="font-medium text-[10px] text-[#161D1F]">
@@ -233,7 +233,7 @@ export const SettingsTab = ({
               onChange={(e) =>
                 onInputChange("featuredProduct", e.target.checked)
               }
-              className="mt-0.5"
+              className="mt-0.5 accent-[#0088B1]"
             />
             <div>
               <div className="font-medium text-[10px] text-[#161D1F]">
