@@ -234,7 +234,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
           billing_country: "India",
           billing_phone: customerInfo.phone || "",
           billing_email: customerInfo.email || "",
-          payment_status: "Pending",
+          payment_status: "COD",
           payment_method: "COD",
           payment_time: new Date().toISOString(),
           transaction_id: "",
