@@ -25,9 +25,6 @@ const Notifications: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All Notifications");
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
-  const [selectedNotifications, setSelectedNotifications] = useState<string[]>(
-    []
-  );
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);

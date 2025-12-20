@@ -36,7 +36,7 @@ const DropdownSelector: React.FC<DropdownSelectorProps> = ({
           <ChevronDown className="w-4 h-4" />
         </button>
         {open && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+          <div className="absolute z-50s w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
             {options.map((option) => (
               <button
                 key={option}
