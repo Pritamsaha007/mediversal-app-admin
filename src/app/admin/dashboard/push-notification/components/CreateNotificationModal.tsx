@@ -424,19 +424,7 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
-          <button
-            onClick={handleBack}
-            disabled={activeTab === "basic"}
-            className={`px-6 py-2 text-[12px] font-medium rounded-lg transition-colors ${
-              activeTab === "basic"
-                ? "text-gray-400 cursor-not-allowed"
-                : "text-[#161D1F] hover:bg-gray-100"
-            }`}
-          >
-            Back
-          </button>
-
+        <div className="flex items-center justify-end px-6 py-4 border-t border-gray-200">
           <div className="flex items-center gap-3">
             <button
               onClick={handleClose}
@@ -461,7 +449,7 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
               <button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="flex items-center gap-2 px-6 py-2 text-[12px] font-medium bg-[#FF8000] text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-6 py-2 text-[12px] font-medium bg-[#0088B1] text-white rounded-lg hover:bg-[#006d8f] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>

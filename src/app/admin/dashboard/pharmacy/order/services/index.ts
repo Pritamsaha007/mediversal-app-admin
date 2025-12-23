@@ -44,7 +44,6 @@ export class OrderService {
   }): Promise<{ orders: Order[]; totalCount: number }> {
     try {
       const { token } = useAdminStore.getState();
-      console.log("Fetching orders with token:", token);
 
       if (!token) {
         throw new Error("No authentication token found");
@@ -170,8 +169,6 @@ export class OrderService {
         rider_staff_id: "",
         rider_delivery_status_id: "",
       };
-
-      // Call your API
       await updateOrderRiderInfo(payload, token);
     } catch (error) {
       console.error("Failed to update rider delivery status:", error);
