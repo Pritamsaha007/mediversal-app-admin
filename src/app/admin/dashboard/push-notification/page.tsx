@@ -1,6 +1,14 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
-import { Search, Plus, Eye, Edit, Trash2, MoreVertical } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  MoreVertical,
+  Download,
+} from "lucide-react";
 import { Notification, SearchNotificationParams } from "./types/types";
 import { searchNotifications } from "./services/service";
 import CreateNotificationModal from "./components/CreateNotificationModal";
@@ -38,6 +46,9 @@ const Notifications: React.FC = () => {
   const [viewingNotification, setViewingNotification] =
     useState<Notification | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedNotifications, setSelectedNotifications] = useState<string[]>(
+    []
+  );
 
   const filterOptions = [
     "All Notifications",
@@ -85,6 +96,7 @@ const Notifications: React.FC = () => {
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
+    setSelectedNotifications([]);
 
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -128,12 +140,14 @@ const Notifications: React.FC = () => {
   const handlePreviousPage = () => {
     if (currentPage > 0) {
       setCurrentPage(currentPage - 1);
+      setSelectedNotifications([]);
     }
   };
 
   const handleNextPage = () => {
     if (hasMore) {
       setCurrentPage(currentPage + 1);
+      setSelectedNotifications([]);
     }
   };
 
@@ -161,6 +175,94 @@ const Notifications: React.FC = () => {
       </div>
     );
   };
+
+  const exportNotificationsToCSV = (notifications: Notification[]) => {
+    const headers = [
+      "Notification ID",
+      "Message Title",
+      "Targeted User Group",
+      "Start Date",
+      "End Date",
+      "Notification Time",
+      "Status",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...notifications.map((n) =>
+        [
+          `"${n.id}"`,
+          `"${n.message_title}"`,
+          `"${formatUserGroup(n.targeted_user_group_value)}"`,
+          `"${n.start_date ? formatDate(n.start_date) : "N/A"}"`,
+          `"${n.end_date ? formatDate(n.end_date) : "N/A"}"`,
+          `"${n.notification_time || "N/A"}"`,
+          n.status,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `notifications_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleSelectNotification = (
+    notificationId: string,
+    checked: boolean
+  ) => {
+    if (checked) {
+      setSelectedNotifications([...selectedNotifications, notificationId]);
+    } else {
+      setSelectedNotifications(
+        selectedNotifications.filter((id) => id !== notificationId)
+      );
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedNotifications(
+        notifications.map((notification) => notification.id)
+      );
+    } else {
+      setSelectedNotifications([]);
+    }
+  };
+
+  const handleExport = () => {
+    if (notifications.length === 0) {
+      toast.error("No notifications to export");
+      return;
+    }
+
+    const notificationsToExport =
+      selectedNotifications.length > 0
+        ? notifications.filter((n) => selectedNotifications.includes(n.id))
+        : notifications;
+
+    exportNotificationsToCSV(notificationsToExport);
+    toast.success(
+      `Exported ${notificationsToExport.length} notifications successfully!`
+    );
+    setSelectedNotifications([]);
+  };
+
+  useEffect(() => {
+    setSelectedNotifications([]);
+    loadNotifications(currentPage, searchTerm);
+  }, [token, currentPage, selectedFilter]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -191,6 +293,26 @@ const Notifications: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:outline-none  text-[12px] "
             />
           </div>
+
+          {/* Export button */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              disabled={loading || notifications.length === 0}
+              className={`flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50 ${
+                loading || notifications.length === 0
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
+            >
+              <Download className="w-4 h-4" />
+              {selectedNotifications.length > 0
+                ? `Export Selected (${selectedNotifications.length})`
+                : "Export All"}
+            </button>
+          </div>
+
+          {/* Filter dropdown - keep existing */}
           <div className="relative">
             <DropdownSelector
               label=""
@@ -202,6 +324,7 @@ const Notifications: React.FC = () => {
               onSelect={(value) => {
                 setSelectedFilter(value);
                 setCurrentPage(0);
+                setSelectedNotifications([]); // Clear selection
               }}
             />
           </div>
@@ -221,6 +344,18 @@ const Notifications: React.FC = () => {
             <table className="w-full">
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+                      checked={
+                        selectedNotifications.length === notifications.length &&
+                        notifications.length > 0
+                      }
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      disabled={loading || notifications.length === 0}
+                    />
+                  </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Notification ID
                   </th>
@@ -259,6 +394,22 @@ const Notifications: React.FC = () => {
                 ) : (
                   notifications.map((notification) => (
                     <tr key={notification.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+                          checked={selectedNotifications.includes(
+                            notification.id
+                          )}
+                          onChange={(e) =>
+                            handleSelectNotification(
+                              notification.id,
+                              e.target.checked
+                            )
+                          }
+                          disabled={loading}
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
                           <div className="text-[12px] font-medium text-[#161D1F]">

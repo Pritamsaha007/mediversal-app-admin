@@ -16,6 +16,7 @@ import {
   UserCheck,
   UserX,
   Car,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { ViewRiderModal } from "./components/ViewRiderModal";
@@ -360,6 +361,71 @@ const DeliveryRiders: React.FC = () => {
     }
   };
 
+  const exportRidersToCSV = (riders: DeliveryRider[]) => {
+    const headers = [
+      "Name",
+      "Email",
+      "Mobile Number",
+      "Aadhar Number",
+      "Vehicle Name",
+      "License No",
+      "Joining Date",
+      "Availability Status",
+      "POI Verified Status",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...riders.map((r) =>
+        [
+          `"${r.name}"`,
+          `"${r.email}"`,
+          `"${r.mobile_number}"`,
+          `"${r.aadhar_number}"`,
+          `"${r.vehicle_name}"`,
+          `"${r.license_no}"`,
+          `"${new Date(r.joining_date).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })}"`,
+          r.is_available_status,
+          r.is_poi_verified_status,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `delivery_riders_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExport = () => {
+    if (riders.length === 0) {
+      toast.error("No riders to export");
+      return;
+    }
+
+    const ridersToExport =
+      selectedRiders.length > 0
+        ? riders.filter((r) => selectedRiders.includes(r.id))
+        : filteredRiders;
+
+    exportRidersToCSV(ridersToExport);
+    toast.success(`Exported ${ridersToExport.length} riders successfully!`);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -446,6 +512,22 @@ const DeliveryRiders: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              disabled={loading || riders.length === 0}
+              className={`flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50 ${
+                loading || riders.length === 0
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
+            >
+              <Download className="w-4 h-4" />
+              {selectedRiders.length > 0
+                ? `Export Selected (${selectedRiders.length})`
+                : "Export All"}
+            </button>
           </div>
         </div>
 

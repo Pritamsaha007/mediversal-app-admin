@@ -18,6 +18,7 @@ import {
   MapPin,
   User,
   BadgeIndianRupee,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Pagination from "@/app/components/common/pagination";
@@ -54,6 +55,7 @@ const RiderBooking: React.FC = () => {
   const [itemsPerPage] = useState(5);
   const [hasMore, setHasMore] = useState(true);
   const [totalOrders, setTotalOrders] = useState(0);
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
 
   const statusOptions = [
     "All Status",
@@ -258,6 +260,7 @@ const RiderBooking: React.FC = () => {
     setRiderSearch("");
     setSearchTerm("");
     setSelectedStatus("All Status");
+    setSelectedOrders([]);
   };
 
   const formatStatusDisplay = (statusValue: string): string => {
@@ -424,10 +427,12 @@ const RiderBooking: React.FC = () => {
     if (direction === "next") {
       if (hasMore) {
         setCurrentPage(currentPage + 1);
+        setSelectedOrders([]);
       }
     } else {
       if (currentPage > 0) {
         setCurrentPage(currentPage - 1);
+        setSelectedOrders([]);
       }
     }
   };
@@ -456,6 +461,117 @@ const RiderBooking: React.FC = () => {
     setSelectedStatus(status);
     setOpenDropdown(null);
     setCurrentPage(0);
+  };
+
+  const handleSelectOrder = (orderId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedOrders([...selectedOrders, orderId]);
+    } else {
+      setSelectedOrders(selectedOrders.filter((id) => id !== orderId));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedOrders(orders.map((order) => order.id));
+    } else {
+      setSelectedOrders([]);
+    }
+  };
+
+  const exportRiderOrdersToCSV = (orders: RiderOrder[]) => {
+    const formatStatusDisplay = (statusValue: string): string => {
+      switch (statusValue) {
+        case "PENDING":
+        case "PENDING_ASSIGNMENT":
+          return "Pending";
+        case "IN_PROGRESS":
+        case "INPROGRESS":
+        case "IN-PROGRESS":
+          return "In Progress";
+        case "COMPLETED":
+          return "Completed";
+        case "CANCELLED":
+          return "Cancelled";
+        default:
+          return statusValue;
+      }
+    };
+
+    const headers = [
+      "Order ID",
+      "Customer Name",
+      "Customer Phone",
+      "Items Count",
+      "Items",
+      "Billing Address",
+      "Billing City",
+      "Billing Pincode",
+      "Amount (₹)",
+      "Delivery Status",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...orders.map((o) => {
+        const itemsList = o.items
+          .map((item) => `${item.name} (Qty: ${item.qty})`)
+          .join("; ");
+        const fullAddress = [
+          o.billing_address_1,
+          o.billing_address_2,
+          o.billing_city,
+          o.billing_pincode ? `Pincode: ${o.billing_pincode}` : "",
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        return [
+          `"${o.id}"`,
+          `"${o.billing_first_name} ${o.billing_last_name}"`,
+          `"${o.customer_phone}"`,
+          o.items.length,
+          `"${itemsList}"`,
+          `"${fullAddress}"`,
+          `"${o.billing_city || ""}"`,
+          o.billing_pincode || "",
+          o.amount,
+          formatStatusDisplay(o.rider_delivery_status),
+        ].join(",");
+      }),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `rider_orders_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExport = () => {
+    if (orders.length === 0) {
+      toast.error("No orders to export");
+      return;
+    }
+
+    const ordersToExport =
+      selectedOrders.length > 0
+        ? orders.filter((order) => selectedOrders.includes(order.id))
+        : orders;
+
+    exportRiderOrdersToCSV(ordersToExport);
+    toast.success(`Exported ${ordersToExport.length} orders successfully!`);
+
+    setSelectedOrders([]);
   };
 
   return (
@@ -621,6 +737,20 @@ const RiderBooking: React.FC = () => {
                   </div>
                 )}
               </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleExport}
+                  disabled={loadingOrders || orders.length === 0}
+                  className={`flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50 ${
+                    loadingOrders || orders.length === 0
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  }`}
+                >
+                  <Download className="w-4 h-4" />
+                  Export Orders
+                </button>
+              </div>
               {/* <div className="flex gap-3">
                 <div className="relative">
                   <button
@@ -670,6 +800,18 @@ const RiderBooking: React.FC = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
+                      <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+                          checked={
+                            selectedOrders.length === orders.length &&
+                            orders.length > 0
+                          }
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                          disabled={loadingOrders || orders.length === 0}
+                        />
+                      </th>
                       <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                         Order ID
                       </th>
@@ -713,6 +855,17 @@ const RiderBooking: React.FC = () => {
                     ) : (
                       orders.map((order) => (
                         <tr key={order.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
+                              checked={selectedOrders.includes(order.id)}
+                              onChange={(e) =>
+                                handleSelectOrder(order.id, e.target.checked)
+                              }
+                              disabled={loadingOrders}
+                            />
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-xs font-medium text-[#161D1F]">
                               {order.id.slice(0, 8).toUpperCase()}
