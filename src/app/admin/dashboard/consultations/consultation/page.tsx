@@ -18,6 +18,7 @@ import {
   Video,
   X,
   HeartPlus,
+  Download,
 } from "lucide-react";
 import AddConsultationModal from "./components/AddConsultationModal";
 import ViewConsultationModal from "./components/ViewConsultationModal";
@@ -501,6 +502,66 @@ const Consultations: React.FC = () => {
     setSelectedConsultations([]);
   };
 
+  const handleExport = () => {
+    if (consultations.length === 0) {
+      alert("No consultations to export");
+      return;
+    }
+
+    const consultationsToExport =
+      selectedConsultations.length > 0
+        ? consultations.filter((c) => selectedConsultations.includes(c.id))
+        : filteredConsultations;
+
+    exportConsultationsToCSV(consultationsToExport);
+  };
+
+  const exportConsultationsToCSV = (consultations: ConsultationAPI[]) => {
+    const headers = [
+      "Consultation ID",
+      "Patient Name",
+      "Phone",
+      "Doctor Name",
+      "Hospital",
+      "Consultation Type",
+      "Consultation Date",
+      "Consultation Time",
+      "Status",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...consultations.map((c) =>
+        [
+          c.id.slice(0, 8).toUpperCase(),
+          `"${c.patient_name}"`,
+          c.phone || "N/A",
+          `"${c.doc_name}"`,
+          `"${c.hospital_name || "N/A"}"`,
+          c.consultation_type === "ONLINE" ? "Online" : "In-Person",
+          c.consultation_date,
+          c.consultation_time,
+          c.status || "N/A",
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `consultations_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -569,6 +630,17 @@ const Consultations: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50"
+            >
+              <Download className="w-4 h-4" />
+              {selectedConsultations.length > 0
+                ? `Export Selected (${selectedConsultations.length})`
+                : "Export All"}
+            </button>
           </div>
           {/* <div className="flex gap-4">
             <div className="relative">
