@@ -1,8 +1,8 @@
 "use client";
 import { useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 
-import { useCouponStore } from "@/app/store/couponStore"; // Import the Zustand store
+import { useCouponStore } from "@/app/store/couponStore";
 import { CouponItem } from "@/app/types/auth.types";
 import {
   getAllCoupons,
@@ -160,6 +160,69 @@ export default function CouponsManagement() {
     setCurrentPage(page);
   };
 
+  const exportCouponsToCSV = (coupons: CouponItem[]) => {
+    const headers = [
+      "Coupon Code",
+      "Description",
+      "Discount Type",
+      "Discount Value",
+      "Minimum Cart Amount",
+      "Maximum Discount Amount",
+      "Usage Limit",
+      "Start Date",
+      "End Date",
+      "Status",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...coupons.map((c) =>
+        [
+          `"${c.coupon_code}"`,
+          `"${c.description || ""}"`,
+          c.discount_type,
+          c.discount_value,
+          c.minimum_item_quantity || "0",
+          c.minimum_order_value || "No limit",
+          c.uses_limit || "Unlimited",
+          `"${c.start_date || "N/A"}"`,
+          `"${c.expiry_date || "No expiry"}"`,
+          c.status,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `coupons_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExport = () => {
+    if (coupons.length === 0) {
+      toast.error("No coupons to export");
+      return;
+    }
+
+    const couponsToExport =
+      selectedItems.length > 0
+        ? coupons.filter((c) => selectedItems.includes(c.id.toString()))
+        : filteredCoupons;
+
+    exportCouponsToCSV(couponsToExport);
+    toast.success(`Exported ${couponsToExport.length} coupons successfully!`);
+  };
+
   if (error) {
     return (
       <div className="max-w-7xl mx-auto p-4">
@@ -187,6 +250,7 @@ export default function CouponsManagement() {
         onSearchChange={setSearchTerm}
         selectedItems={selectedItems}
         onAddCoupon={handleAddCoupon}
+        onExport={handleExport}
       />
 
       <CouponTable

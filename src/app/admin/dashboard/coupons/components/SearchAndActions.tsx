@@ -1,21 +1,21 @@
 "use client";
-import { Search, Plus, ChevronDown } from "lucide-react";
+import { Search, Plus, ChevronDown, Download } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 
 interface SearchAndActionsProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
   selectedItems: string[];
-
   onAddCoupon: () => void;
+  onExport?: () => void;
 }
 
 export default function SearchAndActions({
   searchTerm,
   onSearchChange,
   selectedItems,
-
   onAddCoupon,
+  onExport,
 }: SearchAndActionsProps) {
   const [bulkActionsOpen, setBulkActionsOpen] = useState(false);
   const bulkActionsRef = useRef<HTMLDivElement>(null);
@@ -53,6 +53,19 @@ export default function SearchAndActions({
           className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
         />
       </div>
+      {onExport && (
+        <div className="flex gap-2">
+          <button
+            onClick={onExport}
+            className={`flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50`}
+          >
+            <Download className="w-4 h-4" />
+            {selectedItems.length > 0
+              ? `Export Selected (${selectedItems.length})`
+              : "Export All"}
+          </button>
+        </div>
+      )}
       <div className="flex gap-3">
         {selectedItems.length > 0 && (
           <div className="relative" ref={bulkActionsRef}></div>
