@@ -16,8 +16,6 @@ import { ProductCard } from "./components/ProductCard";
 import { ProductFormData } from "./types/productForm.type";
 import toast from "react-hot-toast";
 import { useConfirmationDialog } from "./components/ConfirmationDialog";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
 import { useProductStore } from "./store/productStore";
 import { useDebounce } from "./utils/useDebounce";
 import Pagination from "@/app/components/common/pagination";
@@ -64,59 +62,6 @@ const ProductCatalog: React.FC = () => {
   const handleRefreshProducts = async () => {
     clearCache();
     await fetchProducts(currentPage);
-  };
-
-  const handleExportPDF = () => {
-    const productsToExport =
-      selectedProducts.length > 0
-        ? products.filter((p) => selectedProducts.includes(p.productId))
-        : getFilteredProducts();
-
-    if (productsToExport.length === 0) {
-      toast.error("No products to export");
-      return;
-    }
-
-    const doc = new jsPDF();
-    doc.text("Product Catalog Report", 14, 15);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
-
-    const tableData = productsToExport.map((product) => [
-      product.ProductName,
-      product.SKU || "N/A",
-      product.Category,
-      `₹${parseFloat(product.CostPrice as string).toFixed(2)}`,
-      `₹${parseFloat(product.SellingPrice as string).toFixed(2)}`,
-      `${parseFloat(product.DiscountedPercentage as string)}%`,
-      product.StockAvailableInInventory.toString(),
-      product.active ? "Active" : "Inactive",
-    ]);
-
-    autoTable(doc, {
-      head: [
-        [
-          "Name",
-          "Code",
-          "Category",
-          "MRP",
-          "Price",
-          "Discount",
-          "Stock",
-          "Status",
-        ],
-      ],
-      body: tableData,
-      startY: 30,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: {
-        fillColor: [0, 112, 154],
-        textColor: 255,
-        fontSize: 9,
-      },
-    });
-
-    doc.save(`products_${new Date().toISOString().slice(0, 10)}.pdf`);
-    toast.success(`Exported ${productsToExport.length} products to PDF`);
   };
 
   const fetchProducts = async (page: number, filters?: Record<string, any>) => {
@@ -419,7 +364,6 @@ const ProductCatalog: React.FC = () => {
     }
   };
 
-  // Pagination calculations
   const totalItems = statistics.activeProducts + statistics.inactiveProducts;
   const hasMore = (currentPage + 1) * itemsPerPage < totalItems;
 
@@ -428,14 +372,11 @@ const ProductCatalog: React.FC = () => {
       setCurrentPage(currentPage + 1);
     }
   };
-
   const handlePreviousPage = () => {
     if (currentPage > 0 && !loading) {
       setCurrentPage(currentPage - 1);
     }
   };
-
-  // Filter products for display
   const getFilteredProducts = () => {
     let filtered = products.filter((product) => {
       let tabMatch = true;
@@ -486,25 +427,21 @@ const ProductCatalog: React.FC = () => {
 
     return filtered;
   };
-
   const handleProductSelect = (id: string, selected: boolean) => {
     setSelectedProducts((prev) =>
       selected ? [...prev, id] : prev.filter((productId) => productId !== id)
     );
   };
-
   useEffect(() => {
     if (error) {
       toast.error(error);
     }
   }, [error]);
-
   const handleSelectAll = (selected: boolean) => {
     setSelectedProducts(
       selected ? getFilteredProducts().map((p) => p.productId) : []
     );
   };
-
   const getStatsData = () => {
     return {
       totalProducts: statistics.activeProducts + statistics.inactiveProducts,
@@ -515,7 +452,6 @@ const ProductCatalog: React.FC = () => {
       totalCategories: statistics.totalCategories,
     };
   };
-
   const handleDeleteAll = async () => {
     if (selectedProducts.length === 0) {
       toast.error("No products selected");
@@ -548,7 +484,86 @@ const ProductCatalog: React.FC = () => {
       },
     });
   };
+  const exportProductsToCSV = (products: Product[]) => {
+    const headers = [
+      "Product ID",
+      "Product Name",
+      "SKU",
+      "Category",
+      "Subcategory",
+      "Type",
+      "Manufacturer",
+      "Cost Price (₹)",
+      "Selling Price (₹)",
+      "Discounted Price (₹)",
+      "Discount (%)",
+      "Stock Available",
+      "Status",
+      "Featured",
+      "GST (%)",
+      "HSN Code",
+      "Prescription Required",
+      "Cold Chain",
+    ];
 
+    const csvContent = [
+      headers.join(","),
+      ...products.map((p) =>
+        [
+          `"${p.productId}"`,
+          `"${p.ProductName}"`,
+          `"${p.SKU || ""}"`,
+          `"${p.Category || ""}"`,
+          `"${p.Subcategory || ""}"`,
+          `"${p.Type || ""}"`,
+          `"${p.ManufacturerName || ""}"`,
+          parseFloat((p.CostPrice as string) || "0").toFixed(2),
+          parseFloat((p.SellingPrice as string) || "0").toFixed(2),
+          parseFloat(
+            (p.DiscountedPrice as string) || (p.SellingPrice as string) || "0"
+          ).toFixed(2),
+          p.DiscountedPercentage || "0",
+          p.StockAvailableInInventory.toString(),
+          p.active ? "Active" : "Inactive",
+          p.featuredProduct ? "Yes" : "No",
+          p.GST || "18",
+          `"${p.HSN_Code || ""}"`,
+          p.PrescriptionRequired ? "Yes" : "No",
+          p.ColdChain || "No",
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `products_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportCSV = () => {
+    const productsToExport =
+      selectedProducts.length > 0
+        ? products.filter((p) => selectedProducts.includes(p.productId))
+        : getFilteredProducts();
+
+    if (productsToExport.length === 0) {
+      toast.error("No products to export");
+      return;
+    }
+
+    exportProductsToCSV(productsToExport);
+    toast.success(`Exported ${productsToExport.length} products to CSV`);
+  };
   const statsData = getStatsData();
   const filteredProducts = getFilteredProducts();
 
@@ -691,11 +706,18 @@ const ProductCatalog: React.FC = () => {
             </div>
             <div className="relative">
               <button
-                onClick={handleExportPDF}
-                className="flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
+                onClick={handleExportCSV}
+                disabled={loading || getFilteredProducts().length === 0}
+                className={`flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50 ${
+                  loading || getFilteredProducts().length === 0
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }`}
               >
                 <Download className="w-4 h-4" />
-                Export
+                {selectedProducts.length > 0
+                  ? `Export Selected (${selectedProducts.length})`
+                  : "Export All"}
               </button>
             </div>
           </div>
@@ -718,7 +740,7 @@ const ProductCatalog: React.FC = () => {
             ))}
           </div>
           <div>
-            {selectedProducts.length > 0 && (
+            {/* {selectedProducts.length > 0 && (
               <div className="flex items-center justify-between px-6  bg-gray-50">
                 <div className="text-[10px] text-gray-600 mr-3 ">
                   {selectedProducts.length} selected
@@ -740,16 +762,23 @@ const ProductCatalog: React.FC = () => {
                         Delete All
                       </button>
                       <button
-                        onClick={handleExportPDF}
-                        className="block w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100"
+                        onClick={handleExportCSV}
+                        disabled={selectedProducts.length === 0}
+                        className={`block w-full px-4 py-2 text-sm text-left text-[#161D1F] hover:bg-gray-100 ${
+                          selectedProducts.length === 0
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                        }`}
                       >
-                        Export PDF
+                        {selectedProducts.length > 0
+                          ? `Export Selected (${selectedProducts.length})`
+                          : "Export Selected"}
                       </button>
                     </div>
                   )}
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         </div>
 
