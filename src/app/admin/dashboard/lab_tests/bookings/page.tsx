@@ -12,6 +12,7 @@ import {
   MoreHorizontal,
   UserPlus,
   Upload,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { AssignPhlebotomistModal } from "./components/assignStaff";
@@ -462,6 +463,93 @@ const BookingsManagement: React.FC = () => {
     return `${id.substring(0, 8).toUpperCase()}`;
   };
 
+  const exportBookingsToCSV = (bookings: LabTestBooking[]) => {
+    const headers = [
+      "Booking ID",
+      "Patient Names",
+      "Test Names",
+      "Booking Date",
+      "Status",
+      "Payment Status",
+      "Amount (₹)",
+      "Number of Patients",
+      "Today's Revenue",
+      "Total Revenue",
+    ];
+
+    const formatPatientNames = (
+      patientDetails: PatientDetailsList | null | undefined
+    ) => {
+      if (!patientDetails || !patientDetails.patients_list) {
+        return "No patient details";
+      }
+
+      const validPatients = patientDetails.patients_list
+        .filter((patient) => patient && patient.name)
+        .map((patient) => patient.name);
+
+      return validPatients.length > 0
+        ? validPatients.join("; ")
+        : "No patients";
+    };
+
+    const csvContent = [
+      headers.join(","),
+      ...bookings.map((b) =>
+        [
+          `"${b.id}"`,
+          `"${formatPatientNames(b.patient_details)}"`,
+          `"${
+            Array.isArray(b.labtestnames)
+              ? b.labtestnames.join("; ")
+              : b.labtestnames || "No tests"
+          }"`,
+          `"${
+            b.booking_date
+              ? new Date(b.booking_date).toLocaleDateString()
+              : "No date"
+          }"`,
+          b.status || "Unknown",
+          b.payment_status || "Unknown",
+          parseFloat(b.amount || "0").toFixed(2),
+          b.patient_details?.patients_list?.length || 0,
+          parseFloat(b.today_revenue || "0").toFixed(2),
+          parseFloat(b.total_revenue || "0").toFixed(2),
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `bookings_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExport = () => {
+    if (bookings.length === 0) {
+      toast.error("No bookings to export");
+      return;
+    }
+
+    const bookingsToExport =
+      selectedBookings.length > 0
+        ? bookings.filter((b) => selectedBookings.includes(b.id))
+        : bookings;
+
+    exportBookingsToCSV(bookingsToExport);
+    toast.success(`Exported ${bookingsToExport.length} bookings successfully!`);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -529,6 +617,23 @@ const BookingsManagement: React.FC = () => {
               onKeyPress={handleSearchKeyPress}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              disabled={loading || bookings.length === 0}
+              className={`flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50 ${
+                loading || bookings.length === 0
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
+            >
+              <Download className="w-4 h-4" />
+              {selectedBookings.length > 0
+                ? `Export Selected (${selectedBookings.length})`
+                : "Export All"}
+            </button>
           </div>
           {/* <div className="flex gap-3">
             <div className="relative">

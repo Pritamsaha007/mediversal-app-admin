@@ -11,6 +11,7 @@ import {
   Edit,
   Trash2,
   ArrowUpDown,
+  Download,
 } from "lucide-react";
 import StatsCard from "../../../../components/common/StatsCard";
 import StatusBadge from "../../../../components/common/StatusBadge";
@@ -454,6 +455,85 @@ const PhlebotomistManagement: React.FC = () => {
     setViewingPhlebotomist(null);
   };
 
+  const exportPhlebotomistsToCSV = (phlebotomists: Phlebotomist[]) => {
+    const headers = [
+      "Name",
+      "Mobile Number",
+      "Email",
+      "Rating",
+      "Experience (Years)",
+      "Service City",
+      "Service Area",
+      "Specialization",
+      "License No",
+      "Joining Date",
+      "Home Collection Certified",
+      "Status",
+      "Is Deleted",
+      "Availability Slots",
+    ];
+
+    const formatAvailability = (availability: PhlebotomistAvailability[]) => {
+      return availability
+        .map((slot) => `${slot.start_time}-${slot.end_time}`)
+        .join("; ");
+    };
+
+    const csvContent = [
+      headers.join(","),
+      ...phlebotomists.map((p) =>
+        [
+          `"${p.name}"`,
+          `"${p.mobile_number || ""}"`,
+          `"${p.email || ""}"`,
+          p.rating || "0",
+          p.experience_in_yrs,
+          `"${p.service_city || ""}"`,
+          `"${p.service_area || ""}"`,
+          `"${p.specialization_id || ""}"`,
+          `"${p.license_no || ""}"`,
+          `"${p.joining_date || ""}"`,
+          p.is_home_collection_certified ? "Yes" : "No",
+          p.is_available ? "Active" : "Inactive",
+          p.is_deleted ? "Yes" : "No",
+          `"${formatAvailability(p.availability || [])}"`,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `phlebotomists_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExport = () => {
+    if (phlebotomists.length === 0) {
+      toast.error("No phlebotomists to export");
+      return;
+    }
+
+    const phlebotomistsToExport =
+      selectedPhlebotomists.length > 0
+        ? phlebotomists.filter((p) => selectedPhlebotomists.includes(p.id))
+        : filteredPhlebotomists;
+
+    exportPhlebotomistsToCSV(phlebotomistsToExport);
+    toast.success(
+      `Exported ${phlebotomistsToExport.length} phlebotomists successfully!`
+    );
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -516,6 +596,23 @@ const PhlebotomistManagement: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              disabled={loading || phlebotomists.length === 0}
+              className={`flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50 ${
+                loading || phlebotomists.length === 0
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
+            >
+              <Download className="w-4 h-4" />
+              {selectedPhlebotomists.length > 0
+                ? `Export Selected (${selectedPhlebotomists.length})`
+                : "Export All"}
+            </button>
           </div>
           {/* <div className="flex gap-3">
             <button className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-3 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50">

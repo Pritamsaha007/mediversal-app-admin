@@ -12,6 +12,7 @@ import {
   Eye,
   Edit,
   Trash2,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { AddTestModal } from "./components/AddTest";
@@ -252,7 +253,6 @@ const RadiologyTests: React.FC = () => {
     setFilteredTests(updatedTests.filter((test) => !test.is_deleted));
   };
 
-  // Delete using the new delete function
   const handleTestAction = async (action: string, test: RadiologyTest) => {
     setTestActionDropdown(null);
 
@@ -338,6 +338,70 @@ const RadiologyTests: React.FC = () => {
     }
   };
 
+  const exportTestsToCSV = (tests: RadiologyTest[]) => {
+    const headers = [
+      "Test Name",
+      "Code",
+      "Description",
+      "Cost Price (₹)",
+      "Selling Price (₹)",
+      "Report Time (hrs)",
+      "Status",
+      "Is Deleted",
+      "Sample Type",
+      "Average Discount",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...tests.map((t) =>
+        [
+          `"${t.name}"`,
+          `"${t.code}"`,
+          `"${t.description || ""}"`,
+          t.cost_price,
+          t.selling_price,
+          t.report_time_hrs,
+          t.is_active ? "Active" : "Inactive",
+          t.is_deleted ? "Yes" : "No",
+          `"${t.modality_type_id || ""}"`,
+          t.average_discount_percentage || "0",
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `radiology_tests_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // 3. Add handleExport function inside the component (after the other handler functions)
+  const handleExport = () => {
+    if (tests.length === 0) {
+      toast.error("No tests to export");
+      return;
+    }
+
+    const testsToExport =
+      selectedTests.length > 0
+        ? tests.filter((t) => selectedTests.includes(t.id))
+        : filteredTests;
+
+    exportTestsToCSV(testsToExport);
+    toast.success(`Exported ${testsToExport.length} tests successfully!`);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -421,6 +485,24 @@ const RadiologyTests: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
+          </div>
+
+          {/* Add this export button section */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              disabled={loading || tests.length === 0}
+              className={`flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50 ${
+                loading || tests.length === 0
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
+            >
+              <Download className="w-4 h-4" />
+              {selectedTests.length > 0
+                ? `Export Selected (${selectedTests.length})`
+                : "Export All"}
+            </button>
           </div>
           {/* <div className="flex gap-3">
             <div className="relative">
