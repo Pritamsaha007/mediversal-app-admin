@@ -21,6 +21,7 @@ import StatsCard from "@/app/components/common/StatsCard";
 
 const CustomerCatalog: React.FC = () => {
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const itemsPerPage = 20;
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -136,12 +137,42 @@ const CustomerCatalog: React.FC = () => {
     fetchMetrics();
   }, []);
 
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedCustomers([]);
+    } else {
+      setSelectedCustomers(customers.map((c) => c.id));
+    }
+    setSelectAll(!selectAll);
+  };
+
+  const handleSelectCustomer = (customerId: string) => {
+    setSelectedCustomers((prev) => {
+      if (prev.includes(customerId)) {
+        return prev.filter((id) => id !== customerId);
+      } else {
+        return [...prev, customerId];
+      }
+    });
+  };
+
+  useEffect(() => {
+    setSelectAll(false);
+    setSelectedCustomers([]);
+  }, [customers]);
+
   const handleExport = () => {
     if (customers.length === 0) {
       alert("No customers to export");
       return;
     }
-    CustomerService.exportToCSV(customers);
+
+    const customersToExport =
+      selectedCustomers.length > 0
+        ? customers.filter((c) => selectedCustomers.includes(c.id))
+        : customers;
+
+    CustomerService.exportToCSV(customersToExport);
   };
 
   const hasMore =
@@ -244,7 +275,9 @@ const CustomerCatalog: React.FC = () => {
                   className="flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50"
                 >
                   <Download className="w-4 h-4" />
-                  Export
+                  {selectedCustomers.length > 0
+                    ? `Export Selected (${selectedCustomers.length})`
+                    : "Export All"}
                 </button>
               </div>
             </div>
@@ -280,6 +313,14 @@ const CustomerCatalog: React.FC = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
+                      <th className="px-6 py-3 text-left">
+                        <input
+                          type="checkbox"
+                          checked={selectAll}
+                          onChange={handleSelectAll}
+                          className="rounded border-gray-300 text-[#0088B1] focus:ring-[#0088B1]"
+                        />
+                      </th>
                       <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F]">
                         Name
                       </th>
@@ -302,7 +343,7 @@ const CustomerCatalog: React.FC = () => {
                       <TableSkeleton rows={5} columns={5} />
                     ) : customers.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center">
+                        <td colSpan={6} className="px-6 py-12 text-center">
                           <div className="flex flex-col items-center justify-center">
                             <Users className="w-12 h-12 text-gray-300 mb-3" />
                             <p className="text-[14px] font-medium text-[#161D1F] mb-1">
@@ -322,6 +363,8 @@ const CustomerCatalog: React.FC = () => {
                           key={customer.id}
                           customer={customer}
                           onClick={() => handleCustomerClick(customer)}
+                          isSelected={selectedCustomers.includes(customer.id)}
+                          onSelect={() => handleSelectCustomer(customer.id)}
                         />
                       ))
                     )}
