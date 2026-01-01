@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Search, Plus, ChevronDown } from "lucide-react";
+import { Search, Plus, ChevronDown, Download } from "lucide-react";
 import DropdownMenu from "./components/DropdownMenu";
 import BookingModal from "./components/BookingModal";
 import AddBookingModal from "./components/AddBookingModal";
@@ -147,6 +147,70 @@ const BookingManagement: React.FC = () => {
     if ((currentPage + 1) * itemsPerPage < allBookings.length) {
       setCurrentPage((prev) => prev + 1);
     }
+  };
+
+  const handleExport = () => {
+    if (allBookings.length === 0) {
+      alert("No bookings to export");
+      return;
+    }
+
+    const bookingsToExport =
+      selectedBookings.length > 0
+        ? allBookings.filter((b) => selectedBookings.includes(b.id))
+        : paginatedBookings;
+
+    exportBookingsToCSV(bookingsToExport);
+  };
+
+  const exportBookingsToCSV = (bookings: ApiOrderResponse[]) => {
+    const headers = [
+      "Booking ID",
+      "Customer Name",
+      "Order Date",
+      "Booking Status",
+      "Payment Status",
+      "Service",
+      "Total Amount",
+      "Staff Assigned",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...bookings.map((booking) =>
+        [
+          booking.id.slice(0, 8).toUpperCase(),
+          `"${booking.customer_name}"`,
+          booking.order_date
+            ? new Date(booking.order_date).toLocaleDateString("en-GB")
+            : "N/A",
+          formatStatusDisplay(booking.order_status),
+          booking.payment_status,
+          `"${booking.homecare_service_name}"`,
+          parseFloat(booking.order_total).toFixed(2),
+          `"${
+            (booking as any).staff_details
+              ?.map((s: any) => s.name)
+              .join(", ") || "Not Assigned"
+          }"`,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `bookings_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const paginatedBookings = useMemo(() => {
@@ -367,46 +431,17 @@ const BookingManagement: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
-
-          {/* <div className="relative">
+          <div className="flex gap-2">
             <button
-              onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors min-w-[150px] justify-between"
+              onClick={handleExport}
+              className="flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50"
             >
-              <span className="text-[#161D1F] text-[12px]">
-                {formatStatusDisplay(statusFilter)}
-              </span>
-              <ChevronDown className="w-4 h-4 text-[#899193]" />
+              <Download className="w-4 h-4" />
+              {selectedBookings.length > 0
+                ? `Export Selected (${selectedBookings.length})`
+                : "Export All"}
             </button>
-            {isStatusDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-                <div className="py-2">
-                  {statusOptions.map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => {
-                        setStatusFilter(status);
-                        setIsStatusDropdownOpen(false);
-                        // Trigger fetch on status change
-                        if (status !== statusFilter) {
-                          // fetchOrders will be called via useEffect
-                        }
-                      }}
-                      className="w-full px-4 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 transition-colors"
-                    >
-                      {formatStatusDisplay(status)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <button
-              onClick={handleSearch}
-              className="ml-4 px-4 py-2 text-white bg-cyan-600 rounded-lg hover:bg-cyan-700 transition-colors text-[12px] hidden sm:block"
-            >
-              Apply
-            </button>
-          </div> */}
+          </div>
         </div>
 
         <div className="mb-6">
@@ -637,46 +672,6 @@ const BookingManagement: React.FC = () => {
           </div>
         )}
 
-        {selectedBookings.length > 0 && (
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-center justify-between">
-              <span className="text-[#161D1F] font-medium">
-                {selectedBookings.length} booking(s) selected
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    selectedBookings.forEach((id) => handleAssignStaff(id));
-                    setSelectedBookings([]);
-                  }}
-                  className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors text-[10px]"
-                >
-                  Assign Staff to All
-                </button>
-                <button
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `Are you sure you want to cancel ${selectedBookings.length} booking(s)?`
-                      )
-                    ) {
-                      setSelectedBookings([]);
-                    }
-                  }}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-[10px]"
-                >
-                  Cancel All
-                </button>
-                <button
-                  onClick={() => setSelectedBookings([])}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-[10px]"
-                >
-                  Clear Selection
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
         <BookingModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
