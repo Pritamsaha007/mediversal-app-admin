@@ -44,7 +44,6 @@ export class OrderService {
   }): Promise<{ orders: Order[]; totalCount: number }> {
     try {
       const { token } = useAdminStore.getState();
-      console.log("Fetching orders with token:", token);
 
       if (!token) {
         throw new Error("No authentication token found");
@@ -170,8 +169,6 @@ export class OrderService {
         rider_staff_id: "",
         rider_delivery_status_id: "",
       };
-
-      // Call your API
       await updateOrderRiderInfo(payload, token);
     } catch (error) {
       console.error("Failed to update rider delivery status:", error);
@@ -369,6 +366,66 @@ export class OrderService {
       pendingDelivery,
       prescriptionVerification,
     };
+  }
+  static exportToCSV(orders: Order[]): void {
+    if (orders.length === 0) {
+      alert("No orders to export");
+      return;
+    }
+
+    const headers = [
+      "Order ID",
+      "Customer Name",
+      "Customer Email",
+      "Customer Phone",
+      "Order Date",
+      "Total Amount",
+      "Payment Status",
+      "Payment Method",
+      "Order Status",
+      "Billing Address",
+      "Billing City",
+      "Billing State",
+      "Billing Pincode",
+      "Assigned Rider",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...orders.map((order) =>
+        [
+          order.id?.slice(0, 6).toUpperCase() || "",
+          `"${order.customername || "Guest User"}"`,
+          order.customeremail || "",
+          order.customerphone || "",
+          this.formatDate(order.created_date),
+          this.calculateTotalAmount(order),
+          order.paymentstatus || "",
+          order.paymentmethod || "",
+          order.deliverystatus || "",
+          `"${order.billing_address_2 || ""}"`,
+          order.billing_city || "",
+          order.billing_state || "",
+          order.billing_pincode || "",
+          `"${order.rider_staff_name || "Not Assigned"}"`,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `orders_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }
 

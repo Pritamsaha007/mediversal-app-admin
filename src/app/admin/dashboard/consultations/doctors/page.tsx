@@ -11,6 +11,7 @@ import {
   Eye,
   Edit,
   Trash2,
+  Download,
 } from "lucide-react";
 import AddDoctorModal from "./components/AddDoctorModal";
 import DoctorDetailsModal from "./components/DoctorDetailsModal";
@@ -150,7 +151,7 @@ const Doctors: React.FC = () => {
           doctor.availability = convertSlotsToAvailability(
             apiDoctor.doctor_slots.map((slot) => ({
               ...slot,
-              day: slot.day || "", // Use day field from API
+              day: slot.day || "",
               day_id: slot.day_id || "",
             })),
             dayNameToName
@@ -301,6 +302,76 @@ const Doctors: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleExport = () => {
+    if (doctors.length === 0) {
+      alert("No doctors to export");
+      return;
+    }
+
+    const doctorsToExport =
+      selectedDoctors.length > 0
+        ? doctors.filter((d) => selectedDoctors.includes(d.id))
+        : filteredDoctors;
+
+    exportDoctorsToCSV(doctorsToExport);
+  };
+
+  const exportDoctorsToCSV = (doctors: Doctor[]) => {
+    const headers = [
+      "Doctor Name",
+      "Mobile Number",
+      "Specialization",
+      "Department",
+      "Experience (Years)",
+      "Consultation Price",
+      "Rating",
+      "Online Available",
+      "In-Person Available",
+      "Hospitals",
+      "Languages Known",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...doctors.map((d) =>
+        [
+          `"${d.name}"`,
+          d.mobile_number || "N/A",
+          d.specializations || "N/A",
+          d.department_id || "N/A",
+          d.experience_in_yrs || 0,
+          d.consultation_price || 0,
+          d.rating ?? 0,
+          d.is_available_online ? "Yes" : "No",
+          d.is_available_in_person ? "Yes" : "No",
+          `"${
+            Array.isArray(d.hospitalNames) ? d.hospitalNames.join(", ") : "N/A"
+          }"`,
+          `"${
+            Array.isArray(d.languages_known)
+              ? d.languages_known.join(", ")
+              : "N/A"
+          }"`,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `doctors_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const renderTimeSlots = (doctor: Doctor) => {
@@ -522,34 +593,17 @@ const Doctors: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
-          {/* <div className="relative">
+          <div className="flex gap-2">
             <button
-              onClick={() =>
-                setOpenDropdown(openDropdown === "status" ? null : "status")
-              }
-              className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-3 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
+              onClick={handleExport}
+              className="flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50"
             >
-              {selectedStatus}
-              <ChevronDown className="w-4 h-4" />
+              <Download className="w-4 h-4" />
+              {selectedDoctors.length > 0
+                ? `Export Selected (${selectedDoctors.length})`
+                : "Export All"}
             </button>
-            {openDropdown === "status" && (
-              <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                {statusOptions.map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => handleStatusChange(status)}
-                    className={`block w-full px-4 py-2 text-xs text-left hover:bg-gray-100 ${
-                      selectedStatus === status
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-[#161D1F]"
-                    }`}
-                  >
-                    {status}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div> */}
+          </div>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

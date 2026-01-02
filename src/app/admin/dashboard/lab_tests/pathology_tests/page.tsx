@@ -14,6 +14,7 @@ import {
   Trash2,
   Droplet,
   Droplets,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { AddTestModal } from "./components/AddTest";
@@ -349,6 +350,70 @@ const PathologyTests: React.FC = () => {
     }
   };
 
+  const exportTestsToCSV = (tests: PathologyTest[]) => {
+    const headers = [
+      "Test Name",
+      "Code",
+      "Description",
+      "Cost Price (₹)",
+      "Selling Price (₹)",
+      "Report Time (hrs)",
+      "Status",
+      "Is Deleted",
+      "Sample Type",
+      "Average Discount",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...tests.map((t) =>
+        [
+          `"${t.name}"`,
+          `"${t.code}"`,
+          `"${t.description || ""}"`,
+          t.cost_price,
+          t.selling_price,
+          t.report_time_hrs,
+          t.is_active ? "Active" : "Inactive",
+          t.is_deleted ? "Yes" : "No",
+          `"${t.sample_type_ids || ""}"`,
+          t.average_discount_percentage || "0",
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `pathology_tests_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // 3. Add handleExport function inside the component (after the other handler functions)
+  const handleExport = () => {
+    if (tests.length === 0) {
+      toast.error("No tests to export");
+      return;
+    }
+
+    const testsToExport =
+      selectedTests.length > 0
+        ? tests.filter((t) => selectedTests.includes(t.id))
+        : filteredTests;
+
+    exportTestsToCSV(testsToExport);
+    toast.success(`Exported ${testsToExport.length} tests successfully!`);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -432,36 +497,24 @@ const PathologyTests: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
-          {/* <div className="flex gap-3">
-            <div className="relative">
-              <button
-                onClick={() =>
-                  setOpenDropdown(openDropdown === "status" ? null : "status")
-                }
-                className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-3 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
-              >
-                {selectedStatus}
-                <ChevronDown className="w-5 h-5" />
-              </button>
-              {openDropdown === "status" && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                  {statusOptions.map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusChange(status)}
-                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
-                        selectedStatus === status
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-[#161D1F]"
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div> */}
+
+          {/* Add this export button section */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              disabled={loading || tests.length === 0}
+              className={`flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50 ${
+                loading || tests.length === 0
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
+            >
+              <Download className="w-4 h-4" />
+              {selectedTests.length > 0
+                ? `Export Selected (${selectedTests.length})`
+                : "Export All"}
+            </button>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

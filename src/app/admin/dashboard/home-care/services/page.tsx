@@ -18,6 +18,7 @@ import {
   Eye,
   Edit,
   Trash2,
+  Download,
 } from "lucide-react";
 import { HomecareService } from "./types";
 
@@ -356,6 +357,69 @@ const Services: React.FC = () => {
     toast.success("Service updated successfully!");
   };
 
+  const exportServicesToCSV = (services: Service[]) => {
+    const headers = [
+      "Service Name",
+      "Description",
+      "Category",
+      "Status",
+      "Offerings Count",
+      "Offerings",
+      "Display Sections",
+      "Custom Medical Info",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...services.map((s) =>
+        [
+          `"${s.name}"`,
+          `"${s.description}"`,
+          `"${s.category}"`,
+          s.status,
+          s.offerings.length,
+          `"${s.offerings.map((o) => o.name).join("; ")}"`,
+          `"${(s.display_sections || []).join("; ")}"`,
+          `"${JSON.stringify(s.custom_medical_info || {}).replace(
+            /"/g,
+            '""'
+          )}"`,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `services_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // 3. Add handleExport function inside the component
+  const handleExport = () => {
+    if (allServices.length === 0) {
+      toast.error("No services to export");
+      return;
+    }
+
+    const servicesToExport =
+      selectedServices.length > 0
+        ? allServices.filter((s) => selectedServices.includes(s.id))
+        : filteredServices;
+
+    exportServicesToCSV(servicesToExport);
+    toast.success(`Exported ${servicesToExport.length} services successfully!`);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -441,6 +505,22 @@ const Services: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              disabled={loading || allServices.length === 0}
+              className={`flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50 ${
+                loading || allServices.length === 0
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
+            >
+              <Download className="w-4 h-4" />
+              {selectedServices.length > 0
+                ? `Export Selected (${selectedServices.length})`
+                : "Export All"}
+            </button>
           </div>
         </div>
 

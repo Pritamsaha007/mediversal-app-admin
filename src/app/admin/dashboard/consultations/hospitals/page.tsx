@@ -11,6 +11,7 @@ import {
   Trash2,
   MapPin,
   Phone,
+  Download,
 } from "lucide-react";
 import AddHospitalModal from "./components/AddHospitalModal";
 import HospitalDetailsModal from "./components/HospitalDetailsModal";
@@ -333,6 +334,68 @@ const Hospitals: React.FC = () => {
     setShowConfirmModal(true);
   };
 
+  const handleExport = () => {
+    if (hospitals.length === 0) {
+      alert("No hospitals to export");
+      return;
+    }
+
+    const hospitalsToExport =
+      selectedHospitals.length > 0
+        ? hospitals.filter((h) => selectedHospitals.includes(h.id))
+        : filteredHospitals;
+
+    exportHospitalsToCSV(hospitalsToExport);
+  };
+
+  const exportHospitalsToCSV = (hospitals: Hospital[]) => {
+    const headers = [
+      "Hospital Name",
+      "Address",
+      "City",
+      "State",
+      "Pincode",
+      "Phone",
+      "Email",
+      "Emergency Services",
+      "Departments",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...hospitals.map((h) =>
+        [
+          `"${h.name}"`,
+          `"${h.address?.line1 || "N/A"}"`,
+          h.address?.city || "N/A",
+          h.address?.state || "N/A",
+          h.address?.pinCode || "N/A",
+          h.contact?.phone?.[0] || "N/A",
+          h.contact?.email?.[0] || "N/A",
+          h.emergencyServices ? "Yes" : "No",
+          `"${
+            Array.isArray(h.departments) ? h.departments.join(", ") : "N/A"
+          }"`,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `hospitals_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -375,76 +438,17 @@ const Hospitals: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
-
-          {/* <div className="relative">
+          <div className="flex gap-2">
             <button
-              onClick={() =>
-                setOpenDropdown(
-                  openDropdown === "department" ? null : "department"
-                )
-              }
-              className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-3 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
+              onClick={handleExport}
+              className="flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50"
             >
-              {selectedDepartment}
-              <ChevronDown className="w-4 h-4" />
+              <Download className="w-4 h-4" />
+              {selectedHospitals.length > 0
+                ? `Export Selected (${selectedHospitals.length})`
+                : "Export All"}
             </button>
-            {openDropdown === "department" && (
-              <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                <button
-                  onClick={() => handleDepartmentChange("All Departments")}
-                  className={`block w-full px-4 py-2 text-xs text-left hover:bg-gray-100 ${
-                    selectedDepartment === "All Departments"
-                      ? "bg-blue-50 text-blue-600"
-                      : "text-[#161D1F]"
-                  }`}
-                >
-                  All Departments
-                </button>
-                {departmentOptions.map((department) => (
-                  <button
-                    key={department}
-                    onClick={() => handleDepartmentChange(department)}
-                    className={`block w-full px-4 py-2 text-xs text-left hover:bg-gray-100 ${
-                      selectedDepartment === department
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-[#161D1F]"
-                    }`}
-                  >
-                    {department}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
-
-          <div className="relative">
-            <button
-              onClick={() =>
-                setOpenDropdown(openDropdown === "hours" ? null : "hours")
-              }
-              className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-3 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
-            >
-              {selectedOperatingHours}
-              <ChevronDown className="w-4 h-4" />
-            </button>
-            {openDropdown === "hours" && (
-              <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                {operatingHoursOptions.map((hours) => (
-                  <button
-                    key={hours}
-                    onClick={() => handleOperatingHoursChange(hours)}
-                    className={`block w-full px-4 py-2 text-xs text-left hover:bg-gray-100 ${
-                      selectedOperatingHours === hours
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-[#161D1F]"
-                    }`}
-                  >
-                    {hours}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div> */}
         </div>
 
         {/* Hospitals Table */}

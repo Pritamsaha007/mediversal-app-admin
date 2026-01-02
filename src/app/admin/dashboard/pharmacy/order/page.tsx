@@ -329,8 +329,18 @@ const Orders: React.FC = () => {
     };
   }, []);
 
-  const handleExportPDF = () => {
-    console.log("Exporting orders to PDF...");
+  const handleExport = () => {
+    if (orders.length === 0) {
+      alert("No orders to export");
+      return;
+    }
+
+    const ordersToExport =
+      selectedOrders.length > 0
+        ? orders.filter((o) => o.id && selectedOrders.includes(o.id.toString()))
+        : orders;
+
+    OrderService.exportToCSV(ordersToExport);
   };
 
   const handleStatusChange = (status: string) => {
@@ -525,44 +535,16 @@ const Orders: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-xs"
             />
           </div>
-        </div>
-
-        <div className="flex justify-between mb-4 bg-[#F8F8F8] rounded-lg">
-          <div className=""></div>
-          <div>
-            {selectedOrders.length > 0 && (
-              <div className="flex items-center justify-between px-6 bg-gray-50">
-                <div className="text-[10px] text-gray-600 mr-3">
-                  {selectedOrders.length} selected
-                </div>
-                <div className="relative" ref={actionDropdownRef}>
-                  <button
-                    onClick={() => setActionDropdownOpen(!actionDropdownOpen)}
-                    className="flex items-center gap-2 px-4 py-2 text-[#161D1F] bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-                  >
-                    Actions
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-                  {actionDropdownOpen && (
-                    <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                      <button
-                        onClick={handleBulkDelete}
-                        className="flex items-center gap-2 w-full px-4 py-2 text-xs text-left text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete Selected
-                      </button>
-                      <button
-                        onClick={handleExportPDF}
-                        className="block w-full px-4 py-2 text-xs text-left text-[#161D1F] hover:bg-gray-100"
-                      >
-                        Export PDF
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50"
+            >
+              <Download className="w-4 h-4" />
+              {selectedOrders.length > 0
+                ? `Export Selected (${selectedOrders.length})`
+                : "Export All"}
+            </button>
           </div>
         </div>
 

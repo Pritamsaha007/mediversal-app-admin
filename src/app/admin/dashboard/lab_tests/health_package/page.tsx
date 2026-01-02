@@ -14,6 +14,7 @@ import {
   Trash2,
   Droplet,
   Droplets,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { AddTestModal } from "./components/AddTest";
@@ -394,6 +395,72 @@ const HealthPackages: React.FC = () => {
         break;
     }
   };
+  const exportHealthPackagesToCSV = (packages: HealthPackage[]) => {
+    const headers = [
+      "Package Name",
+      "Package ID",
+      "Description",
+      "Cost Price (₹)",
+      "Selling Price (₹)",
+      "Discount (%)",
+      "Status",
+      "Is Deleted",
+      "Tests Included Count",
+      "Tests Included",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...packages.map((p) => {
+        const testNames = (p.linked_test_ids || [])
+          .map((testId) => testNamesMap.get(testId) || testId)
+          .join("; ");
+
+        return [
+          `"${p.name}"`,
+          `"${p.id.slice(0, 6).toUpperCase()}"`,
+          `"${p.description || ""}"`,
+          p.cost_price,
+          p.selling_price,
+          p.discount_percentage || "0",
+          p.is_active ? "Active" : "Inactive",
+          p.is_deleted ? "Yes" : "No",
+          (p.linked_test_ids || []).length,
+          `"${testNames}"`,
+        ].join(",");
+      }),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `health_packages_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExport = () => {
+    if (tests.length === 0) {
+      toast.error("No health packages to export");
+      return;
+    }
+
+    const packagesToExport =
+      selectedTests.length > 0
+        ? tests.filter((p) => selectedTests.includes(p.id))
+        : filteredTests;
+
+    exportHealthPackagesToCSV(packagesToExport);
+    toast.success(`Exported ${packagesToExport.length} packages successfully!`);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -478,6 +545,23 @@ const HealthPackages: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              disabled={loading || tests.length === 0}
+              className={`flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50 ${
+                loading || tests.length === 0
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
+            >
+              <Download className="w-4 h-4" />
+              {selectedTests.length > 0
+                ? `Export Selected (${selectedTests.length})`
+                : "Export All"}
+            </button>
           </div>
           {/* <div className="flex gap-3">
             <div className="relative">

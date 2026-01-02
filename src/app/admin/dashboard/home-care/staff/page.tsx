@@ -8,6 +8,7 @@ import {
   Edit,
   Trash2,
   Star,
+  Download,
 } from "lucide-react";
 import AddStaffModal from "./components/AddStaffModal";
 import ViewStaffModal from "./components/ViewStaffModal";
@@ -275,6 +276,69 @@ const StaffManagement: React.FC = () => {
     );
   };
 
+  const handleExport = () => {
+    if (staffList.length === 0) {
+      alert("No staff to export");
+      return;
+    }
+
+    const staffToExport =
+      selectedStaff.length > 0
+        ? staffList.filter((s) => selectedStaff.includes(s.id))
+        : filteredStaff;
+
+    exportStaffToCSV(staffToExport);
+  };
+
+  const exportStaffToCSV = (staff: Staff[]) => {
+    const headers = [
+      "Staff ID",
+      "Name",
+      "Email",
+      "Phone",
+      "Position",
+      "Experience",
+      "Rating",
+      "Status",
+      "Departments",
+      "Join Date",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...staff.map((s) =>
+        [
+          s.id,
+          `"${s.name}"`,
+          s.email || "N/A",
+          s.phone || "N/A",
+          `"${s.position}"`,
+          s.experience,
+          s.rating.toFixed(1),
+          s.status,
+          `"${
+            Array.isArray(s.departments) ? s.departments.join(", ") : "N/A"
+          }"`,
+          s.joinDate,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `staff_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
   // Add to the existing useEffect with cleanup
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -319,7 +383,7 @@ const StaffManagement: React.FC = () => {
                 disabled={loading}
               >
                 <Trash2 className="w-3 h-3" />
-                Delete Selected ({selectedStaff.length})
+                Delete ({selectedStaff.length})
               </button>
             )}
           </div>
@@ -336,37 +400,17 @@ const StaffManagement: React.FC = () => {
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
-          {/* <div className="flex gap-3">
-           
-            <div className="relative">
-              <button
-                onClick={() =>
-                  setOpenDropdown(openDropdown === "status" ? null : "status")
-                }
-                className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-2 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
-              >
-                {selectedStatus}
-                <ChevronDown className="w-4 h-4" />
-              </button>
-              {openDropdown === "status" && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                  {statusOptions.map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusChange(status)}
-                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
-                        selectedStatus === status
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-[#161D1F]"
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div> */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50"
+            >
+              <Download className="w-4 h-4" />
+              {selectedStaff.length > 0
+                ? `Export Selected (${selectedStaff.length})`
+                : "Export All"}
+            </button>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden h-screen max-h-screen flex flex-col">

@@ -18,15 +18,25 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
 interface CustomerRowProps {
   customer: Customer;
   onClick: () => void;
+  onSelect: () => void;
+  isSelected: boolean;
 }
 
 const CustomerRow: React.FC<CustomerRowProps> = React.memo(
-  ({ customer, onClick }) => {
+  ({ customer, onClick, isSelected, onSelect }) => {
     return (
       <tr
         className="hover:bg-gray-50 cursor-pointer transition-colors"
         onClick={onClick}
       >
+        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={onSelect}
+            className="rounded border-gray-300 text-[#0088B1] focus:ring-[#0088B1]"
+          />
+        </td>
         <td className="px-6 py-4">
           <div className="text-[12px] font-medium text-[#161D1F]">
             {CustomerService.getFullName(customer)}
@@ -57,7 +67,8 @@ const CustomerRow: React.FC<CustomerRowProps> = React.memo(
     return (
       prevProps.customer.id === nextProps.customer.id &&
       prevProps.customer.status === nextProps.customer.status &&
-      prevProps.customer.total_spent === nextProps.customer.total_spent
+      prevProps.customer.total_spent === nextProps.customer.total_spent &&
+      prevProps.isSelected === nextProps.isSelected
     );
   }
 );

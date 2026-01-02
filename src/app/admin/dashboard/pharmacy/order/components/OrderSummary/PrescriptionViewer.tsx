@@ -189,33 +189,9 @@ const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
               <p className="text-base font-medium text-gray-800 mb-2">
                 Unable to Load Prescription
               </p>
-              <p className="text-xs text-gray-500 mb-4">
-                The image could not be loaded. This may be due to CORS
-                restrictions or an invalid URL.
+              <p className="text-sm text-gray-500 mb-4">
+                We’re unable to display the prescription right now.
               </p>
-              <div className="bg-gray-100 p-3 rounded border border-gray-300 mb-4 max-w-full overflow-x-auto">
-                <p className="text-xs text-gray-700 font-mono break-all">
-                  {cleanedPrescription}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => window.open(cleanedPrescription, "_blank")}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Open in New Tab
-                </button>
-                <button
-                  onClick={() => {
-                    setImageError(false);
-                    setIsLoading(true);
-                  }}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 transition-colors"
-                >
-                  Retry
-                </button>
-              </div>
             </div>
           ) : (
             <img

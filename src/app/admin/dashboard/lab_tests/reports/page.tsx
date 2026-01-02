@@ -363,6 +363,71 @@ const ReportsManagement: React.FC = () => {
     );
   };
 
+  const exportReportsToCSV = (reports: LabTestReport[]) => {
+    const headers = [
+      "Booking ID",
+      "Patient Name",
+      "Test Names",
+      "Category Names",
+      "Report Status",
+      "Report Date & Time",
+      "Booking Date",
+      "Report URL",
+      "Is Hospital Visit",
+      "Number of Tests",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...reports.map((r) =>
+        [
+          `"${r.booking_id}"`,
+          `"${r.patient_name || "N/A"}"`,
+          `"${r.test_names.filter((t) => t && t.trim() !== "").join("; ")}"`,
+          `"${r.category_names
+            .filter((c) => c && c.trim() !== "")
+            .join("; ")}"`,
+          r.report_status,
+          `"${formatDateTime(r.report_date_time)}"`,
+          `"${formatDateTime(r.booking_date)}"`,
+          `"${r.report_url || "No URL"}"`,
+          r.is_hospital_visit ? "Yes" : "No",
+          r.test_names.length,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `reports_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExport = () => {
+    if (reports.length === 0) {
+      toast.error("No reports to export");
+      return;
+    }
+
+    const reportsToExport =
+      selectedReports.length > 0
+        ? reports.filter((r) => selectedReports.includes(r.booking_id))
+        : reports;
+
+    exportReportsToCSV(reportsToExport);
+    toast.success(`Exported ${reportsToExport.length} reports successfully!`);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-2">
       {showPreview && previewUrl && (
@@ -494,6 +559,22 @@ const ReportsManagement: React.FC = () => {
               onKeyPress={handleSearchKeyPress}
               className="w-full pl-10 text-[#161D1F] pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              disabled={loading || reports.length === 0}
+              className={`flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50 ${
+                loading || reports.length === 0
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
+            >
+              <Download className="w-4 h-4" />
+              {selectedReports.length > 0
+                ? `Export Selected (${selectedReports.length})`
+                : "Export All"}
+            </button>
           </div>
           <div className="flex gap-3">
             <div className="relative">

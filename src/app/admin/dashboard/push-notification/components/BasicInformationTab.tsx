@@ -222,9 +222,9 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
                 </div>
                 <button
                   onClick={handleRemoveCustomer}
-                  className="p-1 hover:bg-red-100 rounded"
+                  className="p-1 hover:bg-blue-100 rounded"
                 >
-                  <X className="w-4 h-4 text-red-500" />
+                  <X className="w-4 h-4 text-[#0088B1]" />
                 </button>
               </div>
             ) : (
