@@ -101,7 +101,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to fetch order details"
+        err instanceof Error ? err.message : "Failed to fetch order details",
       );
     } finally {
       setLoading(false);
@@ -117,14 +117,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
   if (!isOpen || !booking) return null;
 
   const getorder_statusColor = (order_status: string) => {
-    switch (order_status) {
-      case "Pending Assignment":
+    switch (order_status.toLowerCase()) {
+      case "pending":
         return "bg-yellow-100 text-yellow-800";
-      case "In Progress":
+      case "in_progress":
         return "bg-blue-100 text-blue-800";
-      case "Completed":
+      case "completed":
         return "bg-green-100 text-green-800";
-      case "Cancelled":
+      case "cancelled":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -139,6 +139,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
         return "bg-green-100 text-green-800";
       case "Refunded":
         return "bg-blue-100 text-blue-800";
+      case "Pending":
+        return "bg-blue-100 text-blue-800";
+      case "Unpaid":
+        return "bg-blue-100 text-blue-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -146,7 +150,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   const handleStaffAssignment = (
     bookingId: string,
-    staffs: AssignedStaff[]
+    staffs: AssignedStaff[],
   ) => {
     fetchOrderDetails();
 
@@ -198,27 +202,22 @@ const BookingModal: React.FC<BookingModalProps> = ({
           </button>
         </div>
 
-        {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="border-b pb-6">
             <div className="flex gap-3">
               <span
                 className={`px-3 py-1 rounded-full text-[10px] font-medium ${getorder_statusColor(
-                  booking.order_status
+                  booking.order_status,
                 )}`}
               >
                 {booking.order_status}
               </span>
               <span
                 className={`px-3 py-1 rounded-full text-[10px] font-medium ${getPaymentColor(
-                  booking.payment_status
+                  booking.payment_status,
                 )}`}
               >
-                {booking.payment_status == "Refunded"
-                  ? "Paid"
-                  : booking.payment_status == "Paid"
-                  ? "Paid"
-                  : "Partial Payment"}
+                {booking.payment_status.toUpperCase()}
               </span>
             </div>
           </div>
@@ -347,7 +346,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   <div>
                     <p className="text-[10px] text-[#899193] mb-1">Duration</p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
-                      {orderDetails?.schedule_in_days || 0} days
+                      {orderDetails?.schedule_in_hours != undefined &&
+                        `${orderDetails?.schedule_in_hours} hours - `}
+                      &nbsp;{orderDetails?.schedule_in_days || 0} days
                     </p>
                   </div>
 
@@ -412,7 +413,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                         >
                           {staff.name || "Staff Name Not Available"}
                         </p>
-                      )
+                      ),
                     )}
                   </div>
                 ) : (
