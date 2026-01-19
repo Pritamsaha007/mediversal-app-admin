@@ -133,6 +133,15 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
     });
   }, [riders, searchTerm, selectedCategory, selectedCity]);
 
+  useEffect(() => {
+    const ids = filteredRiders.map((r) => r.id);
+    const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+
+    if (duplicates.length) {
+      console.log("Duplicate rider keys found:", duplicates);
+    }
+  }, [filteredRiders]);
+
   const handleAssign = (rider: DeliveryRider) => {
     const assignment = { rider };
     setAssignedRider(assignment);
