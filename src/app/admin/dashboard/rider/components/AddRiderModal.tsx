@@ -455,12 +455,9 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
                     const alreadyAssigned = assignedRider && !assigned;
 
                     return (
-                      <>
+                      <div key={rider.id}>
                         {!assigned && (
-                          <div
-                            key={rider.id}
-                            className="flex items-center justify-between p-4 border border-gray-200"
-                          >
+                          <div className="flex items-center justify-between p-4 border border-gray-200">
                             <div className="flex items-center gap-4">
                               <div className="w-12 h-12 bg-[#E8F4F7] rounded-full flex items-center justify-center">
                                 <span className="text-black text-xs font-semibold">
@@ -531,7 +528,7 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
                             </div>
                           </div>
                         )}
-                      </>
+                      </div>
                     );
                   })
                 )}

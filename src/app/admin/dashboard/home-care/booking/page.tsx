@@ -78,7 +78,7 @@ const BookingManagement: React.FC = () => {
     useState<string>("");
   const [orderStatuses, setOrderStatuses] = useState<OrderStatusEnum[]>([]);
   const [openStatusDropdown, setOpenStatusDropdown] = useState<string | null>(
-    null
+    null,
   );
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
@@ -92,8 +92,8 @@ const BookingManagement: React.FC = () => {
         const relevantStatuses = (response.roles as OrderStatusEnum[]).filter(
           (status) =>
             ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(
-              status.value
-            )
+              status.value,
+            ),
         );
         setOrderStatuses(relevantStatuses);
       }
@@ -193,7 +193,7 @@ const BookingManagement: React.FC = () => {
               ?.map((s: any) => s.name)
               .join(", ") || "Not Assigned"
           }"`,
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -204,7 +204,7 @@ const BookingManagement: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `bookings_export_${new Date().toISOString().split("T")[0]}.csv`
+      `bookings_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -244,7 +244,7 @@ const BookingManagement: React.FC = () => {
     orderId: string,
     statusId: string,
     statusValue: string,
-    customer_id: string
+    customer_id: string,
   ) => {
     try {
       setUpdatingStatus(orderId);
@@ -268,15 +268,15 @@ const BookingManagement: React.FC = () => {
                     order_status: statusValue,
                     order_status_name: statusValue,
                   }
-                : order
-            )
-          )
+                : order,
+            ),
+          ),
         );
 
         setOpenStatusDropdown(null);
 
         toast.success(
-          `Order status updated to ${formatStatusDisplay(statusValue)}`
+          `Order status updated to ${formatStatusDisplay(statusValue)}`,
         );
       } else {
         throw new Error(response.message || "Failed to update status");
@@ -284,7 +284,7 @@ const BookingManagement: React.FC = () => {
     } catch (err) {
       console.error("Error updating status:", err);
       toast.error(
-        err instanceof Error ? err.message : "Failed to update order status"
+        err instanceof Error ? err.message : "Failed to update order status",
       );
     } finally {
       setUpdatingStatus(null);
@@ -317,6 +317,10 @@ const BookingManagement: React.FC = () => {
       case "Fully Paid":
         return "bg-green-100 text-green-800";
       case "Refunded":
+        return "bg-blue-100 text-blue-800";
+      case "Pending":
+        return "bg-blue-100 text-blue-800";
+      case "Unpaid":
         return "bg-blue-100 text-blue-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -367,8 +371,8 @@ const BookingManagement: React.FC = () => {
             };
           }
           return order;
-        })
-      )
+        }),
+      ),
     );
 
     setIsAssignStaffModalOpen(false);
@@ -476,7 +480,7 @@ const BookingManagement: React.FC = () => {
                     Customer Detail
                   </th>
                   <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
-                    Booking Status
+                    Order Status
                   </th>
                   <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
                     Payment
@@ -544,7 +548,7 @@ const BookingManagement: React.FC = () => {
                                     day: "2-digit",
                                     month: "short",
                                     year: "numeric",
-                                  }
+                                  },
                                 )
                               : "N/A"}
                           </div>
@@ -567,12 +571,12 @@ const BookingManagement: React.FC = () => {
                               setOpenStatusDropdown(
                                 openStatusDropdown === booking.id
                                   ? null
-                                  : booking.id
+                                  : booking.id,
                               )
                             }
                             disabled={updatingStatus === booking.id}
                             className={`px-3 py-1 rounded-full text-[10px] font-medium ${getStatusColor(
-                              booking.order_status
+                              booking.order_status,
                             )} flex items-center gap-1 hover:opacity-80 cursor-pointer transition-opacity disabled:opacity-50`}
                           >
                             {updatingStatus === booking.id ? (
@@ -598,7 +602,7 @@ const BookingManagement: React.FC = () => {
                                         booking.id,
                                         status.id,
                                         status.value,
-                                        booking.customer_id
+                                        booking.customer_id,
                                       )
                                     }
                                     className="w-full px-3 py-2 text-left text-[10px] text-[#161D1F] hover:bg-gray-50 cursor-pointer transition-colors"
@@ -614,12 +618,10 @@ const BookingManagement: React.FC = () => {
                       <td className="px-6 py-4">
                         <span
                           className={`px-3 py-1 rounded-full text-[10px] font-medium ${getPaymentColor(
-                            booking.payment_status
+                            booking.payment_status,
                           )}`}
                         >
-                          {booking.payment_status === "Refunded"
-                            ? "Paid"
-                            : booking.payment_status}
+                          {booking.payment_status}
                         </span>
                       </td>
                       <td className="px-6 py-4">
