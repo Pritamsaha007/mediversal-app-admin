@@ -21,6 +21,7 @@ export interface LabTestBooking {
   total_bookings_count?: string;
   total_revenue?: string;
   today_revenue?: string;
+  total_order_amount?: string;
 }
 
 export interface SearchLabTestBookingsPayload {
@@ -124,6 +125,7 @@ export interface BookingDetailsResponse {
       is_featured_lab_test: boolean | null;
       is_home_collection_available: boolean;
       is_active: boolean;
+      total_order_amount: number;
     }>;
     health_packages: any;
     hospital: any;
@@ -165,5 +167,6 @@ export interface BookingDetailsResponse {
     report_received_date: string;
     created_date: string;
     updated_date: string;
+    total_order_amount: string | undefined;
   };
 }
