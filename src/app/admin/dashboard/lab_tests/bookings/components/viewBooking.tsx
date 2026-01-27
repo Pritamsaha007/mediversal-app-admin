@@ -104,7 +104,7 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                     <Clock className="w-3 h-3" />
                     {formatDate(
                       bookingDetails?.booking?.booking_date ||
-                        booking.booking_date
+                        booking.booking_date,
                     )}
                   </span>
                 </div>
@@ -126,14 +126,14 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                         booking.status?.toLowerCase() === "completed"
                           ? "bg-green-100 text-green-800 border-green-800"
                           : bookingDetails?.booking?.status?.value?.toLowerCase() ===
-                              "in progress" ||
-                            booking.status?.toLowerCase() === "in progress"
-                          ? "bg-blue-100 text-blue-800 border-blue-800"
-                          : bookingDetails?.booking?.status?.value?.toLowerCase() ===
-                              "scheduled" ||
-                            booking.status?.toLowerCase() === "scheduled"
-                          ? "bg-yellow-100 text-yellow-800 border-yellow-800"
-                          : "bg-yellow-100 text-yellow-800 border-yellow-800"
+                                "in progress" ||
+                              booking.status?.toLowerCase() === "in progress"
+                            ? "bg-blue-100 text-blue-800 border-blue-800"
+                            : bookingDetails?.booking?.status?.value?.toLowerCase() ===
+                                  "scheduled" ||
+                                booking.status?.toLowerCase() === "scheduled"
+                              ? "bg-yellow-100 text-yellow-800 border-yellow-800"
+                              : "bg-yellow-100 text-yellow-800 border-yellow-800"
                       }`}
                     >
                       {bookingDetails?.booking?.status?.value ||
@@ -269,7 +269,7 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                                 {patient.name} - {patient.age} Yrs. -{" "}
                                 {patient.gender}
                               </div>
-                            )
+                            ),
                           )}
                         </div>
                       </div>
@@ -290,7 +290,7 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                       <span className="ml-2 text-xs text-[#161D1F]">
                         {formatDate(
                           bookingDetails?.booking?.booking_date ||
-                            booking.booking_date
+                            booking.booking_date,
                         )}
                       </span>
                     </div>
@@ -306,13 +306,10 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                     </div>
                     <div>
                       <span className="text-xs text-[#161D1F] font-medium">
-                        Created Date:
+                        Total Amount:
                       </span>
                       <span className="ml-2 text-xs text-[#161D1F]">
-                        {formatDate(
-                          bookingDetails?.booking?.created_date ||
-                            booking.created_date
-                        )}
+                        ₹{bookingDetails?.booking.total_order_amount}
                       </span>
                     </div>
                     <div>
@@ -324,7 +321,7 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                         {parseFloat(
                           bookingDetails?.booking?.price ||
                             booking.amount ||
-                            "0"
+                            "0",
                         ).toLocaleString("en-IN")}
                       </span>
                     </div>

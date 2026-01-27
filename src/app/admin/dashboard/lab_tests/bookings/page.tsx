@@ -72,10 +72,10 @@ const BookingsManagement: React.FC = () => {
   const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [openStatusDropdown, setOpenStatusDropdown] = useState<string | null>(
-    null
+    null,
   );
   const [openActionDropdown, setOpenActionDropdown] = useState<string | null>(
-    null
+    null,
   );
   const [showViewBooking, setShowViewBooking] = useState(false);
   const [showAssignPhlebotomist, setShowAssignPhlebotomist] = useState(false);
@@ -95,8 +95,8 @@ const BookingsManagement: React.FC = () => {
         const relevantStatuses = (response.roles as OrderStatusEnum[]).filter(
           (status) =>
             ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(
-              status.value
-            )
+              status.value,
+            ),
         );
         setOrderStatuses(relevantStatuses);
       }
@@ -335,36 +335,19 @@ const BookingsManagement: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "scheduled":
-        return "bg-yellow-100 text-yellow-800";
-      case "in progress":
-        return "bg-blue-100 text-blue-800";
-      case "completed":
-        return "bg-green-100 text-green-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      case "pending":
-        return "bg-orange-100 text-orange-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   const getStatusIdFromValue = (
     statusValue: string,
-    orderStatuses: OrderStatusEnum[]
+    orderStatuses: OrderStatusEnum[],
   ): string => {
     const status = orderStatuses.find(
-      (s) => s.value.toLowerCase() === statusValue.toLowerCase()
+      (s) => s.value.toLowerCase() === statusValue.toLowerCase(),
     );
     return status?.id || orderStatuses[0]?.id;
   };
 
   const handleOrderStatusChange = async (
     bookingId: string,
-    newStatus: string
+    newStatus: string,
   ) => {
     setUpdatingStatus(bookingId);
 
@@ -374,7 +357,7 @@ const BookingsManagement: React.FC = () => {
             ...booking,
             status: newStatus,
           }
-        : booking
+        : booking,
     );
     setBookings(optimisticBookings);
     setOpenStatusDropdown(null);
@@ -412,14 +395,32 @@ const BookingsManagement: React.FC = () => {
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
-      case "completed":
+      case "Fully Paid":
         return "bg-green-100 text-green-800";
-      case "pending":
+      case "Not Paid":
         return "bg-yellow-100 text-yellow-800";
       case "failed":
         return "bg-red-100 text-red-800";
       case "not paid":
         return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+  const getOrderStatusColor = (status: string) => {
+    const normalized = status?.toUpperCase();
+
+    switch (normalized) {
+      case "COMPLETED":
+        return "bg-green-100 text-green-800";
+      case "SCHEDULED":
+        return "bg-yellow-100 text-yellow-800";
+      case "CANCELLED":
+        return "bg-red-100 text-red-800";
+      case "IN_PROGRESS":
+        return "bg-blue-100 text-blue-800";
+      case "CONFIRMED":
+        return "bg-yellow-100 text-yellow-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -435,7 +436,7 @@ const BookingsManagement: React.FC = () => {
     if (window.confirm("Are you sure you want to delete this booking?")) {
       try {
         const updatedBookings = bookings.filter(
-          (booking) => booking.id !== bookingId
+          (booking) => booking.id !== bookingId,
         );
         setBookings(updatedBookings);
         toast.success("Booking deleted successfully");
@@ -446,7 +447,7 @@ const BookingsManagement: React.FC = () => {
   };
 
   const formatPatientNames = (
-    patientDetails: PatientDetailsList | null | undefined
+    patientDetails: PatientDetailsList | null | undefined,
   ) => {
     if (!patientDetails || !patientDetails.patients_list) {
       return "No patient details";
@@ -478,7 +479,7 @@ const BookingsManagement: React.FC = () => {
     ];
 
     const formatPatientNames = (
-      patientDetails: PatientDetailsList | null | undefined
+      patientDetails: PatientDetailsList | null | undefined,
     ) => {
       if (!patientDetails || !patientDetails.patients_list) {
         return "No patient details";
@@ -515,7 +516,7 @@ const BookingsManagement: React.FC = () => {
           b.patient_details?.patients_list?.length || 0,
           parseFloat(b.today_revenue || "0").toFixed(2),
           parseFloat(b.total_revenue || "0").toFixed(2),
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -526,7 +527,7 @@ const BookingsManagement: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `bookings_export_${new Date().toISOString().split("T")[0]}.csv`
+      `bookings_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -752,7 +753,7 @@ const BookingsManagement: React.FC = () => {
                             Date:{" "}
                             {booking.booking_date
                               ? new Date(
-                                  booking.booking_date
+                                  booking.booking_date,
                                 ).toLocaleDateString()
                               : "No date"}
                           </div>
@@ -777,12 +778,12 @@ const BookingsManagement: React.FC = () => {
                               setOpenStatusDropdown(
                                 openStatusDropdown === booking.id
                                   ? null
-                                  : booking.id
+                                  : booking.id,
                               )
                             }
                             disabled={updatingStatus === booking.id}
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(
-                              booking.status
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium ${getOrderStatusColor(
+                              booking.status,
                             )} hover:opacity-80 transition-opacity ${
                               updatingStatus === booking.id
                                 ? "opacity-50 cursor-not-allowed"
@@ -814,7 +815,7 @@ const BookingsManagement: React.FC = () => {
                                         onClick={() =>
                                           handleOrderStatusChange(
                                             booking.id,
-                                            status.value
+                                            status.value,
                                           )
                                         }
                                         disabled={updatingStatus === booking.id}
@@ -833,7 +834,7 @@ const BookingsManagement: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium ${getPaymentStatusColor(
-                            booking.payment_status
+                            booking.payment_status,
                           )}`}
                         >
                           {booking.payment_status}
@@ -842,12 +843,12 @@ const BookingsManagement: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-xs font-medium text-[#161D1F]">
                           ₹{" "}
-                          {parseFloat(booking.amount || "0").toLocaleString(
+                          {parseFloat(booking.total_order_amount|| "0").toLocaleString(
                             "en-US",
                             {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
-                            }
+                            },
                           )}
                         </div>
                       </td>
@@ -859,7 +860,7 @@ const BookingsManagement: React.FC = () => {
                                 setOpenActionDropdown(
                                   openActionDropdown === booking.id
                                     ? null
-                                    : booking.id
+                                    : booking.id,
                                 )
                               }
                               className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
