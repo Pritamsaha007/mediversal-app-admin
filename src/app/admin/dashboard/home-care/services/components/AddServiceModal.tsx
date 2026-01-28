@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { X, ChevronDown } from "lucide-react";
 import { useAdminStore } from "@/app/store/adminStore";
 import SectionFieldSelector from "./SectionFieldSelector";
+import { Offering } from "../types";
 
 interface Service {
   id: string;
@@ -23,17 +24,6 @@ interface Service {
   custom_medical_info: any;
 }
 
-interface Offering {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  duration: string;
-  features: string[];
-  staffRequirements: string[];
-  equipmentIncluded: string[];
-  status: "Excellent" | "Good" | "Available";
-}
 interface SectionFieldData {
   sections: string[];
   medicalFields: string[];
@@ -56,7 +46,7 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
   const [serviceName, setServiceName] = useState("");
   const [serviceDescription, setServiceDescription] = useState("");
   const [serviceStatus, setServiceStatus] = useState<"Active" | "Inactive">(
-    "Active"
+    "Active",
   );
   const [serviceTags, setServiceTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");

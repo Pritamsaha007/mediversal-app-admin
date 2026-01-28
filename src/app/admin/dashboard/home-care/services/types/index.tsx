@@ -82,3 +82,19 @@ export interface GetOfferingsResponse {
   success: boolean;
   offerings: OfferingResponse[];
 }
+export interface Offering {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  duration: string;
+  duration_in_hrs: number;
+  duration_type: string; // Add this - this comes from API
+  duration_type_id?: string; // This will be populated by matching
+  staffRequirements: string[];
+  equipmentIncluded: string[];
+  features: string[];
+  is_device: boolean;
+  device_stock_count: number;
+  status: "Active" | "Inactive" | "Available" | "Good" | "Excellent";
+}

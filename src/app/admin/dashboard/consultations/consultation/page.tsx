@@ -66,10 +66,10 @@ const Consultations: React.FC = () => {
   >([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [openDropdown, setOpenDropdown] = useState<null | "status" | "type">(
-    null
+    null,
   );
   const [selectedConsultations, setSelectedConsultations] = useState<string[]>(
-    []
+    [],
   );
   const [showVideoCallModal, setShowVideoCallModal] = useState(false);
   const [selectedConsultationForCall, setSelectedConsultationForCall] =
@@ -105,17 +105,17 @@ const Consultations: React.FC = () => {
     ConsultationStatusEnum[]
   >([]);
   const [openStatusDropdown, setOpenStatusDropdown] = useState<string | null>(
-    null
+    null,
   );
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   const generateStats = () => {
     const totalConsultations = consultations.length;
     const onlineConsultations = consultations.filter(
-      (c) => c.consultation_type === "online"
+      (c) => c.consultation_type === "online",
     ).length;
     const inPersonConsultations = consultations.filter(
-      (c) => c.consultation_type === "in-person"
+      (c) => c.consultation_type === "in-person",
     ).length;
     const avgRating = 4.3;
 
@@ -154,7 +154,7 @@ const Consultations: React.FC = () => {
         consultation.status?.toLowerCase() !== "in-progress"
       ) {
         toast.error(
-          "Video calls are only available for scheduled or in-progress consultations"
+          "Video calls are only available for scheduled or in-progress consultations",
         );
         return;
       }
@@ -181,8 +181,8 @@ const Consultations: React.FC = () => {
         const relevantStatuses = response.roles.filter(
           (status: ConsultationStatusEnum) =>
             ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(
-              status.value
-            )
+              status.value,
+            ),
         );
         setConsultationStatuses(relevantStatuses);
       }
@@ -209,8 +209,8 @@ const Consultations: React.FC = () => {
           selectedConsultationType === "Online"
             ? true
             : selectedConsultationType === "In-Person"
-            ? false
-            : null,
+              ? false
+              : null,
       };
 
       const response = await getConsultations(params, token);
@@ -270,13 +270,13 @@ const Consultations: React.FC = () => {
     consultationId: string,
     customer_id: string | null,
     statusId: string,
-    statusValue: string
+    statusValue: string,
   ) => {
     try {
       setUpdatingStatus(consultationId);
 
       const currentConsultation = consultations.find(
-        (c) => c.id === consultationId
+        (c) => c.id === consultationId,
       );
       const currentStatus = currentConsultation?.status;
 
@@ -287,8 +287,8 @@ const Consultations: React.FC = () => {
                 ...consultation,
                 status: formatStatusDisplay(statusValue),
               }
-            : consultation
-        )
+            : consultation,
+        ),
       );
 
       setFilteredConsultations((prev) =>
@@ -298,8 +298,8 @@ const Consultations: React.FC = () => {
                 ...consultation,
                 status: formatStatusDisplay(statusValue),
               }
-            : consultation
-        )
+            : consultation,
+        ),
       );
 
       console.log(consultationId, customer_id, statusId, "jnds");
@@ -308,14 +308,14 @@ const Consultations: React.FC = () => {
         consultationId,
         customer_id,
         statusId,
-        token
+        token,
       );
 
       if (response.success) {
         setOpenStatusDropdown(null);
 
         toast.success(
-          `Consultation status updated to ${formatStatusDisplay(statusValue)}`
+          `Consultation status updated to ${formatStatusDisplay(statusValue)}`,
         );
       } else {
         setConsultations((prev) =>
@@ -325,8 +325,8 @@ const Consultations: React.FC = () => {
                   ...consultation,
                   status: currentStatus || "Scheduled",
                 }
-              : consultation
-          )
+              : consultation,
+          ),
         );
 
         setFilteredConsultations((prev) =>
@@ -336,8 +336,8 @@ const Consultations: React.FC = () => {
                   ...consultation,
                   status: currentStatus || "Scheduled",
                 }
-              : consultation
-          )
+              : consultation,
+          ),
         );
 
         throw new Error("Failed to update status");
@@ -347,13 +347,27 @@ const Consultations: React.FC = () => {
       toast.error(
         err instanceof Error
           ? err.message
-          : "Failed to update consultation status"
+          : "Failed to update consultation status",
       );
     } finally {
       setUpdatingStatus(null);
     }
   };
-
+  const formatDateToMMMDDYYYY = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+  const formatTimeTo12HourLower = (timeString: string): string => {
+    const [hours, minutes] = timeString.split(":");
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? "pm" : "am";
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
   const formatStatusDisplay = (statusValue: string): string => {
     switch (statusValue.toUpperCase()) {
       case "SCHEDULED":
@@ -401,13 +415,13 @@ const Consultations: React.FC = () => {
 
   const handleSelectConsultation = (
     consultationId: string,
-    checked: boolean
+    checked: boolean,
   ) => {
     if (checked) {
       setSelectedConsultations([...selectedConsultations, consultationId]);
     } else {
       setSelectedConsultations(
-        selectedConsultations.filter((id) => id !== consultationId)
+        selectedConsultations.filter((id) => id !== consultationId),
       );
     }
   };
@@ -415,7 +429,7 @@ const Consultations: React.FC = () => {
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedConsultations(
-        filteredConsultations.map((consultation) => consultation.id)
+        filteredConsultations.map((consultation) => consultation.id),
       );
     } else {
       setSelectedConsultations([]);
@@ -435,7 +449,7 @@ const Consultations: React.FC = () => {
     try {
       setEditingConsultation(consultation);
       setActiveConsultationType(
-        consultation.consultation_type === "online" ? "online" : "hospital"
+        consultation.consultation_type === "online" ? "online" : "hospital",
       );
       setShowAddConsultationModal(true);
       toast("Editing consultation details");
@@ -542,7 +556,7 @@ const Consultations: React.FC = () => {
           c.consultation_date,
           c.consultation_time,
           c.status || "N/A",
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -553,7 +567,7 @@ const Consultations: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `consultations_export_${new Date().toISOString().split("T")[0]}.csv`
+      `consultations_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -771,12 +785,12 @@ const Consultations: React.FC = () => {
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                           checked={selectedConsultations.includes(
-                            consultation.id
+                            consultation.id,
                           )}
                           onChange={(e) =>
                             handleSelectConsultation(
                               consultation.id,
-                              e.target.checked
+                              e.target.checked,
                             )
                           }
                         />
@@ -792,7 +806,7 @@ const Consultations: React.FC = () => {
                               className="ml-1 cursor-help"
                               title={consultation.id}
                             >
-                              {consultation.id}
+                              {consultation.id.slice(0, 6).toUpperCase()}
                             </span>
                           </div>
                           <div className="text-[10px] text-gray-500 mb-2">
@@ -826,9 +840,14 @@ const Consultations: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="flex bg-[#E8F4F7] rounded p-2 justify-center">
                           <div className="text-[10px] flex font-medium text-[#161D1F]">
-                            {consultation.consultation_date} |
+                            {formatDateToMMMDDYYYY(
+                              consultation.consultation_date,
+                            )}{" "}
+                            |
                             <p className="text-[#0073A0] ml-1">
-                              {consultation.consultation_time}
+                              {formatTimeTo12HourLower(
+                                consultation.consultation_time,
+                              )}
                             </p>
                           </div>
                         </div>
@@ -840,12 +859,12 @@ const Consultations: React.FC = () => {
                               setOpenStatusDropdown(
                                 openStatusDropdown === consultation.id
                                   ? null
-                                  : consultation.id
+                                  : consultation.id,
                               )
                             }
                             disabled={updatingStatus === consultation.id}
                             className={`px-3 py-1 rounded-full text-[10px] font-medium ${getStatusColor(
-                              consultation.status
+                              consultation.status,
                             )} flex items-center gap-1 hover:opacity-80 transition-opacity disabled:opacity-50`}
                           >
                             {updatingStatus === consultation.id ? (
@@ -877,7 +896,7 @@ const Consultations: React.FC = () => {
                                         consultation.id,
                                         consultation.customer_id,
                                         status.id,
-                                        status.value
+                                        status.value,
                                       )
                                     }
                                     className="w-full px-3 py-2 text-left text-[10px] text-[#161D1F] hover:bg-gray-50 transition-colors"

@@ -20,10 +20,10 @@ import {
   Trash2,
   Download,
 } from "lucide-react";
-import { HomecareService } from "./types";
+import { HomecareService, Offering } from "./types";
 
 const transformHomecareServiceToService = (
-  homecareService: HomecareService
+  homecareService: HomecareService,
 ): Service => {
   return {
     id: homecareService.id,
@@ -39,28 +39,21 @@ const transformHomecareServiceToService = (
       description: `${tag} service`,
       price: 0,
       duration: "1 hour",
+      duration_in_hrs: 1,
+      duration_type_value: "hour",
+      duration_type: "hour",
       features: homecareService.display_sections || [],
       staffRequirements: [],
       equipmentIncluded: [],
       status: "Available" as const,
+      is_device: false,
+      device_stock_count: 0,
     })),
     rating: 4.5,
     reviewCount: 10,
     consents: homecareService.consents || [],
   };
 };
-
-interface Offering {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  duration: string;
-  features: string[];
-  staffRequirements: string[];
-  equipmentIncluded: string[];
-  status: "Excellent" | "Good" | "Available";
-}
 
 interface Service {
   id: string;
@@ -124,7 +117,7 @@ const Services: React.FC = () => {
   const stats: ServiceStats = useMemo(() => {
     const totalServices = allServices.length;
     const activeServices = allServices.filter(
-      (s) => s.status === "Active"
+      (s) => s.status === "Active",
     ).length;
     const totalOfferings = allServices.reduce((acc, service) => {
       return acc + service.offerings.length;
@@ -151,12 +144,12 @@ const Services: React.FC = () => {
           status: selectedStatus === "All Status" ? null : selectedStatus,
           search: searchTerm || null,
         },
-        token
+        token,
       );
 
       if (response.success) {
         const transformedServices = response.services.map(
-          transformHomecareServiceToService
+          transformHomecareServiceToService,
         );
 
         setTimeout(() => {
@@ -236,7 +229,7 @@ const Services: React.FC = () => {
         ),
         {
           duration: Infinity,
-        }
+        },
       );
     });
 
@@ -246,12 +239,12 @@ const Services: React.FC = () => {
         // Delete all selected services
         await Promise.all(
           selectedServices.map((serviceId) =>
-            deleteHomecareService(serviceId, token)
-          )
+            deleteHomecareService(serviceId, token),
+          ),
         );
 
         toast.success(
-          `${selectedServices.length} services deleted successfully!`
+          `${selectedServices.length} services deleted successfully!`,
         );
         setSelectedServices([]);
         await fetchServices();
@@ -321,7 +314,7 @@ const Services: React.FC = () => {
             ),
             {
               duration: Infinity,
-            }
+            },
           );
         });
 
@@ -382,9 +375,9 @@ const Services: React.FC = () => {
           `"${(s.display_sections || []).join("; ")}"`,
           `"${JSON.stringify(s.custom_medical_info || {}).replace(
             /"/g,
-            '""'
+            '""',
           )}"`,
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -395,7 +388,7 @@ const Services: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `services_export_${new Date().toISOString().split("T")[0]}.csv`
+      `services_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
