@@ -6,19 +6,7 @@ import AddOfferingForm from "./AddOfferingForm";
 import toast from "react-hot-toast";
 import { getHomecareOfferings, deleteHomecareOffering } from "../service";
 import { useAdminStore } from "@/app/store/adminStore";
-import { OfferingResponse } from "../types";
-
-interface Offering {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  duration: string;
-  features: string[];
-  staffRequirements: string[];
-  equipmentIncluded: string[];
-  status: "Excellent" | "Good" | "Available";
-}
+import { Offering, OfferingResponse } from "../types";
 
 interface Service {
   id: string;
@@ -56,7 +44,7 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
       try {
         const response = await getHomecareOfferings(
           { service_id: service.id },
-          token
+          token,
         );
 
         if (response.success) {
@@ -69,12 +57,17 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
               description: offering.description,
               price: parseFloat(offering.price),
               duration: `${offering.duration_in_hrs} ${offering.duration_type}`,
-              features: offering.features,
+              duration_in_hrs: offering.duration_in_hrs,
+              duration_type: offering.duration_type,
               staffRequirements: offering.staff_requirements,
               equipmentIncluded: offering.equipment_requirements,
+              features: offering.features,
+              is_device: offering.is_device,
+              device_stock_count: offering.device_stock_count,
+
               status:
                 offering.status === "Active" ? "Available" : ("Good" as const),
-            })
+            }),
           );
 
           setOfferings(transformedOfferings);
@@ -97,7 +90,7 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
     try {
       const response = await getHomecareOfferings(
         { service_id: service!.id },
-        token!
+        token!,
       );
 
       if (response.success) {
@@ -108,19 +101,23 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
             description: offering.description,
             price: parseFloat(offering.price),
             duration: `${offering.duration_in_hrs} ${offering.duration_type}`,
-            features: offering.features,
+            duration_in_hrs: offering.duration_in_hrs,
+            duration_type: offering.duration_type,
             staffRequirements: offering.staff_requirements,
             equipmentIncluded: offering.equipment_requirements,
+            features: offering.features,
+            is_device: offering.is_device,
+            device_stock_count: offering.device_stock_count,
             status:
               offering.status === "Active" ? "Available" : ("Good" as const),
-          })
+          }),
         );
 
         setOfferings(transformedOfferings);
         toast.success(
           editingOffering
             ? "Offering updated successfully!"
-            : "Offering added successfully!"
+            : "Offering added successfully!",
         );
       }
     } catch (error) {
@@ -130,7 +127,6 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
     setShowAddForm(false);
     setEditingOffering(null);
   };
-
   const handleEditOffering = (offering: Offering) => {
     setEditingOffering(offering);
     setShowAddForm(true);
@@ -168,7 +164,7 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
         ),
         {
           duration: Infinity,
-        }
+        },
       );
     });
 
@@ -184,7 +180,7 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
 
         const response = await getHomecareOfferings(
           { service_id: service!.id },
-          token!
+          token!,
         );
 
         if (response.success) {
@@ -195,14 +191,18 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
               description: offering.description,
               price: parseFloat(offering.price),
               duration: `${offering.duration_in_hrs} ${offering.duration_type}`,
-              features: offering.features,
+              duration_in_hrs: offering.duration_in_hrs,
+              duration_type: offering.duration_type,
               staffRequirements: offering.staff_requirements,
               equipmentIncluded: offering.equipment_requirements,
+              features: offering.features,
+              is_device: offering.is_device,
+              device_stock_count: offering.device_stock_count,
+
               status:
                 offering.status === "Active" ? "Available" : ("Good" as const),
-            })
+            }),
           );
-
           setOfferings(transformedOfferings);
         }
       } catch (error: any) {

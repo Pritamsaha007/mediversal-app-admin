@@ -1,18 +1,7 @@
 import React from "react";
 import { MoreVertical } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-
-interface Offering {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  duration: string;
-  features: string[];
-  staffRequirements: string[];
-  equipmentIncluded: string[];
-  status: "Excellent" | "Good" | "Available";
-}
+import { Offering } from "../types";
 
 interface OfferingCardProps {
   offering: Offering;
@@ -32,7 +21,7 @@ const OfferingCard: React.FC<OfferingCardProps> = ({
       case "Good":
         return "text-blue-600 border-blue-600 bg-blue-50";
       case "Available":
-        return "text-gray-600 border-gray-600 bg-gray-50";
+        return "text-blue-600 border-blue-600 bg-gray-50";
       default:
         return "text-gray-600 border-gray-600 bg-gray-50";
     }
@@ -70,14 +59,14 @@ const OfferingCard: React.FC<OfferingCardProps> = ({
           <div className="flex gap-2 mb-4">
             <span
               className={`px-3 py-1 text-[8px] border rounded-full ${getStatusBadgeColor(
-                offering.status
+                offering.status,
               )}`}
             >
               {offering.status}
             </span>
-            <span className="px-3 py-1 text-[8px] text-blue-600 border border-blue-600 rounded-full bg-blue-50">
+            {/* <span className="px-3 py-1 text-[8px] text-blue-600 border border-blue-600 rounded-full bg-blue-50">
               Available
-            </span>
+            </span> */}
           </div>
         </div>
         <div className="relative" ref={dropdownRef}>

@@ -38,6 +38,22 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [isAssignStaffModalOpen, setIsAssignStaffModalOpen] = useState(false);
   const { token } = useAdminStore();
   console.log(orderDetails, "orderDetails");
+  const getDurationText = () => {
+    const hours = orderDetails?.schedule_in_hours;
+    const days = orderDetails?.schedule_in_days;
+
+    const parts: string[] = [];
+
+    if (hours && hours > 0) {
+      parts.push(`${hours} ${hours === 1 ? "Hour" : "Hours"}`);
+    }
+
+    if (days && days > 0) {
+      parts.push(`${days} ${days === 1 ? "Day" : "Days"}`);
+    }
+
+    return parts.join(" • ");
+  };
 
   useEffect(() => {
     if (isOpen && booking?.id && token) {
@@ -346,9 +362,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   <div>
                     <p className="text-[10px] text-[#899193] mb-1">Duration</p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
-                      {orderDetails?.schedule_in_hours != undefined &&
-                        `${orderDetails?.schedule_in_hours} hours - `}
-                      &nbsp;{orderDetails?.schedule_in_days || 0} days
+                      {getDurationText() || "Not specified"}
                     </p>
                   </div>
 
