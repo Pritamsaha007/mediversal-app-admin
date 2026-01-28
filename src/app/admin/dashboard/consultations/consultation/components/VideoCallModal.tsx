@@ -75,7 +75,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
     useState<IMicrophoneAudioTrack | null>(null);
   const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
   const [uid, setUid] = useState<number>(Math.floor(Math.random() * 1000000));
-  const AGORA_APP_ID = process.env.AGORA_APP_ID;
+  const AGORA_APP_ID = "71fe8d0ae7c145ae9e288271571e5006";
   useEffect(() => {
     if (isCallActive) {
       intervalRef.current = setInterval(() => {
@@ -159,7 +159,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
 
         agoraClient.on("user-unpublished", (user) => {
           setRemoteUsers((prevUsers) =>
-            prevUsers.filter((u) => u.uid !== user.uid)
+            prevUsers.filter((u) => u.uid !== user.uid),
           );
         });
         if (!AGORA_APP_ID) {
@@ -169,7 +169,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
           AGORA_APP_ID,
           response.data.channelName,
           response.data.token,
-          uid
+          uid,
         );
 
         // Create and publish local tracks
