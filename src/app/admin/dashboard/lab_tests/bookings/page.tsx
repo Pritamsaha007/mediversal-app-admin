@@ -460,10 +460,6 @@ const BookingsManagement: React.FC = () => {
     return validPatients.length > 0 ? validPatients.join(", ") : "No patients";
   };
 
-  const formatBookingId = (id: string) => {
-    return `${id.substring(0, 8).toUpperCase()}`;
-  };
-
   const exportBookingsToCSV = (bookings: LabTestBooking[]) => {
     const headers = [
       "Booking ID",
@@ -747,7 +743,7 @@ const BookingsManagement: React.FC = () => {
                               : "No tests listed"}
                           </div>
                           <div className="text-xs text-gray-500">
-                            Booking ID: {formatBookingId(booking.ordernumber)}
+                            Booking ID: {booking.ordernumber}
                           </div>
                           <div className="text-xs text-gray-500">
                             Date:{" "}
