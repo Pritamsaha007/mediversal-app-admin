@@ -22,6 +22,7 @@ export interface LabTestBooking {
   total_revenue?: string;
   today_revenue?: string;
   total_order_amount?: string;
+  ordernumber: string;
 }
 
 export interface SearchLabTestBookingsPayload {

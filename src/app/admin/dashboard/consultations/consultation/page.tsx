@@ -804,9 +804,9 @@ const Consultations: React.FC = () => {
                             Booking ID:
                             <span
                               className="ml-1 cursor-help"
-                              title={consultation.id}
+                              title={consultation.ordernumber}
                             >
-                              {consultation.id.slice(0, 6).toUpperCase()}
+                              {consultation.ordernumber}
                             </span>
                           </div>
                           <div className="text-[10px] text-gray-500 mb-2">

@@ -747,7 +747,7 @@ const BookingsManagement: React.FC = () => {
                               : "No tests listed"}
                           </div>
                           <div className="text-xs text-gray-500">
-                            Booking ID: {formatBookingId(booking.id)}
+                            Booking ID: {formatBookingId(booking.ordernumber)}
                           </div>
                           <div className="text-xs text-gray-500">
                             Date:{" "}
@@ -843,13 +843,12 @@ const BookingsManagement: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-xs font-medium text-[#161D1F]">
                           ₹{" "}
-                          {parseFloat(booking.total_order_amount|| "0").toLocaleString(
-                            "en-US",
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            },
-                          )}
+                          {parseFloat(
+                            booking.total_order_amount || "0",
+                          ).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">

@@ -153,6 +153,7 @@ export interface ApiOrderResponse {
     postal_code: string | null;
     country: string | null;
   };
+  ordernumber: string;
 }
 
 export interface GetOrdersResponse {

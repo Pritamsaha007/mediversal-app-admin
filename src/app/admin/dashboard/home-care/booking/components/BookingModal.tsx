@@ -208,7 +208,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         {/* Header - Fixed */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-[16px] font-semibold text-[#161D1F]">
-            Booking ID: {booking.id}
+            Booking ID: {booking.ordernumber}
           </h2>
           <button
             onClick={onClose}
@@ -481,6 +481,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         isOpen={isAssignStaffModalOpen}
         onClose={() => setIsAssignStaffModalOpen(false)}
         bookingId={booking.id}
+        ordernumber={booking.ordernumber}
         actualOrderId={booking.id}
         onUpdateStaff={handleStaffAssignment}
       />

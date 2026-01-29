@@ -229,7 +229,7 @@ const BookingManagement: React.FC = () => {
     if (!searchTerm) return paginatedBookings;
 
     return paginatedBookings.filter((booking) => {
-      const idMatch = booking.id
+      const idMatch = booking.ordernumber
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       const nameMatch = booking.customer_name
@@ -522,23 +522,28 @@ const BookingManagement: React.FC = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredBookings.map((booking) => (
                     <tr
-                      key={booking.id}
+                      key={booking.ordernumber}
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <input
                           type="checkbox"
                           className="rounded border-gray-300"
-                          checked={selectedBookings.includes(booking.id)}
+                          checked={selectedBookings.includes(
+                            booking.ordernumber,
+                          )}
                           onChange={(e) =>
-                            handleSelectBooking(booking.id, e.target.checked)
+                            handleSelectBooking(
+                              booking.ordernumber,
+                              e.target.checked,
+                            )
                           }
                         />
                       </td>
                       <td className="px-6 py-4">
                         <div>
                           <div className="font-medium text-[12px] text-[#161D1F]">
-                            {booking.id.slice(0, 6).toUpperCase()}
+                            {booking.ordernumber}
                           </div>
                           <div className="text-[10px] text-[#899193]">
                             {booking.order_date
@@ -552,9 +557,9 @@ const BookingManagement: React.FC = () => {
                                 )
                               : "N/A"}
                           </div>
-                          <div className="text-xs text-[#899193]">
+                          {/* <div className="text-xs text-[#899193]">
                             Booking ID: {booking.id.slice(0, 8).toUpperCase()}
-                          </div>
+                          </div> */}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -690,6 +695,10 @@ const BookingManagement: React.FC = () => {
           isOpen={isAssignStaffModalOpen}
           onClose={() => setIsAssignStaffModalOpen(false)}
           bookingId={selectedBookingForStaff}
+          ordernumber={
+            allBookings.find((b) => b.id === selectedBookingForStaff)
+              ?.ordernumber
+          }
           actualOrderId={selectedActualOrderId}
           onUpdateStaff={handleUpdateAssignedStaff}
         />
