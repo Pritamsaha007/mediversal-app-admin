@@ -54,6 +54,7 @@ export type Order = {
   receipt_url?: string;
   rider_staff_name: string | null;
   rider_delivery_status: string | null;
+  ordernumber: string;
 };
 
 export type OrderItem = {

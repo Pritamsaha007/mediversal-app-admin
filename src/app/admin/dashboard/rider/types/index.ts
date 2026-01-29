@@ -1,5 +1,6 @@
 export default interface DeliveryOrder {
   id: string;
+  ordername: string;
   items: OrderItem[];
   amount: string;
   billing_city: string | null;
@@ -36,6 +37,7 @@ export interface Rider {
 }
 export interface DeliveryRider {
   id: string;
+  ordername: string;
   name: string;
   email: string;
   is_deleted: boolean;

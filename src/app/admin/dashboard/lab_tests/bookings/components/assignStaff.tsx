@@ -65,7 +65,7 @@ export const AssignPhlebotomistModal: React.FC<
     const baseCategories = ["All Phlebotomists"];
     if (specializations.length > 0) {
       const specializationCategories = specializations.map(
-        (spec) => spec.value
+        (spec) => spec.value,
       );
       return [...baseCategories, ...specializationCategories];
     }
@@ -140,7 +140,7 @@ export const AssignPhlebotomistModal: React.FC<
         firstSlot.specialization_name === selectedCategory;
 
       return matchesSearch && matchesCategory;
-    }
+    },
   );
 
   const handleAssign = (phleboId: string, selectedSlot: PhlebotomistSlot) => {
@@ -314,10 +314,7 @@ export const AssignPhlebotomistModal: React.FC<
             </div>
             <div className="bg-[#0088B1] rounded-lg py-3 px-4 mt-3">
               <p className="text-sm font-semibold text-white">
-                Booking ID:{" "}
-                {booking?.id
-                  ? `${booking.id.substring(0, 8).toUpperCase()}`
-                  : "LP0006789"}
+                Booking ID: {booking?.ordernumber}
               </p>
               <p className="text-xs text-white mt-1">
                 {booking?.patient_details?.patients_list?.[0]?.name ||
@@ -365,7 +362,7 @@ export const AssignPhlebotomistModal: React.FC<
                         <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                         <span className="text-xs font-medium text-gray-700">
                           {parseFloat(
-                            assignedPhlebotomist.phlebotomist.rating
+                            assignedPhlebotomist.phlebotomist.rating,
                           ).toFixed(1)}
                         </span>
                       </div>
@@ -388,7 +385,7 @@ export const AssignPhlebotomistModal: React.FC<
                   <span className="text-xs text-gray-600">Status:</span>
                   <span
                     className={`px-3 py-1 ${getStatusColor(
-                      assignedPhlebotomist.phlebotomist.status
+                      assignedPhlebotomist.phlebotomist.status,
                     )} text-white text-xs font-medium rounded`}
                   >
                     {assignedPhlebotomist.phlebotomist.status}
@@ -457,7 +454,7 @@ export const AssignPhlebotomistModal: React.FC<
                     const slots = groupedPhlebotomists[phleboId];
                     const firstSlot = slots[0];
                     const availableSlots = slots.filter(
-                      (slot) => slot.available_count > 0
+                      (slot) => slot.available_count > 0,
                     );
 
                     return (
@@ -509,7 +506,7 @@ export const AssignPhlebotomistModal: React.FC<
                           <span className="text-xs text-gray-600">Status:</span>
                           <span
                             className={`px-3 py-1 ${getStatusColor(
-                              firstSlot.status
+                              firstSlot.status,
                             )} text-white text-xs font-medium rounded`}
                           >
                             {firstSlot.status}
@@ -522,7 +519,7 @@ export const AssignPhlebotomistModal: React.FC<
                                 setOpenTimeDropdown(
                                   openTimeDropdown === phleboId
                                     ? null
-                                    : phleboId
+                                    : phleboId,
                                 )
                               }
                               disabled={
@@ -541,8 +538,8 @@ export const AssignPhlebotomistModal: React.FC<
                               {isAssigned(phleboId)
                                 ? "Assigned"
                                 : assignedPhlebotomist
-                                ? "Assign"
-                                : "Select Time"}
+                                  ? "Assign"
+                                  : "Select Time"}
                             </button>
 
                             {openTimeDropdown === phleboId &&

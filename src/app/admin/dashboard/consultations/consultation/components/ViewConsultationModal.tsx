@@ -130,8 +130,8 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
             <div className="flex items-center gap-2 text-[10px] text-gray-500 mb-4">
               <span>
                 Booking ID:
-                <span className="cursor-help" title={consultation.id}>
-                  {consultation.id}
+                <span className="cursor-help" title={consultation.ordernumber}>
+                  {consultation.ordernumber}
                 </span>
               </span>
               <span>|</span>

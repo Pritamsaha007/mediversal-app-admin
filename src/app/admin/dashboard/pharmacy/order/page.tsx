@@ -57,7 +57,7 @@ const Orders: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [orderActionDropdown, setOrderActionDropdown] = useState<number | null>(
-    null
+    null,
   );
   const [orders, setOrders] = useState<Order[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -75,7 +75,7 @@ const Orders: React.FC = () => {
 
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [openStatusDropdown, setOpenStatusDropdown] = useState<string | null>(
-    null
+    null,
   );
   const [orderStatuses, setOrderStatuses] = useState<OrderStatusEnum[]>([]);
 
@@ -122,7 +122,7 @@ const Orders: React.FC = () => {
               "IN_PROGRESS",
               "COMPLETED",
               "CANCELLED",
-            ].includes(status.value)
+            ].includes(status.value),
         );
         setOrderStatuses(relevantStatuses);
       }
@@ -182,8 +182,8 @@ const Orders: React.FC = () => {
 
     setOrders((prevOrders) =>
       prevOrders.map((o) =>
-        o.id === order.id ? { ...o, deliverystatus: newStatus } : o
-      )
+        o.id === order.id ? { ...o, deliverystatus: newStatus } : o,
+      ),
     );
 
     setOpenStatusDropdown(null);
@@ -213,8 +213,8 @@ const Orders: React.FC = () => {
                       ...o,
                       rider_delivery_status: currentStatus,
                     }
-                  : o
-              )
+                  : o,
+              ),
             );
             throw new Error(response.message || "Update failed");
           }
@@ -356,7 +356,7 @@ const Orders: React.FC = () => {
   };
 
   const getRiderDeliveryStatus = (
-    status: string
+    status: string,
   ): "Pending" | "In Progress" | "Completed" | "Cancelled" => {
     switch (status.toLowerCase()) {
       case "delivered":
@@ -398,7 +398,7 @@ const Orders: React.FC = () => {
 
     if (
       window.confirm(
-        `Are you sure you want to delete ${selectedOrders.length} selected orders?`
+        `Are you sure you want to delete ${selectedOrders.length} selected orders?`,
       )
     ) {
       try {
@@ -447,7 +447,7 @@ const Orders: React.FC = () => {
         .map((order) => order.id.toString());
 
       setSelectedOrders(
-        selectedOrders.filter((id) => !currentPageOrderIds.includes(id))
+        selectedOrders.filter((id) => !currentPageOrderIds.includes(id)),
       );
     }
   };
@@ -571,7 +571,7 @@ const Orders: React.FC = () => {
                         orders.every(
                           (order) =>
                             order.id != null &&
-                            selectedOrders.includes(order.id.toString())
+                            selectedOrders.includes(order.id.toString()),
                         )
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
@@ -629,14 +629,12 @@ const Orders: React.FC = () => {
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                          checked={selectedOrders.includes(
-                            order?.id?.toString() ?? ""
-                          )}
+                          checked={selectedOrders.includes(order?.ordernumber)}
                           onChange={(e) => {
                             if (order?.id != null) {
                               handleSelectOrder(
                                 order.id.toString(),
-                                e.target.checked
+                                e.target.checked,
                               );
                             }
                           }}
@@ -644,7 +642,7 @@ const Orders: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-xs font-medium text-[#161D1F]">
-                          {order.id.slice(0, 6).toUpperCase()}
+                          {order.ordernumber}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -667,7 +665,7 @@ const Orders: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-[#161D1F]">
                         {OrderService.formatCurrency(
-                          OrderService.calculateTotalAmount(order)
+                          OrderService.calculateTotalAmount(order),
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -687,12 +685,12 @@ const Orders: React.FC = () => {
                                 setOpenStatusDropdown(
                                   openStatusDropdown === order.id?.toString()
                                     ? null
-                                    : order.id?.toString() || null
+                                    : order.id?.toString() || null,
                                 )
                               }
                               disabled={updatingStatus === order.id?.toString()}
                               className={`px-2 py-1 rounded-full text-[10px] font-medium ${getStatusColor(
-                                getCurrentStatus(order)
+                                getCurrentStatus(order),
                               )} flex items-center gap-1 hover:opacity-80 cursor-pointer transition-opacity disabled:opacity-50 min-w-[100px] justify-center`}
                               style={{ minHeight: "24px" }}
                             >
@@ -720,7 +718,7 @@ const Orders: React.FC = () => {
                                       onClick={() =>
                                         handleRiderStatusChange(
                                           order,
-                                          status.value
+                                          status.value,
                                         )
                                       }
                                       className="w-full px-3 py-2 text-left text-[10px] text-[#161D1F] hover:bg-gray-50 transition-colors cursor-pointer"
@@ -825,11 +823,12 @@ const Orders: React.FC = () => {
                 onClose={handleCloseRiderModal}
                 order={{
                   id: selectedOrderForRider.id || "",
+                  ordername: selectedOrderForRider.ordernumber || "",
                   items: (selectedOrderForRider.order_items || []).map(
                     (item) => ({
                       qty: item.quantity || 1,
                       name: item.productName || "Product",
-                    })
+                    }),
                   ),
                   amount: selectedOrderForRider.totalorderamount,
                   billing_city: selectedOrderForRider.billing_city || "",
@@ -845,7 +844,7 @@ const Orders: React.FC = () => {
                     selectedOrderForRider.billing_last_name || "",
                   billing_first_name: selectedOrderForRider.customername || "",
                   rider_delivery_status: getRiderDeliveryStatus(
-                    selectedOrderForRider.deliverystatus || ""
+                    selectedOrderForRider.deliverystatus || "",
                   ),
                 }}
                 onAssignmentSuccess={handleRiderAssignmentSuccess}

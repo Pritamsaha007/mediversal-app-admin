@@ -179,7 +179,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h2 className="text-base font-semibold text-gray-800">
-              Order ID: {order.id}
+              Order ID: {order.ordernumber}
             </h2>
             <div className="flex items-center gap-2 mt-1">
               <StatusBadge status={order.deliverystatus || "Pending"} />

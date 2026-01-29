@@ -33,6 +33,7 @@ export interface ConsultationAPI {
   total_online_consultations: string;
   receipt_url: string | null;
   hospital_name: string;
+  ordernumber: string;
 }
 
 export interface GetConsultationsResponse {

@@ -9,6 +9,15 @@ interface ViewBookingModalProps {
   onClose: () => void;
   booking: LabTestBooking | null;
 }
+const hospitalAddressMap: Record<string, string> = {
+  "Mediversal Health Studio - OPD, Diagnostics & Wellness Center":
+    "1st Floor, Mona Cinema Enclave, Gandhi Maidan Rd, Dujra Diara, Patna",
+
+  "Mediversal Maatri - Advanced Hospital for Women, Neonates & Children":
+    "Road 2B, Rajendra Nagar, Patna",
+
+  "Mediversal Multi Super Speciality Hospital": "Doctors’ Colony, Patna",
+};
 
 const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
   isOpen,
@@ -38,6 +47,7 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
 
     fetchBookingDetails();
   }, [isOpen, booking?.id, token]);
+  console.log(bookingDetails, "booking details");
 
   if (!isOpen || !booking) return null;
 
@@ -52,7 +62,8 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
       return dateString;
     }
   };
-
+  const hospitalName = bookingDetails?.booking?.hospital?.name;
+  const hospitalAddress = hospitalAddressMap[hospitalName];
   const formatTime = (timeNumber: number) => {
     const hours = Math.floor(timeNumber / 100);
     const minutes = timeNumber % 100;
@@ -99,7 +110,7 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                     "Lab Tests"}
                 </h3>
                 <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
-                  <span>Booking ID: {booking.id}</span>
+                  <span>Booking ID: {booking.ordernumber}</span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     {formatDate(
@@ -242,12 +253,12 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                     </div>
                     <div>
                       <span className="text-xs text-[#161D1F] font-medium">
-                        Payment Status:
+                        Customer ID:
                       </span>
                       <span className="ml-2 text-xs text-[#161D1F]">
-                        {bookingDetails?.booking?.payment_status ||
-                          booking.payment_status ||
-                          "Unknown"}
+                        {bookingDetails?.booking?.customer_id ||
+                          booking.customer_id ||
+                          "Not assigned"}
                       </span>
                     </div>
                   </div>
@@ -314,6 +325,16 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                     </div>
                     <div>
                       <span className="text-xs text-[#161D1F] font-medium">
+                        Payment Status:
+                      </span>
+                      <span className="ml-2 text-xs text-[#161D1F]">
+                        {bookingDetails?.booking?.payment_status ||
+                          booking.payment_status ||
+                          "Unknown"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-[#161D1F] font-medium">
                         Lab Test Charges:
                       </span>
                       <span className="ml-2 text-xs text-[#161D1F]">
@@ -325,16 +346,7 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                         ).toLocaleString("en-IN")}
                       </span>
                     </div>
-                    <div>
-                      <span className="text-xs text-[#161D1F] font-medium">
-                        Customer ID:
-                      </span>
-                      <span className="ml-2 text-xs text-[#161D1F]">
-                        {bookingDetails?.booking?.customer_id ||
-                          booking.customer_id ||
-                          "Not assigned"}
-                      </span>
-                    </div>
+
                     <div>
                       <span className="text-xs text-[#161D1F] font-medium">
                         Home Collection:
@@ -348,7 +360,7 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                   </div>
                 </div>
               </div>
-              {bookingDetails?.booking.address_line1 != null && (
+              {bookingDetails?.booking.house_no != null ? (
                 <div>
                   <h4 className="text-xs font-semibold text-[#161D1F] mb-3">
                     Address Details
@@ -409,6 +421,37 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                         </span>
                       </div>
                     </div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h4 className="text-xs font-semibold text-[#161D1F] mb-3">
+                    Address Details
+                  </h4>
+                  <div className="rounded-lg p-4 border border-gray-200 bg-white">
+                    <div className="grid grid-cols-2 gap-x-12 gap-y-3">
+                      <div>
+                        <span className="text-xs text-[#161D1F] font-medium">
+                          Hospital Name:
+                        </span>
+                        <span className="ml-2 text-xs text-[#161D1F]">
+                          {bookingDetails?.booking.hospital?.name ||
+                            "Not specified"}
+                        </span>
+                      </div>
+                    </div>
+                    {hospitalAddress && (
+                      <div className="grid grid-cols-2 gap-x-12 gap-y-3">
+                        <div>
+                          <span className="text-xs text-[#161D1F] font-medium">
+                            Address:
+                          </span>
+                          <span className="ml-2 text-xs text-[#161D1F]">
+                            {hospitalAddress}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

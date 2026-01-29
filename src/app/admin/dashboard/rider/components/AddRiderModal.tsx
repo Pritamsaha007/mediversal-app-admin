@@ -119,7 +119,7 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
 
       const vehicleType = getVehicleType(
         rider.vehicle_type_id,
-        rider.vehicle_name
+        rider.vehicle_name,
       );
       const matchesCategory =
         selectedCategory === "All Riders" || vehicleType === selectedCategory;
@@ -260,7 +260,7 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
             </div>
             <div className="bg-[#0088B1] rounded-lg py-3 px-4 mt-3">
               <p className="text-sm font-semibold text-white">
-                Order ID: {order?.id || "ORD000004864"}
+                Order ID: {order?.ordername || "ORD000004864"}
                 {storedAssignment && (
                   <span className="text-xs ml-2 opacity-75">
                     (Previously assigned:{" "}
@@ -316,14 +316,14 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
                   Vehicle:{" "}
                   {getVehicleType(
                     assignedRider.rider.vehicle_type_id,
-                    assignedRider.rider.vehicle_name
+                    assignedRider.rider.vehicle_name,
                   )}
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-600">Status:</span>
                   <span
                     className={`px-3 py-1 ${getStatusColor(
-                      assignedRider.rider.is_available_status
+                      assignedRider.rider.is_available_status,
                     )} text-white text-xs font-medium rounded`}
                   >
                     {getStatusText(assignedRider.rider.is_available_status)}
@@ -486,7 +486,7 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
                               Vehicle:{" "}
                               {getVehicleType(
                                 rider.vehicle_type_id,
-                                rider.vehicle_name
+                                rider.vehicle_name,
                               )}
                             </span>
 
@@ -496,7 +496,7 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
                               </span>
                               <span
                                 className={`px-3 py-1 ${getStatusColor(
-                                  rider.is_available_status
+                                  rider.is_available_status,
                                 )} text-white text-xs font-medium rounded`}
                               >
                                 {getStatusText(rider.is_available_status)}
@@ -522,8 +522,8 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
                                 {assigned
                                   ? "Assigned"
                                   : alreadyAssigned
-                                  ? "Assign"
-                                  : "Assign"}
+                                    ? "Assign"
+                                    : "Assign"}
                               </button>
                             </div>
                           </div>
