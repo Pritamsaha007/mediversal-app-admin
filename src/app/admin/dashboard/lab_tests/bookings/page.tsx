@@ -743,7 +743,9 @@ const BookingsManagement: React.FC = () => {
                               : "No tests listed"}
                           </div>
                           <div className="text-xs text-gray-500">
-                            Booking ID: {booking.ordernumber}
+                            {booking.ordernumber
+                              ? `Booking ID: ${booking.ordernumber}`
+                              : "No Booking ID"}
                           </div>
                           <div className="text-xs text-gray-500">
                             Date:{" "}
