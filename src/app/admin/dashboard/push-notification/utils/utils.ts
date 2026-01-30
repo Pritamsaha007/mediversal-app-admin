@@ -62,7 +62,7 @@ export const formatUserGroup = (userGroup?: string | null): string => {
 };
 
 export const parseCustomSchedule = (
-  customSchedule: CustomScheduleDay[] | null
+  customSchedule: CustomScheduleDay[] | null,
 ): { day: string; times: string[] }[] => {
   if (!customSchedule || !Array.isArray(customSchedule)) return [];
 
@@ -73,7 +73,7 @@ export const parseCustomSchedule = (
 };
 
 export const formatScheduledDays = (
-  notification: Notification
+  notification: Notification,
 ): { day: string; time: string }[] => {
   const result: { day: string; time: string }[] = [];
 

@@ -47,22 +47,27 @@ interface OrderStatusEnum {
   metadata: any | null;
 }
 
-const useDebounce = (callback: () => void, delay: number) => {
+// Custom debounce hook
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  return useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+  useEffect(() => {
     timeoutRef.current = setTimeout(() => {
-      callback();
+      setDebouncedValue(value);
     }, delay);
-  }, [callback, delay]);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
 };
 
 const BookingsManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentSearchTerm, setCurrentSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [bookings, setBookings] = useState<LabTestBooking[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -88,6 +93,9 @@ const BookingsManagement: React.FC = () => {
   const [orderStatuses, setOrderStatuses] = useState<OrderStatusEnum[]>([]);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
+  // Use debounced search term - waits 500ms after user stops typing
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
   const fetchOrderStatuses = async () => {
     try {
       const response = await getOrderStatus(token);
@@ -105,7 +113,7 @@ const BookingsManagement: React.FC = () => {
     }
   };
 
-  const fetchBookings = async (page: number = 0) => {
+  const fetchBookings = async (page: number = 0, searchText: string = "") => {
     setLoading(true);
     setSelectedBookings([]);
 
@@ -114,7 +122,7 @@ const BookingsManagement: React.FC = () => {
       const payload: SearchLabTestBookingsPayload = {
         start: page * pageSize,
         max: pageSize,
-        search_text: currentSearchTerm || null,
+        search_text: searchText || null,
         filter_status:
           selectedStatus !== "All Status" ? [selectedStatus] : null,
         sort_by: "created_date",
@@ -169,55 +177,50 @@ const BookingsManagement: React.FC = () => {
 
   const stats = generateStats();
 
-  const updateSearchTerm = useCallback(() => {
-    setCurrentSearchTerm(searchTerm);
-  }, [searchTerm]);
-
-  const debouncedUpdateSearchTerm = useDebounce(updateSearchTerm, 500);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    debouncedUpdateSearchTerm();
-  };
-
-  const applyFiltersAndSearch = () => {
-    fetchBookings(0);
-  };
-
-  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      if (
-        debouncedUpdateSearchTerm &&
-        (debouncedUpdateSearchTerm as any).cancel
-      ) {
-        (debouncedUpdateSearchTerm as any).cancel();
-      }
-      setCurrentSearchTerm(searchTerm);
-    }
-  };
-
   const loadNextPage = () => {
     if (hasMore && !loading) {
       const nextPage = currentPage + 1;
-      fetchBookings(nextPage);
+      fetchBookings(nextPage, debouncedSearchTerm);
     }
   };
 
   const loadPreviousPage = () => {
     if (currentPage > 0 && !loading) {
       const prevPage = currentPage - 1;
-      fetchBookings(prevPage);
+      fetchBookings(prevPage, debouncedSearchTerm);
     }
   };
 
   useEffect(() => {
-    fetchBookings(0);
+    fetchBookings(0, debouncedSearchTerm);
     fetchOrderStatuses();
   }, []);
 
+  // This useEffect will trigger when debouncedSearchTerm changes (after user stops typing for 500ms)
   useEffect(() => {
-    applyFiltersAndSearch();
-  }, [selectedStatus, currentSearchTerm, token]);
+    if (debouncedSearchTerm !== undefined) {
+      // Reset to first page when search term changes
+      fetchBookings(0, debouncedSearchTerm);
+    }
+  }, [debouncedSearchTerm, selectedStatus, token]);
+
+  // Also trigger search when status filter changes
+  useEffect(() => {
+    // Reset to first page when status changes
+    fetchBookings(0, debouncedSearchTerm);
+  }, [selectedStatus]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    // The debouncedSearchTerm will update automatically after 500ms
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      // If user presses Enter, search immediately
+      fetchBookings(0, searchTerm);
+    }
+  };
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -296,7 +299,7 @@ const BookingsManagement: React.FC = () => {
 
         if (response.success) {
           toast.success("Report uploaded successfully!");
-          fetchBookings(currentPage);
+          fetchBookings(currentPage, debouncedSearchTerm);
         } else {
           throw new Error("Failed to update booking with report");
         }
@@ -374,14 +377,14 @@ const BookingsManagement: React.FC = () => {
 
       if (response.success) {
         toast.success(`Booking status updated to ${newStatus}`);
-        fetchBookings(currentPage);
+        fetchBookings(currentPage, debouncedSearchTerm);
       } else {
         throw new Error("Failed to update booking status");
       }
     } catch (error) {
       console.error("Error updating booking status:", error);
       toast.error("Failed to update booking status");
-      fetchBookings(currentPage);
+      fetchBookings(currentPage, debouncedSearchTerm);
     } finally {
       setUpdatingStatus(null);
     }
@@ -394,19 +397,20 @@ const BookingsManagement: React.FC = () => {
   };
 
   const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case "Fully Paid":
+    switch (status?.toLowerCase()) {
+      case "fully paid":
         return "bg-green-100 text-green-800";
-      case "Not Paid":
+      case "not paid":
         return "bg-yellow-100 text-yellow-800";
       case "failed":
         return "bg-red-100 text-red-800";
-      case "not paid":
-        return "bg-red-100 text-red-800";
+      case "partially paid":
+        return "bg-orange-100 text-orange-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
+
   const getOrderStatusColor = (status: string) => {
     const normalized = status?.toUpperCase();
 
@@ -421,6 +425,8 @@ const BookingsManagement: React.FC = () => {
         return "bg-blue-100 text-blue-800";
       case "CONFIRMED":
         return "bg-yellow-100 text-yellow-800";
+      case "PENDING":
+        return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -430,20 +436,6 @@ const BookingsManagement: React.FC = () => {
     setSelectedBookingForView(booking);
     setShowViewBooking(true);
     setOpenActionDropdown(null);
-  };
-
-  const handleDeleteBooking = async (bookingId: string) => {
-    if (window.confirm("Are you sure you want to delete this booking?")) {
-      try {
-        const updatedBookings = bookings.filter(
-          (booking) => booking.id !== bookingId,
-        );
-        setBookings(updatedBookings);
-        toast.success("Booking deleted successfully");
-      } catch (error) {
-        toast.error("Failed to delete booking");
-      }
-    }
   };
 
   const formatPatientNames = (
@@ -474,7 +466,7 @@ const BookingsManagement: React.FC = () => {
       "Total Revenue",
     ];
 
-    const formatPatientNames = (
+    const formatPatientNamesCSV = (
       patientDetails: PatientDetailsList | null | undefined,
     ) => {
       if (!patientDetails || !patientDetails.patients_list) {
@@ -495,7 +487,7 @@ const BookingsManagement: React.FC = () => {
       ...bookings.map((b) =>
         [
           `"${b.id}"`,
-          `"${formatPatientNames(b.patient_details)}"`,
+          `"${formatPatientNamesCSV(b.patient_details)}"`,
           `"${
             Array.isArray(b.labtestnames)
               ? b.labtestnames.join("; ")
@@ -614,6 +606,11 @@ const BookingsManagement: React.FC = () => {
               onKeyPress={handleSearchKeyPress}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
+            {loading && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-600"></div>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2">
@@ -632,36 +629,6 @@ const BookingsManagement: React.FC = () => {
                 : "Export All"}
             </button>
           </div>
-          {/* <div className="flex gap-3">
-            <div className="relative">
-              <button
-                onClick={() =>
-                  setOpenDropdown(openDropdown === "status" ? null : "status")
-                }
-                className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-3 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
-              >
-                {selectedStatus}
-                <ChevronDown className="w-5 h-5" />
-              </button>
-              {openDropdown === "status" && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                  {statusOptions.map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusChange(status)}
-                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
-                        selectedStatus === status
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-[#161D1F]"
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div> */}
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -835,7 +802,7 @@ const BookingsManagement: React.FC = () => {
                             booking.payment_status,
                           )}`}
                         >
-                          {booking.payment_status}
+                          {booking.payment_status || "Not Specified"}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -890,7 +857,7 @@ const BookingsManagement: React.FC = () => {
                                       </button>
                                     </li>
                                   )}
-                                  {booking.status == "COMPLETED" && (
+                                  {booking.status === "COMPLETED" && (
                                     <li>
                                       <button
                                         onClick={() =>

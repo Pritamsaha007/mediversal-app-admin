@@ -10,6 +10,7 @@ import {
 import { useAdminStore } from "@/app/store/adminStore";
 import { getOrderById } from "../services";
 import toast from "react-hot-toast";
+import StatusBadge from "@/app/components/common/StatusBadge";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -132,38 +133,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   if (!isOpen || !booking) return null;
 
-  const getorder_statusColor = (order_status: string) => {
-    switch (order_status.toLowerCase()) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "in_progress":
-        return "bg-blue-100 text-blue-800";
-      case "completed":
-        return "bg-green-100 text-green-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getPaymentColor = (payment: string) => {
-    switch (payment) {
-      case "Partial Payment":
-        return "bg-yellow-100 text-yellow-800";
-      case "Paid":
-        return "bg-green-100 text-green-800";
-      case "Refunded":
-        return "bg-blue-100 text-blue-800";
-      case "Pending":
-        return "bg-blue-100 text-blue-800";
-      case "Unpaid":
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   const handleStaffAssignment = (
     bookingId: string,
     staffs: AssignedStaff[],
@@ -220,21 +189,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
         <div className="flex-1 overflow-y-auto p-6">
           <div className="border-b pb-6">
-            <div className="flex gap-3">
-              <span
-                className={`px-3 py-1 rounded-full text-[10px] font-medium ${getorder_statusColor(
-                  booking.order_status,
-                )}`}
-              >
-                {booking.order_status}
-              </span>
-              <span
-                className={`px-3 py-1 rounded-full text-[10px] font-medium ${getPaymentColor(
-                  booking.payment_status,
-                )}`}
-              >
-                {booking.payment_status.toUpperCase()}
-              </span>
+            <div className="flex gap-3 text-black text-[12px]">
+              <div>Order Status:</div>
+              <StatusBadge status={booking.order_status} />
+              <div>Payment Status:</div>
+              <StatusBadge status={booking.payment_status} />
             </div>
           </div>
 

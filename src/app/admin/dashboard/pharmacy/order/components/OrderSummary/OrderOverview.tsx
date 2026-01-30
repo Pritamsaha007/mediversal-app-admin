@@ -111,7 +111,7 @@ const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
                 <div className="text-xs text-gray-800">
                   {new Date(
                     new Date(order.created_date).getTime() +
-                      3 * 24 * 60 * 60 * 1000
+                      3 * 24 * 60 * 60 * 1000,
                   ).toLocaleString("en-US", {
                     year: "numeric",
                     month: "long",
@@ -132,7 +132,7 @@ const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
                 <div className="text-xs text-gray-800">
                   {new Date(
                     new Date(order.created_date).getTime() +
-                      3 * 24 * 60 * 60 * 1000
+                      3 * 24 * 60 * 60 * 1000,
                   ).toLocaleString("en-US", {
                     year: "numeric",
                     month: "long",

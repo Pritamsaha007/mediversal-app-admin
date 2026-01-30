@@ -3,6 +3,8 @@ import React from "react";
 import { Printer, X } from "lucide-react";
 import { ConsultationAPI } from "../types";
 import toast from "react-hot-toast";
+import { formatDate, formatTime } from "../../../push-notification/utils/utils";
+import StatusBadge from "@/app/components/common/StatusBadge";
 
 interface ViewConsultationModalProps {
   isOpen: boolean;
@@ -20,33 +22,6 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
   if (!isOpen || !consultation) return null;
   console.log(consultation);
 
-  const getStatusBadge = (status?: string | null) => {
-    if (!status) {
-      return (
-        <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-medium bg-gray-100 text-gray-800">
-          Unknown
-        </span>
-      );
-    }
-
-    const statusStyles = {
-      completed: "bg-[#34C759] text-white",
-      scheduled: "bg-[#2F80ED] text-white",
-      "in-progress": "bg-[#FF9500] text-white",
-      cancelled: "bg-[#FF3B30] text-white",
-    };
-
-    return (
-      <span
-        className={`inline-flex items-center px-2 py-1 rounded text-[10px] font-medium ${
-          statusStyles[status as keyof typeof statusStyles] ||
-          "bg-gray-100 text-gray-800"
-        }`}
-      >
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
-  };
   const downloadAndPrintPDF = (url: string, orderId: string) => {
     try {
       const printFrame = document.createElement("iframe");
@@ -89,20 +64,6 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
     downloadAndPrintPDF(consultation.receipt_url, consultation.id);
   };
 
-  const getConsultationTypeBadge = (type: string) => {
-    return (
-      <span
-        className={`inline-flex items-center px-2 py-1 rounded text-[10px] font-medium ${
-          type === "online"
-            ? "bg-[#34C759] text-white"
-            : "bg-[#2F80ED] text-white"
-        }`}
-      >
-        {type === "online" ? "Online" : "Completed"}
-      </span>
-    );
-  };
-
   const formatCurrency = (amount: string) => {
     return `Rs. ${amount}`;
   };
@@ -140,12 +101,11 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
 
             {/* Tags */}
             <div className="flex items-center gap-2">
-              <span className="text-[12px] font-medium text-[#161D1F]">
-                Tags:
-              </span>
-              <div className="flex gap-2">
-                {getConsultationTypeBadge(consultation.consultation_type)}
-                {getStatusBadge(consultation.status)}
+              <div className="flex gap-2 text-black text-[12px]">
+                Payment Status:{" "}
+                <StatusBadge status={consultation.payment_status} />
+                Consultation Status:{" "}
+                <StatusBadge status={consultation.status} />
               </div>
             </div>
           </div>
@@ -197,8 +157,8 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
                     Consultation Date & Time:{" "}
                   </span>
                   <span className="text-[10px] text-gray-600">
-                    {consultation.consultation_date} |{" "}
-                    {consultation.consultation_time}
+                    {formatDate(consultation.consultation_date)} |{" "}
+                    {formatTime(consultation.consultation_time)}
                   </span>
                 </div>
                 <div>

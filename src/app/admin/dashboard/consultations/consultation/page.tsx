@@ -29,21 +29,20 @@ import { ConsultationAPI } from "./types";
 import Pagination from "../../../../components/common/pagination";
 import StatsCard from "@/app/components/common/StatsCard";
 import { EnumCodes, fetchEnums } from "@/app/service/enumService";
+import { formatDate, formatTime } from "../../push-notification/utils/utils";
 
-const ConsultationTypeBadge: React.FC<{ type: string }> = ({ type }) => {
-  return (
-    <div className="flex items-center gap-1 text-[10px] text-[#0088B1]">
-      {type === "online" ? (
-        <Globe className="w-3 h-3" />
-      ) : (
-        <MapPin className="w-3 h-3" />
-      )}
-      {type === "online"
-        ? "Online Consultation"
-        : "Mediversal Multi Super Speciality Hospital"}
-    </div>
-  );
-};
+// const ConsultationTypeBadge: React.FC<{ type: string }> = ({ type }) => {
+//   return (
+//     <div className="flex items-center gap-1 text-[10px] text-[#0088B1]">
+//       {type === "ONLINE" ? (
+//         <Globe className="w-3 h-3" />
+//       ) : (
+//         <MapPin className="w-3 h-3" />
+//       )}
+//       {type === "ONLINE" ? "Online Consultation" : "In-Person Consultation"}
+//     </div>
+//   );
+// };
 
 interface ConsultationStatusEnum {
   id: string;
@@ -353,21 +352,7 @@ const Consultations: React.FC = () => {
       setUpdatingStatus(null);
     }
   };
-  const formatDateToMMMDDYYYY = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-  const formatTimeTo12HourLower = (timeString: string): string => {
-    const [hours, minutes] = timeString.split(":");
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? "pm" : "am";
-    const hour12 = hour % 12 || 12;
-    return `${hour12}:${minutes} ${ampm}`;
-  };
+
   const formatStatusDisplay = (statusValue: string): string => {
     switch (statusValue.toUpperCase()) {
       case "SCHEDULED":
@@ -823,12 +808,15 @@ const Consultations: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
-                          <ConsultationTypeBadge
-                            type={consultation.consultation_type}
-                          />
-                          {consultation.consultation_type === "in-person" && (
-                            <div className="text-[10px] text-gray-500 mt-1">
+                          {consultation.consultation_type === "OFFLINE" ? (
+                            <div className="flex items-center gap-1 text-[10px] text-[#0088B1]">
+                              <MapPin className="w-3 h-3" />
                               {consultation.hospital_name}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 text-[10px] text-[#0088B1]">
+                              <Globe className="w-3 h-3" />
+                              Online Consultation
                             </div>
                           )}
                           <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-2">
@@ -840,14 +828,9 @@ const Consultations: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="flex bg-[#E8F4F7] rounded p-2 justify-center">
                           <div className="text-[10px] flex font-medium text-[#161D1F]">
-                            {formatDateToMMMDDYYYY(
-                              consultation.consultation_date,
-                            )}{" "}
-                            |
+                            {formatDate(consultation.consultation_date)} |
                             <p className="text-[#0073A0] ml-1">
-                              {formatTimeTo12HourLower(
-                                consultation.consultation_time,
-                              )}
+                              {formatTime(consultation.consultation_time)}
                             </p>
                           </div>
                         </div>
@@ -909,8 +892,8 @@ const Consultations: React.FC = () => {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center gap-2 justify-end">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
                           {consultation.consultation_type === "ONLINE" && (
                             <button
                               className="p-2 text-gray-400 hover:text-[#0088B1] cursor-pointer"
