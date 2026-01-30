@@ -24,6 +24,8 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
     cancelled: "bg-red-100 text-red-800",
     confirmed: "bg-orange-100 text-orange-800",
     completed: "bg-green-100 text-green-800",
+    unpaid: "bg-[#F2994A] text-white",
+    "partially paid": "bg-yellow-200 text-yellow-900",
     "not provided": "bg-amber-100 text-amber-800",
     "in progress": "bg-yellow-100 text-yellow-800",
     "not needed": "bg-yellow-100 text-yellow-800",

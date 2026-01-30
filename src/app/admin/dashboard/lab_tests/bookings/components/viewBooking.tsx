@@ -3,6 +3,7 @@ import { X, Clock, User } from "lucide-react";
 import { BookingDetailsResponse, LabTestBooking } from "../type";
 import { useAdminStore } from "@/app/store/adminStore";
 import { getBookingById } from "../../services";
+import StatusBadge from "@/app/components/common/StatusBadge";
 
 interface ViewBookingModalProps {
   isOpen: boolean;
@@ -120,37 +121,14 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                   </span>
                 </div>
 
-                <div className="flex items-start gap-2">
-                  <span className="text-xs text-[#161D1F] font-medium">
-                    Tags:
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    <span
-                      className={`px-3 py-1 rounded-md text-xs border text-[#9B51E0] border-[#9B51E0]`}
-                    >
-                      Lab Test
-                    </span>
-                    <span
-                      className={`px-3 py-1 rounded-md text-xs border ${
-                        bookingDetails?.booking?.status?.value?.toLowerCase() ===
-                          "completed" ||
-                        booking.status?.toLowerCase() === "completed"
-                          ? "bg-green-100 text-green-800 border-green-800"
-                          : bookingDetails?.booking?.status?.value?.toLowerCase() ===
-                                "in progress" ||
-                              booking.status?.toLowerCase() === "in progress"
-                            ? "bg-blue-100 text-blue-800 border-blue-800"
-                            : bookingDetails?.booking?.status?.value?.toLowerCase() ===
-                                  "scheduled" ||
-                                booking.status?.toLowerCase() === "scheduled"
-                              ? "bg-yellow-100 text-yellow-800 border-yellow-800"
-                              : "bg-yellow-100 text-yellow-800 border-yellow-800"
-                      }`}
-                    >
-                      {bookingDetails?.booking?.status?.value ||
-                        booking.status ||
-                        "Unknown"}
-                    </span>
+                <div className="flex items-start gap-2 text-black text-[12px]">
+                  <div>
+                    Booking Status:{" "}
+                    <StatusBadge
+                      status={
+                        bookingDetails?.booking?.status?.value || booking.status
+                      }
+                    />
                   </div>
                 </div>
               </div>
