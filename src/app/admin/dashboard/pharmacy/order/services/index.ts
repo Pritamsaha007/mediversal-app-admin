@@ -66,7 +66,7 @@ export class OrderService {
         requestBody,
         {
           headers: getAuthHeaders(),
-        }
+        },
       );
 
       console.log("API Response:", response.data);
@@ -100,7 +100,7 @@ export class OrderService {
         console.error("Response data:", error.response?.data);
         console.error("Response status:", error.response?.status);
         throw new Error(
-          `Failed to fetch orders: ${error.response?.status} ${error.response?.statusText} - ${error.response?.data?.message}`
+          `Failed to fetch orders: ${error.response?.status} ${error.response?.statusText} - ${error.response?.data?.message}`,
         );
       }
       throw new Error("Failed to fetch orders");
@@ -160,7 +160,7 @@ export class OrderService {
   static async updateRiderDeliveryStatus(
     orderId: string,
     status: string,
-    token: string
+    token: string,
   ): Promise<void> {
     try {
       const payload = {
@@ -212,36 +212,36 @@ export class OrderService {
     switch (sortBy) {
       case "Order Total (Low to High)":
         return sortedOrders.sort(
-          (a, b) => this.calculateTotalAmount(a) - this.calculateTotalAmount(b)
+          (a, b) => this.calculateTotalAmount(a) - this.calculateTotalAmount(b),
         );
 
       case "Order Total (High to Low)":
         return sortedOrders.sort(
-          (a, b) => this.calculateTotalAmount(b) - this.calculateTotalAmount(a)
+          (a, b) => this.calculateTotalAmount(b) - this.calculateTotalAmount(a),
         );
 
       case "Order Date (Latest)":
         return sortedOrders.sort(
           (a, b) =>
             new Date(b.created_date).getTime() -
-            new Date(a.created_date).getTime()
+            new Date(a.created_date).getTime(),
         );
 
       case "Order Date (Oldest)":
         return sortedOrders.sort(
           (a, b) =>
             new Date(a.created_date).getTime() -
-            new Date(b.created_date).getTime()
+            new Date(b.created_date).getTime(),
         );
 
       case "By Order Status":
         return sortedOrders.sort((a, b) =>
-          this.getOrderStatus(a).localeCompare(this.getOrderStatus(b))
+          this.getOrderStatus(a).localeCompare(this.getOrderStatus(b)),
         );
 
       case "By Payment Status":
         return sortedOrders.sort((a, b) =>
-          a.paymentstatus.localeCompare(b.paymentstatus)
+          a.paymentstatus.localeCompare(b.paymentstatus),
         );
 
       default:
@@ -257,7 +257,7 @@ export class OrderService {
         {
           headers: getAuthHeaders(),
           timeout: 10000, // 10 second timeout
-        }
+        },
       );
       console.log("Delete response:", response.status, response.data);
 
@@ -273,12 +273,12 @@ export class OrderService {
         const statusText = error.response?.statusText;
         const errorMessage = error.response?.data?.message || error.message;
         console.error(
-          `Delete failed - Status: ${status}, StatusText: ${statusText}, Message: ${errorMessage}`
+          `Delete failed - Status: ${status}, StatusText: ${statusText}, Message: ${errorMessage}`,
         );
 
         if (error.code === "ERR_NETWORK") {
           throw new Error(
-            "Network error: Unable to connect to the server. Please check your internet connection."
+            "Network error: Unable to connect to the server. Please check your internet connection.",
           );
         } else if (status === 404) {
           throw new Error(`Order ${orderId} not found`);
@@ -286,7 +286,7 @@ export class OrderService {
           throw new Error("Delete method not allowed on this endpoint");
         } else {
           throw new Error(
-            `Failed to delete order: ${status} ${statusText} - ${errorMessage}`
+            `Failed to delete order: ${status} ${statusText} - ${errorMessage}`,
           );
         }
       }
@@ -314,12 +314,12 @@ export class OrderService {
       const failed = results.filter((r) => !r.success).length;
 
       console.log(
-        `Bulk delete completed: ${successful} successful, ${failed} failed`
+        `Bulk delete completed: ${successful} successful, ${failed} failed`,
       );
 
       if (failed > 0) {
         throw new Error(
-          `Bulk delete partially failed: ${failed} orders could not be deleted`
+          `Bulk delete partially failed: ${failed} orders could not be deleted`,
         );
       }
     } catch (error) {
@@ -357,7 +357,7 @@ export class OrderService {
     }).length;
 
     const prescriptionVerification = orders.filter(
-      (order) => order.prescriptionurl !== null
+      (order) => order.prescriptionurl !== null,
     ).length;
 
     return {
@@ -406,7 +406,7 @@ export class OrderService {
           order.billing_state || "",
           order.billing_pincode || "",
           `"${order.rider_staff_name || "Not Assigned"}"`,
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -417,7 +417,7 @@ export class OrderService {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `orders_export_${new Date().toISOString().split("T")[0]}.csv`
+      `orders_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -440,7 +440,7 @@ export const trackOrders = async (seller_order_id: number, awb: string) => {
           "content-type": "application/json",
           "rapidshyp-token": ACCESS_TOKEN,
         },
-      }
+      },
     );
 
     return response.data;
@@ -468,7 +468,7 @@ export const cancelOrder = async (orderId: string, reason: string) => {
       },
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
 
     return response.data;
@@ -506,7 +506,7 @@ export interface CancelOrderResponse {
 }
 
 export const cancelShiprocketOrder = async (
-  requestData: CancelOrderRequest
+  requestData: CancelOrderRequest,
 ): Promise<CancelOrderResponse> => {
   try {
     const response = await axios.patch(
@@ -514,7 +514,7 @@ export const cancelShiprocketOrder = async (
       requestData,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
 
     return response.data;
@@ -542,7 +542,7 @@ export const getTracking = async (awb: string): Promise<TrackingResponse> => {
       `${API_BASE_URL}/api/v1/shiprocket/order/tracking?awb=${awb}`,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -551,7 +551,7 @@ export const getTracking = async (awb: string): Promise<TrackingResponse> => {
 };
 export const checkServiceability = async (
   token: string | undefined,
-  requestData: ServiceabilityRequest
+  requestData: ServiceabilityRequest,
 ): Promise<ServiceabilityResponse> => {
   try {
     if (!token) {
@@ -572,7 +572,7 @@ export const checkServiceability = async (
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-      }
+      },
     );
 
     return response.data;
@@ -593,7 +593,7 @@ export const checkServiceability = async (
 export const createShiprocketOrder = async (
   token: string | undefined,
   isRequired: boolean,
-  requestData: CreateOrderRequest
+  requestData: CreateOrderRequest,
 ): Promise<CreateOrderResponse> => {
   try {
     if (!token) {
@@ -608,7 +608,7 @@ export const createShiprocketOrder = async (
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-      }
+      },
     );
 
     return response.data;
@@ -631,7 +631,7 @@ export const createShiprocketOrder = async (
 };
 export const BookingForPatna = async (
   token: string | undefined,
-  pincode: number | undefined
+  pincode: number | undefined,
 ) => {
   try {
     if (!token) {
@@ -646,7 +646,7 @@ export const BookingForPatna = async (
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-      }
+      },
     );
 
     return response.data;

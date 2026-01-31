@@ -30,7 +30,6 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
   const [activeTab, setActiveTab] = useState("customer");
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [tabErrors, setTabErrors] = useState<Record<string, string[]>>({});
-  const [isLocalDelivery, setIsLocalDelivery] = useState(false);
 
   const {
     resetOrder,
@@ -197,7 +196,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
       const subtotal = orderItems.reduce(
         (total, item) =>
           total + Number(item.sellingPrice) * Number(item.quantity),
-        0
+        0,
       );
       const deliveryCharge = subtotal < 499 ? 40 : 0;
       const handlingPackagingFee = 5;
@@ -212,7 +211,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
 
       const serviceabilityResponse = await checkServiceability(
         token,
-        serviceabilityData
+        serviceabilityData,
       );
 
       if (
@@ -283,13 +282,13 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
           shiprocketResponse = await createShiprocketOrder(
             token,
             false,
-            shiprocketOrderData
+            shiprocketOrderData,
           );
         } else {
           shiprocketResponse = await createShiprocketOrder(
             token,
             true,
-            shiprocketOrderData
+            shiprocketOrderData,
           );
         }
 
@@ -366,12 +365,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
           )}
 
           {activeTab === "customer" && <CustomerInformationTab />}
-          {activeTab === "shipping" && (
-            <ShippingDetailsTab
-              isLocalDelivery={isLocalDelivery}
-              onLocalDeliveryChange={setIsLocalDelivery}
-            />
-          )}
+          {activeTab === "shipping" && <ShippingDetailsTab />}
           {activeTab === "prescription" && <PrescriptionTab />}
           {activeTab === "items" && <OrderItemsTab />}
         </div>
@@ -402,8 +396,8 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
               {isCreatingOrder
                 ? "Creating..."
                 : isLastTab
-                ? "Create Order"
-                : "Next"}
+                  ? "Create Order"
+                  : "Next"}
             </button>
           </div>
         </div>
