@@ -1,41 +1,119 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useOrderStore } from "../../store/placeOrderStore";
-import { Check, ChevronDown, MapPin } from "lucide-react";
+import { useAdminStore } from "@/app/store/adminStore";
+import { ChevronDown, Phone } from "lucide-react";
+import axios from "axios";
+import CustomerAddress from "../../types/types";
 
-interface ShippingDetailsTabProps {
-  isLocalDelivery?: boolean;
-  onLocalDeliveryChange?: (isLocal: boolean) => void;
-}
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-const ShippingDetailsTab: React.FC<ShippingDetailsTabProps> = ({
-  isLocalDelivery = false,
-  onLocalDeliveryChange,
-}) => {
+export const getCustomerAddresses = async (
+  customerId: string,
+  token: string | undefined,
+) => {
+  try {
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const response = await axios.get(
+      `${API_BASE_URL}/api/customerAddress/${customerId}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching customer addresses:", error);
+    throw error;
+  }
+};
+
+const ShippingDetailsTab = () => {
   const [addressType, setAddressType] = useState("home");
-  const [state, setState] = useState("");
-  const [isLocal, setIsLocal] = useState(isLocalDelivery);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const { shippingInfo, updateShippingInfo } = useOrderStore();
-  const [isCityOpen, setIsCityOpen] = useState(false);
+  const { shippingInfo, updateShippingInfo, customerInfo } = useOrderStore();
 
-  const localCities = ["Patna", "Begusarai"];
+  const { token } = useAdminStore();
 
-  const handleLocalDeliveryChange = (checked: boolean) => {
-    setIsLocal(checked);
+  const [customerAddresses, setCustomerAddresses] = useState<CustomerAddress[]>(
+    [],
+  );
+  const [isAddressDropdownOpen, setIsAddressDropdownOpen] = useState(false);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+  const addressDropdownRef = useRef<HTMLDivElement>(null);
 
-    if (checked && !shippingInfo.city) {
-      updateShippingInfo({ city: "Patna" });
-    }
+  useEffect(() => {
+    const fetchCustomerAddresses = async () => {
+      if (!customerInfo.customerId || !token) {
+        setCustomerAddresses([]);
+        return;
+      }
 
-    if (!checked && localCities.includes(shippingInfo.city)) {
-      updateShippingInfo({ city: "" });
-    }
+      setIsLoadingAddresses(true);
+      try {
+        const data = await getCustomerAddresses(customerInfo.customerId, token);
 
-    if (onLocalDeliveryChange) {
-      onLocalDeliveryChange(checked);
-    }
+        if (Array.isArray(data)) {
+          setCustomerAddresses(data);
+        } else if (data && data && Array.isArray(data)) {
+          setCustomerAddresses(data);
+        } else {
+          setCustomerAddresses([]);
+        }
+      } catch (error) {
+        console.error("Error fetching customer addresses:", error);
+        setCustomerAddresses([]);
+      } finally {
+        setIsLoadingAddresses(false);
+      }
+    };
+
+    fetchCustomerAddresses();
+  }, [customerInfo.customerId, token]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        addressDropdownRef.current &&
+        !addressDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsAddressDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const fillAddressForm = (address: CustomerAddress) => {
+    const addressLine1 = [
+      address.Home_Floor_FlatNumber?.trim(),
+      address.Area_details?.trim(),
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    updateShippingInfo({
+      addressLine1: addressLine1 || address.Address || "",
+      addressLine2: address.Address || "",
+      landmark: address.LandMark || "",
+      city: address.City?.trim() || "",
+      state: address.State?.trim() || "",
+      pincode: address.PinCode?.toString() || "",
+      country: address.Country?.trim() || "India",
+      addressType: address.Address_type?.toLowerCase() || "home",
+    });
+
+    setAddressType(address.Address_type?.toLowerCase() || "home");
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -106,6 +184,40 @@ const ShippingDetailsTab: React.FC<ShippingDetailsTabProps> = ({
     setErrors(newErrors);
   };
 
+  const getAddressDisplayText = (address: CustomerAddress) => {
+    const addressLine1 = [
+      address.Home_Floor_FlatNumber?.trim(),
+      address.Area_details?.trim(),
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    const parts = [
+      addressLine1 || address.Address,
+      address.LandMark?.trim(),
+      `${address.City?.trim()}, ${address.State?.trim()} - ${address.PinCode}`,
+    ].filter(Boolean);
+
+    return parts.join(", ");
+  };
+
+  const getAddressTypeDisplay = (type: string) => {
+    if (!type) return "Address";
+
+    const typeMap: Record<string, string> = {
+      home: "Home",
+      work: "Work",
+      office: "Work",
+      other: "Other",
+      Home: "Home",
+      Work: "Work",
+      Office: "Work",
+      Other: "Other",
+    };
+
+    return typeMap[type] || type.charAt(0).toUpperCase() + type.slice(1);
+  };
+
   const RequiredStar = () => <span className="text-red-500">*</span>;
 
   const getInputClassName = (fieldName: string) => {
@@ -126,45 +238,54 @@ const ShippingDetailsTab: React.FC<ShippingDetailsTabProps> = ({
     <div className="space-y-6">
       <h3 className="text-lg font-medium text-[#161D1F]">Shipping Addresses</h3>
 
-      <div className="mb-6 p-4 border border-[#E5E8E9] rounded-xl bg-gradient-to-r from-blue-50 to-gray-50 shadow-sm">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start space-x-3 flex-1">
-            <div className="mt-1">
-              <div
-                onClick={() => handleLocalDeliveryChange(!isLocal)}
-                className={`w-5 h-5 border-2 rounded-md flex items-center justify-center cursor-pointer transition-all duration-200
-      ${
-        isLocal
-          ? "bg-[#0088B1] border-[#0088B1]"
-          : "border-[#0088B1] hover:bg-blue-50"
-      }`}
-              >
-                {isLocal && <Check size={14} className="text-white" />}
-              </div>
-            </div>
-
-            <div className="flex-1">
-              <div className="flex items-center space-x-2">
-                <MapPin className="w-4 h-4 text-[#0088B1]" />
-                <label
-                  htmlFor="localDelivery"
-                  className="text-sm font-semibold text-[#161D1F] cursor-pointer"
-                >
-                  Local Delivery Service
-                </label>
-                <span className="px-2 py-1 text-xs font-medium bg-[#0088B1] text-white rounded-full">
-                  Recommended
-                </span>
-              </div>
-              <p className="text-xs text-gray-600 mt-2">
-                Select for fast delivery within Patna & Begusarai. Enjoy
-                same-day delivery, lower shipping costs, and dedicated local
-                support.
-              </p>
-            </div>
+      {customerInfo.customerId && (
+        <div className="relative" ref={addressDropdownRef}>
+          <label className="block text-xs font-medium text-[#161D1F] mb-2">
+            Select Saved Address
+          </label>
+          <div
+            className={`${getInputClassName("addressLine1")} cursor-pointer flex justify-between items-center`}
+            onClick={() => setIsAddressDropdownOpen(!isAddressDropdownOpen)}
+            tabIndex={0}
+          >
+            <span className="text-[#161D1F]">
+              {isLoadingAddresses
+                ? "Loading addresses..."
+                : customerAddresses.length > 0
+                  ? "Select a saved address"
+                  : "No saved addresses found"}
+            </span>
+            {customerAddresses.length > 0 && <ChevronDown size={14} />}
           </div>
+
+          {isAddressDropdownOpen && customerAddresses.length > 0 && (
+            <div className="absolute z-50 mt-1 w-full bg-white border border-[#E5E8E9] rounded-xl shadow-lg max-h-60 overflow-y-auto">
+              {customerAddresses.map((address) => (
+                <div
+                  key={address.id}
+                  onClick={() => {
+                    fillAddressForm(address);
+                    setIsAddressDropdownOpen(false);
+                  }}
+                  className="px-4 py-3 text-xs cursor-pointer hover:bg-gray-50 border-b last:border-b-0"
+                >
+                  <div className="font-medium text-[#161D1F] mb-1">
+                    {getAddressTypeDisplay(address.Address_type)} Address
+                    {address.Recipient_name && (
+                      <span className="ml-2 text-gray-600">
+                        ({address.Recipient_name})
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-gray-600 text-xs">
+                    {getAddressDisplayText(address)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       <div>
         <label className="block text-xs font-medium text-[#161D1F] mb-3">
@@ -187,7 +308,7 @@ const ShippingDetailsTab: React.FC<ShippingDetailsTabProps> = ({
               />
               <span
                 className={`ml-2 text-xs capitalize ${getRadioClassName(
-                  "addressType"
+                  "addressType",
                 )}`}
               >
                 {type}
@@ -252,59 +373,18 @@ const ShippingDetailsTab: React.FC<ShippingDetailsTabProps> = ({
 
         <div className="space-y-4">
           <div className="space-y-4">
-            <div className="relative">
+            <div>
               <label className="block text-xs font-medium text-[#161D1F] mb-2">
                 City/Town/Village <RequiredStar />
               </label>
-
-              {isLocal ? (
-                <>
-                  <div
-                    className={`${getInputClassName(
-                      "city"
-                    )} cursor-pointer flex justify-between items-center`}
-                    onClick={() => setIsCityOpen((prev) => !prev)}
-                    onBlur={() => handleBlur("city", shippingInfo.city)}
-                    tabIndex={0}
-                  >
-                    <span
-                      className={
-                        shippingInfo.city ? "text-black" : "text-gray-400"
-                      }
-                    >
-                      {shippingInfo.city || "Select City"}
-                    </span>
-                    <ChevronDown size={14} />
-                  </div>
-
-                  {isCityOpen && (
-                    <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                      {localCities.map((city) => (
-                        <div
-                          key={city}
-                          onClick={() => {
-                            handleInputChange("city", city);
-                            setIsCityOpen(false);
-                          }}
-                          className="px-3 py-2 text-xs cursor-pointer hover:bg-gray-100 text-black"
-                        >
-                          {city}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <input
-                  type="text"
-                  placeholder="e.g., Patna"
-                  value={shippingInfo.city}
-                  onChange={(e) => handleInputChange("city", e.target.value)}
-                  onBlur={(e) => handleBlur("city", e.target.value)}
-                  className={getInputClassName("city")}
-                />
-              )}
-
+              <input
+                type="text"
+                placeholder="e.g., Patna"
+                value={shippingInfo.city}
+                onChange={(e) => handleInputChange("city", e.target.value)}
+                onBlur={(e) => handleBlur("city", e.target.value)}
+                className={getInputClassName("city")}
+              />
               {errors.city && (
                 <p className="text-red-500 text-xs mt-1">{errors.city}</p>
               )}
@@ -317,9 +397,8 @@ const ShippingDetailsTab: React.FC<ShippingDetailsTabProps> = ({
                 State <RequiredStar />
               </label>
               <input
-                value={state}
+                value={shippingInfo.state}
                 onChange={(e) => {
-                  setState(e.target.value);
                   handleInputChange("state", e.target.value);
                 }}
                 onBlur={(e) => handleBlur("state", e.target.value)}
@@ -355,9 +434,9 @@ const ShippingDetailsTab: React.FC<ShippingDetailsTabProps> = ({
             </label>
             <input
               type="text"
-              value="India"
-              readOnly
-              className="w-full px-4 py-3 border border-[#E5E8E9] rounded-xl bg-gray-50 text-xs text-[#161D1F]"
+              value={shippingInfo.country || "India"}
+              onChange={(e) => handleInputChange("country", e.target.value)}
+              className="w-full px-4 py-3 border border-[#E5E8E9] rounded-xl focus:outline-none focus:ring-1 focus:border-[#0088B1] focus:ring-[#0088B1] text-xs text-[#161D1F]"
             />
           </div>
         </div>

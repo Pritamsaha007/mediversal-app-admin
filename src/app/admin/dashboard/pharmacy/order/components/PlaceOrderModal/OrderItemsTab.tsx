@@ -46,7 +46,7 @@ const OrderItemsTab: React.FC = () => {
     const subtotal = orderItems.reduce(
       (total, item) =>
         total + Number(item.sellingPrice) * Number(item.quantity),
-      0
+      0,
     );
 
     const deliveryCharge =
@@ -95,7 +95,7 @@ const OrderItemsTab: React.FC = () => {
 
           {
             searchTerm: term.trim(),
-          }
+          },
         );
 
         if (response.products) {
@@ -106,7 +106,7 @@ const OrderItemsTab: React.FC = () => {
             delivery: product.delivery || 0,
             discountPercentage: product.discountPercentage || 0,
           }));
-          
+
           if (page === 1) {
             setSearchResults(transformedProducts);
           } else {
@@ -132,7 +132,7 @@ const OrderItemsTab: React.FC = () => {
         }
       }
     },
-    [token, pageSize]
+    [token, pageSize],
   );
 
   const loadMoreSearchResults = useCallback(() => {
@@ -184,7 +184,7 @@ const OrderItemsTab: React.FC = () => {
 
   const addToOrder = (product: Product) => {
     const existingItem = orderItems.find(
-      (item) => item.productId === product.productId
+      (item) => item.productId === product.productId,
     );
 
     if (existingItem) {
@@ -195,7 +195,7 @@ const OrderItemsTab: React.FC = () => {
               quantity: item.quantity + 1,
               total: (item.quantity + 1) * Number(item.sellingPrice),
             }
-          : item
+          : item,
       );
       updateOrderItems(updatedItems);
     } else {
@@ -242,14 +242,14 @@ const OrderItemsTab: React.FC = () => {
             quantity: newQuantity,
             total: newQuantity * Number(item.sellingPrice),
           }
-        : item
+        : item,
     );
     updateOrderItems(updatedItems);
   };
 
   const removeItem = (productId: string) => {
     const updatedItems = orderItems.filter(
-      (item) => item.productId !== productId
+      (item) => item.productId !== productId,
     );
     updateOrderItems(updatedItems);
   };

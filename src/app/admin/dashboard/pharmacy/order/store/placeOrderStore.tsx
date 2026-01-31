@@ -18,6 +18,7 @@ interface ShippingInfo {
   state: string;
   pincode: string;
   country: string;
+  addressType: string;
 }
 
 interface OrderState {
@@ -61,6 +62,7 @@ const initialShippingInfo: ShippingInfo = {
   state: "",
   pincode: "",
   country: "India",
+  addressType: "Home",
 };
 
 export const useOrderStore = create<OrderState>((set, get) => ({
@@ -156,7 +158,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         }
         if (!item.sellingPrice || item.sellingPrice <= 0) {
           errors.push(
-            `Item ${index + 1}: Selling price must be greater than 0`
+            `Item ${index + 1}: Selling price must be greater than 0`,
           );
         }
       });
@@ -196,7 +198,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const subtotal = state.orderItems.reduce<number>(
       (total, item) =>
         total + Number(item.sellingPrice) * Number(item.quantity),
-      0
+      0,
     );
     const deliveryCharge = subtotal < 499 ? 40 : 0;
     const handlingPackagingFee = 5;

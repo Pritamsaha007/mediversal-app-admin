@@ -517,3 +517,21 @@ export interface TrackingData {
   is_return: boolean;
   order_tag: string;
 }
+export default interface CustomerAddress {
+  id: string;
+  Customer_id: string;
+  Address: string;
+  Home_Floor_FlatNumber: string;
+  Area_details: string;
+  LandMark: string;
+  City: string;
+  State: string;
+  Contact_details: string;
+  Recipient_name: string;
+  PhoneNumber: string;
+  PinCode: number;
+  Country: string;
+  Address_type: string;
+  created_date: string;
+  updated_date: string;
+}
