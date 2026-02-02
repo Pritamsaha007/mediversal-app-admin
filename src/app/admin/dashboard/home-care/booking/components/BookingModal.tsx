@@ -11,6 +11,7 @@ import { useAdminStore } from "@/app/store/adminStore";
 import { getOrderById } from "../services";
 import toast from "react-hot-toast";
 import StatusBadge from "@/app/components/common/StatusBadge";
+import { formatDateTime } from "@/app/utils/date.utils";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -174,7 +175,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
       <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] flex flex-col">
-        {/* Header - Fixed */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-[16px] font-semibold text-[#161D1F]">
             Booking ID: {booking.ordernumber}
@@ -311,10 +311,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   <div>
                     <p className="text-[10px] text-[#899193] mb-1">Scheduled</p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
-                      {contactLocation?.["Date & Time"] ||
-                        `${orderDetails?.schedule_in_days || 0} days, ${
-                          orderDetails?.schedule_in_hours || 0
-                        } hours`}
+                      {contactLocation?.["Date & Time"]
+                        ? formatDateTime(contactLocation["Date & Time"])
+                        : `${orderDetails?.schedule_in_days ?? 0} days, ${
+                            orderDetails?.schedule_in_hours ?? 0
+                          } hours`}
                     </p>
                   </div>
 

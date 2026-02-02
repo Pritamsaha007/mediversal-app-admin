@@ -30,8 +30,10 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
     "in progress": "bg-yellow-100 text-yellow-800",
     "not needed": "bg-yellow-100 text-yellow-800",
     "not assigned": "bg-red-100 text-red-800",
+    scheduled: "bg-yellow-100 text-yellow-800",
 
     paid: "bg-green-100 text-green-800",
+    "not paid": "bg-red-100 text-red-800",
     pending: "bg-yellow-100 text-yellow-800",
     failed: "bg-red-100 text-red-800",
     refund: "bg-orange-100 text-orange-800",

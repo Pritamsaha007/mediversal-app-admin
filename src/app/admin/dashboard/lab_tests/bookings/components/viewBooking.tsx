@@ -130,6 +130,15 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                       }
                     />
                   </div>
+                  <div>
+                    Payment Status:{" "}
+                    <StatusBadge
+                      status={
+                        bookingDetails?.booking?.payment_status ||
+                        booking.status
+                      }
+                    />
+                  </div>
                 </div>
               </div>
 
