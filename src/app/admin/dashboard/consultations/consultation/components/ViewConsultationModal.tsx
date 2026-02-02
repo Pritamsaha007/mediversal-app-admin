@@ -99,7 +99,6 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
               <span>{consultation.consultation_language}</span>
             </div>
 
-            {/* Tags */}
             <div className="flex items-center gap-2">
               <div className="flex gap-2 text-black text-[12px]">
                 Payment Status:{" "}
@@ -110,7 +109,6 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
             </div>
           </div>
 
-          {/* Patient Details */}
           <div className="mb-6">
             <h4 className="text-[10px] font-medium text-[#161D1F] mb-4">
               Patient Details

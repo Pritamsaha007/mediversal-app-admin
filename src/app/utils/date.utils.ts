@@ -13,3 +13,22 @@ export const getCurrentDateTime = () => {
   });
   return { date, time };
 };
+export const formatDateTime = (dateTime?: string) => {
+  if (!dateTime) return "";
+
+  const date = new Date(dateTime.replace(" ", "T")); // important fix
+
+  const day = date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  const time = date.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  return `${day}, ${time}`;
+};
