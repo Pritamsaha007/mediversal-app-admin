@@ -52,7 +52,7 @@ export default function CouponsManagement() {
         setError(null);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Failed to fetch coupons"
+          err instanceof Error ? err.message : "Failed to fetch coupons",
         );
         console.error("Error fetching coupons:", err);
       } finally {
@@ -63,6 +63,7 @@ export default function CouponsManagement() {
     fetchCoupons();
   }, [setCoupons, setIsLoading, setError]);
 
+  console.log(coupons, "coupons");
   const handleAddCoupon = () => {
     openAddModal();
   };
@@ -91,7 +92,7 @@ export default function CouponsManagement() {
 
   const handleStatusChange = async (
     id: string,
-    status: "active" | "inactive"
+    status: "active" | "inactive",
   ) => {
     try {
       const couponToUpdate = coupons.find((c) => String(c.id) === String(id));
@@ -107,7 +108,7 @@ export default function CouponsManagement() {
     } catch (err) {
       console.error("Error updating coupon status:", err);
       alert(
-        err instanceof Error ? err.message : "Failed to update coupon status"
+        err instanceof Error ? err.message : "Failed to update coupon status",
       );
     }
   };
@@ -134,7 +135,7 @@ export default function CouponsManagement() {
         setError(
           refreshErr instanceof Error
             ? refreshErr.message
-            : "Failed to refresh coupons"
+            : "Failed to refresh coupons",
         );
         console.error("Error refreshing coupons:", refreshErr);
       } finally {
@@ -143,7 +144,7 @@ export default function CouponsManagement() {
     } catch (err) {
       console.error("Error submitting coupon:", err);
       toast.error(
-        err instanceof Error ? err.message : "Failed to submit coupon"
+        err instanceof Error ? err.message : "Failed to submit coupon",
       );
     }
   };
@@ -188,7 +189,7 @@ export default function CouponsManagement() {
           `"${c.start_date || "N/A"}"`,
           `"${c.expiry_date || "No expiry"}"`,
           c.status,
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -199,7 +200,7 @@ export default function CouponsManagement() {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `coupons_export_${new Date().toISOString().split("T")[0]}.csv`
+      `coupons_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 

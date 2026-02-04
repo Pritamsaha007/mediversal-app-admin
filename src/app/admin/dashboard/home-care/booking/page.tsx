@@ -496,34 +496,34 @@ const BookingManagement: React.FC = () => {
                   </th>
                 </tr>
               </thead>
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="py-8">
-                    <div className="flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="py-8">
+                      <div className="flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-8">
-                    <p className="text-sm text-red-600">{error}</p>
-                    <button
-                      onClick={fetchOrders}
-                      className="mt-2 text-sm text-cyan-600 hover:text-cyan-700"
-                    >
-                      Try again
-                    </button>
-                  </td>
-                </tr>
-              ) : (
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredBookings.map((booking) => (
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={8} className="text-center py-8">
+                      <p className="text-sm text-red-600">{error}</p>
+                      <button
+                        onClick={fetchOrders}
+                        className="mt-2 text-sm text-cyan-600 hover:text-cyan-700"
+                      >
+                        Try again
+                      </button>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredBookings.map((booking) => (
                     <tr
                       key={booking.ordernumber}
-                      className="hover:bg-gray-50 transition-colors"
+                      className="hover:bg-gray-50 transition-colors border-1"
                     >
                       <td className="px-6 py-4">
                         <input
@@ -557,9 +557,6 @@ const BookingManagement: React.FC = () => {
                                 )
                               : "N/A"}
                           </div>
-                          {/* <div className="text-xs text-[#899193]">
-                            Booking ID: {booking.id.slice(0, 8).toUpperCase()}
-                          </div> */}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -652,9 +649,9 @@ const BookingManagement: React.FC = () => {
                         />
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              )}
+                  ))
+                )}
+              </tbody>
             </table>
 
             {allBookings.length > 0 && (

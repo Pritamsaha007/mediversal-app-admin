@@ -153,7 +153,7 @@ const Orders: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "PENDING":
-        return "bg-yellow-100 text-yellow-800 ";
+        return "bg-yellow-100 text-yellow-800";
       case "IN_PROGRESS":
         return "bg-blue-100 text-blue-800 ";
       case "COMPLETED":
