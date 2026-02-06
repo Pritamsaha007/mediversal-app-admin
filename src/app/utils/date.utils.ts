@@ -32,3 +32,18 @@ export const formatDateTime = (dateTime?: string) => {
 
   return `${day}, ${time}`;
 };
+export const formatDateForInput = (dateString: string | null): string => {
+  if (!dateString) return "";
+
+  try {
+    const dateOnly = dateString.split(" ")[0].split("T")[0];
+
+    const date = new Date(dateOnly);
+    if (isNaN(date.getTime())) return "";
+
+    return date.toISOString().split("T")[0];
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "";
+  }
+};

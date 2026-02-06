@@ -4,6 +4,7 @@ import { X, ChevronDown, Calendar as CalendarIcon } from "lucide-react";
 import { CouponItem } from "@/app/types/auth.types";
 import toast from "react-hot-toast";
 import { useCouponStore } from "@/app/store/couponStore";
+import { formatDateForInput } from "@/app/utils/date.utils";
 
 interface CouponModalProps {
   isOpen: boolean;
@@ -119,7 +120,6 @@ export const CouponModal: React.FC<CouponModalProps> = ({
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >
       <div className="bg-white rounded-lg w-full max-w-6xl max-h-[80vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex items-center justify-between p-4 sticky top-0 bg-white z-10">
           <h2 className="text-[16px] font-semibold text-[#161D1F]">
             {isEditMode ? "Edit Coupon" : "Create New Coupon"}
@@ -132,10 +132,8 @@ export const CouponModal: React.FC<CouponModalProps> = ({
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(80vh-150px)]">
           <div className="grid grid-cols-1 md:grid-row-2 gap-4">
-            {/* Coupon Code */}
             <div className="space-y-1 col-span-2">
               <label className="block text-[10px] font-medium text-[#161D1F]">
                 Coupon Code
@@ -147,7 +145,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                   onChange={(e) =>
                     handleInputChange(
                       "coupon_code",
-                      e.target.value.toUpperCase()
+                      e.target.value.toUpperCase(),
                     )
                   }
                   className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[10px] text-gray-500"
@@ -162,7 +160,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                   Generate
                 </button> */}
               </div>
-              {/* Discount Type */}
+
               <div className="space-y-1">
                 <label className="block text-[10px] font-medium text-[#161D1F]">
                   Discount Type
@@ -209,7 +207,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                   onChange={(e) =>
                     handleInputChange(
                       "discount_value",
-                      parseFloat(e.target.value)
+                      parseFloat(e.target.value),
                     )
                   }
                   min="0"
@@ -225,7 +223,6 @@ export const CouponModal: React.FC<CouponModalProps> = ({
               </div>
             </div>
 
-            {/* Minimum Order Value */}
             <div className="space-y-1">
               <label className="block text-[10px] font-medium text-[#161D1F]">
                 Minimum Order Value (₹)
@@ -236,7 +233,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                 onChange={(e) =>
                   handleInputChange(
                     "minimum_order_value",
-                    parseFloat(e.target.value)
+                    parseFloat(e.target.value),
                   )
                 }
                 min="0"
@@ -244,7 +241,6 @@ export const CouponModal: React.FC<CouponModalProps> = ({
               />
             </div>
 
-            {/* Usage Limit */}
             <div className="space-y-1">
               <label className="block text-[10px] font-medium text-[#161D1F]">
                 Usage Limit
@@ -260,7 +256,6 @@ export const CouponModal: React.FC<CouponModalProps> = ({
               />
             </div>
 
-            {/* Start Date */}
             <div className="space-y-1">
               <label className="block text-[10px] font-medium text-[#161D1F]">
                 Start Date (Optional)
@@ -268,7 +263,11 @@ export const CouponModal: React.FC<CouponModalProps> = ({
               <div className="relative">
                 <input
                   type="date"
-                  value={formData.start_date || ""}
+                  value={
+                    formData.start_date
+                      ? formatDateForInput(formData.start_date)
+                      : ""
+                  }
                   onChange={(e) =>
                     handleInputChange("start_date", e.target.value)
                   }
@@ -277,7 +276,6 @@ export const CouponModal: React.FC<CouponModalProps> = ({
               </div>
             </div>
 
-            {/* Expiry Date */}
             <div className="space-y-1">
               <label className="block text-[10px] font-medium text-[#161D1F]">
                 Expiry Date
@@ -285,7 +283,11 @@ export const CouponModal: React.FC<CouponModalProps> = ({
               <div className="relative">
                 <input
                   type="date"
-                  value={formData.expiry_date || ""}
+                  value={
+                    formData.expiry_date
+                      ? formatDateForInput(formData.expiry_date)
+                      : ""
+                  }
                   onChange={(e) =>
                     handleInputChange("expiry_date", e.target.value)
                   }
@@ -295,7 +297,6 @@ export const CouponModal: React.FC<CouponModalProps> = ({
               </div>
             </div>
 
-            {/* Category */}
             <div className="space-y-1 relative">
               <label className="block text-[10px] font-medium text-[#161D1F]">
                 Category
@@ -313,19 +314,19 @@ export const CouponModal: React.FC<CouponModalProps> = ({
               {categoryDropdownOpen && (
                 <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 border border-gray-200 max-h-60 overflow-auto">
                   {categories.map((category) => (
-                    <div
+                    <button
                       key={category}
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-[10px] text-gray-500"
+                      type="button"
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-[10px] text-gray-500 w-full text-left bg-white"
                       onClick={() => handleCategorySelect(category)}
                     >
                       {category}
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Status */}
             <div className="space-y-1">
               <label className="block text-[10px] font-medium text-[#161D1F]">
                 Status
@@ -335,7 +336,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                 onChange={(e) =>
                   handleInputChange(
                     "status",
-                    e.target.value as "active" | "inactive"
+                    e.target.value as "active" | "inactive",
                   )
                 }
                 className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[10px] text-gray-500"
@@ -346,7 +347,6 @@ export const CouponModal: React.FC<CouponModalProps> = ({
             </div>
           </div>
 
-          {/* Description (full width) */}
           <div className="space-y-1 mt-4 col-span-2">
             <label className="block text-[10px] font-medium text-[#161D1F]">
               Coupon Description
@@ -361,7 +361,6 @@ export const CouponModal: React.FC<CouponModalProps> = ({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
           <button
             onClick={handleReset}

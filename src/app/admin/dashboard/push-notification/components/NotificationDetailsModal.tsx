@@ -41,7 +41,7 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
           {notification.custom_schedule.map((scheduleItem, idx) =>
             Object.entries(scheduleItem).map(([dayId, times]) => {
               const day = notification.days_selected?.find(
-                (d) => d.id === dayId
+                (d) => d.id === dayId,
               );
               return times.map((time, timeIdx) => (
                 <span
@@ -51,7 +51,7 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
                   {day?.value.substring(0, 3)}: {formatTime(time)}
                 </span>
               ));
-            })
+            }),
           )}
         </div>
       );
@@ -60,9 +60,9 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
     if (notification.days_selected && notification.days_selected.length > 0) {
       return (
         <div className="flex flex-wrap gap-2">
-          {notification.days_selected.map((day) => (
+          {notification.days_selected.map((day, index) => (
             <span
-              key={day.id}
+              key={`${day.id}-${index}`}
               className="text-[12px] bg-[#E8F4F7] text-[#161D1F] px-3 py-1.5 rounded"
             >
               {day.value.substring(0, 3)}:{" "}
@@ -75,7 +75,6 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
 
     return <div className="text-[12px] text-[#899193]">No schedule set</div>;
   };
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
@@ -113,7 +112,7 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
             <div className="flex gap-2">
               <span
                 className={`inline-flex items-center px-3 py-1 rounded text-[8px] font-medium ${getStatusColor(
-                  notification.status
+                  notification.status,
                 )}`}
               >
                 {notification.status.charAt(0) +
@@ -121,7 +120,7 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
               </span>
               <span
                 className={`inline-flex items-center px-3 py-1 rounded text-[8px] font-medium border ${getUserGroupColor(
-                  notification.targeted_user_group_value
+                  notification.targeted_user_group_value,
                 )}`}
               >
                 {formatUserGroup(notification.targeted_user_group_value)}

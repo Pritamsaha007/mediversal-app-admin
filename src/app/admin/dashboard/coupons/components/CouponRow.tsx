@@ -1,5 +1,12 @@
 "use client";
-import { Percent, IndianRupee, Edit, Trash2, MoreVertical } from "lucide-react";
+import {
+  Percent,
+  IndianRupee,
+  Edit,
+  Trash2,
+  MoreVertical,
+  ChevronDown,
+} from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { CouponItem } from "@/app/types/auth.types";
 import { useCouponStore } from "@/app/store/couponStore";
@@ -22,7 +29,10 @@ export default function CouponRow({
   onStatusChange,
 }: CouponRowProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -32,6 +42,12 @@ export default function CouponRow({
       ) {
         setDropdownOpen(false);
       }
+      if (
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(event.target as Node)
+      ) {
+        setStatusDropdownOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -40,8 +56,31 @@ export default function CouponRow({
 
   const isExpired = new Date(coupon.expiry_date || "") < new Date();
 
+  const getStatusColor = (status: string, isExpired: boolean) => {
+    if (isExpired) return "bg-red-100 text-red-800";
+    return status === "active"
+      ? "bg-green-100 text-green-800"
+      : "bg-yellow-100 text-yellow-800";
+  };
+
+  const formatStatusDisplay = (status: string) => {
+    if (status === "active") return "Active";
+    if (status === "inactive") return "Inactive";
+    return status;
+  };
+
+  const handleStatusChange = async (status: "active" | "inactive") => {
+    setUpdatingStatus(true);
+    try {
+      await onStatusChange(String(coupon.id), status);
+      setStatusDropdownOpen(false);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   return (
-    <tr className="hover:bg-gray-50">
+    <tr className="hover:bg-gray-50 border-b border-gray-200">
       <td className="px-4 py-4">
         <input
           type="checkbox"
@@ -66,7 +105,7 @@ export default function CouponRow({
         <div className="flex items-center">
           {coupon.discount_type === "percentage" ? (
             <>
-              {/* <Percent className="h-4 w-4 mr-1" /> */}
+              <Percent className="h-4 w-4 mr-1" />
               {coupon.discount_value}%
             </>
           ) : (
@@ -92,67 +131,103 @@ export default function CouponRow({
         </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        <select
-          value={isExpired ? "expired" : coupon.status}
-          onChange={(e) =>
-            onStatusChange(
-              String(coupon.id),
-              e.target.value as "active" | "inactive"
-            )
-          }
-          disabled={isExpired}
-          className={`text-[10px] px-2 py-1 rounded-md border-1 font-medium ${
-            isExpired
-              ? "bg-red-100 text-red-800"
-              : coupon.status === "active"
-              ? "bg-white text-green-800"
-              : "bg-gray-100 text-gray-800"
-          }`}
-        >
+        <div className="relative" ref={statusDropdownRef}>
           {isExpired ? (
-            <option value="expired">Expired</option>
+            <span className="px-3 py-1 rounded-full text-[10px] font-medium bg-red-100 text-red-800">
+              Expired
+            </span>
           ) : (
             <>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              <button
+                onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                disabled={updatingStatus}
+                className={`px-3 py-1 rounded-full text-[10px] font-medium ${getStatusColor(
+                  coupon.status,
+                  false,
+                )} flex items-center gap-1 hover:opacity-80 transition-opacity disabled:opacity-50`}
+              >
+                {updatingStatus ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    {formatStatusDisplay(coupon.status)}
+                    <ChevronDown className="w-3 h-3" />
+                  </>
+                )}
+              </button>
+              {statusDropdownOpen && (
+                <div className="absolute left-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+                  <div className="py-1 flex flex-col">
+                    {" "}
+                    {/* Added flex-col here */}
+                    <button
+                      onClick={() => handleStatusChange("active")}
+                      className={`w-full px-3 py-2 text-left text-[10px] hover:bg-gray-50 transition-colors ${
+                        coupon.status === "active"
+                          ? "text-green-600 bg-green-50"
+                          : "text-[#161D1F]"
+                      }`}
+                    >
+                      Active
+                    </button>
+                    <button
+                      onClick={() => handleStatusChange("inactive")}
+                      className={`w-full px-3 py-2 text-left text-[10px] hover:bg-gray-50 transition-colors ${
+                        coupon.status === "inactive"
+                          ? "text-yellow-600 bg-yellow-50"
+                          : "text-[#161D1F]"
+                      }`}
+                    >
+                      Inactive
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
-        </select>
+        </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-right text-[12px] font-medium">
         <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="text-gray-400 hover:text-gray-600 cursor-pointer p-1"
-            title="More options"
-          >
-            <MoreVertical className="h-4 w-4" />
-          </button>
-          {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-32 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10">
-              <div className="py-1">
-                <button
-                  onClick={() => {
-                    onEdit(String(coupon.id));
-                    setDropdownOpen(false);
-                  }}
-                  className="flex items-center px-4 py-2 text-[12px] text-gray-700 hover:bg-gray-100 cursor-pointer w-full text-left"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </button>
-                <button
-                  onClick={() => {
-                    onDelete(String(coupon.id));
-                    setDropdownOpen(false);
-                  }}
-                  className="flex items-center px-4 py-2 text-[12px] text-red-700 hover:bg-gray-100 cursor-pointer w-full text-left"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </button>
-              </div>
-            </div>
+          {!isExpired && (
+            <>
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="text-gray-400 hover:text-gray-600 cursor-pointer p-1 hover:bg-gray-100 rounded-full transition-colors"
+                title="More options"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </button>
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg ring-1 ring-gray-200 ring-opacity-5 z-10 border border-gray-100 overflow-hidden">
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        onEdit(String(coupon.id));
+                        setDropdownOpen(false);
+                      }}
+                      className="flex items-center px-4 py-2 text-[12px] text-gray-700 hover:bg-gray-50 cursor-pointer w-full text-left transition-colors duration-150 border-b border-gray-100"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Coupon
+                    </button>
+                    <button
+                      onClick={() => {
+                        onDelete(String(coupon.id));
+                        setDropdownOpen(false);
+                      }}
+                      className="flex items-center px-4 py-2 text-[12px] text-red-600 hover:bg-red-50 cursor-pointer w-full text-left transition-colors duration-150"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Coupon
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </td>

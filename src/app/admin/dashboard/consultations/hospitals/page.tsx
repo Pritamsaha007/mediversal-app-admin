@@ -25,7 +25,7 @@ const Hospitals: React.FC = () => {
   const [selectedDepartment, setSelectedDepartment] =
     useState("All Departments");
   const [selectedOperatingHours, setSelectedOperatingHours] = useState(
-    "All Operating Hours"
+    "All Operating Hours",
   );
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [filteredHospitals, setFilteredHospitals] = useState<Hospital[]>([]);
@@ -38,13 +38,13 @@ const Hospitals: React.FC = () => {
   const [editingHospital, setEditingHospital] = useState<Hospital | null>(null);
   const [showAddHospitalModal, setShowAddHospitalModal] = useState(false);
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(
-    null
+    null,
   );
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [departmentOptions, setDepartmentOptions] = useState<string[]>([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [hospitalToDelete, setHospitalToDelete] = useState<Hospital | null>(
-    null
+    null,
   );
   const { token } = useAdminStore();
   const operatingHoursOptions = [
@@ -85,17 +85,17 @@ const Hospitals: React.FC = () => {
       const response = await getHospitals(params, token);
       console.log(response, "real");
       let convertedHospitals = response.hospitals.map(
-        convertAPIToLocalHospital
+        convertAPIToLocalHospital,
       );
 
       if (selectedOperatingHours !== "All Operating Hours") {
         if (selectedOperatingHours === "24/7 Emergency") {
           convertedHospitals = convertedHospitals.filter(
-            (hospital) => hospital.emergencyServices
+            (hospital) => hospital.emergencyServices,
           );
         } else if (selectedOperatingHours === "Regular Hours") {
           convertedHospitals = convertedHospitals.filter(
-            (hospital) => !hospital.emergencyServices
+            (hospital) => !hospital.emergencyServices,
           );
         }
       }
@@ -161,7 +161,7 @@ const Hospitals: React.FC = () => {
     setExpandedDepartments((prev) =>
       prev.includes(hospitalId)
         ? prev.filter((id) => id !== hospitalId)
-        : [...prev, hospitalId]
+        : [...prev, hospitalId],
     );
   };
 
@@ -172,8 +172,8 @@ const Hospitals: React.FC = () => {
         prev.map((h) =>
           h.id === editingHospital.id
             ? { ...hospitalData, id: editingHospital.id }
-            : h
-        )
+            : h,
+        ),
       );
     } else {
       const newHospital = {
@@ -316,11 +316,11 @@ const Hospitals: React.FC = () => {
             hospitalToDelete.name
           } because it has ${staffCount} active staff member${
             staffCount === "1" ? "" : "s"
-          }. Please remove or transfer the staff first.`
+          }. Please remove or transfer the staff first.`,
         );
       } else {
         toast.error(
-          "Sorry, we couldn't delete the hospital. Please try again."
+          "Sorry, we couldn't delete the hospital. Please try again.",
         );
       }
       setShowConfirmModal(false);
@@ -376,7 +376,7 @@ const Hospitals: React.FC = () => {
           `"${
             Array.isArray(h.departments) ? h.departments.join(", ") : "N/A"
           }"`,
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -387,7 +387,7 @@ const Hospitals: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `hospitals_export_${new Date().toISOString().split("T")[0]}.csv`
+      `hospitals_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -493,10 +493,11 @@ const Hospitals: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
-                  <td colSpan={7} className="px-6 py-12 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
-                    {/* <div className="text-gray-500">Loading hospitals...</div> */}
-                  </td>
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
+                    </td>
+                  </tr>
                 ) : filteredHospitals.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">
