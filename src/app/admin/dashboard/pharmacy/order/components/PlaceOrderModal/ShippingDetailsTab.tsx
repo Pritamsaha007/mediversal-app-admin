@@ -19,7 +19,7 @@ export const getCustomerAddresses = async (
     }
 
     const response = await axios.get(
-      `${API_BASE_URL}/api/customerAddress/${customerId}`,
+      `${API_BASE_URL}/api/customer/address/${customerId}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -28,7 +28,7 @@ export const getCustomerAddresses = async (
       },
     );
 
-    return response.data;
+    return response.data.addresses;
   } catch (error) {
     console.error("Error fetching customer addresses:", error);
     throw error;
