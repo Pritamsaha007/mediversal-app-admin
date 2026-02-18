@@ -69,6 +69,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
     PrescriptionRequired: "",
     featuredProduct: false,
+    discount_allowed: true,
     active: true,
     SafetyAdvices: "",
     StorageInstructions: "",
@@ -96,7 +97,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   };
 
   const handleImageChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -164,6 +165,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       productWeight: 0.4,
       subCategoryType: "",
       Coupons: null,
+      discount_allowed: true,
     });
 
     imagePreviews.forEach((preview) => {
@@ -234,7 +236,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             const timestamp = Date.now();
             const safeProductName = formData.ProductName.replace(
               /[^a-zA-Z0-9]/g,
-              "_"
+              "_",
             );
             const fileName = `${safeProductName}_${timestamp}_${i}_${file.name}`;
 
@@ -275,7 +277,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           ? Math.round(
               ((formData.CostPrice - formData.SellingPrice) /
                 formData.CostPrice) *
-                100
+                100,
             )
           : 0;
       console.log("DEBUG - PrescriptionRequired before submit:", {
@@ -385,7 +387,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                   const newFiles = Array.from(files);
                   setSelectedImages((prev) => [...prev, ...newFiles]);
                   const newPreviews = newFiles.map((file) =>
-                    URL.createObjectURL(file)
+                    URL.createObjectURL(file),
                   );
                   setImagePreviews((prev) => [...prev, ...newPreviews]);
                 }}
@@ -437,8 +439,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 {uploadingImages
                   ? "Saving..."
                   : isEditMode
-                  ? "Update Product"
-                  : "Add Product"}
+                    ? "Update Product"
+                    : "Add Product"}
               </button>
             )}
           </div>

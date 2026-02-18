@@ -28,6 +28,7 @@ export const SettingsTab = ({
   setSymptomsDropdownOpen,
 }: SettingsTabProps) => {
   console.log(formData, "cold cahin");
+  console.log(formData.discount_allowed, "discount allowed");
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -46,8 +47,8 @@ export const SettingsTab = ({
                 {formData.ColdChain === "Yes"
                   ? "Yes - Cold Chain Required"
                   : formData.ColdChain === "No"
-                  ? "No - No Cold Chain"
-                  : "Select Cold Chain"}
+                    ? "No - No Cold Chain"
+                    : "Select Cold Chain"}
               </span>
               <ChevronDown className="w-4 h-4" />
             </button>
@@ -55,7 +56,7 @@ export const SettingsTab = ({
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
                 <button
                   onClick={() => {
-                    onInputChange("ColdChain", "Yes"); // Set to string "Yes"
+                    onInputChange("ColdChain", "Yes");
                     setScheduleDropdownOpen(false);
                   }}
                   className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg"
@@ -204,7 +205,7 @@ export const SettingsTab = ({
               onChange={(e) =>
                 onInputChange(
                   "PrescriptionRequired",
-                  e.target.checked ? "Yes" : "No"
+                  e.target.checked ? "Yes" : "No",
                 )
               }
               className="mt-0.5 accent-[#0088B1]"
@@ -265,6 +266,32 @@ export const SettingsTab = ({
               </div>
               <div className="text-[8px] text-[#899193]">
                 Inactive products are not displayed on the website
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          className={`p-4 border ${
+            formData.discount_allowed // Changed from formData.active to formData.discount_allowed
+              ? "border-2 border-[#0088B1] bg-[#E8F4F7]"
+              : "border-gray-200"
+          } rounded-lg`}
+        >
+          <div className="flex items-start space-x-3">
+            <input
+              type="checkbox"
+              checked={formData.discount_allowed}
+              onChange={(e) =>
+                onInputChange("discount_allowed", e.target.checked)
+              }
+              className="mt-0.5 accent-[#0088B1]"
+            />
+            <div>
+              <div className="font-medium text-[10px] text-[#161D1F]">
+                Eligible for Discount
+              </div>
+              <div className="text-[8px] text-[#899193]">
+                Check this if the product is eligible for discounts and offers
               </div>
             </div>
           </div>

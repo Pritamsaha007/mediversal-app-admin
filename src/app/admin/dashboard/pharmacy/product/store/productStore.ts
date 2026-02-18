@@ -1,4 +1,3 @@
-// store/productStore.ts
 import { create } from "zustand";
 import { Product } from "../types/product";
 
@@ -21,13 +20,11 @@ interface ProductStoreState {
   loading: boolean;
   error: string | null;
 
-  // Cache management
   cache: Map<string, ProductCache>;
   setCache: (key: string, data: any) => void;
   getCache: (key: string) => any | null;
   clearCache: () => void;
 
-  // Store updaters
   setProducts: (products: Product[]) => void;
   setStatistics: (stats: any) => void;
   setLoading: (loading: boolean) => void;
@@ -51,7 +48,6 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
   loading: false,
   error: null,
 
-  // Cache with 5 minute TTL
   cache: new Map(),
 
   setCache: (key: string, data: any) => {
@@ -67,7 +63,6 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
     const cached = get().cache.get(key);
     if (!cached) return null;
 
-    // Check if cache is expired (5 minutes)
     if (Date.now() - cached.timestamp > 5 * 60 * 1000) {
       get().cache.delete(key);
       return null;
@@ -111,7 +106,7 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
       products: state.products.map((product) =>
         product.productId === updatedProduct.productId
           ? { ...product, ...updatedProduct }
-          : product
+          : product,
       ),
     }));
   },
@@ -119,7 +114,7 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
   removeProduct: (productId: string) => {
     set((state) => ({
       products: state.products.filter(
-        (product) => product.productId !== productId
+        (product) => product.productId !== productId,
       ),
     }));
   },
