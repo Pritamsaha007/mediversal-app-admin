@@ -317,7 +317,7 @@ export const ProductCard: React.FC<{
           {typeof product.DiscountedPercentage === "string"
             ? product.DiscountedPercentage
             : product.DiscountedPercentage?.toFixed(0)}
-          % OFF
+          {product.DiscountedPercentage ? `% OFF` : "0% OFF"}
         </span>
       </td>
       <td className="px-4 py-4">
