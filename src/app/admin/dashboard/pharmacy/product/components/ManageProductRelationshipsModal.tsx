@@ -53,18 +53,18 @@ export const ProductRelationshipsModal: React.FC<
   onRefresh,
 }) => {
   const [activeTab, setActiveTab] = useState<"substitutes" | "similar">(
-    "substitutes"
+    "substitutes",
   );
 
   const [substitutes, setSubstitutes] = useState<Product[]>(currentSubstitutes);
   const [similarProducts, setSimilarProducts] = useState<Product[]>(
-    currentSimilarProducts
+    currentSimilarProducts,
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [availableProductsList, setAvailableProductsList] = useState<Product[]>(
-    []
+    [],
   );
   const [searchLoading, setSearchLoading] = useState(false);
   const [pagination, setPagination] = useState({
@@ -123,7 +123,7 @@ export const ProductRelationshipsModal: React.FC<
 
   const searchAvailableProducts = async (
     query: string = "",
-    loadMore: boolean = false
+    loadMore: boolean = false,
   ) => {
     try {
       setSearchLoading(true);
@@ -198,7 +198,7 @@ export const ProductRelationshipsModal: React.FC<
     } catch (err) {
       console.error("Error fetching product data:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to fetch product data"
+        err instanceof Error ? err.message : "Failed to fetch product data",
       );
     } finally {
       setIsLoading(false);
@@ -228,7 +228,7 @@ export const ProductRelationshipsModal: React.FC<
         product.productId !== productId &&
         !pendingChanges.toAdd[
           activeTab === "substitutes" ? "substitutes" : "similar"
-        ].includes(product.productId)
+        ].includes(product.productId),
     );
   };
 
@@ -250,7 +250,7 @@ export const ProductRelationshipsModal: React.FC<
         toRemove: {
           ...prev.toRemove,
           [tabType]: prev.toRemove[tabType].filter(
-            (id) => id !== productIdToAdd
+            (id) => id !== productIdToAdd,
           ),
         },
       }));
@@ -273,7 +273,7 @@ export const ProductRelationshipsModal: React.FC<
     toast.success(
       `Added "${product.ProductName}" as ${
         activeTab === "substitutes" ? "substitute" : "similar product"
-      }`
+      }`,
     );
   };
 
@@ -294,7 +294,7 @@ export const ProductRelationshipsModal: React.FC<
         toAdd: {
           ...prev.toAdd,
           [tabType]: prev.toAdd[tabType].filter(
-            (id) => id !== productIdToRemove
+            (id) => id !== productIdToRemove,
           ),
         },
       }));
@@ -310,18 +310,18 @@ export const ProductRelationshipsModal: React.FC<
 
     if (activeTab === "substitutes") {
       setSubstitutes((prev) =>
-        prev.filter((p) => p.productId !== productIdToRemove)
+        prev.filter((p) => p.productId !== productIdToRemove),
       );
     } else {
       setSimilarProducts((prev) =>
-        prev.filter((p) => p.productId !== productIdToRemove)
+        prev.filter((p) => p.productId !== productIdToRemove),
       );
     }
 
     toast.success(
       `${
         activeTab === "substitutes" ? "Substitute" : "Similar product"
-      } removed`
+      } removed`,
     );
   };
 
@@ -396,10 +396,10 @@ export const ProductRelationshipsModal: React.FC<
         await fetchProductData();
 
         const finalSubstitutes = substitutes.filter(
-          (p) => !pendingChanges.toRemove.substitutes.includes(p.productId)
+          (p) => !pendingChanges.toRemove.substitutes.includes(p.productId),
         );
         const finalSimilar = similarProducts.filter(
-          (p) => !pendingChanges.toRemove.similar.includes(p.productId)
+          (p) => !pendingChanges.toRemove.similar.includes(p.productId),
         );
 
         const relationshipsData = {
@@ -441,7 +441,7 @@ export const ProductRelationshipsModal: React.FC<
     } catch (err) {
       console.error("Error saving relationships:", err);
       toast.error(
-        err instanceof Error ? err.message : "Failed to save relationships"
+        err instanceof Error ? err.message : "Failed to save relationships",
       );
     } finally {
       setIsLoading(false);
@@ -546,18 +546,18 @@ export const ProductRelationshipsModal: React.FC<
                   const isPendingRemoval =
                     activeTab === "substitutes"
                       ? pendingChanges.toRemove.substitutes.includes(
-                          product.productId
+                          product.productId,
                         )
                       : pendingChanges.toRemove.similar.includes(
-                          product.productId
+                          product.productId,
                         );
                   const isPendingAddition =
                     activeTab === "substitutes"
                       ? pendingChanges.toAdd.substitutes.includes(
-                          product.productId
+                          product.productId,
                         )
                       : pendingChanges.toAdd.similar.includes(
-                          product.productId
+                          product.productId,
                         );
 
                   return (
@@ -567,8 +567,8 @@ export const ProductRelationshipsModal: React.FC<
                         isPendingRemoval
                           ? "border-red-200 bg-red-50"
                           : isPendingAddition
-                          ? "border-green-200 bg-green-50"
-                          : "border-gray-200"
+                            ? "border-green-200 bg-green-50"
+                            : "border-gray-200"
                       }`}
                     >
                       <div>
@@ -585,10 +585,10 @@ export const ProductRelationshipsModal: React.FC<
                             </span>
                           )}
                         </div>
-                        <div className="text-sm text-[#899193]">
+                        {/* <div className="text-sm text-[#899193]">
                           {product.SKU || product.Type || "N/A"} |{" "}
                           {product.ManufacturerName}
-                        </div>
+                        </div> */}
                       </div>
                       <button
                         onClick={() => handleRemoveProduct(product.productId)}
@@ -641,10 +641,10 @@ export const ProductRelationshipsModal: React.FC<
                     const isPendingAddition =
                       activeTab === "substitutes"
                         ? pendingChanges.toAdd.substitutes.includes(
-                            product.productId
+                            product.productId,
                           )
                         : pendingChanges.toAdd.similar.includes(
-                            product.productId
+                            product.productId,
                           );
 
                     return (

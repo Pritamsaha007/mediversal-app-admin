@@ -56,7 +56,7 @@ const getAuthHeaders = () => {
 
 export const addProductAPI = async (
   productData: Product,
-  imageUrls: string[] = []
+  imageUrls: string[] = [],
 ): Promise<any> => {
   try {
     const userId = getCurrentUserId();
@@ -83,16 +83,16 @@ export const addProductAPI = async (
       Subcategory: productData.Subcategory || "General",
       subCategoryType: productData.subCategoryType || "",
       DiscountedPercentage: parseFloat(
-        productData.DiscountedPercentage?.toString() || "0"
+        productData.DiscountedPercentage?.toString() || "0",
       ),
       HSN_Code: productData.HSN_Code || "",
       SKU: productData.SKU || "",
       StockAvailableInInventory: parseInt(
-        productData.StockAvailableInInventory?.toString() || "0"
+        productData.StockAvailableInInventory?.toString() || "0",
       ),
       productLength: parseFloat(productData.productLength?.toString() || "20"),
       productBreadth: parseFloat(
-        productData.productBreadth?.toString() || "20"
+        productData.productBreadth?.toString() || "20",
       ),
       productHeight: parseFloat(productData.productHeight?.toString() || "5"),
       productWeight: parseFloat(productData.productWeight?.toString() || "0.4"),
@@ -110,6 +110,7 @@ export const addProductAPI = async (
       dosageForm: productData.dosageForm || "",
       schedule: productData.schedule || "",
       storageConditions: productData.storageConditions || "",
+      discount_allowed: productData.discount_allowed ?? true,
     };
 
     console.log("Add product payload:", payload);
@@ -139,7 +140,7 @@ export const updateProductAPI = async (id: string, data: any): Promise<any> => {
       CostPrice: parseFloat(data.CostPrice?.toString() || "0"),
       SellingPrice: parseFloat(data.SellingPrice?.toString() || "0"),
       DiscountedPrice: parseFloat(
-        data.DiscountedPrice?.toString() || data.SellingPrice || "0"
+        data.DiscountedPrice?.toString() || data.SellingPrice || "0",
       ),
       Type: data.Type || "Tablet",
       PrescriptionRequired: data.PrescriptionRequired,
@@ -155,12 +156,12 @@ export const updateProductAPI = async (id: string, data: any): Promise<any> => {
       Subcategory: data.Subcategory || "",
       subCategoryType: data.subCategoryType || "",
       DiscountedPercentage: parseFloat(
-        data.DiscountedPercentage?.toString() || "0"
+        data.DiscountedPercentage?.toString() || "0",
       ),
       HSN_Code: data.HSN_Code || "",
       SKU: data.SKU || "",
       StockAvailableInInventory: parseInt(
-        data.StockAvailableInInventory?.toString() || "0"
+        data.StockAvailableInInventory?.toString() || "0",
       ),
       productLength: parseFloat(data.productLength?.toString() || "20"),
       productBreadth: parseFloat(data.productBreadth?.toString() || "20"),
@@ -179,6 +180,7 @@ export const updateProductAPI = async (id: string, data: any): Promise<any> => {
       dosageForm: data.dosageForm || "",
       schedule: data.schedule || "",
       storageConditions: data.storageConditions || "",
+      discount_allowed: data.discount_allowed ?? true,
     };
 
     console.log("Update product payload:", payload);
@@ -193,7 +195,7 @@ export const updateProductAPI = async (id: string, data: any): Promise<any> => {
     if (axios.isAxiosError(error)) {
       console.error("Update product error:", error.response?.data);
       throw new Error(
-        error.response?.data?.message || "Failed to update product"
+        error.response?.data?.message || "Failed to update product",
       );
     }
     console.error("Update product error:", error);
@@ -213,7 +215,7 @@ export const deleteProductAPI = async (id: string): Promise<any> => {
     const searchResponse = await axios.post(
       `${API_BASE_URL}/api/product/search`,
       searchParams,
-      { headers: getAuthHeaders() }
+      { headers: getAuthHeaders() },
     );
 
     if (!searchResponse.data.products?.[0]) {
@@ -267,7 +269,7 @@ export const deleteProductAPI = async (id: string): Promise<any> => {
     const response = await axios.post(
       `${API_BASE_URL}/api/product/`,
       updatePayload,
-      { headers: getAuthHeaders() }
+      { headers: getAuthHeaders() },
     );
 
     clearProductCache();
@@ -276,7 +278,7 @@ export const deleteProductAPI = async (id: string): Promise<any> => {
     if (axios.isAxiosError(error)) {
       console.error("Delete product error:", error.response?.data);
       throw new Error(
-        error.response?.data?.message || "Failed to delete product"
+        error.response?.data?.message || "Failed to delete product",
       );
     }
     console.error("Delete product error:", error);
@@ -287,7 +289,7 @@ export const deleteProductAPI = async (id: string): Promise<any> => {
 export const getProductsWithPaginationAPI = async (
   start: number = 0,
   max: number = 20,
-  filters: ProductSearchParams = {}
+  filters: ProductSearchParams = {},
 ): Promise<GetProductsResponse> => {
   const cacheKey = `products_${start}_${max}_${JSON.stringify(filters)}`;
 
@@ -309,7 +311,7 @@ export const getProductsWithPaginationAPI = async (
     const response = await axios.post<GetProductsResponse>(
       `${API_BASE_URL}/api/product/search`,
       searchParams,
-      { headers: getAuthHeaders() }
+      { headers: getAuthHeaders() },
     );
 
     console.log("Products API response:", response.data);
@@ -321,7 +323,7 @@ export const getProductsWithPaginationAPI = async (
     if (axios.isAxiosError(error)) {
       console.error("Get products error:", error.response?.data);
       throw new Error(
-        error.response?.data?.message || "Failed to fetch products"
+        error.response?.data?.message || "Failed to fetch products",
       );
     }
     console.error("Get products error:", error);
@@ -348,7 +350,7 @@ export const getProductByIdAPI = async (id: string): Promise<Product> => {
     const response = await axios.post<GetProductsResponse>(
       `${API_BASE_URL}/api/product/search`,
       searchParams,
-      { headers: getAuthHeaders() }
+      { headers: getAuthHeaders() },
     );
 
     if (!response.data.products?.[0]) {
@@ -363,7 +365,7 @@ export const getProductByIdAPI = async (id: string): Promise<Product> => {
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(
-        error.response?.data?.message || "Failed to fetch product"
+        error.response?.data?.message || "Failed to fetch product",
       );
     }
     throw error;

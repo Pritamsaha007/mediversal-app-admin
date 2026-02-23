@@ -32,7 +32,7 @@ export const ProductCard: React.FC<{
     data: {
       substitutes: Product[];
       similarProducts: Product[];
-    }
+    },
   ) => void;
 }> = ({
   product,
@@ -54,7 +54,7 @@ export const ProductCard: React.FC<{
     useState(false);
 
   const [productToEdit, setProductToEdit] = useState<ProductFormData | null>(
-    null
+    null,
   );
   const router = useRouter();
   const [showSubstitutes, setShowSubstitutes] = useState(false);
@@ -162,14 +162,15 @@ export const ProductCard: React.FC<{
 
       Substitutes:
         product.substitutes?.map((sub) =>
-          typeof sub === "string" ? sub : sub.productId
+          typeof sub === "string" ? sub : sub.productId,
         ) || [],
       SimilarProducts:
         product.similarProducts?.map((sim) =>
-          typeof sim === "string" ? sim : sim.productId
+          typeof sim === "string" ? sim : sim.productId,
         ) || [],
       Coupons: product.Coupons,
       admin_id: "",
+      discount_allowed: product.discount_allowed ?? true,
     };
 
     setProductToEdit(productFormData);
@@ -199,10 +200,10 @@ export const ProductCard: React.FC<{
   }) => {
     if (onUpdateRelationships) {
       const substitutesProducts = availableProducts.filter((p) =>
-        data.substitutes.includes(p.productId)
+        data.substitutes.includes(p.productId),
       );
       const similarProducts = availableProducts.filter((p) =>
-        data.similarProducts.includes(p.productId)
+        data.similarProducts.includes(p.productId),
       );
 
       onUpdateRelationships(product.productId, {
@@ -260,7 +261,7 @@ export const ProductCard: React.FC<{
                   {product.substitutes
                     .slice(0, 3)
                     .map((sub) =>
-                      typeof sub === "string" ? sub : sub.ProductName
+                      typeof sub === "string" ? sub : sub.ProductName,
                     )
                     .join(", ")}
                   {product.substitutes.length > 3 &&
@@ -276,7 +277,7 @@ export const ProductCard: React.FC<{
                   {product.similarProducts
                     .slice(0, 3)
                     .map((sim) =>
-                      typeof sim === "string" ? sim : sim.ProductName
+                      typeof sim === "string" ? sim : sim.ProductName,
                     )
                     .join(", ")}
                   {product.similarProducts.length > 3 &&
@@ -316,7 +317,7 @@ export const ProductCard: React.FC<{
           {typeof product.DiscountedPercentage === "string"
             ? product.DiscountedPercentage
             : product.DiscountedPercentage?.toFixed(0)}
-          % OFF
+          {product.DiscountedPercentage ? `% OFF` : "0% OFF"}
         </span>
       </td>
       <td className="px-4 py-4">

@@ -40,7 +40,7 @@ export interface ProductFormData {
 
   DiscountedPrice?: number | null;
   DiscountedPercentage?: number;
-
+  discount_allowed?: boolean;
   Substitutes?: string[];
   SimilarProducts?: string[];
   Coupons?: string | null;

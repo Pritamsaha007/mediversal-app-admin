@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   ListOrdered,
   Projector,
+  Disc,
 } from "lucide-react";
 import { categories, sortOptions, tabs } from "./data/productCatalogData";
 import { AddProductModal } from "./components/AddProductModal";
@@ -67,7 +68,7 @@ const ProductCatalog: React.FC = () => {
   const fetchProducts = async (page: number, filters?: Record<string, any>) => {
     const start = page * itemsPerPage;
     const cacheKey = `products_${start}_${itemsPerPage}_${JSON.stringify(
-      filters || {}
+      filters || {},
     )}`;
 
     const cachedData = getCache(cacheKey);
@@ -88,9 +89,9 @@ const ProductCatalog: React.FC = () => {
       const response = await getProductsWithPaginationAPI(
         start,
         itemsPerPage,
-        filters
+        filters,
       );
-
+      console.log("API response:", response);
       setCache(cacheKey, response);
 
       setProducts(response.products || []);
@@ -149,6 +150,7 @@ const ProductCatalog: React.FC = () => {
         storageConditions: productData.storageConditions || "",
         InventoryUpdated: new Date().toISOString(),
         updated_by: "",
+        discount_allowed: productData.discount_allowed ?? true,
       };
 
       const imageUrls = productData.image_url || [];
@@ -159,7 +161,6 @@ const ProductCatalog: React.FC = () => {
       toast.success("Product added successfully");
       setIsModalOpen(false);
 
-      // Clear cache and refresh products
       clearCache();
       await fetchProducts(currentPage);
     } catch (error: any) {
@@ -172,7 +173,7 @@ const ProductCatalog: React.FC = () => {
 
   const handleUpdateProduct = async (
     id: string,
-    productData: ProductFormData
+    productData: ProductFormData,
   ) => {
     try {
       setLoading(true);
@@ -220,13 +221,14 @@ const ProductCatalog: React.FC = () => {
         schedule: productData.schedule || "",
         storageConditions: productData.storageConditions || "",
         image_url: productData.image_url || [],
+        discount_allowed: productData.discount_allowed ?? true,
       };
 
       console.log(
         "Calling updateProductAPI with ID:",
         productId,
         "payload:",
-        payload
+        payload,
       );
       const result = await updateProductAPI(productId, payload);
 
@@ -429,7 +431,7 @@ const ProductCatalog: React.FC = () => {
   };
   const handleProductSelect = (id: string, selected: boolean) => {
     setSelectedProducts((prev) =>
-      selected ? [...prev, id] : prev.filter((productId) => productId !== id)
+      selected ? [...prev, id] : prev.filter((productId) => productId !== id),
     );
   };
   useEffect(() => {
@@ -439,7 +441,7 @@ const ProductCatalog: React.FC = () => {
   }, [error]);
   const handleSelectAll = (selected: boolean) => {
     setSelectedProducts(
-      selected ? getFilteredProducts().map((p) => p.productId) : []
+      selected ? getFilteredProducts().map((p) => p.productId) : [],
     );
   };
   const getStatsData = () => {
@@ -469,7 +471,7 @@ const ProductCatalog: React.FC = () => {
           setLoading(true);
           await Promise.all(selectedProducts.map((id) => deleteProductAPI(id)));
           toast.success(
-            `${selectedProducts.length} products deleted successfully`
+            `${selectedProducts.length} products deleted successfully`,
           );
 
           // Clear cache and refresh
@@ -520,7 +522,7 @@ const ProductCatalog: React.FC = () => {
           parseFloat((p.CostPrice as string) || "0").toFixed(2),
           parseFloat((p.SellingPrice as string) || "0").toFixed(2),
           parseFloat(
-            (p.DiscountedPrice as string) || (p.SellingPrice as string) || "0"
+            (p.DiscountedPrice as string) || (p.SellingPrice as string) || "0",
           ).toFixed(2),
           p.DiscountedPercentage || "0",
           p.StockAvailableInInventory.toString(),
@@ -530,7 +532,7 @@ const ProductCatalog: React.FC = () => {
           `"${p.HSN_Code || ""}"`,
           p.PrescriptionRequired ? "Yes" : "No",
           p.ColdChain || "No",
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -541,7 +543,7 @@ const ProductCatalog: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `products_export_${new Date().toISOString().split("T")[0]}.csv`
+      `products_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -805,7 +807,7 @@ const ProductCatalog: React.FC = () => {
                         selectedProducts.length > 0 &&
                         selectedProducts.length === filteredProducts.length &&
                         filteredProducts.every((p) =>
-                          selectedProducts.includes(p.productId)
+                          selectedProducts.includes(p.productId),
                         )
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
@@ -866,7 +868,7 @@ const ProductCatalog: React.FC = () => {
                         console.log(
                           "Updating relationships for product:",
                           productId,
-                          data
+                          data,
                         );
                         clearCache();
                         await fetchProducts(currentPage);

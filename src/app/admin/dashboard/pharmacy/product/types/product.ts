@@ -41,6 +41,7 @@ export interface Product {
   dosageForm?: string;
   schedule?: string;
   storageConditions?: string;
+  discount_allowed?: boolean;
 }
 export interface Statistics {
   activeproducts: string;
@@ -108,6 +109,7 @@ export interface UpsertProductPayload {
   dosageForm?: string;
   schedule?: string;
   storageConditions?: string;
+  discount_allowed?: boolean;
 }
 
 export interface inventoryItem {
