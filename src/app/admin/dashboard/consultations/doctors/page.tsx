@@ -106,10 +106,10 @@ const Doctors: React.FC = () => {
         const doctor = convertAPIDoctor(apiDoctor);
 
         const specialization = enumData.specializations.find(
-          (s) => s.value === apiDoctor.specializations
+          (s) => s.value === apiDoctor.specializations,
         );
         const department = enumData.departments.find(
-          (d) => d.value === apiDoctor.departments
+          (d) => d.value === apiDoctor.departments,
         );
 
         doctor.specialization_id = specialization?.id || "";
@@ -154,7 +154,7 @@ const Doctors: React.FC = () => {
               day: slot.day || "",
               day_id: slot.day_id || "",
             })),
-            dayNameToName
+            dayNameToName,
           );
         }
 
@@ -171,7 +171,7 @@ const Doctors: React.FC = () => {
     const totalDoctors = doctors.length;
     const availableOnline = doctors.filter((d) => d.is_available_online).length;
     const availableInPerson = doctors.filter(
-      (d) => d.is_available_in_person
+      (d) => d.is_available_in_person,
     ).length;
     const avgRating =
       doctors.length > 0
@@ -202,8 +202,8 @@ const Doctors: React.FC = () => {
         (doctor) =>
           doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (doctor.specializations?.toLowerCase() || "").includes(
-            searchTerm.toLowerCase()
-          )
+            searchTerm.toLowerCase(),
+          ),
       );
     }
     if (selectedStatus !== "All Status") {
@@ -277,7 +277,7 @@ const Doctors: React.FC = () => {
 
     // Show confirmation dialog
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete Dr. ${doctor.name}? This action cannot be undone.`
+      `Are you sure you want to delete Dr. ${doctor.name}? This action cannot be undone.`,
     );
 
     if (!confirmDelete) return;
@@ -287,17 +287,15 @@ const Doctors: React.FC = () => {
       await deleteDoctor(doctor.id, token);
       toast.success("Doctor deleted successfully!");
 
-      // Refresh the doctors list
       await loadDoctors();
 
-      // Show success message (optional)
       alert(`Dr. ${doctor.name} has been successfully deleted.`);
     } catch (error) {
       console.error("Error deleting doctor:", error);
       alert(
         `Error deleting doctor: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     } finally {
       setLoading(false);
@@ -354,7 +352,7 @@ const Doctors: React.FC = () => {
               ? d.languages_known.join(", ")
               : "N/A"
           }"`,
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -365,7 +363,7 @@ const Doctors: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `doctors_export_${new Date().toISOString().split("T")[0]}.csv`
+      `doctors_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -377,7 +375,6 @@ const Doctors: React.FC = () => {
   const renderTimeSlots = (doctor: Doctor) => {
     const slots: string[] = [];
 
-    // Convert availability to display format
     Object.entries(doctor.availability || {}).forEach(([day, timeSlots]) => {
       timeSlots.forEach((slot) => {
         if (slot.startTime && slot.endTime) {
@@ -445,7 +442,7 @@ const Doctors: React.FC = () => {
     setExpandedSlots((prev) =>
       prev.includes(doctorId)
         ? prev.filter((id) => id !== doctorId)
-        : [...prev, doctorId]
+        : [...prev, doctorId],
     );
   };
 
@@ -459,7 +456,7 @@ const Doctors: React.FC = () => {
 
       const hasInvalidDays = Object.keys(doctorData.availability).some(
         (dayName) =>
-          doctorData.availability[dayName].length > 0 && !dayNameToId[dayName]
+          doctorData.availability[dayName].length > 0 && !dayNameToId[dayName],
       );
 
       if (hasInvalidDays) {
@@ -470,7 +467,7 @@ const Doctors: React.FC = () => {
 
       const doctorSlots = convertAvailabilityToSlots(
         doctorData.availability,
-        dayNameToId
+        dayNameToId,
       );
 
       const requestData = {
@@ -504,14 +501,13 @@ const Doctors: React.FC = () => {
 
       await loadDoctors();
 
-      // Close modal
       setShowAddDoctorModal(false);
     } catch (error) {
       console.error("Error saving doctor:", error);
       alert(
         `Error saving doctor: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     }
 

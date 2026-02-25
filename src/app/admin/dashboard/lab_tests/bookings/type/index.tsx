@@ -26,7 +26,7 @@ export interface LabTestBooking {
 }
 
 export interface SearchLabTestBookingsPayload {
-  start: number;
+  start: number | null;
   max: number | null;
   search_text?: string | null;
   filter_status?: string[] | null;

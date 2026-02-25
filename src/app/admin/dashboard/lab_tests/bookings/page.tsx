@@ -196,28 +196,22 @@ const BookingsManagement: React.FC = () => {
     fetchOrderStatuses();
   }, []);
 
-  // This useEffect will trigger when debouncedSearchTerm changes (after user stops typing for 500ms)
   useEffect(() => {
     if (debouncedSearchTerm !== undefined) {
-      // Reset to first page when search term changes
       fetchBookings(0, debouncedSearchTerm);
     }
   }, [debouncedSearchTerm, selectedStatus, token]);
 
-  // Also trigger search when status filter changes
   useEffect(() => {
-    // Reset to first page when status changes
     fetchBookings(0, debouncedSearchTerm);
   }, [selectedStatus]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    // The debouncedSearchTerm will update automatically after 500ms
   };
 
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      // If user presses Enter, search immediately
       fetchBookings(0, searchTerm);
     }
   };
@@ -641,11 +635,17 @@ const BookingsManagement: React.FC = () => {
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+          <div
+            className="overflow-auto"
+            style={{
+              maxHeight: "calc(100vh - 350px)",
+              minHeight: "400px",
+            }}
+          >
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -656,22 +656,22 @@ const BookingsManagement: React.FC = () => {
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Booking Details
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Patient Details
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Payment
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-right text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-right text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Actions
                   </th>
                 </tr>
@@ -703,7 +703,7 @@ const BookingsManagement: React.FC = () => {
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col min-w-[200px]">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">
                             {Array.isArray(booking.labtestnames)
                               ? booking.labtestnames.join(", ")
@@ -725,7 +725,7 @@ const BookingsManagement: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col min-w-[150px]">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">
                             {formatPatientNames(booking.patient_details)}
                           </div>
@@ -890,15 +890,17 @@ const BookingsManagement: React.FC = () => {
             </table>
           </div>
 
-          <Pagination
-            currentPage={currentPage}
-            hasMore={hasMore}
-            loading={loading}
-            onPrevious={loadPreviousPage}
-            onNext={loadNextPage}
-            totalItems={bookings.length}
-            itemsPerPage={20}
-          />
+          <div className="border-t border-gray-200 bg-white">
+            <Pagination
+              currentPage={currentPage}
+              hasMore={hasMore}
+              loading={loading}
+              onPrevious={loadPreviousPage}
+              onNext={loadNextPage}
+              totalItems={bookings.length}
+              itemsPerPage={20}
+            />
+          </div>
         </div>
       </div>
 
