@@ -411,13 +411,6 @@ const BookingManagement: React.FC = () => {
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
             Booking Management
           </h1>
-          {/* <button
-            onClick={handleNewBooking}
-            className="flex items-center text-[12px] gap-2 bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            New Booking
-          </button> */}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -456,7 +449,7 @@ const BookingManagement: React.FC = () => {
           </h2>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div
             className="overflow-auto"
             style={{
@@ -504,24 +497,14 @@ const BookingManagement: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="py-8">
-                      <div className="flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
-                        </div>
-                      </div>
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
                     </td>
                   </tr>
-                ) : error ? (
+                ) : filteredBookings.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-8">
-                      <p className="text-sm text-red-600">{error}</p>
-                      <button
-                        onClick={fetchOrders}
-                        className="mt-2 text-sm text-cyan-600 hover:text-cyan-700"
-                      >
-                        Try again
-                      </button>
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <div className="text-gray-500">No bookings found.</div>
                     </td>
                   </tr>
                 ) : (

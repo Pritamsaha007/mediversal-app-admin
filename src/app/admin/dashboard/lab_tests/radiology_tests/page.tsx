@@ -22,9 +22,10 @@ import {
   fetchCategories,
   SearchLabTestsPayload,
   searchPathologyTests,
-  deletePathologyTest, // Import the new delete function
+  deletePathologyTest,
 } from "../services/index";
 import { useAdminStore } from "@/app/store/adminStore";
+import Pagination from "@/app/components/common/pagination";
 
 interface RadiologyStats {
   totalTests: number;
@@ -40,7 +41,7 @@ const RadiologyTests: React.FC = () => {
   const [openDropdown, setOpenDropdown] = useState<null | "status">(null);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
   const [testActionDropdown, setTestActionDropdown] = useState<number | null>(
-    null
+    null,
   );
   const [loading, setLoading] = useState(false);
   const [showAddTestModal, setShowAddTestModal] = useState(false);
@@ -49,6 +50,9 @@ const RadiologyTests: React.FC = () => {
   const [editingTest, setEditingTest] = useState<RadiologyTest | null>(null);
 
   const { token } = useAdminStore();
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 10;
 
   const statusOptions = ["All Status", "Active", "Inactive"];
   const [category_id, setCategory_id] = useState<string>("");
@@ -86,8 +90,8 @@ const RadiologyTests: React.FC = () => {
             selectedStatus === "All Status"
               ? null
               : selectedStatus === "Active"
-              ? true
-              : false,
+                ? true
+                : false,
           filter_featured: null,
           sort_by: "name",
           sort_order: "ASC",
@@ -97,7 +101,7 @@ const RadiologyTests: React.FC = () => {
         const res = await searchPathologyTests(payload, token!);
 
         const activeTests = res.labTests.filter(
-          (test: RadiologyTest) => !test.is_deleted
+          (test: RadiologyTest) => !test.is_deleted,
         );
 
         setTests(res.labTests);
@@ -121,18 +125,43 @@ const RadiologyTests: React.FC = () => {
         (test) =>
           test.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           test.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          test.code.toLowerCase().includes(searchTerm.toLowerCase())
+          test.code.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     if (selectedStatus !== "All Status") {
       filtered = filtered.filter((test) =>
-        selectedStatus === "Active" ? test.is_active : !test.is_active
+        selectedStatus === "Active" ? test.is_active : !test.is_active,
       );
     }
 
     setFilteredTests(filtered);
+    setCurrentPage(0);
   }, [searchTerm, selectedStatus, tests]);
+
+  const paginatedTests = React.useMemo(() => {
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredTests.slice(startIndex, endIndex);
+  }, [filteredTests, currentPage, itemsPerPage]);
+
+  const hasMore = React.useMemo(() => {
+    return (currentPage + 1) * itemsPerPage < filteredTests.length;
+  }, [filteredTests, currentPage, itemsPerPage]);
+
+  const totalItems = filteredTests.length;
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (hasMore) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -174,7 +203,7 @@ const RadiologyTests: React.FC = () => {
         ),
         {
           duration: Infinity,
-        }
+        },
       );
     });
 
@@ -182,7 +211,7 @@ const RadiologyTests: React.FC = () => {
       setLoading(true);
       try {
         const deletePromises = selectedTests.map((testId) =>
-          deletePathologyTest(testId, token)
+          deletePathologyTest(testId, token),
         );
 
         await Promise.all(deletePromises);
@@ -204,7 +233,7 @@ const RadiologyTests: React.FC = () => {
 
         const res = await searchPathologyTests(payload, token!);
         const activeTests = res.labTests.filter(
-          (test: RadiologyTest) => !test.is_deleted
+          (test: RadiologyTest) => !test.is_deleted,
         );
 
         setTests(res.labTests);
@@ -231,7 +260,7 @@ const RadiologyTests: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedTests(filteredTests.map((test) => test.id));
+      setSelectedTests(paginatedTests.map((test) => test.id));
     } else {
       setSelectedTests([]);
     }
@@ -247,7 +276,7 @@ const RadiologyTests: React.FC = () => {
 
   const handleUpdateTest = async (updatedTest: RadiologyTest) => {
     const updatedTests = tests.map((test) =>
-      test.id === updatedTest.id ? updatedTest : test
+      test.id === updatedTest.id ? updatedTest : test,
     );
     setTests(updatedTests);
     setFilteredTests(updatedTests.filter((test) => !test.is_deleted));
@@ -295,7 +324,7 @@ const RadiologyTests: React.FC = () => {
             ),
             {
               duration: Infinity,
-            }
+            },
           );
         });
 
@@ -320,7 +349,7 @@ const RadiologyTests: React.FC = () => {
 
             const res = await searchPathologyTests(payload, token!);
             const activeTests = res.labTests.filter(
-              (test: RadiologyTest) => !test.is_deleted
+              (test: RadiologyTest) => !test.is_deleted,
             );
 
             setTests(res.labTests);
@@ -366,7 +395,7 @@ const RadiologyTests: React.FC = () => {
           t.is_deleted ? "Yes" : "No",
           `"${t.modality_type_id || ""}"`,
           t.average_discount_percentage || "0",
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -377,7 +406,7 @@ const RadiologyTests: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `radiology_tests_export_${new Date().toISOString().split("T")[0]}.csv`
+      `radiology_tests_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -386,7 +415,6 @@ const RadiologyTests: React.FC = () => {
     document.body.removeChild(link);
   };
 
-  // 3. Add handleExport function inside the component (after the other handler functions)
   const handleExport = () => {
     if (tests.length === 0) {
       toast.error("No tests to export");
@@ -487,7 +515,6 @@ const RadiologyTests: React.FC = () => {
             />
           </div>
 
-          {/* Add this export button section */}
           <div className="flex gap-2">
             <button
               onClick={handleExport}
@@ -504,36 +531,6 @@ const RadiologyTests: React.FC = () => {
                 : "Export All"}
             </button>
           </div>
-          {/* <div className="flex gap-3">
-            <div className="relative">
-              <button
-                onClick={() =>
-                  setOpenDropdown(openDropdown === "status" ? null : "status")
-                }
-                className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-3 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
-              >
-                {selectedStatus}
-                <ChevronDown className="w-5 h-5" />
-              </button>
-              {openDropdown === "status" && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                  {statusOptions.map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusChange(status)}
-                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
-                        selectedStatus === status
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-[#161D1F]"
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div> */}
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -546,38 +543,40 @@ const RadiologyTests: React.FC = () => {
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+          <div
+            className="overflow-auto"
+            style={{ maxHeight: "calc(100vh - 350px)", minHeight: "400px" }}
+          >
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                       checked={
-                        selectedTests.length === filteredTests.length &&
-                        filteredTests.length > 0
+                        selectedTests.length === paginatedTests.length &&
+                        paginatedTests.length > 0
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Test Details
                   </th>
-
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Cost Price
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Selling Price
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Report Time
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-right text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-right text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Actions
                   </th>
                 </tr>
@@ -585,19 +584,18 @@ const RadiologyTests: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center">
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
-                      {/* <div className="text-gray-500">Loading tests...</div> */}
                     </td>
                   </tr>
-                ) : filteredTests.length === 0 ? (
+                ) : paginatedTests.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center">
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="text-gray-500">No tests found.</div>
                     </td>
                   </tr>
                 ) : (
-                  filteredTests.map((test) => (
+                  paginatedTests.map((test) => (
                     <tr key={test.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
@@ -610,7 +608,7 @@ const RadiologyTests: React.FC = () => {
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col min-w-[200px]">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">
                             {test.name}
                           </div>
@@ -622,7 +620,6 @@ const RadiologyTests: React.FC = () => {
                           </div>
                         </div>
                       </td>
-
                       <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-[#161D1F]">
                         ₹{test.cost_price}
                       </td>
@@ -668,6 +665,20 @@ const RadiologyTests: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {filteredTests.length > 0 && (
+            <div className="border-t border-gray-200 bg-white">
+              <Pagination
+                currentPage={currentPage}
+                hasMore={hasMore}
+                loading={loading}
+                onPrevious={handlePreviousPage}
+                onNext={handleNextPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+              />
+            </div>
+          )}
         </div>
       </div>
 

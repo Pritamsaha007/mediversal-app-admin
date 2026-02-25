@@ -30,6 +30,7 @@ import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
 import { Doctor, EnumItem, GetDoctorsParams } from "./types";
 import StatsCard from "@/app/components/common/StatsCard";
+import Pagination from "@/app/components/common/pagination";
 
 const StatusBadge: React.FC<{ isOnline: boolean; isInPerson: boolean }> = ({
   isOnline,
@@ -81,6 +82,9 @@ const Doctors: React.FC = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const { token } = useAdminStore();
 
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 10;
+
   const statusOptions = [
     "All Status",
     "Online",
@@ -129,7 +133,6 @@ const Doctors: React.FC = () => {
 
         doctor.hospitalNames = hospitals.map((h) => h.name).filter(Boolean);
 
-        // Map language names to IDs
         doctor.languages_known = (apiDoctor.languages_known || [])
           .map((langName) => {
             const lang = enumData.languages.find((l) => l.value === langName);
@@ -137,7 +140,6 @@ const Doctors: React.FC = () => {
           })
           .filter(Boolean);
 
-        // Convert doctor_slots to availability format
         if (
           apiDoctor.doctor_slots &&
           Array.isArray(apiDoctor.doctor_slots) &&
@@ -167,6 +169,7 @@ const Doctors: React.FC = () => {
       setLoading(false);
     }
   };
+
   const generateStats = () => {
     const totalDoctors = doctors.length;
     const availableOnline = doctors.filter((d) => d.is_available_online).length;
@@ -195,6 +198,7 @@ const Doctors: React.FC = () => {
   };
 
   const stats = generateStats();
+
   useEffect(() => {
     let filtered = [...doctors];
     if (searchTerm) {
@@ -226,6 +230,7 @@ const Doctors: React.FC = () => {
     }
 
     setFilteredDoctors(filtered);
+    setCurrentPage(0);
   }, [searchTerm, selectedStatus, doctors]);
 
   useEffect(() => {
@@ -272,10 +277,33 @@ const Doctors: React.FC = () => {
     enumData.languages,
   ]);
 
+  const paginatedDoctors = React.useMemo(() => {
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredDoctors.slice(startIndex, endIndex);
+  }, [filteredDoctors, currentPage, itemsPerPage]);
+
+  const hasMore = React.useMemo(() => {
+    return (currentPage + 1) * itemsPerPage < filteredDoctors.length;
+  }, [filteredDoctors, currentPage, itemsPerPage]);
+
+  const totalItems = filteredDoctors.length;
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (hasMore) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
   const handleDeleteDoctor = async (doctor: Doctor) => {
     if (!token) return;
 
-    // Show confirmation dialog
     const confirmDelete = window.confirm(
       `Are you sure you want to delete Dr. ${doctor.name}? This action cannot be undone.`,
     );
@@ -408,6 +436,7 @@ const Doctors: React.FC = () => {
       </div>
     );
   };
+
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
     setOpenDropdown(null);
@@ -423,11 +452,12 @@ const Doctors: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedDoctors(filteredDoctors.map((doctor) => doctor.id));
+      setSelectedDoctors(paginatedDoctors.map((doctor) => doctor.id));
     } else {
       setSelectedDoctors([]);
     }
   };
+
   const handleViewDoctor = (doctor: Doctor) => {
     setSelectedDoctor(doctor);
     setShowDetailsModal(true);
@@ -448,7 +478,6 @@ const Doctors: React.FC = () => {
 
   const handleAddDoctor = async (doctorData: Doctor) => {
     try {
-      // Create mapping from day names to IDs
       const dayNameToId: Record<string, string> = {};
       enumData.days.forEach((day) => {
         dayNameToId[day.value] = day.id;
@@ -612,31 +641,34 @@ const Doctors: React.FC = () => {
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+          <div
+            className="overflow-auto"
+            style={{ maxHeight: "calc(100vh - 350px)", minHeight: "400px" }}
+          >
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                       checked={
-                        selectedDoctors.length === filteredDoctors.length &&
-                        filteredDoctors.length > 0
+                        selectedDoctors.length === paginatedDoctors.length &&
+                        paginatedDoctors.length > 0
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Doctor Details
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Available Slots
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Availability Status
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Actions
                   </th>
                 </tr>
@@ -646,19 +678,18 @@ const Doctors: React.FC = () => {
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
-                      {/* <div className="text-gray-500">Loading doctors...</div> */}
                     </td>
                   </tr>
-                ) : filteredDoctors.length === 0 ? (
+                ) : paginatedDoctors.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">
                       <div className="text-gray-500">No doctors found.</div>
                     </td>
                   </tr>
                 ) : (
-                  filteredDoctors.map((doctor) => (
+                  paginatedDoctors.map((doctor) => (
                     <tr key={doctor.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -669,7 +700,7 @@ const Doctors: React.FC = () => {
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col min-w-[250px]">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">
                             {doctor.name}
                           </div>
@@ -694,14 +725,18 @@ const Doctors: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">{renderTimeSlots(doctor)}</td>
                       <td className="px-6 py-4">
+                        <div className="min-w-[200px]">
+                          {renderTimeSlots(doctor)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <StatusBadge
                           isOnline={doctor.is_available_online}
                           isInPerson={doctor.is_available_in_person}
                         />
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center gap-2 justify-end">
                           <button
                             className="p-2 text-gray-400 hover:text-[#0088B1] cursor-pointer"
@@ -733,6 +768,20 @@ const Doctors: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {filteredDoctors.length > 0 && (
+            <div className="border-t border-gray-200 bg-white">
+              <Pagination
+                currentPage={currentPage}
+                hasMore={hasMore}
+                loading={loading}
+                onPrevious={handlePreviousPage}
+                onNext={handleNextPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+              />
+            </div>
+          )}
         </div>
       </div>
       <AddDoctorModal

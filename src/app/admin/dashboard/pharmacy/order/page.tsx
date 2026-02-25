@@ -558,7 +558,13 @@ const Orders: React.FC = () => {
             </h3>
           </div>
 
-          <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
+          <div
+            className="overflow-x-auto overflow-y-auto"
+            style={{
+              maxHeight: "calc(100vh - 350px)",
+              minHeight: "400px",
+            }}
+          >
             <table className="w-full relative">
               <thead className="bg-gray-50 sticky top-0 z-20">
                 <tr>
@@ -851,15 +857,17 @@ const Orders: React.FC = () => {
               />
             )}
           </div>
-          <Pagination
-            currentPage={currentPage}
-            hasMore={hasMore}
-            loading={loading}
-            onPrevious={handlePreviousPage}
-            onNext={handleNextPage}
-            totalItems={totalCount}
-            itemsPerPage={itemsPerPage}
-          />
+          {orders.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              hasMore={hasMore}
+              loading={loading}
+              onPrevious={handlePreviousPage}
+              onNext={handleNextPage}
+              totalItems={totalCount}
+              itemsPerPage={itemsPerPage}
+            />
+          )}
         </div>
       </div>
     </div>

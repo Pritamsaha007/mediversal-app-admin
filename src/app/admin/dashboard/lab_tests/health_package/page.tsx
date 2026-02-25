@@ -28,6 +28,7 @@ import {
 } from "../services/index";
 import { HealthPackage, statics } from "./types";
 import { PathologyTest } from "../pathology_tests/types";
+import Pagination from "@/app/components/common/pagination";
 
 interface HealthPackagesStats {
   totalTests: number;
@@ -43,7 +44,7 @@ const HealthPackages: React.FC = () => {
   const [openDropdown, setOpenDropdown] = useState<null | "status">(null);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
   const [testActionDropdown, setTestActionDropdown] = useState<number | null>(
-    null
+    null,
   );
   const [loading, setLoading] = useState(false);
   const [showAddTestModal, setShowAddTestModal] = useState(false);
@@ -51,9 +52,12 @@ const HealthPackages: React.FC = () => {
   const [selectedTest, setSelectedTest] = useState<HealthPackage | null>(null);
   const [editingTest, setEditingTest] = useState<HealthPackage | null>(null);
   const [testNamesMap, setTestNamesMap] = useState<Map<string, string>>(
-    new Map()
+    new Map(),
   );
   const [statics, setStatics] = useState<statics | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 10;
 
   const { token } = useAdminStore();
 
@@ -61,7 +65,6 @@ const HealthPackages: React.FC = () => {
     const visibleTests = testIds.slice(0, maxVisible);
     const remainingCount = testIds.length - maxVisible;
 
-    // Check if we're still loading test names
     const isLoadingNames = testIds.some((testId) => !testNamesMap.has(testId));
 
     if (isLoadingNames) {
@@ -105,7 +108,7 @@ const HealthPackages: React.FC = () => {
     const totalTests = activePackages.length;
     const activeTests = activePackages.filter((t) => t.is_active).length;
     const totalCategories = new Set(
-      activePackages.map((test) => test.linked_test_ids?.length || 0)
+      activePackages.map((test) => test.linked_test_ids?.length || 0),
     ).size;
 
     return {
@@ -168,7 +171,7 @@ const HealthPackages: React.FC = () => {
       const statics = response.statics;
       setStatics(statics);
       const activeHealthPackages = healthPackages.filter(
-        (pkg: HealthPackage) => !pkg.is_deleted
+        (pkg: HealthPackage) => !pkg.is_deleted,
       );
 
       console.log(activeHealthPackages, "active health packages");
@@ -206,18 +209,43 @@ const HealthPackages: React.FC = () => {
       filtered = filtered.filter(
         (test) =>
           test.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          test.description.toLowerCase().includes(searchTerm.toLowerCase())
+          test.description.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     if (selectedStatus !== "All Status") {
       filtered = filtered.filter((test) =>
-        selectedStatus === "Active" ? test.is_active : !test.is_active
+        selectedStatus === "Active" ? test.is_active : !test.is_active,
       );
     }
 
     setFilteredTests(filtered);
+    setCurrentPage(0);
   }, [searchTerm, selectedStatus, tests]);
+
+  const paginatedTests = React.useMemo(() => {
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredTests.slice(startIndex, endIndex);
+  }, [filteredTests, currentPage, itemsPerPage]);
+
+  const hasMore = React.useMemo(() => {
+    return (currentPage + 1) * itemsPerPage < filteredTests.length;
+  }, [filteredTests, currentPage, itemsPerPage]);
+
+  const totalItems = filteredTests.length;
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (hasMore) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -259,7 +287,7 @@ const HealthPackages: React.FC = () => {
         ),
         {
           duration: Infinity,
-        }
+        },
       );
     });
 
@@ -267,7 +295,7 @@ const HealthPackages: React.FC = () => {
       setLoading(true);
       try {
         const deletePromises = selectedTests.map((packageId) =>
-          deleteHealthPackage(packageId, token)
+          deleteHealthPackage(packageId, token),
         );
 
         await Promise.all(deletePromises);
@@ -275,7 +303,7 @@ const HealthPackages: React.FC = () => {
         fetchHealthPackages();
 
         toast.success(
-          `${selectedTests.length} health packages deleted successfully!`
+          `${selectedTests.length} health packages deleted successfully!`,
         );
         setSelectedTests([]);
       } catch (error: any) {
@@ -297,7 +325,7 @@ const HealthPackages: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedTests(filteredTests.map((test) => test.id));
+      setSelectedTests(paginatedTests.map((test) => test.id));
     } else {
       setSelectedTests([]);
     }
@@ -316,14 +344,14 @@ const HealthPackages: React.FC = () => {
 
   const handleUpdateTest = (updatedTest: HealthPackage) => {
     const updatedTests = tests.map((test) =>
-      test.id === updatedTest.id ? updatedTest : test
+      test.id === updatedTest.id ? updatedTest : test,
     );
     setTests(updatedTests);
     setFilteredTests(updatedTests.filter((test) => !test.is_deleted));
 
     if (updatedTest.linked_test_ids && updatedTest.linked_test_ids.length > 0) {
       const newTestIds = updatedTest.linked_test_ids.filter(
-        (id) => !testNamesMap.has(id)
+        (id) => !testNamesMap.has(id),
       );
       if (newTestIds.length > 0) {
         fetchTestNames(newTestIds);
@@ -332,6 +360,7 @@ const HealthPackages: React.FC = () => {
 
     toast.success("Health package updated successfully!");
   };
+
   const handleTestAction = async (action: string, test: HealthPackage) => {
     setTestActionDropdown(null);
 
@@ -374,7 +403,7 @@ const HealthPackages: React.FC = () => {
             ),
             {
               duration: Infinity,
-            }
+            },
           );
         });
 
@@ -395,6 +424,7 @@ const HealthPackages: React.FC = () => {
         break;
     }
   };
+
   const exportHealthPackagesToCSV = (packages: HealthPackage[]) => {
     const headers = [
       "Package Name",
@@ -438,7 +468,7 @@ const HealthPackages: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `health_packages_export_${new Date().toISOString().split("T")[0]}.csv`
+      `health_packages_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -563,36 +593,6 @@ const HealthPackages: React.FC = () => {
                 : "Export All"}
             </button>
           </div>
-          {/* <div className="flex gap-3">
-            <div className="relative">
-              <button
-                onClick={() =>
-                  setOpenDropdown(openDropdown === "status" ? null : "status")
-                }
-                className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-3 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
-              >
-                {selectedStatus}
-                <ChevronDown className="w-5 h-5" />
-              </button>
-              {openDropdown === "status" && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                  {statusOptions.map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusChange(status)}
-                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
-                        selectedStatus === status
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-[#161D1F]"
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div> */}
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -605,40 +605,43 @@ const HealthPackages: React.FC = () => {
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+          <div
+            className="overflow-auto"
+            style={{ maxHeight: "calc(100vh - 350px)", minHeight: "400px" }}
+          >
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                       checked={
-                        selectedTests.length === filteredTests.length &&
-                        filteredTests.length > 0
+                        selectedTests.length === paginatedTests.length &&
+                        paginatedTests.length > 0
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Package Details
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Tests Included
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Cost Price
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Selling Price
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
-                    Discount Percentage
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
+                    Discount %
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-right text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-right text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Actions
                   </th>
                 </tr>
@@ -646,19 +649,18 @@ const HealthPackages: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
+                    <td colSpan={8} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
-                      {/* <div className="text-gray-500">Loading packages...</div> */}
                     </td>
                   </tr>
-                ) : filteredTests.length === 0 ? (
+                ) : paginatedTests.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
+                    <td colSpan={8} className="px-6 py-12 text-center">
                       <div className="text-gray-500">No packages found.</div>
                     </td>
                   </tr>
                 ) : (
-                  filteredTests.map((test) => (
+                  paginatedTests.map((test) => (
                     <tr key={test.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
@@ -671,7 +673,7 @@ const HealthPackages: React.FC = () => {
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col min-w-[200px]">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">
                             {test.name}
                           </div>
@@ -684,14 +686,16 @@ const HealthPackages: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        {test.linked_test_ids &&
-                        test.linked_test_ids.length > 0 ? (
-                          renderTestsIncluded(test.linked_test_ids, 3)
-                        ) : (
-                          <span className="text-xs text-gray-500">
-                            No tests included
-                          </span>
-                        )}
+                        <div className="min-w-[200px]">
+                          {test.linked_test_ids &&
+                          test.linked_test_ids.length > 0 ? (
+                            renderTestsIncluded(test.linked_test_ids, 3)
+                          ) : (
+                            <span className="text-xs text-gray-500">
+                              No tests included
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-[#161D1F]">
                         ₹{test.cost_price}
@@ -712,7 +716,7 @@ const HealthPackages: React.FC = () => {
                           <button
                             onClick={() => handleTestAction("view", test)}
                             className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
-                            title="View Pacakage"
+                            title="View Package"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
@@ -738,6 +742,20 @@ const HealthPackages: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {filteredTests.length > 0 && (
+            <div className="border-t border-gray-200 bg-white">
+              <Pagination
+                currentPage={currentPage}
+                hasMore={hasMore}
+                loading={loading}
+                onPrevious={handlePreviousPage}
+                onNext={handleNextPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+              />
+            </div>
+          )}
         </div>
       </div>
 

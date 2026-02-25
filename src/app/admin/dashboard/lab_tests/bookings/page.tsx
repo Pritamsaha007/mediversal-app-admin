@@ -637,10 +637,7 @@ const BookingsManagement: React.FC = () => {
 
           <div
             className="overflow-auto"
-            style={{
-              maxHeight: "calc(100vh - 350px)",
-              minHeight: "400px",
-            }}
+            style={{ maxHeight: "calc(100vh - 350px)", minHeight: "400px" }}
           >
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-10">
