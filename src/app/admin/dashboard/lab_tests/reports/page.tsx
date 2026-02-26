@@ -21,7 +21,7 @@ import { useAdminStore } from "@/app/store/adminStore";
 import Pagination from "../../../../components/common/pagination";
 
 const getDateRangeForFilter = (
-  filter: string
+  filter: string,
 ): { start_date: string | null; end_date: string | null } => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -98,7 +98,7 @@ const ReportsManagement: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
 
   const [openDropdown, setOpenDropdown] = useState<null | "filter" | "date">(
-    null
+    null,
   );
   const [selectedReports, setSelectedReports] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -290,15 +290,15 @@ const ReportsManagement: React.FC = () => {
 
   const renderTests = (report: LabTestReport) => {
     const validTests = report.test_names.filter(
-      (test) => test && test.trim() !== ""
+      (test) => test && test.trim() !== "",
     );
     const validCategories = report.category_names.filter(
-      (cat) => cat && cat.trim() !== ""
+      (cat) => cat && cat.trim() !== "",
     );
 
     return (
-      <div className="px-2 py-2 whitespace-nowrap">
-        <div className="flex flex-col gap-1">
+      <div className="px-2 py-2">
+        <div className="flex flex-col gap-1 min-w-[250px]">
           {validTests.length > 0 ? (
             validTests.map((test, index) => (
               <span key={index} className="text-xs text-gray-700">
@@ -393,7 +393,7 @@ const ReportsManagement: React.FC = () => {
           `"${r.report_url || "No URL"}"`,
           r.is_hospital_visit ? "Yes" : "No",
           r.test_names.length,
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -404,7 +404,7 @@ const ReportsManagement: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `reports_export_${new Date().toISOString().split("T")[0]}.csv`
+      `reports_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -427,6 +427,10 @@ const ReportsManagement: React.FC = () => {
     exportReportsToCSV(reportsToExport);
     toast.success(`Exported ${reportsToExport.length} reports successfully!`);
   };
+
+  const paginatedReports = reports;
+  const totalItems = reports.length;
+  const hasMorePages = hasMore;
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
@@ -522,8 +526,8 @@ const ReportsManagement: React.FC = () => {
                   {isPdf(previewUrl)
                     ? "PDF Document"
                     : isImage(previewUrl)
-                    ? "Image"
-                    : "File"}
+                      ? "Image"
+                      : "File"}
                 </span>
                 <a
                   href={previewUrl}
@@ -655,11 +659,14 @@ const ReportsManagement: React.FC = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+          <div
+            className="overflow-auto"
+            style={{ maxHeight: "calc(100vh - 350px)", minHeight: "400px" }}
+          >
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -670,19 +677,19 @@ const ReportsManagement: React.FC = () => {
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Patient Details
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Tests Booked
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Report Status
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Report Date & Time
                   </th>
-                  <th className="px-6 py-3 text-right text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-right text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Actions
                   </th>
                 </tr>
@@ -713,13 +720,13 @@ const ReportsManagement: React.FC = () => {
                           onChange={(e) =>
                             handleSelectReport(
                               report.booking_id,
-                              e.target.checked
+                              e.target.checked,
                             )
                           }
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1 min-w-[150px]">
                           <div className="text-xs font-medium text-[#161D1F]">
                             {report.patient_name || "N/A"}
                           </div>
@@ -733,7 +740,7 @@ const ReportsManagement: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`px-2 py-1 rounded-md text-xs font-medium ${getStatusColor(
-                            report.report_status
+                            report.report_status,
                           )}`}
                         >
                           {report.report_status}
@@ -747,21 +754,19 @@ const ReportsManagement: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">
                         <div className="flex items-center gap-2 justify-end">
                           {report.report_url ? (
-                            <>
-                              <a
-                                href={report.report_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1 text-gray-500 hover:text-[#0088B1] transition-colors"
-                                title="Download/Open Report"
-                                download
-                              >
-                                Download Report
-                              </a>
-                            </>
+                            <button
+                              onClick={() =>
+                                handleViewReport(report.report_url!)
+                              }
+                              className="p-1 text-gray-500 hover:text-[#0088B1] transition-colors flex items-center gap-1"
+                              title="View Report"
+                            >
+                              <Eye className="w-4 h-4" />
+                              <span className="text-xs">View</span>
+                            </button>
                           ) : (
                             <span className="text-xs text-gray-400">
-                              No report available
+                              No report
                             </span>
                           )}
                         </div>
@@ -782,11 +787,11 @@ const ReportsManagement: React.FC = () => {
 
           <Pagination
             currentPage={currentPage}
-            hasMore={hasMore}
+            hasMore={hasMorePages}
             loading={loading}
             onPrevious={loadPreviousPage}
             onNext={loadNextPage}
-            totalItems={reports.length}
+            totalItems={totalItems}
             itemsPerPage={20}
           />
         </div>

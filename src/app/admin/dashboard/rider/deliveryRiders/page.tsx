@@ -45,7 +45,7 @@ const DeliveryRiders: React.FC = () => {
   const [showAddRiderModal, setShowAddRiderModal] = useState(false);
   const [showViewRiderModal, setShowViewRiderModal] = useState(false);
   const [selectedRider, setSelectedRider] = useState<DeliveryRider | null>(
-    null
+    null,
   );
   const [editingRider, setEditingRider] = useState<DeliveryRider | null>(null);
   const { token } = useAdminStore();
@@ -70,8 +70,8 @@ const DeliveryRiders: React.FC = () => {
           selectedStatus === "Active"
             ? true
             : selectedStatus === "Inactive"
-            ? false
-            : null,
+              ? false
+              : null,
         sort_by: "name",
         sort_order: "ASC" as const,
       };
@@ -120,8 +120,8 @@ const DeliveryRiders: React.FC = () => {
               ...rider,
               is_poi_verified_status: isApproved ? "approved" : "pending",
             }
-          : rider
-      )
+          : rider,
+      ),
     );
 
     setFilteredRiders((prevFilteredRiders) =>
@@ -131,12 +131,12 @@ const DeliveryRiders: React.FC = () => {
               ...rider,
               is_poi_verified_status: isApproved ? "approved" : "pending",
             }
-          : rider
-      )
+          : rider,
+      ),
     );
 
     toast.success(
-      `Rider ${isApproved ? "approved" : "disapproved"} successfully!`
+      `Rider ${isApproved ? "approved" : "disapproved"} successfully!`,
     );
 
     try {
@@ -151,8 +151,8 @@ const DeliveryRiders: React.FC = () => {
                 ...rider,
                 is_poi_verified_status: isApproved ? "pending" : "approved",
               }
-            : rider
-        )
+            : rider,
+        ),
       );
 
       setFilteredRiders((prevFilteredRiders) =>
@@ -162,8 +162,8 @@ const DeliveryRiders: React.FC = () => {
                 ...rider,
                 is_poi_verified_status: isApproved ? "pending" : "approved",
               }
-            : rider
-        )
+            : rider,
+        ),
       );
 
       toast.error(error.message || "Failed to update rider status");
@@ -205,7 +205,7 @@ const DeliveryRiders: React.FC = () => {
         ),
         {
           duration: Infinity,
-        }
+        },
       );
     });
 
@@ -214,12 +214,12 @@ const DeliveryRiders: React.FC = () => {
       try {
         // Update local state immediately
         setRiders((prevRiders) =>
-          prevRiders.filter((rider) => !selectedRiders.includes(rider.id))
+          prevRiders.filter((rider) => !selectedRiders.includes(rider.id)),
         );
         setFilteredRiders((prevFilteredRiders) =>
           prevFilteredRiders.filter(
-            (rider) => !selectedRiders.includes(rider.id)
-          )
+            (rider) => !selectedRiders.includes(rider.id),
+          ),
         );
 
         // Show success message
@@ -320,17 +320,17 @@ const DeliveryRiders: React.FC = () => {
             ),
             {
               duration: Infinity,
-            }
+            },
           );
         });
 
         if (confirmed) {
           try {
             setRiders((prevRiders) =>
-              prevRiders.filter((r) => r.id !== rider.id)
+              prevRiders.filter((r) => r.id !== rider.id),
             );
             setFilteredRiders((prevFilteredRiders) =>
-              prevFilteredRiders.filter((r) => r.id !== rider.id)
+              prevFilteredRiders.filter((r) => r.id !== rider.id),
             );
 
             toast.success("Rider deleted successfully!");
@@ -391,7 +391,7 @@ const DeliveryRiders: React.FC = () => {
           })}"`,
           r.is_available_status,
           r.is_poi_verified_status,
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -402,7 +402,7 @@ const DeliveryRiders: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `delivery_riders_export_${new Date().toISOString().split("T")[0]}.csv`
+      `delivery_riders_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -541,7 +541,10 @@ const DeliveryRiders: React.FC = () => {
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
+          <div
+            className="overflow-x-auto"
+            style={{ maxHeight: "calc(100vh - 350px)", minHeight: "400px" }}
+          >
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
@@ -654,7 +657,7 @@ const DeliveryRiders: React.FC = () => {
                             day: "numeric",
                             month: "short",
                             year: "numeric",
-                          }
+                          },
                         )}
                       </td>
 
@@ -682,7 +685,7 @@ const DeliveryRiders: React.FC = () => {
                             <button
                               onClick={() =>
                                 setOpenDropdown(
-                                  openDropdown === rider.id ? null : rider.id
+                                  openDropdown === rider.id ? null : rider.id,
                                 )
                               }
                               className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer dropdown-toggle"

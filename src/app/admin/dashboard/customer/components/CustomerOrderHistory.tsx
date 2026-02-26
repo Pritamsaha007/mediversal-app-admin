@@ -80,7 +80,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
       let orders: any[] = [];
       switch (activeTab) {
         case "pharmacy":
-          orders = orderData.pharmacy || [];
+          orders = orderData.pharmacy ? [...orderData.pharmacy].reverse() : [];
           break;
         case "homecare":
           orders = orderData.homecare || [];
@@ -156,7 +156,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
                       order.orderdate ||
                         order.order_date ||
                         order.consultation_date ||
-                        order.booking_date
+                        order.booking_date,
                     )}
                   </td>
                   <td className="px-6 py-4">
@@ -228,7 +228,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
                         order.status ||
                           order.deliverystatus ||
                           order.order_status ||
-                          "N/A"
+                          "N/A",
                       )}`}
                     >
                       {order.status ||
@@ -244,8 +244,8 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
                           order.total_amount ||
                           order.order_total ||
                           order.amount ||
-                          "0"
-                      )
+                          "0",
+                      ),
                     )}
                   </td>
                 </tr>
@@ -297,7 +297,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
         <div className="flex-1 overflow-y-auto">{renderOrderList()}</div>
       </div>
     );
-  }
+  },
 );
 
 export default CustomerOrderHistory;

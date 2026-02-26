@@ -30,6 +30,7 @@ import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
 import { Doctor, EnumItem, GetDoctorsParams } from "./types";
 import StatsCard from "@/app/components/common/StatsCard";
+import Pagination from "@/app/components/common/pagination";
 
 const StatusBadge: React.FC<{ isOnline: boolean; isInPerson: boolean }> = ({
   isOnline,
@@ -81,6 +82,9 @@ const Doctors: React.FC = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const { token } = useAdminStore();
 
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 10;
+
   const statusOptions = [
     "All Status",
     "Online",
@@ -106,10 +110,10 @@ const Doctors: React.FC = () => {
         const doctor = convertAPIDoctor(apiDoctor);
 
         const specialization = enumData.specializations.find(
-          (s) => s.value === apiDoctor.specializations
+          (s) => s.value === apiDoctor.specializations,
         );
         const department = enumData.departments.find(
-          (d) => d.value === apiDoctor.departments
+          (d) => d.value === apiDoctor.departments,
         );
 
         doctor.specialization_id = specialization?.id || "";
@@ -129,7 +133,6 @@ const Doctors: React.FC = () => {
 
         doctor.hospitalNames = hospitals.map((h) => h.name).filter(Boolean);
 
-        // Map language names to IDs
         doctor.languages_known = (apiDoctor.languages_known || [])
           .map((langName) => {
             const lang = enumData.languages.find((l) => l.value === langName);
@@ -137,7 +140,6 @@ const Doctors: React.FC = () => {
           })
           .filter(Boolean);
 
-        // Convert doctor_slots to availability format
         if (
           apiDoctor.doctor_slots &&
           Array.isArray(apiDoctor.doctor_slots) &&
@@ -154,7 +156,7 @@ const Doctors: React.FC = () => {
               day: slot.day || "",
               day_id: slot.day_id || "",
             })),
-            dayNameToName
+            dayNameToName,
           );
         }
 
@@ -167,11 +169,12 @@ const Doctors: React.FC = () => {
       setLoading(false);
     }
   };
+
   const generateStats = () => {
     const totalDoctors = doctors.length;
     const availableOnline = doctors.filter((d) => d.is_available_online).length;
     const availableInPerson = doctors.filter(
-      (d) => d.is_available_in_person
+      (d) => d.is_available_in_person,
     ).length;
     const avgRating =
       doctors.length > 0
@@ -195,6 +198,7 @@ const Doctors: React.FC = () => {
   };
 
   const stats = generateStats();
+
   useEffect(() => {
     let filtered = [...doctors];
     if (searchTerm) {
@@ -202,8 +206,8 @@ const Doctors: React.FC = () => {
         (doctor) =>
           doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (doctor.specializations?.toLowerCase() || "").includes(
-            searchTerm.toLowerCase()
-          )
+            searchTerm.toLowerCase(),
+          ),
       );
     }
     if (selectedStatus !== "All Status") {
@@ -226,6 +230,7 @@ const Doctors: React.FC = () => {
     }
 
     setFilteredDoctors(filtered);
+    setCurrentPage(0);
   }, [searchTerm, selectedStatus, doctors]);
 
   useEffect(() => {
@@ -272,12 +277,35 @@ const Doctors: React.FC = () => {
     enumData.languages,
   ]);
 
+  const paginatedDoctors = React.useMemo(() => {
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredDoctors.slice(startIndex, endIndex);
+  }, [filteredDoctors, currentPage, itemsPerPage]);
+
+  const hasMore = React.useMemo(() => {
+    return (currentPage + 1) * itemsPerPage < filteredDoctors.length;
+  }, [filteredDoctors, currentPage, itemsPerPage]);
+
+  const totalItems = filteredDoctors.length;
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (hasMore) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
   const handleDeleteDoctor = async (doctor: Doctor) => {
     if (!token) return;
 
-    // Show confirmation dialog
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete Dr. ${doctor.name}? This action cannot be undone.`
+      `Are you sure you want to delete Dr. ${doctor.name}? This action cannot be undone.`,
     );
 
     if (!confirmDelete) return;
@@ -287,17 +315,15 @@ const Doctors: React.FC = () => {
       await deleteDoctor(doctor.id, token);
       toast.success("Doctor deleted successfully!");
 
-      // Refresh the doctors list
       await loadDoctors();
 
-      // Show success message (optional)
       alert(`Dr. ${doctor.name} has been successfully deleted.`);
     } catch (error) {
       console.error("Error deleting doctor:", error);
       alert(
         `Error deleting doctor: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     } finally {
       setLoading(false);
@@ -354,7 +380,7 @@ const Doctors: React.FC = () => {
               ? d.languages_known.join(", ")
               : "N/A"
           }"`,
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -365,7 +391,7 @@ const Doctors: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `doctors_export_${new Date().toISOString().split("T")[0]}.csv`
+      `doctors_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -377,7 +403,6 @@ const Doctors: React.FC = () => {
   const renderTimeSlots = (doctor: Doctor) => {
     const slots: string[] = [];
 
-    // Convert availability to display format
     Object.entries(doctor.availability || {}).forEach(([day, timeSlots]) => {
       timeSlots.forEach((slot) => {
         if (slot.startTime && slot.endTime) {
@@ -411,6 +436,7 @@ const Doctors: React.FC = () => {
       </div>
     );
   };
+
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
     setOpenDropdown(null);
@@ -426,11 +452,12 @@ const Doctors: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedDoctors(filteredDoctors.map((doctor) => doctor.id));
+      setSelectedDoctors(paginatedDoctors.map((doctor) => doctor.id));
     } else {
       setSelectedDoctors([]);
     }
   };
+
   const handleViewDoctor = (doctor: Doctor) => {
     setSelectedDoctor(doctor);
     setShowDetailsModal(true);
@@ -445,13 +472,12 @@ const Doctors: React.FC = () => {
     setExpandedSlots((prev) =>
       prev.includes(doctorId)
         ? prev.filter((id) => id !== doctorId)
-        : [...prev, doctorId]
+        : [...prev, doctorId],
     );
   };
 
   const handleAddDoctor = async (doctorData: Doctor) => {
     try {
-      // Create mapping from day names to IDs
       const dayNameToId: Record<string, string> = {};
       enumData.days.forEach((day) => {
         dayNameToId[day.value] = day.id;
@@ -459,7 +485,7 @@ const Doctors: React.FC = () => {
 
       const hasInvalidDays = Object.keys(doctorData.availability).some(
         (dayName) =>
-          doctorData.availability[dayName].length > 0 && !dayNameToId[dayName]
+          doctorData.availability[dayName].length > 0 && !dayNameToId[dayName],
       );
 
       if (hasInvalidDays) {
@@ -470,7 +496,7 @@ const Doctors: React.FC = () => {
 
       const doctorSlots = convertAvailabilityToSlots(
         doctorData.availability,
-        dayNameToId
+        dayNameToId,
       );
 
       const requestData = {
@@ -504,14 +530,13 @@ const Doctors: React.FC = () => {
 
       await loadDoctors();
 
-      // Close modal
       setShowAddDoctorModal(false);
     } catch (error) {
       console.error("Error saving doctor:", error);
       alert(
         `Error saving doctor: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     }
 
@@ -616,31 +641,34 @@ const Doctors: React.FC = () => {
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+          <div
+            className="overflow-auto"
+            style={{ maxHeight: "calc(100vh - 350px)", minHeight: "400px" }}
+          >
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                       checked={
-                        selectedDoctors.length === filteredDoctors.length &&
-                        filteredDoctors.length > 0
+                        selectedDoctors.length === paginatedDoctors.length &&
+                        paginatedDoctors.length > 0
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Doctor Details
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Available Slots
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Availability Status
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Actions
                   </th>
                 </tr>
@@ -650,19 +678,18 @@ const Doctors: React.FC = () => {
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
-                      {/* <div className="text-gray-500">Loading doctors...</div> */}
                     </td>
                   </tr>
-                ) : filteredDoctors.length === 0 ? (
+                ) : paginatedDoctors.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">
                       <div className="text-gray-500">No doctors found.</div>
                     </td>
                   </tr>
                 ) : (
-                  filteredDoctors.map((doctor) => (
+                  paginatedDoctors.map((doctor) => (
                     <tr key={doctor.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -673,7 +700,7 @@ const Doctors: React.FC = () => {
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col min-w-[250px]">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">
                             {doctor.name}
                           </div>
@@ -698,14 +725,18 @@ const Doctors: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">{renderTimeSlots(doctor)}</td>
                       <td className="px-6 py-4">
+                        <div className="min-w-[200px]">
+                          {renderTimeSlots(doctor)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <StatusBadge
                           isOnline={doctor.is_available_online}
                           isInPerson={doctor.is_available_in_person}
                         />
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center gap-2 justify-end">
                           <button
                             className="p-2 text-gray-400 hover:text-[#0088B1] cursor-pointer"
@@ -737,6 +768,20 @@ const Doctors: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {filteredDoctors.length > 0 && (
+            <div className="border-t border-gray-200 bg-white">
+              <Pagination
+                currentPage={currentPage}
+                hasMore={hasMore}
+                loading={loading}
+                onPrevious={handlePreviousPage}
+                onNext={handleNextPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+              />
+            </div>
+          )}
         </div>
       </div>
       <AddDoctorModal

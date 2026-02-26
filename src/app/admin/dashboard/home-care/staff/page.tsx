@@ -15,6 +15,7 @@ import ViewStaffModal from "./components/ViewStaffModal";
 import { ApiStaff, Staff } from "./types";
 import { fetchStaff, deleteStaff } from "./service";
 import StatusBadge from "@/app/components/common/StatusBadge";
+import Pagination from "@/app/components/common/pagination";
 
 const StaffManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,10 +29,13 @@ const StaffManagement: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
   const [staffActionDropdown, setStaffActionDropdown] = useState<number | null>(
-    null
+    null,
   );
   const [viewStaff, setViewStaff] = useState<Staff | null>(null);
   const [editStaff, setEditStaff] = useState<Staff | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 10;
 
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +97,9 @@ const StaffManagement: React.FC = () => {
 
   const handleUpdateStaff = async (updatedStaff: Staff) => {
     setStaffList((prev) =>
-      prev.map((staff) => (staff.id === updatedStaff.id ? updatedStaff : staff))
+      prev.map((staff) =>
+        staff.id === updatedStaff.id ? updatedStaff : staff,
+      ),
     );
 
     try {
@@ -114,19 +120,17 @@ const StaffManagement: React.FC = () => {
 
   const statusOptions = ["All Statuses", "Available", "Not available"];
 
-  // Filter staff based on search and filters
   useEffect(() => {
     let filtered = staffList;
 
-    // Apply search filter
     if (searchTerm.trim()) {
       filtered = filtered.filter(
         (staff) =>
           staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           staff.departments.some((dept) =>
-            dept.toLowerCase().includes(searchTerm.toLowerCase())
+            dept.toLowerCase().includes(searchTerm.toLowerCase()),
           ) ||
-          staff.position.toLowerCase().includes(searchTerm.toLowerCase())
+          staff.position.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
@@ -135,7 +139,20 @@ const StaffManagement: React.FC = () => {
     }
 
     setFilteredStaff(filtered);
+    setCurrentPage(0);
   }, [searchTerm, selectedStatus, staffList]);
+
+  const paginatedStaff = React.useMemo(() => {
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredStaff.slice(startIndex, endIndex);
+  }, [filteredStaff, currentPage, itemsPerPage]);
+
+  const hasMore = React.useMemo(() => {
+    return (currentPage + 1) * itemsPerPage < filteredStaff.length;
+  }, [filteredStaff, currentPage, itemsPerPage]);
+
+  const totalItems = filteredStaff.length;
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -166,6 +183,7 @@ const StaffManagement: React.FC = () => {
 
     setSearchDebounceTimer(timer);
   };
+
   const handleSelectStaff = (staffId: string, checked: boolean) => {
     if (checked) {
       setSelectedStaff([...selectedStaff, staffId]);
@@ -176,11 +194,12 @@ const StaffManagement: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedStaff(filteredStaff.map((staff) => staff.id));
+      setSelectedStaff(paginatedStaff.map((staff) => staff.id));
     } else {
       setSelectedStaff([]);
     }
   };
+
   const handleStaffAction = async (action: string, staff: Staff) => {
     switch (action) {
       case "view":
@@ -195,17 +214,15 @@ const StaffManagement: React.FC = () => {
             setLoading(true);
             await deleteStaff(staff.id);
 
-            // Remove from local state
             setStaffList((prev) => prev.filter((s) => s.id !== staff.id));
 
-            // Also remove from selected staff if it was selected
             setSelectedStaff((prev) => prev.filter((id) => id !== staff.id));
 
             console.log("Staff deleted successfully:", staff.name);
           } catch (error) {
             console.error("Error deleting staff:", error);
             setError(
-              error instanceof Error ? error.message : "Failed to delete staff"
+              error instanceof Error ? error.message : "Failed to delete staff",
             );
           } finally {
             setLoading(false);
@@ -221,7 +238,7 @@ const StaffManagement: React.FC = () => {
 
     if (
       window.confirm(
-        `Are you sure you want to delete ${selectedStaff.length} selected staff members?`
+        `Are you sure you want to delete ${selectedStaff.length} selected staff members?`,
       )
     ) {
       try {
@@ -230,7 +247,7 @@ const StaffManagement: React.FC = () => {
         await Promise.all(selectedStaff.map((staffId) => deleteStaff(staffId)));
 
         setStaffList((prev) =>
-          prev.filter((staff) => !selectedStaff.includes(staff.id))
+          prev.filter((staff) => !selectedStaff.includes(staff.id)),
         );
         setSelectedStaff([]);
 
@@ -240,7 +257,7 @@ const StaffManagement: React.FC = () => {
         setError(
           error instanceof Error
             ? error.message
-            : "Failed to delete selected staff"
+            : "Failed to delete selected staff",
         );
       } finally {
         setLoading(false);
@@ -320,7 +337,7 @@ const StaffManagement: React.FC = () => {
             Array.isArray(s.departments) ? s.departments.join(", ") : "N/A"
           }"`,
           s.joinDate,
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -331,7 +348,7 @@ const StaffManagement: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `staff_export_${new Date().toISOString().split("T")[0]}.csv`
+      `staff_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -339,7 +356,19 @@ const StaffManagement: React.FC = () => {
     link.click();
     document.body.removeChild(link);
   };
-  // Add to the existing useEffect with cleanup
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (hasMore) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -413,7 +442,7 @@ const StaffManagement: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden h-screen max-h-screen flex flex-col">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
               {activeTab}
@@ -423,37 +452,40 @@ const StaffManagement: React.FC = () => {
             </h3>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
-            <table className="w-full ">
-              <thead className="bg-gray-100">
+          <div
+            className="overflow-auto"
+            style={{
+              maxHeight: "calc(100vh - 350px)",
+              minHeight: "400px",
+            }}
+          >
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-100 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-100">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                       checked={
-                        selectedStaff.length === filteredStaff.length &&
-                        filteredStaff.length > 0
+                        selectedStaff.length === paginatedStaff.length &&
+                        paginatedStaff.length > 0
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-100">
                     Staff Detail
                   </th>
-                  {/* <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
-                    Address
-                  </th> */}
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-100">
                     Experience
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-100">
                     Rating
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-100">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-100">
                     Actions
                   </th>
                 </tr>
@@ -461,16 +493,13 @@ const StaffManagement: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center">
+                    <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
-                      {/* <div className="text-gray-500 text-sm">
-                        Loading staff...
-                      </div> */}
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center">
+                    <td colSpan={6} className="px-6 py-8 text-center">
                       <div className="text-red-500 text-sm">Error: {error}</div>
                       <button
                         onClick={() => window.location.reload()}
@@ -480,8 +509,8 @@ const StaffManagement: React.FC = () => {
                       </button>
                     </td>
                   </tr>
-                ) : filteredStaff.length > 0 ? (
-                  filteredStaff.map((staff) => (
+                ) : paginatedStaff.length > 0 ? (
+                  paginatedStaff.map((staff) => (
                     <tr key={staff.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
@@ -494,27 +523,17 @@ const StaffManagement: React.FC = () => {
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-start">
-                          <div className="ml-4">
+                        <div className="flex items-start min-w-[200px]">
+                          <div>
                             <div className="text-xs font-medium text-[#161D1F] mb-1">
                               {staff.name}
                             </div>
-                            {/* Department Chips */}
-                            {/* <div className="flex flex-wrap">
-                              {staff.departments.map((department, index) => (
-                                <span key={index}>
-                                  {getDepartmentChip(department)}
-                                </span>
-                              ))}
-                            </div> */}
+                            <div className="text-[10px] text-gray-500">
+                              {staff.position}
+                            </div>
                           </div>
                         </div>
                       </td>
-                      {/* <td className="px-6 py-4">
-                        <div className="text-[10px] text-[#161D1F] max-w-xs">
-                          {staff.address}
-                        </div>
-                      </td> */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-[10px] text-[#161D1F]">
                           {staff.experience}
@@ -555,7 +574,7 @@ const StaffManagement: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center">
+                    <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="text-gray-500 text-sm">
                         {staffList.length === 0
                           ? "No staff members found. Click 'Add Staff' to add your first staff member."
@@ -567,6 +586,20 @@ const StaffManagement: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {filteredStaff.length > 0 && (
+            <div className="border-t border-gray-200 bg-white">
+              <Pagination
+                currentPage={currentPage}
+                hasMore={hasMore}
+                loading={loading}
+                onPrevious={handlePreviousPage}
+                onNext={handleNextPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+              />
+            </div>
+          )}
         </div>
       </div>
       <AddStaffModal

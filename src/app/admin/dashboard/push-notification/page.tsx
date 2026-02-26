@@ -47,7 +47,7 @@ const Notifications: React.FC = () => {
     useState<Notification | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>(
-    []
+    [],
   );
 
   const filterOptions = [
@@ -120,7 +120,7 @@ const Notifications: React.FC = () => {
     if (!token) return;
 
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${notification.message_title}"? This action cannot be undone.`
+      `Are you sure you want to delete "${notification.message_title}"? This action cannot be undone.`,
     );
 
     if (!confirmDelete) return;
@@ -198,7 +198,7 @@ const Notifications: React.FC = () => {
           `"${n.end_date ? formatDate(n.end_date) : "N/A"}"`,
           `"${n.notification_time || "N/A"}"`,
           n.status,
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -209,7 +209,7 @@ const Notifications: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `notifications_export_${new Date().toISOString().split("T")[0]}.csv`
+      `notifications_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -220,13 +220,13 @@ const Notifications: React.FC = () => {
 
   const handleSelectNotification = (
     notificationId: string,
-    checked: boolean
+    checked: boolean,
   ) => {
     if (checked) {
       setSelectedNotifications([...selectedNotifications, notificationId]);
     } else {
       setSelectedNotifications(
-        selectedNotifications.filter((id) => id !== notificationId)
+        selectedNotifications.filter((id) => id !== notificationId),
       );
     }
   };
@@ -234,7 +234,7 @@ const Notifications: React.FC = () => {
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedNotifications(
-        notifications.map((notification) => notification.id)
+        notifications.map((notification) => notification.id),
       );
     } else {
       setSelectedNotifications([]);
@@ -254,7 +254,7 @@ const Notifications: React.FC = () => {
 
     exportNotificationsToCSV(notificationsToExport);
     toast.success(
-      `Exported ${notificationsToExport.length} notifications successfully!`
+      `Exported ${notificationsToExport.length} notifications successfully!`,
     );
     setSelectedNotifications([]);
   };
@@ -267,7 +267,6 @@ const Notifications: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-[16px] font-medium text-[#161D1F]">
             Push Notification Manager
@@ -281,7 +280,6 @@ const Notifications: React.FC = () => {
           </button>
         </div>
 
-        {/* Search and Filter */}
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -294,7 +292,6 @@ const Notifications: React.FC = () => {
             />
           </div>
 
-          {/* Export button */}
           <div className="flex gap-2">
             <button
               onClick={handleExport}
@@ -312,7 +309,6 @@ const Notifications: React.FC = () => {
             </button>
           </div>
 
-          {/* Filter dropdown - keep existing */}
           <div className="relative">
             <DropdownSelector
               label=""
@@ -324,13 +320,12 @@ const Notifications: React.FC = () => {
               onSelect={(value) => {
                 setSelectedFilter(value);
                 setCurrentPage(0);
-                setSelectedNotifications([]); // Clear selection
+                setSelectedNotifications([]);
               }}
             />
           </div>
         </div>
 
-        {/* Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
@@ -340,7 +335,10 @@ const Notifications: React.FC = () => {
               </span>
             </h3>
           </div>
-          <div className="overflow-x-auto max-h-[calc(100vh-400px)] overflow-y-auto">
+          <div
+            className="overflow-x-auto  overflow-y-auto"
+            style={{ maxHeight: "calc(100vh - 350px)", minHeight: "400px" }}
+          >
             <table className="w-full">
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
@@ -399,12 +397,12 @@ const Notifications: React.FC = () => {
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                           checked={selectedNotifications.includes(
-                            notification.id
+                            notification.id,
                           )}
                           onChange={(e) =>
                             handleSelectNotification(
                               notification.id,
-                              e.target.checked
+                              e.target.checked,
                             )
                           }
                           disabled={loading}
@@ -417,11 +415,11 @@ const Notifications: React.FC = () => {
                           </div>
                           <span
                             className={`inline-flex items-center w-fit px-2 py-0.5 rounded text-[8px] font-medium border ${getUserGroupColor(
-                              notification.targeted_user_group_value
+                              notification.targeted_user_group_value,
                             )}`}
                           >
                             {formatUserGroup(
-                              notification.targeted_user_group_value
+                              notification.targeted_user_group_value,
                             )}
                           </span>
                         </div>
@@ -462,7 +460,7 @@ const Notifications: React.FC = () => {
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium ${getStatusColor(
-                            notification.status
+                            notification.status,
                           )}`}
                         >
                           {notification.status.charAt(0) +

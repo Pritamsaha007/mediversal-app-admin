@@ -711,7 +711,10 @@ const Consultations: React.FC = () => {
             </h3>
           </div>
 
-          <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
+          <div
+            className="overflow-x-auto overflow-y-auto"
+            style={{ maxHeight: "calc(100vh - 350px)", minHeight: "400px" }}
+          >
             <table className="w-full relative">
               <thead className="bg-gray-50 sticky top-0 z-20">
                 <tr>
@@ -749,9 +752,6 @@ const Consultations: React.FC = () => {
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
-                      {/* <div className="text-gray-500">
-                        Loading consultations...
-                      </div> */}
                     </td>
                   </tr>
                 ) : filteredConsultations.length === 0 ? (
@@ -926,16 +926,17 @@ const Consultations: React.FC = () => {
               </tbody>
             </table>
           </div>
-
-          <Pagination
-            currentPage={currentPage}
-            hasMore={hasMore}
-            loading={loading}
-            onPrevious={handlePreviousPage}
-            onNext={handleNextPage}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-          />
+          {filteredConsultations.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              hasMore={hasMore}
+              loading={loading}
+              onPrevious={handlePreviousPage}
+              onNext={handleNextPage}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+            />
+          )}
         </div>
       </div>
 

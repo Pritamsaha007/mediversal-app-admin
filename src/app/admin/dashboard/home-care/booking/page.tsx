@@ -49,12 +49,11 @@ const formatStatusDisplay = (statusValue: string): string => {
   }
 };
 
-// Sort function for most recent first based on order_date
 const sortByMostRecent = (orders: ApiOrderResponse[]): ApiOrderResponse[] => {
   return [...orders].sort((a, b) => {
     const dateA = a.order_date ? new Date(a.order_date).getTime() : 0;
     const dateB = b.order_date ? new Date(b.order_date).getTime() : 0;
-    return dateB - dateA; // Most recent first
+    return dateB - dateA;
   });
 };
 
@@ -412,13 +411,6 @@ const BookingManagement: React.FC = () => {
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
             Booking Management
           </h1>
-          {/* <button
-            onClick={handleNewBooking}
-            className="flex items-center text-[12px] gap-2 bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            New Booking
-          </button> */}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -457,12 +449,18 @@ const BookingManagement: React.FC = () => {
           </h2>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div
+            className="overflow-auto"
+            style={{
+              maxHeight: "calc(100vh - 350px)",
+              minHeight: "400px",
+            }}
+          >
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-6 py-4 text-left">
+                  <th className="px-6 py-4 text-left whitespace-nowrap bg-gray-50">
                     <input
                       type="checkbox"
                       className="rounded border-gray-300"
@@ -473,59 +471,49 @@ const BookingManagement: React.FC = () => {
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider whitespace-nowrap bg-gray-50">
                     Booking Detail
                   </th>
-                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider whitespace-nowrap bg-gray-50">
                     Customer Detail
                   </th>
-                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider whitespace-nowrap bg-gray-50">
                     Order Status
                   </th>
-                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider whitespace-nowrap bg-gray-50">
                     Payment
                   </th>
-                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider whitespace-nowrap bg-gray-50">
                     Services
                   </th>
-                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider whitespace-nowrap bg-gray-50">
                     Total
                   </th>
-                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider whitespace-nowrap bg-gray-50">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="py-8">
-                      <div className="flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
-                        </div>
-                      </div>
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
                     </td>
                   </tr>
-                ) : error ? (
+                ) : filteredBookings.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-8">
-                      <p className="text-sm text-red-600">{error}</p>
-                      <button
-                        onClick={fetchOrders}
-                        className="mt-2 text-sm text-cyan-600 hover:text-cyan-700"
-                      >
-                        Try again
-                      </button>
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <div className="text-gray-500">No bookings found.</div>
                     </td>
                   </tr>
                 ) : (
                   filteredBookings.map((booking) => (
                     <tr
                       key={booking.ordernumber}
-                      className="hover:bg-gray-50 transition-colors border-1"
+                      className="hover:bg-gray-50 transition-colors"
                     >
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
                           className="rounded border-gray-300"
@@ -540,7 +528,7 @@ const BookingManagement: React.FC = () => {
                           }
                         />
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="font-medium text-[12px] text-[#161D1F]">
                             {booking.ordernumber}
@@ -559,14 +547,14 @@ const BookingManagement: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="font-medium text-[12px] text-[#161D1F]">
                             {booking.customer_name}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="relative">
                           <button
                             onClick={() =>
@@ -617,7 +605,7 @@ const BookingManagement: React.FC = () => {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`px-3 py-1 rounded-full text-[10px] font-medium ${getPaymentColor(
                             booking.payment_status,
@@ -626,19 +614,19 @@ const BookingManagement: React.FC = () => {
                           {booking.payment_status}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <span className="bg-gray-100 text-[#161D1F] px-3 py-1 rounded-full text-[10px]">
                           {booking.homecare_service_name}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="font-medium text-[12px] text-[#161D1F]">
                             ₹{parseFloat(booking.order_total).toLocaleString()}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <DropdownMenu
                           booking={booking}
                           onViewDetails={handleViewDetails}
@@ -653,8 +641,10 @@ const BookingManagement: React.FC = () => {
                 )}
               </tbody>
             </table>
+          </div>
 
-            {allBookings.length > 0 && (
+          {allBookings.length > 0 && (
+            <div className="border-t border-gray-200 bg-white">
               <Pagination
                 currentPage={currentPage}
                 hasMore={hasMore}
@@ -664,8 +654,8 @@ const BookingManagement: React.FC = () => {
                 totalItems={currentPage + 1 * 20}
                 itemsPerPage={itemsPerPage}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {allBookings.length === 0 && !loading && !error && (

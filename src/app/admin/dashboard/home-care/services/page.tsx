@@ -1,382 +1,501 @@
 "use client";
-import React, { useEffect, useState, useMemo } from "react";
-import StatusBadge from "../../../../components/common/StatusBadge";
-import StatsCard from "../../../../components/common/StatsCard";
-import ManageOfferingsModal from "./components/ManageOfferingsModal";
-import AddServiceModal from "./components/AddServiceModal";
-import { getHomecareServices, deleteHomecareService } from "./service";
-import { useAdminStore } from "@/app/store/adminStore";
-import toast from "react-hot-toast";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 
+import StatsCard from "../../../../components/common/StatsCard";
 import {
   Search,
   ChevronDown,
-  Plus,
-  Settings,
-  Activity,
-  Users,
   Eye,
-  Edit,
-  Trash2,
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  MoreHorizontal,
+  UserPlus,
+  Upload,
   Download,
 } from "lucide-react";
-import { HomecareService, Offering } from "./types";
+import toast from "react-hot-toast";
 
-const transformHomecareServiceToService = (
-  homecareService: HomecareService,
-): Service => {
-  return {
-    id: homecareService.id,
-    name: homecareService.name,
-    description: homecareService.description,
-    category: homecareService.display_sections?.[0] || "General",
-    status: homecareService.status,
-    display_sections: homecareService.display_sections,
-    custom_medical_info: homecareService.custom_medical_info,
-    offerings: homecareService.service_tags.map((tag, index) => ({
-      id: `${homecareService.id}-offering-${index}`,
-      name: tag,
-      description: `${tag} service`,
-      price: 0,
-      duration: "1 hour",
-      duration_in_hrs: 1,
-      duration_type_value: "hour",
-      duration_type: "hour",
-      features: homecareService.display_sections || [],
-      staffRequirements: [],
-      equipmentIncluded: [],
-      status: "Available" as const,
-      is_device: false,
-      device_stock_count: 0,
-    })),
-    rating: 4.5,
-    reviewCount: 10,
-    consents: homecareService.consents || [],
-  };
+import { useAdminStore } from "@/app/store/adminStore";
+import { getOrderStatus } from "../../home-care/booking/services";
+import Pagination from "../../../../components/common/pagination";
+import {
+  searchLabTestBookings,
+  updateLabTestBooking,
+  uploadFile,
+} from "../../lab_tests/services";
+import {
+  LabTestBooking,
+  PatientDetailsList,
+  SearchLabTestBookingsPayload,
+  UpdateLabTestBookingPayload,
+} from "../../lab_tests/bookings/type";
+import ViewBookingModal from "../../lab_tests/bookings/components/viewBooking";
+import AssignPhlebotomistModal from "../../lab_tests/bookings/components/assignStaff";
+
+interface BookingStats {
+  todaysBookings: number;
+  todaysRevenue: number;
+  totalRevenue: number;
+}
+
+interface OrderStatusEnum {
+  id: string;
+  slno: number;
+  code: string;
+  value: string;
+  description: string | null;
+  metadata: any | null;
+}
+
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    timeoutRef.current = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
 };
 
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  status: "Active" | "Inactive";
-  offerings: Offering[];
-  rating?: number;
-  reviewCount?: number;
-  consents?: Array<{
-    id: string;
-    consent: string;
-    is_active: boolean;
-    consent_category_id: string;
-  }>;
-  display_sections: string[];
-  custom_medical_info: any;
-}
-
-interface ServiceStats {
-  totalServices: number;
-  activeServices: number;
-  totalOfferings: number;
-}
-
-const Services: React.FC = () => {
+const BookingsManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
-  const [allServices, setAllServices] = useState<Service[]>([]);
+  const [bookings, setBookings] = useState<LabTestBooking[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+
   const [openDropdown, setOpenDropdown] = useState<null | "status">(null);
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [serviceActionDropdown, setServiceActionDropdown] = useState<
-    number | null
-  >(null);
+  const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showManageModal, setShowManageModal] = useState(false);
-  const [showAddServiceModal, setShowAddServiceModal] = useState(false);
-  const [selectedServiceForModal, setSelectedServiceForModal] =
-    useState<Service | null>(null);
+  const [openStatusDropdown, setOpenStatusDropdown] = useState<string | null>(
+    null,
+  );
+  const [openActionDropdown, setOpenActionDropdown] = useState<string | null>(
+    null,
+  );
+  const [showViewBooking, setShowViewBooking] = useState(false);
+  const [showAssignPhlebotomist, setShowAssignPhlebotomist] = useState(false);
+  const [selectedBookingForView, setSelectedBookingForView] =
+    useState<LabTestBooking | null>(null);
+  const [selectedBookingForAssign, setSelectedBookingForAssign] =
+    useState<LabTestBooking | null>(null);
+  const { token } = useAdminStore();
 
-  // Get token from store
-  const { token, isLoggedIn } = useAdminStore();
-  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [orderStatuses, setOrderStatuses] = useState<OrderStatusEnum[]>([]);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
-  const statusOptions = ["All Status", "Active", "Inactive"];
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Derived filtered services - No separate state needed
-  const filteredServices = useMemo(() => {
-    return allServices.filter((service) => {
-      const matchesSearch = service.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const matchesStatus =
-        selectedStatus === "All Status" || service.status === selectedStatus;
-      return matchesSearch && matchesStatus;
-    });
-  }, [allServices, searchTerm, selectedStatus]);
-
-  // Generate stats from allServices
-  const stats: ServiceStats = useMemo(() => {
-    const totalServices = allServices.length;
-    const activeServices = allServices.filter(
-      (s) => s.status === "Active",
-    ).length;
-    const totalOfferings = allServices.reduce((acc, service) => {
-      return acc + service.offerings.length;
-    }, 0);
-
-    return {
-      totalServices,
-      activeServices,
-      totalOfferings,
-    };
-  }, [allServices]);
-
-  const fetchServices = async () => {
-    if (!isLoggedIn || !token) {
-      toast.error("Please login to access services");
-      return;
+  const fetchOrderStatuses = async () => {
+    try {
+      const response = await getOrderStatus(token);
+      if (response.success) {
+        const relevantStatuses = (response.roles as OrderStatusEnum[]).filter(
+          (status) =>
+            ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(
+              status.value,
+            ),
+        );
+        setOrderStatuses(relevantStatuses);
+      }
+    } catch (err) {
+      console.error("Failed to fetch order statuses:", err);
     }
+  };
 
+  const fetchBookings = async (page: number = 0, searchText: string = "") => {
     setLoading(true);
+    setSelectedBookings([]);
 
     try {
-      const response = await getHomecareServices(
-        {
-          status: selectedStatus === "All Status" ? null : selectedStatus,
-          search: searchTerm || null,
-        },
-        token,
-      );
+      const pageSize = 20;
+      const payload: SearchLabTestBookingsPayload = {
+        start: page * pageSize,
+        max: pageSize,
+        search_text: searchText || null,
+        filter_status:
+          selectedStatus !== "All Status" ? [selectedStatus] : null,
+        sort_by: "created_date",
+        sort_order: "DESC",
+      };
 
+      const response = await searchLabTestBookings(payload, token);
       if (response.success) {
-        const transformedServices = response.services.map(
-          transformHomecareServiceToService,
-        );
-
-        setTimeout(() => {
-          setAllServices(transformedServices);
-          setLoading(false);
-        }, 0);
+        setBookings(response.labTestBookings);
+        setHasMore(response.labTestBookings.length === pageSize);
+        setCurrentPage(page);
       } else {
-        throw new Error("Failed to fetch services");
+        toast.error("Failed to fetch bookings");
       }
-    } catch (err: any) {
-      console.error("Error fetching services:", err);
-      const errorMessage = err.message || "Failed to fetch services";
-      toast.error(errorMessage);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      toast.error("Error loading bookings");
+    } finally {
       setLoading(false);
     }
   };
-  useEffect(() => {
-    if (isLoggedIn && token) {
-      fetchServices();
-    } else {
-      setAllServices([]);
-      if (!isLoggedIn) {
-        toast.error("Please login to access services");
-      }
+
+  const generateStats = (): BookingStats => {
+    const today = new Date().toISOString().split("T")[0];
+
+    const todaysBookings = bookings.filter((booking) => {
+      const bookingDate = new Date(booking.booking_date)
+        .toISOString()
+        .split("T")[0];
+      return bookingDate === today;
+    }).length;
+
+    const todaysRevenue = bookings.reduce((sum, booking) => {
+      const value = booking.today_revenue ?? "0";
+      const num = parseFloat(value) || 0;
+      return sum + num;
+    }, 0);
+
+    const totalRevenue = bookings.reduce((sum, booking) => {
+      const value = booking.total_revenue ?? "0";
+      const num = parseFloat(value) || 0;
+      return sum + num;
+    }, 0);
+
+    return {
+      todaysBookings,
+      todaysRevenue,
+      totalRevenue,
+    };
+  };
+
+  const stats = generateStats();
+
+  const loadNextPage = () => {
+    if (hasMore && !loading) {
+      const nextPage = currentPage + 1;
+      fetchBookings(nextPage, debouncedSearchTerm);
     }
-  }, [isLoggedIn, token]);
+  };
+
+  const loadPreviousPage = () => {
+    if (currentPage > 0 && !loading) {
+      const prevPage = currentPage - 1;
+      fetchBookings(prevPage, debouncedSearchTerm);
+    }
+  };
 
   useEffect(() => {
-    if (isLoggedIn && token) {
-      if (searchTerm.length === 0 || searchTerm.length > 2) {
-        const timeoutId = setTimeout(() => {
-          fetchServices();
-        }, 500);
+    fetchBookings(0, debouncedSearchTerm);
+    fetchOrderStatuses();
+  }, []);
 
-        return () => clearTimeout(timeoutId);
-      }
+  useEffect(() => {
+    if (debouncedSearchTerm !== undefined) {
+      fetchBookings(0, debouncedSearchTerm);
     }
-  }, [searchTerm, selectedStatus]);
+  }, [debouncedSearchTerm, selectedStatus, token]);
+
+  useEffect(() => {
+    fetchBookings(0, debouncedSearchTerm);
+  }, [selectedStatus]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      fetchBookings(0, searchTerm);
+    }
+  };
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
     setOpenDropdown(null);
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedServices.length === 0) return;
-
-    const confirmed = await new Promise<boolean>((resolve) => {
-      const toastId = toast(
-        (t) => (
-          <div className="flex flex-col gap-2">
-            <span>
-              Are you sure you want to delete {selectedServices.length} selected
-              services?
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  toast.dismiss(toastId);
-                  resolve(true);
-                }}
-                className="px-3 py-1 bg-red-400 text-white rounded text-xs"
-              >
-                Yes, Delete
-              </button>
-              <button
-                onClick={() => {
-                  toast.dismiss(toastId);
-                  resolve(false);
-                }}
-                className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-xs"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ),
-        {
-          duration: Infinity,
-        },
-      );
-    });
-
-    if (confirmed) {
-      setLoading(true);
-      try {
-        // Delete all selected services
-        await Promise.all(
-          selectedServices.map((serviceId) =>
-            deleteHomecareService(serviceId, token),
-          ),
-        );
-
-        toast.success(
-          `${selectedServices.length} services deleted successfully!`,
-        );
-        setSelectedServices([]);
-        await fetchServices();
-      } catch (error: any) {
-        console.error("Error deleting services:", error);
-        toast.error(error.message || "Failed to delete some services");
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const handleSelectService = (serviceId: string, checked: boolean) => {
+  const handleSelectBooking = (bookingId: string, checked: boolean) => {
     if (checked) {
-      setSelectedServices([...selectedServices, serviceId]);
+      setSelectedBookings([...selectedBookings, bookingId]);
     } else {
-      setSelectedServices(selectedServices.filter((id) => id !== serviceId));
+      setSelectedBookings(selectedBookings.filter((id) => id !== bookingId));
     }
   };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedServices(filteredServices.map((service) => service.id));
+      setSelectedBookings(bookings.map((booking) => booking.id));
     } else {
-      setSelectedServices([]);
+      setSelectedBookings([]);
     }
   };
 
-  const handleServiceAction = async (action: string, service: Service) => {
-    setServiceActionDropdown(null);
+  const handleReportUpload = async (bookingId: string) => {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".pdf,.jpg,.jpeg,.png,.doc,.docx";
 
-    switch (action) {
-      case "view":
-        console.log("View service:", service);
-        break;
-      case "edit":
-        setEditingService(service);
-        setShowAddServiceModal(true);
-        break;
-      case "delete":
-        const confirmed = await new Promise<boolean>((resolve) => {
-          const toastId = toast(
-            (t) => (
-              <div className="flex flex-col gap-2 ">
-                <span>Are you sure you want to delete "{service.name}"?</span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      toast.dismiss(toastId);
-                      resolve(true);
-                    }}
-                    className="px-3 py-1 bg-red-400 text-white rounded text-xs"
-                  >
-                    Yes, Delete
-                  </button>
-                  <button
-                    onClick={() => {
-                      toast.dismiss(toastId);
-                      resolve(false);
-                    }}
-                    className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-xs"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ),
-            {
-              duration: Infinity,
-            },
-          );
-        });
+    fileInput.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
 
-        if (confirmed) {
-          try {
-            await deleteHomecareService(service.id, token);
-            toast.success("Service deleted successfully!");
-            await fetchServices();
-          } catch (error: any) {
-            console.error("Error deleting service:", error);
-            toast.error(error.message || "Failed to delete service");
-          }
+      try {
+        setLoading(true);
+
+        if (
+          !file.type.startsWith("image/") &&
+          file.type !== "application/pdf"
+        ) {
+          toast.error("Please upload a valid image or PDF file.");
+          return;
         }
-        break;
-      default:
-        break;
+
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error("File size should be less than 10MB.");
+          return;
+        }
+
+        const fileContent = await fileToBase64(URL.createObjectURL(file));
+
+        const bucketName =
+          process.env.NODE_ENV === "development"
+            ? process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_DEV
+            : process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_PROD;
+
+        if (!bucketName) {
+          throw new Error("S3 bucket name is not configured properly.");
+        }
+
+        const uploadRequest = {
+          bucketName,
+          folderPath: "labTestReports",
+          fileName: `report_${bookingId}_${Date.now()}_${file.name}`,
+          fileContent,
+        };
+
+        const uploadRes = await uploadFile(token!, uploadRequest);
+        const reportUrl = uploadRes.result;
+
+        const updatePayload: UpdateLabTestBookingPayload = {
+          id: bookingId,
+          report_url: reportUrl,
+          report_received_date: new Date().toISOString(),
+        };
+
+        const response = await updateLabTestBooking(updatePayload, token);
+
+        if (response.success) {
+          toast.success("Report uploaded successfully!");
+          fetchBookings(currentPage, debouncedSearchTerm);
+        } else {
+          throw new Error("Failed to update booking with report");
+        }
+      } catch (error: any) {
+        console.error("Report upload failed:", error);
+        toast.error(error.message || "Failed to upload report");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fileInput.click();
+  };
+
+  const fileToBase64 = async (fileUri: string): Promise<string> => {
+    try {
+      const response = await fetch(fileUri);
+      const blob = await response.blob();
+
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result?.toString().split(",")[1];
+          if (base64) {
+            resolve(base64);
+          } else {
+            reject(new Error("Failed to convert file to base64"));
+          }
+        };
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error("Error converting file to base64:", error);
+      throw error;
     }
   };
 
-  const handleManageOfferings = (service: Service) => {
-    setSelectedServiceForModal(service);
-    setShowManageModal(true);
+  const getStatusIdFromValue = (
+    statusValue: string,
+    orderStatuses: OrderStatusEnum[],
+  ): string => {
+    const status = orderStatuses.find(
+      (s) => s.value.toLowerCase() === statusValue.toLowerCase(),
+    );
+    return status?.id || orderStatuses[0]?.id;
   };
 
-  const handleAddService = async (newServiceData: Omit<Service, "id">) => {
-    await fetchServices();
-    toast.success("Service list updated!");
+  const handleOrderStatusChange = async (
+    bookingId: string,
+    newStatus: string,
+  ) => {
+    setUpdatingStatus(bookingId);
+
+    const optimisticBookings = bookings.map((booking) =>
+      booking.id === bookingId
+        ? {
+            ...booking,
+            status: newStatus,
+          }
+        : booking,
+    );
+    setBookings(optimisticBookings);
+    setOpenStatusDropdown(null);
+
+    try {
+      const statusId = getStatusIdFromValue(newStatus, orderStatuses);
+
+      const updatePayload: UpdateLabTestBookingPayload = {
+        id: bookingId,
+        status_id: statusId,
+      };
+
+      const response = await updateLabTestBooking(updatePayload, token);
+
+      if (response.success) {
+        toast.success(`Booking status updated to ${newStatus}`);
+        fetchBookings(currentPage, debouncedSearchTerm);
+      } else {
+        throw new Error("Failed to update booking status");
+      }
+    } catch (error) {
+      console.error("Error updating booking status:", error);
+      toast.error("Failed to update booking status");
+      fetchBookings(currentPage, debouncedSearchTerm);
+    } finally {
+      setUpdatingStatus(null);
+    }
   };
 
-  const handleUpdateService = async (updatedService: Service) => {
-    await fetchServices();
-    setEditingService(null);
-    toast.success("Service updated successfully!");
+  const handleAssignPhlebotomist = (booking: LabTestBooking) => {
+    setSelectedBookingForAssign(booking);
+    setShowAssignPhlebotomist(true);
+    setOpenActionDropdown(null);
   };
 
-  const exportServicesToCSV = (services: Service[]) => {
+  const getPaymentStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "fully paid":
+        return "bg-green-100 text-green-800";
+      case "not paid":
+        return "bg-yellow-100 text-yellow-800";
+      case "failed":
+        return "bg-red-100 text-red-800";
+      case "partially paid":
+        return "bg-orange-100 text-orange-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getOrderStatusColor = (status: string) => {
+    const normalized = status?.toUpperCase();
+
+    switch (normalized) {
+      case "COMPLETED":
+        return "bg-green-100 text-green-800";
+      case "SCHEDULED":
+        return "bg-yellow-100 text-yellow-800";
+      case "CANCELLED":
+        return "bg-red-100 text-red-800";
+      case "IN_PROGRESS":
+        return "bg-blue-100 text-blue-800";
+      case "CONFIRMED":
+        return "bg-yellow-100 text-yellow-800";
+      case "PENDING":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const handleViewBooking = (booking: LabTestBooking) => {
+    setSelectedBookingForView(booking);
+    setShowViewBooking(true);
+    setOpenActionDropdown(null);
+  };
+
+  const formatPatientNames = (
+    patientDetails: PatientDetailsList | null | undefined,
+  ) => {
+    if (!patientDetails || !patientDetails.patients_list) {
+      return "No patient details";
+    }
+
+    const validPatients = patientDetails.patients_list
+      .filter((patient) => patient && patient.name)
+      .map((patient) => patient.name);
+
+    return validPatients.length > 0 ? validPatients.join(", ") : "No patients";
+  };
+
+  const exportBookingsToCSV = (bookings: LabTestBooking[]) => {
     const headers = [
-      "Service Name",
-      "Description",
-      "Category",
+      "Booking ID",
+      "Patient Names",
+      "Test Names",
+      "Booking Date",
       "Status",
-      "Offerings Count",
-      "Offerings",
-      "Display Sections",
-      "Custom Medical Info",
+      "Payment Status",
+      "Amount (₹)",
+      "Number of Patients",
+      "Today's Revenue",
+      "Total Revenue",
     ];
+
+    const formatPatientNamesCSV = (
+      patientDetails: PatientDetailsList | null | undefined,
+    ) => {
+      if (!patientDetails || !patientDetails.patients_list) {
+        return "No patient details";
+      }
+
+      const validPatients = patientDetails.patients_list
+        .filter((patient) => patient && patient.name)
+        .map((patient) => patient.name);
+
+      return validPatients.length > 0
+        ? validPatients.join("; ")
+        : "No patients";
+    };
 
     const csvContent = [
       headers.join(","),
-      ...services.map((s) =>
+      ...bookings.map((b) =>
         [
-          `"${s.name}"`,
-          `"${s.description}"`,
-          `"${s.category}"`,
-          s.status,
-          s.offerings.length,
-          `"${s.offerings.map((o) => o.name).join("; ")}"`,
-          `"${(s.display_sections || []).join("; ")}"`,
-          `"${JSON.stringify(s.custom_medical_info || {}).replace(
-            /"/g,
-            '""',
-          )}"`,
+          `"${b.id}"`,
+          `"${formatPatientNamesCSV(b.patient_details)}"`,
+          `"${
+            Array.isArray(b.labtestnames)
+              ? b.labtestnames.join("; ")
+              : b.labtestnames || "No tests"
+          }"`,
+          `"${
+            b.booking_date
+              ? new Date(b.booking_date).toLocaleDateString()
+              : "No date"
+          }"`,
+          b.status || "Unknown",
+          b.payment_status || "Unknown",
+          parseFloat(b.amount || "0").toFixed(2),
+          b.patient_details?.patients_list?.length || 0,
+          parseFloat(b.today_revenue || "0").toFixed(2),
+          parseFloat(b.total_revenue || "0").toFixed(2),
         ].join(","),
       ),
     ].join("\n");
@@ -388,7 +507,7 @@ const Services: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `services_export_${new Date().toISOString().split("T")[0]}.csv`,
+      `bookings_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -397,20 +516,19 @@ const Services: React.FC = () => {
     document.body.removeChild(link);
   };
 
-  // 3. Add handleExport function inside the component
   const handleExport = () => {
-    if (allServices.length === 0) {
-      toast.error("No services to export");
+    if (bookings.length === 0) {
+      toast.error("No bookings to export");
       return;
     }
 
-    const servicesToExport =
-      selectedServices.length > 0
-        ? allServices.filter((s) => selectedServices.includes(s.id))
-        : filteredServices;
+    const bookingsToExport =
+      selectedBookings.length > 0
+        ? bookings.filter((b) => selectedBookings.includes(b.id))
+        : bookings;
 
-    exportServicesToCSV(servicesToExport);
-    toast.success(`Exported ${servicesToExport.length} services successfully!`);
+    exportBookingsToCSV(bookingsToExport);
+    toast.success(`Exported ${bookingsToExport.length} bookings successfully!`);
   };
 
   useEffect(() => {
@@ -418,7 +536,12 @@ const Services: React.FC = () => {
       const target = event.target as HTMLElement;
       if (!target.closest(".dropdown-toggle")) {
         setOpenDropdown(null);
-        setServiceActionDropdown(null);
+      }
+      if (!target.closest(".status-dropdown")) {
+        setOpenStatusDropdown(null);
+      }
+      if (!target.closest(".action-dropdown")) {
+        setOpenActionDropdown(null);
       }
     };
 
@@ -433,57 +556,33 @@ const Services: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
-            Services Management
+            Bookings Management
           </h1>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowAddServiceModal(true)}
-              disabled={loading}
-              className={`flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg ${
-                loading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-[#0088B1] hover:bg-[#00729A] cursor-pointer"
-              } text-[#F8F8F8]`}
-            >
-              <Plus className="w-3 h-3" />
-              {loading ? "Loading..." : "New Service"}
-            </button>
-            {selectedServices.length > 0 && (
-              <button
-                onClick={() => handleBulkDelete()}
-                disabled={loading}
-                className={`flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg ${
-                  loading
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-red-400 hover:bg-red-500"
-                } text-[#F8F8F8]`}
-              >
-                <Trash2 className="w-3 h-3" />
-                {loading
-                  ? "Deleting..."
-                  : `Delete (${selectedServices.length})`}
-              </button>
-            )}
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
           <StatsCard
-            title="Total Services"
-            stats={stats.totalServices}
-            icon={<Settings className="w-5 h-5" />}
+            title="Today's Bookings"
+            stats={stats.todaysBookings}
+            icon={<Calendar className="w-5 h-5" />}
             color="text-[#0088B1]"
           />
           <StatsCard
-            title="Active Services"
-            stats={stats.activeServices}
-            icon={<Activity className="w-5 h-5" />}
+            title="Today's Revenue"
+            stats={`₹ ${stats.todaysRevenue.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`}
+            icon={<DollarSign className="w-5 h-5" />}
             color="text-[#0088B1]"
           />
           <StatsCard
-            title="Total Offerings"
-            stats={stats.totalOfferings}
-            icon={<Users className="w-5 h-5" />}
+            title="Total Revenue"
+            stats={`₹ ${stats.totalRevenue.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`}
+            icon={<TrendingUp className="w-5 h-5" />}
             color="text-[#0088B1]"
           />
         </div>
@@ -493,25 +592,32 @@ const Services: React.FC = () => {
             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by services name..."
+              placeholder="Search by booking ID, patient name, test name..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
+              onKeyPress={handleSearchKeyPress}
               className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
+            {loading && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-600"></div>
+              </div>
+            )}
           </div>
+
           <div className="flex gap-2">
             <button
               onClick={handleExport}
-              disabled={loading || allServices.length === 0}
+              disabled={loading || bookings.length === 0}
               className={`flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50 ${
-                loading || allServices.length === 0
+                loading || bookings.length === 0
                   ? "opacity-50 cursor-not-allowed"
                   : ""
               }`}
             >
               <Download className="w-4 h-4" />
-              {selectedServices.length > 0
-                ? `Export Selected (${selectedServices.length})`
+              {selectedBookings.length > 0
+                ? `Export Selected (${selectedBookings.length})`
                 : "Export All"}
             </button>
           </div>
@@ -520,163 +626,296 @@ const Services: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
-              All Services
+              All Bookings
               <span className="text-[8px] text-[#899193] font-normal ml-2">
-                {filteredServices.length} Services
+                {bookings.length} Bookings on this page
               </span>
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+          <div
+            className="overflow-auto"
+            style={{ maxHeight: "calc(100vh - 350px)", minHeight: "400px" }}
+          >
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                       checked={
-                        selectedServices.length === filteredServices.length &&
-                        filteredServices.length > 0
+                        selectedBookings.length === bookings.length &&
+                        bookings.length > 0
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
-                    Service Detail
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
+                    Booking Details
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
+                    Patient Details
+                  </th>
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-right text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
+                    Payment
+                  </th>
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-right text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {loading ? (
+                {loading && bookings.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
                     </td>
                   </tr>
-                ) : filteredServices.length === 0 ? (
+                ) : bookings.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">No services found.</div>
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <div className="text-gray-500">No bookings found.</div>
                     </td>
                   </tr>
                 ) : (
-                  filteredServices.map((service) => (
-                    <tr key={service.id} className="hover:bg-gray-50">
+                  bookings.map((booking) => (
+                    <tr key={booking.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                          checked={selectedServices.includes(service.id)}
+                          checked={selectedBookings.includes(booking.id)}
                           onChange={(e) =>
-                            handleSelectService(service.id, e.target.checked)
+                            handleSelectBooking(booking.id, e.target.checked)
                           }
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col min-w-[200px]">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">
-                            {service.name}
+                            {Array.isArray(booking.labtestnames)
+                              ? booking.labtestnames.join(", ")
+                              : "No tests listed"}
                           </div>
-                          <div className="text-xs text-gray-500 mb-2">
-                            {service.description}
+                          <div className="text-xs text-gray-500">
+                            {booking.ordernumber
+                              ? `Booking ID: ${booking.ordernumber}`
+                              : "No Booking ID"}
                           </div>
-                          <div className="flex gap-2 flex-wrap">
-                            {service.offerings.map((offering, index) => {
-                              const isActiveOffering = offering.name
-                                .toLowerCase()
-                                .includes("active");
-                              const activeClasses =
-                                "px-2 py-1 text-[8px] text-[#9B51E0] border border-[#9B51E0] rounded hover:bg-[#9B51E0] hover:text-white transition-colors";
-                              const offeringClasses =
-                                "px-2 py-1 text-[8px] text-[#2196F3] border border-[#2196F3] rounded hover:bg-[#2196F3] hover:text-white transition-colors";
-
-                              return (
-                                <span
-                                  key={index}
-                                  className={
-                                    isActiveOffering
-                                      ? activeClasses
-                                      : offeringClasses
-                                  }
-                                >
-                                  {offering.name}
-                                </span>
-                              );
-                            })}
+                          <div className="text-xs text-gray-500">
+                            Date:{" "}
+                            {booking.booking_date
+                              ? new Date(
+                                  booking.booking_date,
+                                ).toLocaleDateString()
+                              : "No date"}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col min-w-[150px]">
+                          <div className="text-xs font-medium text-[#161D1F] mb-1">
+                            {formatPatientNames(booking.patient_details)}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Patients:{" "}
+                            {booking.patient_details?.patients_list?.length ||
+                              0}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge status={service.status} />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-[#161D1F]">
-                        <div className="flex items-center gap-2 justify-end">
-                          <span
-                            onClick={() => handleManageOfferings(service)}
-                            className="text-[#161D1F] hover:text-black cursor-pointer text-xs hover:underline"
-                          >
-                            Manage Offerings
-                          </span>
-                          <button
-                            className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
-                            onClick={() => handleManageOfferings(service)}
-                            title="View Service"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleServiceAction("edit", service)}
-                            className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
-                            title="Edit Service"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
+                        <div className="relative status-dropdown">
                           <button
                             onClick={() =>
-                              handleServiceAction("delete", service)
+                              setOpenStatusDropdown(
+                                openStatusDropdown === booking.id
+                                  ? null
+                                  : booking.id,
+                              )
                             }
-                            className="p-1 text-[#F44336] hover:text-red-500 cursor-pointer"
-                            title="Delete Service"
+                            disabled={updatingStatus === booking.id}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium ${getOrderStatusColor(
+                              booking.status,
+                            )} hover:opacity-80 transition-opacity ${
+                              updatingStatus === booking.id
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            {updatingStatus === booking.id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                                Updating...
+                              </>
+                            ) : (
+                              <>
+                                {booking?.status
+                                  ? booking.status.charAt(0).toUpperCase() +
+                                    booking.status.slice(1).toLowerCase()
+                                  : "Unknown"}
+                                <ChevronDown className="w-3 h-3 ml-1" />
+                              </>
+                            )}
                           </button>
+                          {openStatusDropdown === booking.id &&
+                            updatingStatus !== booking.id && (
+                              <div className="absolute left-0 mt-1 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-20">
+                                <div className="flex flex-col ">
+                                  {orderStatuses.map((status) => (
+                                    <div key={status.id}>
+                                      <button
+                                        onClick={() =>
+                                          handleOrderStatusChange(
+                                            booking.id,
+                                            status.value,
+                                          )
+                                        }
+                                        disabled={updatingStatus === booking.id}
+                                        className="w-full px-3 py-2 text-left text-[10px] text-[#161D1F] hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {status.value.charAt(0).toUpperCase() +
+                                          status.value.slice(1).toLowerCase()}
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium ${getPaymentStatusColor(
+                            booking.payment_status,
+                          )}`}
+                        >
+                          {booking.payment_status || "Not Specified"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-xs font-medium text-[#161D1F]">
+                          ₹{" "}
+                          {parseFloat(
+                            booking.total_order_amount || "0",
+                          ).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">
+                        <div className="flex items-center gap-2 justify-end">
+                          <div className="relative action-dropdown">
+                            <button
+                              onClick={() =>
+                                setOpenActionDropdown(
+                                  openActionDropdown === booking.id
+                                    ? null
+                                    : booking.id,
+                                )
+                              }
+                              className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
+                            {openActionDropdown === booking.id && (
+                              <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+                                <ul className="flex flex-col divide-y divide-gray-200">
+                                  <li>
+                                    <button
+                                      onClick={() => handleViewBooking(booking)}
+                                      className="w-full px-3 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-2"
+                                    >
+                                      <Eye className="w-3 h-3" />
+                                      View Details
+                                    </button>
+                                  </li>
+                                  {(booking.status === "PENDING" ||
+                                    booking.status === "SCHEDULED") && (
+                                    <li>
+                                      <button
+                                        onClick={() =>
+                                          handleAssignPhlebotomist(booking)
+                                        }
+                                        className="w-full px-3 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 cursor-pointer transition-colors flex items-center gap-2"
+                                      >
+                                        <UserPlus className="w-3 h-3" />
+                                        Assign Phlebotomist
+                                      </button>
+                                    </li>
+                                  )}
+                                  {booking.status === "COMPLETED" && (
+                                    <li>
+                                      <button
+                                        onClick={() =>
+                                          handleReportUpload(booking.id)
+                                        }
+                                        className="w-full px-3 py-2 text-left text-[12px] text-[#161D1F] hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                      >
+                                        <Upload className="w-3 h-3" />
+                                        Upload Report
+                                      </button>
+                                    </li>
+                                  )}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>
                   ))
                 )}
+                {loading && bookings.length > 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-4 text-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-600 mx-auto"></div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={currentPage}
+            hasMore={hasMore}
+            loading={loading}
+            onPrevious={loadPreviousPage}
+            onNext={loadNextPage}
+            totalItems={bookings.length}
+            itemsPerPage={20}
+          />
         </div>
       </div>
-      <ManageOfferingsModal
-        isOpen={showManageModal}
+
+      <ViewBookingModal
+        isOpen={showViewBooking}
         onClose={() => {
-          setShowManageModal(false);
-          setSelectedServiceForModal(null);
+          setShowViewBooking(false);
+          setSelectedBookingForView(null);
         }}
-        service={selectedServiceForModal}
+        booking={selectedBookingForView}
       />
-      <AddServiceModal
-        isOpen={showAddServiceModal}
+
+      <AssignPhlebotomistModal
+        isOpen={showAssignPhlebotomist}
         onClose={() => {
-          setShowAddServiceModal(false);
-          setEditingService(null);
+          setShowAssignPhlebotomist(false);
+          setSelectedBookingForAssign(null);
         }}
-        onAddService={handleAddService}
-        onUpdateService={handleUpdateService}
-        editService={editingService}
+        booking={selectedBookingForAssign}
       />
     </div>
   );
 };
 
-export default Services;
+export default BookingsManagement;

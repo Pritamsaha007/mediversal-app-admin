@@ -30,6 +30,7 @@ import {
   updatePhlebotomist,
 } from "../services/index";
 import { EnumItem } from "@/app/service/enumService";
+import Pagination from "@/app/components/common/pagination";
 
 interface PhlebotomistStats {
   totalPhlebotomists: number;
@@ -50,7 +51,7 @@ const PhlebotomistManagement: React.FC = () => {
     null | "filter" | "location"
   >(null);
   const [selectedPhlebotomists, setSelectedPhlebotomists] = useState<string[]>(
-    []
+    [],
   );
   const [loading, setLoading] = useState(false);
   const [expandedSchedules, setExpandedSchedules] = useState<string[]>([]);
@@ -63,13 +64,18 @@ const PhlebotomistManagement: React.FC = () => {
   const [daysData, setDaysData] = useState<EnumItem[]>([]);
   const [daysDataLoaded, setDaysDataLoaded] = useState(false);
   const [specializationsData, setSpecializationsData] = useState<EnumItem[]>(
-    []
+    [],
   );
   const [fetchingData, setFetchingData] = useState(false);
   const [enumDataLoaded, setEnumDataLoaded] = useState(false);
   const [serviceCitiesData, setServiceCitiesData] = useState<EnumItem[]>([]);
   const [serviceAreasData, setServiceAreasData] = useState<EnumItem[]>([]);
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 10;
+
   const { token } = useAdminStore();
+
   useEffect(() => {
     const fetchEnumData = async () => {
       if (!token) return;
@@ -111,6 +117,7 @@ const PhlebotomistManagement: React.FC = () => {
 
     fetchEnumData();
   }, [token]);
+
   useEffect(() => {
     const fetchEnumData = async () => {
       if (!token) return;
@@ -162,6 +169,7 @@ const PhlebotomistManagement: React.FC = () => {
       updated_by: apiPhlebo.updated_by || "",
     };
   };
+
   const handleDeletePhlebotomist = async (phlebotomist: Phlebotomist) => {
     if (!token) {
       toast.error("Authentication required");
@@ -196,7 +204,7 @@ const PhlebotomistManagement: React.FC = () => {
         ),
         {
           duration: Infinity,
-        }
+        },
       );
     });
 
@@ -207,29 +215,27 @@ const PhlebotomistManagement: React.FC = () => {
     try {
       setLoading(true);
 
-      // Helper functions to get IDs from display names
       const getCityId = (cityName: string): string => {
         const city = serviceCitiesData.find((item) => item.value === cityName);
-        return city?.id || cityName; // Fallback to original if not found
+        return city?.id || cityName;
       };
 
       const getAreaId = (areaName: string): string => {
         const area = serviceAreasData.find((item) => item.value === areaName);
-        return area?.id || areaName; // Fallback to original if not found
+        return area?.id || areaName;
       };
 
       const getSpecializationId = (specializationName: string): string => {
         const specialization = specializationsData.find(
-          (item) => item.value === specializationName
+          (item) => item.value === specializationName,
         );
-        return specialization?.id || specializationName; // Fallback to original if not found
+        return specialization?.id || specializationName;
       };
 
-      // Convert display names to UUIDs
       const serviceCityId = getCityId(phlebotomist.service_city);
       const serviceAreaId = getAreaId(phlebotomist.service_area);
       const specializationId = getSpecializationId(
-        phlebotomist.specialization_id
+        phlebotomist.specialization_id,
       );
 
       const updatePayload = {
@@ -239,9 +245,9 @@ const PhlebotomistManagement: React.FC = () => {
         email: phlebotomist.email,
         rating: phlebotomist.rating,
         experience_in_yrs: phlebotomist.experience_in_yrs,
-        service_city: serviceCityId, // Use UUID instead of display name
-        service_area: serviceAreaId, // Use UUID instead of display name
-        specialization_id: specializationId, // Use UUID instead of display name
+        service_city: serviceCityId,
+        service_area: serviceAreaId,
+        specialization_id: specializationId,
         license_no: phlebotomist.license_no,
         joining_date: phlebotomist.joining_date,
         is_home_collection_certified: phlebotomist.is_home_collection_certified,
@@ -263,6 +269,7 @@ const PhlebotomistManagement: React.FC = () => {
       setLoading(false);
     }
   };
+
   const filterOptions = ["All Phlebotomist", "Active", "Inactive"];
   const locationOptions = [
     "All Locations",
@@ -276,7 +283,7 @@ const PhlebotomistManagement: React.FC = () => {
   const generateStats = (): PhlebotomistStats => {
     const totalPhlebotomists = phlebotomists.length;
     const activePhlebotomists = phlebotomists.filter(
-      (p) => p.is_available
+      (p) => p.is_available,
     ).length;
     const avgExp =
       phlebotomists.reduce((sum, p) => sum + p.experience_in_yrs, 0) /
@@ -321,8 +328,8 @@ const PhlebotomistManagement: React.FC = () => {
           selectedFilter === "Active"
             ? true
             : selectedFilter === "Inactive"
-            ? false
-            : null,
+              ? false
+              : null,
         filter_is_home_collection_certified: null,
         sort_by: "name",
         sort_order: "ASC",
@@ -332,7 +339,7 @@ const PhlebotomistManagement: React.FC = () => {
 
       if (response.success) {
         const phlebotomistData = response.phlebotomists.map(
-          convertSearchResultToPhlebotomist
+          convertSearchResultToPhlebotomist,
         );
         setPhlebotomists(phlebotomistData);
         setFilteredPhlebotomists(phlebotomistData);
@@ -362,19 +369,47 @@ const PhlebotomistManagement: React.FC = () => {
     }
   }, [searchTerm, selectedFilter, selectedLocation, daysDataLoaded]);
 
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchTerm, selectedFilter, selectedLocation]);
+
+  const paginatedPhlebotomists = React.useMemo(() => {
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredPhlebotomists.slice(startIndex, endIndex);
+  }, [filteredPhlebotomists, currentPage, itemsPerPage]);
+
+  const hasMore = React.useMemo(() => {
+    return (currentPage + 1) * itemsPerPage < filteredPhlebotomists.length;
+  }, [filteredPhlebotomists, currentPage, itemsPerPage]);
+
+  const totalItems = filteredPhlebotomists.length;
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (hasMore) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
   const handleSelectPhlebotomist = (id: string, checked: boolean) => {
     if (checked) {
       setSelectedPhlebotomists([...selectedPhlebotomists, id]);
     } else {
       setSelectedPhlebotomists(
-        selectedPhlebotomists.filter((pid) => pid !== id)
+        selectedPhlebotomists.filter((pid) => pid !== id),
       );
     }
   };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedPhlebotomists(filteredPhlebotomists.map((p) => p.id));
+      setSelectedPhlebotomists(paginatedPhlebotomists.map((p) => p.id));
     } else {
       setSelectedPhlebotomists([]);
     }
@@ -390,7 +425,7 @@ const PhlebotomistManagement: React.FC = () => {
 
   const renderSchedules = (
     schedules: PhlebotomistAvailability[],
-    phlebotomistId: string
+    phlebotomistId: string,
   ) => {
     const isExpanded = expandedSchedules.includes(phlebotomistId);
     const visibleSchedules = isExpanded ? schedules : schedules.slice(0, 2);
@@ -497,7 +532,7 @@ const PhlebotomistManagement: React.FC = () => {
           p.is_available ? "Active" : "Inactive",
           p.is_deleted ? "Yes" : "No",
           `"${formatAvailability(p.availability || [])}"`,
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -508,7 +543,7 @@ const PhlebotomistManagement: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `phlebotomists_export_${new Date().toISOString().split("T")[0]}.csv`
+      `phlebotomists_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -530,7 +565,7 @@ const PhlebotomistManagement: React.FC = () => {
 
     exportPhlebotomistsToCSV(phlebotomistsToExport);
     toast.success(
-      `Exported ${phlebotomistsToExport.length} phlebotomists successfully!`
+      `Exported ${phlebotomistsToExport.length} phlebotomists successfully!`,
     );
   };
 
@@ -614,76 +649,6 @@ const PhlebotomistManagement: React.FC = () => {
                 : "Export All"}
             </button>
           </div>
-          {/* <div className="flex gap-3">
-            <button className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-3 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50">
-              <ArrowUpDown className="w-4 h-4" />
-              Sort
-            </button>
-            <div className="relative">
-              <button
-                onClick={() =>
-                  setOpenDropdown(openDropdown === "filter" ? null : "filter")
-                }
-                className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-3 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
-              >
-                {selectedFilter}
-                <ChevronDown className="w-5 h-5" />
-              </button>
-              {openDropdown === "filter" && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                  {filterOptions.map((filter) => (
-                    <button
-                      key={filter}
-                      onClick={() => {
-                        setSelectedFilter(filter);
-                        setOpenDropdown(null);
-                      }}
-                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
-                        selectedFilter === filter
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-[#161D1F]"
-                      }`}
-                    >
-                      {filter}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="relative">
-              <button
-                onClick={() =>
-                  setOpenDropdown(
-                    openDropdown === "location" ? null : "location"
-                  )
-                }
-                className="dropdown-toggle flex items-center text-[12px] gap-2 px-4 py-3 border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50"
-              >
-                {selectedLocation}
-                <ChevronDown className="w-5 h-5" />
-              </button>
-              {openDropdown === "location" && (
-                <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                  {locationOptions.map((location) => (
-                    <button
-                      key={location}
-                      onClick={() => {
-                        setSelectedLocation(location);
-                        setOpenDropdown(null);
-                      }}
-                      className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
-                        selectedLocation === location
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-[#161D1F]"
-                      }`}
-                    >
-                      {location}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div> */}
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -696,32 +661,35 @@ const PhlebotomistManagement: React.FC = () => {
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+          <div
+            className="overflow-auto"
+            style={{ maxHeight: "calc(100vh - 350px)", minHeight: "400px" }}
+          >
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                       checked={
                         selectedPhlebotomists.length ===
-                          filteredPhlebotomists.length &&
-                        filteredPhlebotomists.length > 0
+                          paginatedPhlebotomists.length &&
+                        paginatedPhlebotomists.length > 0
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Phlebotomist Details
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Today's Schedule
                   </th>
-                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-right text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  <th className="px-6 py-3 text-right text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Actions
                   </th>
                 </tr>
@@ -731,12 +699,9 @@ const PhlebotomistManagement: React.FC = () => {
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
-                      {/* <div className="text-gray-500">
-                        Loading phlebotomists...
-                      </div> */}
                     </td>
                   </tr>
-                ) : filteredPhlebotomists.length === 0 ? (
+                ) : paginatedPhlebotomists.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">
                       <div className="text-gray-500">
@@ -745,25 +710,25 @@ const PhlebotomistManagement: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredPhlebotomists.map((phlebotomist) => (
+                  paginatedPhlebotomists.map((phlebotomist) => (
                     <tr key={phlebotomist.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                           checked={selectedPhlebotomists.includes(
-                            phlebotomist.id
+                            phlebotomist.id,
                           )}
                           onChange={(e) =>
                             handleSelectPhlebotomist(
                               phlebotomist.id,
-                              e.target.checked
+                              e.target.checked,
                             )
                           }
                         />
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1 min-w-[250px]">
                           <div className="text-xs font-medium text-[#161D1F]">
                             {phlebotomist.name}
                           </div>
@@ -786,10 +751,12 @@ const PhlebotomistManagement: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        {renderSchedules(
-                          phlebotomist.availability,
-                          phlebotomist.id
-                        )}
+                        <div className="min-w-[200px]">
+                          {renderSchedules(
+                            phlebotomist.availability,
+                            phlebotomist.id,
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <StatusBadge
@@ -832,6 +799,20 @@ const PhlebotomistManagement: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {filteredPhlebotomists.length > 0 && (
+            <div className="border-t border-gray-200 bg-white">
+              <Pagination
+                currentPage={currentPage}
+                hasMore={hasMore}
+                loading={loading}
+                onPrevious={handlePreviousPage}
+                onNext={handleNextPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+              />
+            </div>
+          )}
         </div>
       </div>
 
