@@ -715,25 +715,21 @@ export default function HealthcareDashboard() {
               icon={<Users className="w-5 h-5" />}
               subtitle="Active Customers in system"
               color="text-[#0088b1]"
-              stats={
-                customerMetrics
-                  ? customerMetrics.total_active_customers
-                  : "Loading..."
-              }
+              stats={customerMetrics ? customerMetrics.total_customers : 0}
             />
             <StatsCard
               title="Total Products"
               icon={<Package className="w-5 h-5" />}
               subtitle="Products in inventory"
               color="text-[#0088b1]"
-              stats={statistics ? statistics.activeproducts : "Loading..."}
+              stats={statistics ? statistics.activeproducts : 0}
             />
             <StatsCard
               title="Total Doctors"
               icon={<User className="w-5 h-5" />}
               subtitle="Active doctors"
               color="text-[#0088b1]"
-              stats={doctorCount > 0 ? doctorCount : "Loading..."}
+              stats={doctorCount > 0 ? doctorCount : 0}
             />
           </div>
         </div>

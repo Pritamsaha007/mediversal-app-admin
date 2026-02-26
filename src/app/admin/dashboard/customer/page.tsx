@@ -8,6 +8,7 @@ import {
   UserCheck,
   ShoppingCart,
   DollarSign,
+  Plus,
 } from "lucide-react";
 import { CustomerService } from "./services/customerService";
 import CreateCustomerModal from "./components/CreateCustomerModal";
@@ -82,7 +83,7 @@ const CustomerCatalog: React.FC = () => {
       const response = await CustomerService.searchCustomers(
         search,
         start,
-        itemsPerPage
+        itemsPerPage,
       );
 
       if (response.success) {
@@ -97,7 +98,7 @@ const CustomerCatalog: React.FC = () => {
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to fetch customers"
+        err instanceof Error ? err.message : "Failed to fetch customers",
       );
       setCustomers([]);
       setTotalCount(0);
@@ -205,9 +206,10 @@ const CustomerCatalog: React.FC = () => {
               </h1>
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-[#0088B1] text-white text-[10px] px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#006f8e] cursor-pointer"
+                className="bg-[#0088B1] text-white text-[12px] px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#006f8e] cursor-pointer"
               >
-                + New Customer
+                <Plus className="w-3 h-3" />
+                Add New Customer
               </button>
             </div>
             {apiError.type && (
@@ -220,7 +222,9 @@ const CustomerCatalog: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
               <StatsCard
                 title="Total Customers"
-                stats={metricsLoading ? "..." : metrics?.total_customers ?? "0"}
+                stats={
+                  metricsLoading ? "..." : (metrics?.total_customers ?? "0")
+                }
                 icon={<Users className="w-5 h-5" />}
                 color="text-[#0088b1]"
               />
@@ -229,14 +233,14 @@ const CustomerCatalog: React.FC = () => {
                 stats={
                   metricsLoading
                     ? "..."
-                    : metrics?.total_active_customers ?? "0"
+                    : (metrics?.total_active_customers ?? "0")
                 }
                 icon={<UserCheck className="w-5 h-5" />}
                 color="text-[#0088b1]"
               />
               <StatsCard
                 title="Total Orders"
-                stats={metricsLoading ? "..." : metrics?.total_orders ?? "0"}
+                stats={metricsLoading ? "..." : (metrics?.total_orders ?? "0")}
                 icon={<ShoppingCart className="w-5 h-5" />}
                 color="text-[#0088b1]"
               />
@@ -246,7 +250,7 @@ const CustomerCatalog: React.FC = () => {
                   metricsLoading
                     ? "..."
                     : CustomerService.formatCurrency(
-                        parseFloat(metrics?.net_revenue ?? "0")
+                        parseFloat(metrics?.net_revenue ?? "0"),
                       )
                 }
                 icon={<DollarSign className="w-5 h-5" />}

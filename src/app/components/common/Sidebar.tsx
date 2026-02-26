@@ -1,26 +1,22 @@
 "use client";
 import { useEffect, useState } from "react";
 import {
-  LucideComputer,
-  ChevronRight,
   ChevronDown,
   CornerDownRight,
   LayoutDashboard,
   PillIcon,
   BadgePercent,
   Ambulance,
-  UserLock,
   Funnel,
-  Phone,
   Laptop,
   Bike,
   BookUser,
-  Bell,
   BellRing,
 } from "lucide-react";
 import MainMediversalLogo from "../../../../public/Mediversal 247 Logo.svg";
 import Image from "next/image";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface MenuItem {
   name: string;
@@ -31,27 +27,18 @@ interface MenuItem {
   }[];
 }
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const Sidebar = () => {
   const [selectedMenu, setSelectedMenu] = useState<string>("Dashboard");
-  const [openMenu, setOpenMenu] = useState<string | null>("Front Desk");
+  const [openMenu, setOpenMenu] = useState<string | null>("Dashboard");
   const [selectedSubMenu, setSelectedSubMenu] = useState<string | null>(
-    "Patient Search"
+    "Overview",
   );
+  const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
+  const [hoveredSubMenu, setHoveredSubMenu] = useState<string | null>(null);
   const pathname = usePathname();
-  useEffect(() => {
-    menuItems.forEach((menu) => {
-      menu.subItems?.forEach((sub) => {
-        if (pathname.startsWith(sub.link)) {
-          setSelectedMenu(menu.name);
-          setOpenMenu(menu.name);
-          setSelectedSubMenu(sub.name);
-        }
-      });
-    });
-  }, [pathname]);
-
+  const router = useRouter();
   const menuItems: MenuItem[] = [
     {
       name: "Dashboard",
@@ -82,33 +69,8 @@ const Sidebar = () => {
           link: "/admin/dashboard/pharmacy/product",
         },
         { name: "Order", link: "/admin/dashboard/pharmacy/order" },
-        // {
-        //   name: "Inventory",
-        //   link: "/admin/dashboard/pharmacy/inventory",
-        // },
-        // {
-        //   name: "Prescription",
-        //   link: "/admin/dashboard/pharmacy/prescription",
-        // },
       ],
     },
-
-    // {
-    //   name: "Patient",
-    //   icon: <LucideComputer size={18} />,
-    //   // subItems: [
-    //   //   {
-    //   //     name: "Create Permission",
-    //   //     link: "/dashboard/user-management/create-permission",
-    //   //   },
-    //   //   { name: "Create Role", link: "/dashboard/user-management/create-role" },
-    //   //   { name: "Role List", link: "/dashboard/user-management/role-list" },
-    //   //   {
-    //   //     name: "List Access Permission",
-    //   //     link: "/dashboard/user-management/list-access-role",
-    //   //   },
-    //   // ],
-    // },
     {
       name: "Coupons",
       icon: <BadgePercent size={18} />,
@@ -117,12 +79,6 @@ const Sidebar = () => {
           name: "Coupons",
           link: "/admin/dashboard/coupons",
         },
-        // { name: "Create Role", link: "/dashboard/user-management/create-role" },
-        // { name: "Role List", link: "/dashboard/user-management/role-list" },
-        // {
-        //   name: "List Access Permission",
-        //   link: "/dashboard/user-management/list-access-role",
-        // },
       ],
     },
     {
@@ -141,10 +97,6 @@ const Sidebar = () => {
           name: "Staff",
           link: "/admin/dashboard/home-care/staff",
         },
-        // {
-        //   name: "Care Plan",
-        //   link: "/admin/dashboard/home-care/care-plan",
-        // },
       ],
     },
     {
@@ -163,11 +115,6 @@ const Sidebar = () => {
           name: "Consultations",
           link: "/admin/dashboard/consultations/consultation",
         },
-
-        // {
-        //   name: "Chat Test",
-        //   link: "/admin/dashboard/consultations/test",
-        // },
       ],
     },
     {
@@ -226,17 +173,58 @@ const Sidebar = () => {
     },
   ];
 
+  useEffect(() => {
+    let foundMatch = false;
+
+    menuItems.forEach((menu) => {
+      if (menu.subItems && menu.subItems.length > 0) {
+        const matchingSubItem = menu.subItems.find((sub) =>
+          pathname.startsWith(sub.link),
+        );
+
+        if (matchingSubItem) {
+          setSelectedMenu(menu.name);
+          setOpenMenu(menu.name);
+          setSelectedSubMenu(matchingSubItem.name);
+          foundMatch = true;
+        }
+      }
+    });
+
+    if (!foundMatch) {
+      setSelectedMenu("Dashboard");
+      setOpenMenu("Dashboard");
+      setSelectedSubMenu("Overview");
+    }
+  }, [pathname]);
+
   const toggleMenu = (menuName: string) => {
-    setOpenMenu(openMenu === menuName ? null : menuName);
-    setSelectedMenu(menuName);
+    if (openMenu === menuName) {
+      setOpenMenu(null);
+    } else {
+      setOpenMenu(menuName);
+      setSelectedMenu(menuName);
+
+      const menu = menuItems.find((m) => m.name === menuName);
+      if (menu?.subItems && menu.subItems.length > 0) {
+        const firstSubItem = menu.subItems[0];
+        setSelectedSubMenu(firstSubItem.name);
+
+        router.push(firstSubItem.link);
+      }
+    }
   };
+
   const handleSubMenuClick = (subMenuName: string) => {
     setSelectedSubMenu(subMenuName);
   };
 
   return (
-    <div className="flex flex-col h-screen w-[302px] bg-white shadow-md">
-      <div className="flex items-center justify-center h-[80px] p-10">
+    <div className="flex flex-col h-screen w-[302px] bg-white shadow-xl">
+      <motion.div
+        className="flex items-center justify-center h-[80px] p-10"
+        whileHover="hover"
+      >
         <Image
           src={MainMediversalLogo}
           alt="Mediversal 247 Logo"
@@ -245,75 +233,124 @@ const Sidebar = () => {
           className="w-full max-w-sm mx-auto"
           priority
         />
-      </div>
+      </motion.div>
 
       <div className="border-t border-[#D3D7D8]"></div>
 
       <div className="flex flex-col overflow-y-auto py-6 px-2 space-y-1 justify-center items-center">
         {menuItems.map((menu) => (
           <div key={menu.name} className="mb-2 w-full">
-            <div
+            <motion.div
               className={`flex items-center justify-between px-4 py-2 cursor-pointer rounded-lg w-[254px] h-[40px] mx-auto
                 ${
                   selectedMenu === menu.name
-                    ? "bg-[#0088B1] text-[#F8F8F8] shadow-sm"
+                    ? "bg-[#0088B1] text-[#F8F8F8] shadow-lg"
                     : "bg-white text-[#161D1F] hover:bg-gray-100"
                 }
-                transition-all duration-300 ease-in-out`}
+                transition-colors duration-150 ease-in-out relative overflow-hidden`}
               onClick={() => toggleMenu(menu.name)}
+              onHoverStart={() => setHoveredMenu(menu.name)}
+              onHoverEnd={() => setHoveredMenu(null)}
+              whileHover="hover"
+              whileTap="tap"
             >
-              <div className="flex items-center">
-                <span
-                  className={`mr-3 ${
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                initial={{ x: "-100%" }}
+                animate={
+                  hoveredMenu === menu.name ? { x: "100%" } : { x: "-100%" }
+                }
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+              />
+
+              <div className="flex items-center relative z-10">
+                <motion.span
+                  className={`mr-3 ${selectedMenu === menu.name ? "text-[#F8F8F8]" : "text-[#161D1F]"}`}
+                  whileHover="hover"
+                >
+                  {menu.icon}
+                </motion.span>
+                <span className="text-sm font-medium">{menu.name}</span>
+              </div>
+
+              {menu.subItems && (
+                <motion.span
+                  className={`relative z-10 transition-transform duration-150 ${
                     selectedMenu === menu.name
                       ? "text-[#F8F8F8]"
                       : "text-[#161D1F]"
                   }`}
+                  animate={{
+                    rotate: openMenu === menu.name ? 180 : 0,
+                  }}
+                  transition={{ duration: 0.15 }}
                 >
-                  {menu.icon}
-                </span>
-                <span className="text-sm font-medium">{menu.name}</span>
-              </div>
-              {menu.subItems && (
-                <span
-                  className={
-                    selectedMenu === menu.name
-                      ? "text-[#F8F8F8]"
-                      : "text-[#161D1F]"
-                  }
-                >
-                  {openMenu === menu.name ? (
-                    <ChevronDown size={16} />
-                  ) : (
-                    <ChevronRight size={16} />
-                  )}
-                </span>
+                  <ChevronDown size={16} />
+                </motion.span>
               )}
-            </div>
-            {openMenu === menu.name && menu.subItems && (
-              <div className="mt-2 rounded-lg space-y-2 py-1 pl-2">
-                {menu.subItems.map((subItem) => (
-                  <Link href={subItem.link} key={subItem.name}>
-                    <div
-                      className={`flex items-center px-4 py-2 cursor-pointer rounded-md mx-auto w-[234px] h-[36px]
-                        ${
-                          selectedSubMenu === subItem.name
-                            ? "bg-[#D0E8F0] text-[#161D1F] font-medium"
-                            : "text-[#161D1F] hover:bg-[#E6F4F8] hover:my-0.5"
-                        }
-                        transition-all duration-200 ease-in-out`}
-                      onClick={() => handleSubMenuClick(subItem.name)}
-                    >
-                      <CornerDownRight
-                        size={14}
-                        className="mr-3 text-[#161D1F]"
-                      />
-                      <span className="text-sm">{subItem.name}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
+            </motion.div>
+
+            <AnimatePresence mode="wait">
+              {openMenu === menu.name && menu.subItems && (
+                <motion.div
+                  className="mt-2 rounded-lg space-y-2 py-1 pl-2 overflow-hidden"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  {menu.subItems.map((subItem, index) => (
+                    <Link href={subItem.link} key={subItem.name}>
+                      <motion.div
+                        className={`flex items-center px-4 py-2 cursor-pointer rounded-md mx-auto w-[234px] h-[36px]
+                          ${
+                            selectedSubMenu === subItem.name
+                              ? "bg-[#D0E8F0] text-[#161D1F] font-medium shadow-md"
+                              : "text-[#161D1F] hover:bg-[#E6F4F8]"
+                          }
+                          transition-colors duration-150 ease-in-out relative overflow-hidden`}
+                        onClick={() => handleSubMenuClick(subItem.name)}
+                        onHoverStart={() => setHoveredSubMenu(subItem.name)}
+                        onHoverEnd={() => setHoveredSubMenu(null)}
+                        whileHover="hover"
+                        whileTap="tap"
+                      >
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                          initial={{ x: "-100%" }}
+                          animate={
+                            hoveredSubMenu === subItem.name
+                              ? { x: "100%" }
+                              : { x: "-100%" }
+                          }
+                          transition={{ duration: 0.5, ease: "easeInOut" }}
+                        />
+
+                        <div className="relative z-10 flex items-center">
+                          <CornerDownRight
+                            size={14}
+                            className="mr-3 text-[#161D1F]"
+                          />
+                          <span className="text-sm">{subItem.name}</span>
+                        </div>
+
+                        {selectedSubMenu === subItem.name && (
+                          <motion.div
+                            className="absolute left-0 w-1 h-6 bg-[#0088B1] rounded-r-full"
+                            layoutId="activeSubMenuIndicator"
+                            transition={{
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 30,
+                            }}
+                          />
+                        )}
+                      </motion.div>
+                    </Link>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         ))}
       </div>
