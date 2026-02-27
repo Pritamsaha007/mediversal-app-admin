@@ -72,18 +72,18 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [availableTests, setAvailableTests] = useState<PathologyTest[]>([]);
   const [availablePackages, setAvailablePackages] = useState<HealthPackage[]>(
-    []
+    [],
   );
   const [loadingTests, setLoadingTests] = useState(false);
   const [loadingPackages, setLoadingPackages] = useState(false);
   const [allPathologyTests, setAllPathologyTests] = useState<PathologyTest[]>(
-    []
+    [],
   );
   const [allRadiologyTests, setAllRadiologyTests] = useState<PathologyTest[]>(
-    []
+    [],
   );
   const [allHealthPackages, setAllHealthPackages] = useState<HealthPackage[]>(
-    []
+    [],
   );
   const [contactInputs, setContactInputs] = useState({
     phone: "",
@@ -93,7 +93,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
 
   const convertDepartmentsToIds = (
     departments: string[],
-    enumDepartments: EnumItem[]
+    enumDepartments: EnumItem[],
   ): string[] => {
     if (!Array.isArray(departments)) {
       return [];
@@ -107,7 +107,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
 
         if (
           dept.match(
-            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
           )
         ) {
           return dept;
@@ -126,12 +126,12 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
       enumStates.length > 0
     ) {
       const stateEnum = enumStates.find(
-        (s) => s.value === editingHospital.address.state
+        (s) => s.value === editingHospital.address.state,
       );
 
       const departmentIds = convertDepartmentsToIds(
         editingHospital.departments,
-        enumDepartments
+        enumDepartments,
       );
 
       setFormData({
@@ -274,11 +274,11 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
   const allAvailableTests = [...allPathologyTests, ...allRadiologyTests];
 
   const selectedTests = allAvailableTests.filter((test) =>
-    formData.lab_test_ids.includes(test.id)
+    formData.lab_test_ids.includes(test.id),
   );
 
   const selectedPackages = allHealthPackages.filter((pkg) =>
-    formData.health_package_ids.includes(pkg.id)
+    formData.health_package_ids.includes(pkg.id),
   );
   useEffect(() => {
     if (searchTerm) {
@@ -345,7 +345,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
     setFormData((prev) => ({
       ...prev,
       health_package_ids: prev.health_package_ids.filter(
-        (id) => id !== packageId
+        (id) => id !== packageId,
       ),
     }));
   };
@@ -411,7 +411,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
   const handleOperatingHoursChange = (
     day: string,
     field: "startTime" | "endTime",
-    value: string
+    value: string,
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -472,7 +472,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
       toast.success(
         editingHospital
           ? "Hospital updated successfully!"
-          : "Hospital added successfully!"
+          : "Hospital added successfully!",
       );
 
       onAddHospital(formData);
@@ -483,7 +483,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
       toast.error(
         editingHospital
           ? "Failed to update hospital. Please try again."
-          : "Failed to add hospital. Please try again."
+          : "Failed to add hospital. Please try again.",
       );
     }
   };
@@ -584,7 +584,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
               >
                 {category}
               </button>
-            )
+            ),
           )}
         </div>
 
@@ -621,11 +621,11 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                         <div className="text-xs font-medium text-[#161D1F]">
                           {pkg.name}
                         </div>
-                        <div className="text-[10px] text-gray-500 mt-1">
+                        <div className="text-[12px] text-gray-500 mt-1">
                           Price: ₹{pkg.selling_price} | Tests:{" "}
                           {pkg.linked_test_ids?.length || 0}
                         </div>
-                        <div className="text-[10px] text-gray-500">
+                        <div className="text-[12px] text-gray-500">
                           {pkg.description}
                         </div>
                       </div>
@@ -661,13 +661,13 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       <div className="text-xs font-medium text-[#161D1F]">
                         {test.name}
                       </div>
-                      <div className="text-[10px] text-gray-500 mt-1">
+                      <div className="text-[12px] text-gray-500 mt-1">
                         Code: {test.code} | Report Time: {test.report_time_hrs}{" "}
                         hrs
                       </div>
                       {test.sample_type_ids &&
                         test.sample_type_ids.length > 0 && (
-                          <div className="text-[10px] text-gray-500">
+                          <div className="text-[12px] text-gray-500">
                             Sample: {test.sample_type_ids.join(", ")}
                           </div>
                         )}
@@ -718,13 +718,13 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       <div className="text-xs font-medium text-[#161D1F]">
                         {test.name}
                       </div>
-                      <div className="text-[10px] text-gray-500">
+                      <div className="text-[12px] text-gray-500">
                         Code: {test.code} | Price: ₹{test.selling_price} |
                         Report Time: {test.report_time_hrs} hrs
                       </div>
                       {test.sample_type_ids &&
                         test.sample_type_ids.length > 0 && (
-                          <div className="text-[10px] text-gray-500">
+                          <div className="text-[12px] text-gray-500">
                             Sample: {test.sample_type_ids.join(", ")}
                           </div>
                         )}
@@ -757,11 +757,11 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       <div className="text-xs font-medium text-[#161D1F]">
                         {pkg.name}
                       </div>
-                      <div className="text-[10px] text-gray-500">
+                      <div className="text-[12px] text-gray-500">
                         Price: ₹{pkg.selling_price} | Included Tests:{" "}
                         {pkg.linked_test_ids?.length || 0}
                       </div>
-                      <div className="text-[10px] text-gray-500">
+                      <div className="text-[12px] text-gray-500">
                         {pkg.description}
                       </div>
                     </div>
@@ -818,8 +818,8 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
               onClick={() => setActiveTab(index)}
               className={`flex-1 py-3 px-3 ${
                 activeTab === index
-                  ? "bg-[#0088B1] text-white rounded-lg text-[10px]"
-                  : "bg-gray-100 text-[#161D1F] text-[10px]"
+                  ? "bg-[#0088B1] text-white rounded-lg text-[12px]"
+                  : "bg-gray-100 text-[#161D1F] text-[12px]"
               }`}
             >
               {tab}
@@ -891,7 +891,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                         <h3 className="text-[12px] font-medium text-[#161d1f] mb-1">
                           Hospital Image
                         </h3>
-                        <p className="text-gray-500 text-[10px]">
+                        <p className="text-gray-500 text-[12px]">
                           {typeof formData.image === "object" &&
                           formData.image instanceof File
                             ? formData.image.name
@@ -907,13 +907,13 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                         <h3 className="text-[12px] font-medium text-[#161d1f] mb-2">
                           Upload Hospital Image
                         </h3>
-                        <p className="text-gray-500 mb-2 text-[10px]">
+                        <p className="text-gray-500 mb-2 text-[12px]">
                           Drag and drop your image here or click to browse
                         </p>
                       </div>
                     )}
 
-                    <p className="text-[10px] text-gray-400 mt-2">
+                    <p className="text-[12px] text-gray-400 mt-2">
                       (supported file format .jpg, .jpeg, .png)
                     </p>
                   </label>
@@ -923,7 +923,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                     onClick={() =>
                       document.getElementById("hospitalImage")?.click()
                     }
-                    className={`mt-4 text-[10px] px-6 py-2 border rounded-lg hover:bg-gray-50 transition-colors ${
+                    className={`mt-4 text-[12px] px-6 py-2 border rounded-lg hover:bg-gray-50 transition-colors ${
                       formData.image
                         ? "border-gray-300 text-[#161D1F]"
                         : "border-gray-300 text-[#161D1F] bg-gray-50"
@@ -939,7 +939,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                         e.preventDefault();
                         handleFileUpload("image", null);
                       }}
-                      className="mt-2 ml-2 text-[10px] px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                      className="mt-2 ml-2 text-[12px] px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                     >
                       Remove Image
                     </button>
@@ -953,21 +953,21 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                 </h3>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                  <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                     <span className="text-red-500">*</span> Hospital Name
                   </label>
                   <input
                     type="text"
                     value={formData.name ?? ""}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                    className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     placeholder="Flat/House No., Building Name, Street"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                    <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                       <span className="text-red-500">*</span> Address Line 1
                     </label>
                     <input
@@ -976,13 +976,13 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       onChange={(e) =>
                         handleInputChange("address", e.target.value, "line1")
                       }
-                      className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                      className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                       placeholder="Plot No. / Building Name / Street"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                    <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                       Address Line 2
                     </label>
                     <input
@@ -991,7 +991,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       onChange={(e) =>
                         handleInputChange("address", e.target.value, "line2")
                       }
-                      className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                      className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                       placeholder="Area, Colony, Sector"
                     />
                   </div>
@@ -999,7 +999,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                    <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                       <span className="text-red-500">*</span> City/Town/Village
                     </label>
                     <input
@@ -1008,13 +1008,13 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       onChange={(e) =>
                         handleInputChange("address", e.target.value, "city")
                       }
-                      className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                      className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                       placeholder="e.g., Patna"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                    <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                       Landmark
                     </label>
                     <input
@@ -1023,7 +1023,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       onChange={(e) =>
                         handleInputChange("address", e.target.value, "landmark")
                       }
-                      className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                      className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                       placeholder="Near Railway Station, Temple, etc.,"
                     />
                   </div>
@@ -1031,7 +1031,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                    <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                       <span className="text-red-500">*</span> State
                     </label>
                     <select
@@ -1039,7 +1039,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       onChange={(e) =>
                         handleInputChange("address", e.target.value, "state")
                       }
-                      className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                      className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     >
                       <option value="">Select State</option>
                       {enumStates.map((state) => (
@@ -1051,7 +1051,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                    <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                       <span className="text-red-500">*</span> PIN Code
                     </label>
                     <input
@@ -1060,13 +1060,13 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       onChange={(e) =>
                         handleInputChange("address", e.target.value, "pinCode")
                       }
-                      className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                      className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                       placeholder="6-digit PIN Code"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                    <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                       <span className="text-red-500">*</span> Country
                     </label>
                     <input
@@ -1075,7 +1075,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       onChange={(e) =>
                         handleInputChange("address", e.target.value, "country")
                       }
-                      className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                      className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                       placeholder="India"
                     />
                   </div>
@@ -1087,7 +1087,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
           {activeTab === 1 && (
             <div className="space-y-6">
               <div>
-                <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                   <span className="text-red-500">*</span> Brief Description
                 </label>
                 <textarea
@@ -1096,7 +1096,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                     handleInputChange("description", e.target.value)
                   }
                   rows={4}
-                  className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                  className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                   placeholder="Brief description of the hospital & its services"
                 />
               </div>
@@ -1115,7 +1115,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                     <span className="text-[12px] font-medium text-gray-700">
                       24/7 Emergency Services
                     </span>
-                    <p className="text-[10px] text-gray-500">
+                    <p className="text-[12px] text-gray-500">
                       Make the hospital available for 24/7 emergency
                     </p>
                   </div>
@@ -1124,7 +1124,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                  <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                     <span className="text-red-500">*</span> Contact Number
                   </label>
                   <div className="flex gap-2">
@@ -1134,13 +1134,13 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       onChange={(e) =>
                         handleContactInputChange("phone", e.target.value)
                       }
-                      className="flex-1 text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                      className="flex-1 text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                       placeholder="Enter 10-digit phone / landline no."
                     />
                     <button
                       type="button"
                       onClick={() => addContactInfo("phone")}
-                      className="text-[10px] px-4 py-2 text-[#1BA3C7] border border-[#1BA3C7] rounded-lg hover:bg-[#1BA3C7] hover:text-white transition-colors"
+                      className="text-[12px] px-4 py-2 text-[#1BA3C7] border border-[#1BA3C7] rounded-lg hover:bg-[#1BA3C7] hover:text-white transition-colors"
                     >
                       Add
                     </button>
@@ -1150,7 +1150,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       {formData.contact.phone.map((phone, index) => (
                         <div
                           key={index}
-                          className="text-[10px] text-gray-600 bg-gray-50 px-2 py-1 rounded"
+                          className="text-[12px] text-gray-600 bg-gray-50 px-2 py-1 rounded"
                         >
                           {phone}
                         </div>
@@ -1160,7 +1160,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                  <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                     <span className="text-red-500">*</span> Email Address
                   </label>
                   <div className="flex gap-2">
@@ -1170,13 +1170,13 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       onChange={(e) =>
                         handleContactInputChange("email", e.target.value)
                       }
-                      className="flex-1 text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                      className="flex-1 text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                       placeholder="e.g., info@hospital.com"
                     />
                     <button
                       type="button"
                       onClick={() => addContactInfo("email")}
-                      className="text-[10px] px-4 py-2 text-[#1BA3C7] border border-[#1BA3C7] rounded-lg hover:bg-[#1BA3C7] hover:text-white transition-colors"
+                      className="text-[12px] px-4 py-2 text-[#1BA3C7] border border-[#1BA3C7] rounded-lg hover:bg-[#1BA3C7] hover:text-white transition-colors"
                     >
                       Add
                     </button>
@@ -1186,7 +1186,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       {formData.contact.email.map((email, index) => (
                         <div
                           key={index}
-                          className="text-[10px] text-gray-600 bg-gray-50 px-2 py-1 rounded"
+                          className="text-[12px] text-gray-600 bg-gray-50 px-2 py-1 rounded"
                         >
                           {email}
                         </div>
@@ -1197,7 +1197,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                   Website URL
                 </label>
                 <div className="flex gap-2">
@@ -1207,20 +1207,20 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                     onChange={(e) =>
                       handleContactInputChange("website", e.target.value)
                     }
-                    className="flex-1 text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                    className="flex-1 text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     placeholder="e.g., www.hospital.com"
                   />
                   <button
                     type="button"
                     onClick={() => addContactInfo("website")}
-                    className="text-[10px] px-4 py-2 text-[#1BA3C7] border border-[#1BA3C7] rounded-lg hover:bg-[#1BA3C7] hover:text-white transition-colors"
+                    className="text-[12px] px-4 py-2 text-[#1BA3C7] border border-[#1BA3C7] rounded-lg hover:bg-[#1BA3C7] hover:text-white transition-colors"
                   >
                     Add
                   </button>
                 </div>
                 {formData.contact.website && (
                   <div className="mt-2">
-                    <div className="text-[10px] text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                    <div className="text-[12px] text-gray-600 bg-gray-50 px-2 py-1 rounded">
                       {formData.contact.website ?? ""}
                     </div>
                   </div>
@@ -1233,7 +1233,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
 
           {activeTab === 3 && (
             <div className="space-y-6">
-              <h3 className="text-[10px] font-semibold text-[#161d1f] mb-6">
+              <h3 className="text-[12px] font-semibold text-[#161d1f] mb-6">
                 <span className="text-red-500">*</span> Set Operating Hours
               </h3>
               <div className="space-y-6 border border-gray-200 rounded-lg p-4">
@@ -1259,12 +1259,12 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                           handleOperatingHoursChange(
                             dayEnum.value,
                             "startTime",
-                            e.target.value
+                            e.target.value,
                           )
                         }
-                        className="text-[10px] px-3 py-2 border-b border-gray-300  focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none text-[#161D1F]"
+                        className="text-[12px] px-3 py-2 border-b border-gray-300  focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none text-[#161D1F]"
                       />
-                      <span className="text-[10px] text-gray-500">to</span>
+                      <span className="text-[12px] text-gray-500">to</span>
                       <input
                         type="time"
                         value={
@@ -1275,10 +1275,10 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                           handleOperatingHoursChange(
                             dayEnum.value,
                             "endTime",
-                            e.target.value
+                            e.target.value,
                           )
                         }
-                        className="text-[10px] px-3 py-2 border-b border-gray-300 focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none text-[#161D1F]"
+                        className="text-[12px] px-3 py-2 border-b border-gray-300 focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none text-[#161D1F]"
                       />
                     </div>
                   </div>
@@ -1291,7 +1291,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
         <div className="flex items-center justify-end p-6 border-t border-gray-200 gap-4">
           <button
             onClick={resetForm}
-            className="px-6 py-2 text-[#161D1F] text-[10px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-6 py-2 text-[#161D1F] text-[12px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Reset
           </button>
@@ -1299,7 +1299,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
           {activeTab > 0 && (
             <button
               onClick={() => setActiveTab(activeTab - 1)}
-              className="px-6 py-2 text-[#16181b] text-[10px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 text-[#16181b] text-[12px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Previous
             </button>
@@ -1308,14 +1308,14 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
           {activeTab < 3 ? (
             <button
               onClick={() => setActiveTab(activeTab + 1)}
-              className="px-6 py-2 text-[#16181b] text-[10px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 text-[#16181b] text-[12px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Next
             </button>
           ) : (
             <button
               onClick={handleSubmit}
-              className="px-6 py-2 text-white text-[10px] bg-[#1BA3C7] border border-gray-300 rounded-lg hover:bg-[#1591B8] transition-colors"
+              className="px-6 py-2 text-white text-[12px] bg-[#1BA3C7] border border-gray-300 rounded-lg hover:bg-[#1591B8] transition-colors"
             >
               {editingHospital ? "Update Hospital" : "Add Hospital"}
             </button>

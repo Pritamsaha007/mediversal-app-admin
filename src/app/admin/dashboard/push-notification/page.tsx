@@ -265,10 +265,10 @@ const Notifications: React.FC = () => {
   }, [token, currentPage, selectedFilter]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-2">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-[16px] font-medium text-[#161D1F]">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-[20px] font-semibold text-[#161D1F]">
             Push Notification Manager
           </h1>
           <button

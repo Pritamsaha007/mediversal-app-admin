@@ -139,7 +139,7 @@ export const ProductDetailsTab = ({
 
       {/* Rest of your form fields remain the same */}
       <div>
-        <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+        <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
           <span className="text-red-500">*</span> Product Information
         </label>
         <textarea
@@ -147,11 +147,11 @@ export const ProductDetailsTab = ({
           value={formData.ProductInformation}
           onChange={(e) => onInputChange("ProductInformation", e.target.value)}
           rows={4}
-          className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none resize-none"
+          className="w-full px-3 py-3 text-[#899193] text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none resize-none"
         />
       </div>
       <div>
-        <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+        <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
           <span className="text-red-500">*</span> Safety Advice
         </label>
         <textarea
@@ -159,11 +159,11 @@ export const ProductDetailsTab = ({
           value={formData.SafetyAdvices}
           onChange={(e) => onInputChange("SafetyAdvices", e.target.value)}
           rows={4}
-          className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none resize-none"
+          className="w-full px-3 py-3 text-[#899193] text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none resize-none"
         />
       </div>
       <div>
-        <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+        <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
           <span className="text-red-500">*</span> Storage Instructions
         </label>
         <textarea
@@ -171,13 +171,13 @@ export const ProductDetailsTab = ({
           value={formData.StorageInstructions}
           onChange={(e) => onInputChange("StorageInstructions", e.target.value)}
           rows={4}
-          className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none resize-none"
+          className="w-full px-3 py-3 text-[#899193] text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none resize-none"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+          <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
             <span className="text-red-500">*</span> Composition
           </label>
           <input
@@ -185,11 +185,11 @@ export const ProductDetailsTab = ({
             placeholder="Enter Composition"
             value={formData.Composition}
             onChange={(e) => onInputChange("Composition", e.target.value)}
-            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
         <div>
-          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+          <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
             Pack Size
           </label>
           <input
@@ -197,14 +197,14 @@ export const ProductDetailsTab = ({
             placeholder="e.g., 10 tablets, 100ml"
             value={formData.PackageSize}
             onChange={(e) => onInputChange("PackageSize", e.target.value)}
-            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+          <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
             Strength
           </label>
           <input
@@ -212,7 +212,7 @@ export const ProductDetailsTab = ({
             placeholder="e.g., 500mg, 10ml"
             value={formData.ProductStrength ?? ""}
             onChange={(e) => onInputChange("ProductStrength", e.target.value)}
-            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
       </div>

@@ -455,14 +455,11 @@ const DeliveryRiders: React.FC = () => {
             <button
               onClick={() => setShowAddRiderModal(true)}
               disabled={loading}
-              className={`flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg ${
-                loading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-[#0088B1] hover:bg-[#00729A] cursor-pointer"
-              } text-[#F8F8F8]`}
+              className={`flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg bg-[#0088B1] hover:bg-[#00729A] cursor-pointer"
+               text-[#F8F8F8]`}
             >
               <Plus className="w-3 h-3" />
-              {loading ? "Loading..." : "Add New Rider"}
+              {"Add New Rider"}
             </button>
             {selectedRiders.length > 0 && (
               <button

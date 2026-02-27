@@ -207,7 +207,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-[10px] text-[#899193] mb-1">
+                      <p className="text-[12px] text-[#899193] mb-1">
                         Patient Name
                       </p>
                       <p className="font-medium text-[12px] text-[#161D1F]">
@@ -218,7 +218,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-[#899193] mb-1">
+                      <p className="text-[12px] text-[#899193] mb-1">
                         Patient Age
                       </p>
                       <p className="font-medium text-[12px] text-[#161D1F]">
@@ -229,7 +229,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-[10px] text-[#899193] mb-1">
+                      <p className="text-[12px] text-[#899193] mb-1">
                         Patient Gender
                       </p>
                       <p className="font-medium text-[12px] text-[#161D1F]">
@@ -237,7 +237,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-[#899193] mb-1">
+                      <p className="text-[12px] text-[#899193] mb-1">
                         Phone Number
                       </p>
                       <p className="font-medium text-[12px] text-[#161D1F]">
@@ -248,13 +248,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     </div>
                   </div>
                   <div>
-                    <p className="text-[10px] text-[#899193] mb-1">Email</p>
+                    <p className="text-[12px] text-[#899193] mb-1">Email</p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
                       {orderDetails?.customer_details?.email || "Not available"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-[#899193] mb-1">
+                    <p className="text-[12px] text-[#899193] mb-1">
                       Service Address
                     </p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
@@ -269,7 +269,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-[10px] text-[#899193] mb-1">
+                      <p className="text-[12px] text-[#899193] mb-1">
                         Contact Name
                       </p>
                       <p className="font-medium text-[12px] text-[#161D1F]">
@@ -278,7 +278,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-[#899193] mb-1">
+                      <p className="text-[12px] text-[#899193] mb-1">
                         Emergency Contact
                       </p>
                       <p className="font-medium text-[12px] text-[#161D1F]">
@@ -297,7 +297,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
                 <div className="space-y-4">
                   <div>
-                    <p className="text-[10px] text-[#899193] mb-1">
+                    <p className="text-[12px] text-[#899193] mb-1">
                       Booking Amount
                     </p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
@@ -309,7 +309,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   </div>
 
                   <div>
-                    <p className="text-[10px] text-[#899193] mb-1">Scheduled</p>
+                    <p className="text-[12px] text-[#899193] mb-1">Scheduled</p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
                       {contactLocation?.["Date & Time"]
                         ? formatDateTime(contactLocation["Date & Time"])
@@ -320,14 +320,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   </div>
 
                   <div>
-                    <p className="text-[10px] text-[#899193] mb-1">Duration</p>
+                    <p className="text-[12px] text-[#899193] mb-1">Duration</p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
                       {getDurationText() || "Not specified"}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-[10px] text-[#899193] mb-1">
+                    <p className="text-[12px] text-[#899193] mb-1">
                       Current Medication
                     </p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
@@ -335,7 +335,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-[#899193] mb-1">
+                    <p className="text-[12px] text-[#899193] mb-1">
                       Medical Condition
                     </p>
                     <p className="font-medium text-[12px] text-[#161D1F]">
@@ -353,7 +353,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
               <div className="bg-gray-50 rounded-lg p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <span className="bg-cyan-600 text-white px-3 py-1 rounded text-[10px] font-medium">
+                    <span className="bg-cyan-600 text-white px-3 py-1 rounded text-[12px] font-medium">
                       Service:{" "}
                       {orderDetails?.service_details?.homecare_service_name}
                     </span>
@@ -372,7 +372,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
             </div>
 
             <div className="mt-8">
-              <h3 className="text-[10px] font-semibold text-[#161D1F] mb-4">
+              <h3 className="text-[12px] font-semibold text-[#161D1F] mb-4">
                 Assigned Staff
               </h3>
               <div className="bg-gray-50 rounded-lg p-6">
@@ -383,7 +383,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       (staff: any, index: number) => (
                         <p
                           key={index}
-                          className="font-medium text-[10px] text-[#161D1F]"
+                          className="font-medium text-[12px] text-[#161D1F]"
                         >
                           {staff.name || "Staff Name Not Available"}
                         </p>
@@ -391,7 +391,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     )}
                   </div>
                 ) : (
-                  <p className="text-red-500 font-medium text-[10px]">
+                  <p className="text-red-500 font-medium text-[12px]">
                     No staff assigned
                   </p>
                 )}
@@ -405,7 +405,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
           <div className="flex flex-wrap gap-4">
             <button
               onClick={() => setIsAssignStaffModalOpen(true)}
-              className="flex items-center text-[10px] gap-2 bg-cyan-600 text-white px-6 py-3 rounded-lg hover:bg-cyan-700 transition-colors"
+              className="flex items-center text-[12px] gap-2 bg-cyan-600 text-white px-6 py-3 rounded-lg hover:bg-cyan-700 transition-colors"
             >
               <User className="w-3 h-3" />
               Assign Staff
@@ -413,7 +413,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
             <button
               onClick={handlePrint}
-              className="flex items-center text-[10px] gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center text-[12px] gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Printer className="w-3 h-3" />
               Print
@@ -422,14 +422,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
               onClick={() =>
                 onContactPatient(contactLocation?.["Contact Number"])
               }
-              className="flex items-center text-[10px] gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center text-[12px] gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Phone className="w-3 h-3" />
               Contact Patient
             </button>
             {/* <button
               onClick={() => onEditOrder(booking.id)}
-              className="flex items-center text-[10px] gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center text-[12px] gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Edit className="w-3 h-3" />
               Edit Order

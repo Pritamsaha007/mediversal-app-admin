@@ -1,4 +1,5 @@
-import React from "react";
+"use client";
+import React, { useState } from "react";
 import { Product } from "../types/product";
 
 interface ProductDetailModalProps {
@@ -12,6 +13,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onClose,
   product,
 }) => {
+  const [showFullDescription, setShowFullDescription] = useState(false);
+  const description =
+    product?.ProductInformation || "No description available.";
+  const isLongDescription = description.length > 300;
   if (!isOpen || !product) return null;
 
   return (
@@ -31,12 +36,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           Product Detail
         </h2>
         <h3 className="text-[14px] text-[#161D1F]">{product.ProductName}</h3>
-        <p className="text-[10px] text-[#899193]">
+        <p className="text-[12px] text-[#899193]">
           {product.Type} &nbsp; | &nbsp; {product.ManufacturerName || "N/A"}
         </p>
 
         <div className="flex flex-wrap gap-2 mt-3">
-          <h1 className="text-[#161D1F] font-semibold text-[10px]">Tags:</h1>
+          <h1 className="text-[#161D1F] font-semibold text-[12px]">Tags:</h1>
           {product.substitutes && product.substitutes.length > 0 && (
             <span className="border-[#0088B1] text-[#0088B1] border text-[8px] font-medium px-2 py-1 rounded">
               {product.substitutes.length} Substitutes
@@ -60,19 +65,28 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         </div>
 
         <div className="mt-2 text-sm text-gray-700">
-          <p>
-            <span className=" text-[#161D1F] font-semibold text-[10px]">
+          <p className="flex flex-col gap-1">
+            <span className="text-[#161D1F] font-semibold text-[12px]">
               Description:
             </span>
-            <span className="text-[#161D1F] text-[10px]">
-              {product.ProductInformation || "No1234 description available."}
+            <span className="text-[#161D1F] text-[12px]">
+              {showFullDescription ? description : description.slice(0, 300)}
+              {isLongDescription && !showFullDescription && "..."}
             </span>
+            {isLongDescription && (
+              <button
+                onClick={() => setShowFullDescription(!showFullDescription)}
+                className="text-[#0088B1] text-[10px] font-medium hover:underline mt-1 self-start"
+              >
+                {showFullDescription ? "View Less" : "View Full Description"}
+              </button>
+            )}
           </p>
           <p>
-            <span className="text-[#161D1F] font-semibold text-[10px]">
+            <span className="text-[#161D1F] font-semibold text-[12px]">
               Category:
             </span>
-            <span className="text-[#161D1F] text-[10px]">
+            <span className="text-[#161D1F] text-[12px]">
               {product.Category}
             </span>
           </p>
@@ -80,20 +94,20 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
         <div className="mt-1 grid grid-cols-2 gap-2 text-sm text-gray-700">
           <p>
-            <span className="text-[#161D1F] font-semibold text-[10px]">
+            <span className="text-[#161D1F] font-semibold text-[12px]">
               Discount:
             </span>
-            <span className="text-[#161D1F] text-[10px]">
+            <span className="text-[#161D1F] text-[12px]">
               {product.DiscountedPercentage
                 ? `${product.DiscountedPercentage}% OFF`
                 : "No Discount"}
             </span>
           </p>
           <p>
-            <span className="text-[#161D1F] font-semibold text-[10px]">
+            <span className="text-[#161D1F] font-semibold text-[12px]">
               Stock:
             </span>
-            <span className="text-[#161D1F] text-[10px]">
+            <span className="text-[#161D1F] text-[12px]">
               {product.StockAvailableInInventory}
             </span>
           </p>

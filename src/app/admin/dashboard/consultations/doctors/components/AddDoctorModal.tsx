@@ -78,7 +78,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     day: string,
     newStartTime: string,
     newEndTime: string,
-    currentIndex: number = -1
+    currentIndex: number = -1,
   ) => {
     return formData.availability[day].some((slot, index) => {
       if (index === currentIndex) return false;
@@ -121,7 +121,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       isTimeSlotOverlapping(selectedDay, newSlot.startTime, newSlot.endTime)
     ) {
       toast.error(
-        "Time slot overlaps with existing slot. Please choose different times."
+        "Time slot overlaps with existing slot. Please choose different times.",
       );
       return;
     }
@@ -230,11 +230,11 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
         editingSlot.day,
         newSlot.startTime,
         newSlot.endTime,
-        editingSlot.index
+        editingSlot.index,
       )
     ) {
       toast.error(
-        "Time slot overlaps with existing slot. Please choose different times."
+        "Time slot overlaps with existing slot. Please choose different times.",
       );
       return;
     }
@@ -252,7 +252,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   endTime: newSlot.endTime,
                   maxPatientsPerSlot: newSlot.maxPatientsPerSlot,
                 }
-              : slot
+              : slot,
         ),
       },
     }));
@@ -287,7 +287,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
 
     const doctorSlots = convertAvailabilityToSlots(
       formData.availability,
-      daysMapping
+      daysMapping,
     );
 
     console.log("Converted doctor slots:", doctorSlots);
@@ -316,13 +316,13 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       toast.success(
         editingDoctor
           ? "Doctor updated successfully!"
-          : "Doctor created successfully!"
+          : "Doctor created successfully!",
       );
       onClose();
       resetForm();
     } catch (error) {
       toast.error(
-        editingDoctor ? "Failed to update doctor" : "Failed to create doctor"
+        editingDoctor ? "Failed to update doctor" : "Failed to create doctor",
       );
     }
   };
@@ -386,8 +386,8 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
               onClick={() => setActiveTab(index)}
               className={`flex-1 py-3 px-3 ${
                 activeTab === index
-                  ? "bg-[#0088B1] text-white rounded-lg text-[10px]"
-                  : "bg-gray-100 text-[#161D1F] text-[10px]"
+                  ? "bg-[#0088B1] text-white rounded-lg text-[12px]"
+                  : "bg-gray-100 text-[#161D1F] text-[12px]"
               }`}
             >
               {tab}
@@ -405,7 +405,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     onChange={(e) =>
                       handleFileUpload(
                         "profile_image_url",
-                        e.target.files?.[0] || null
+                        e.target.files?.[0] || null,
                       )
                     }
                     className="hidden"
@@ -422,7 +422,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                             <>
                               <img
                                 src={URL.createObjectURL(
-                                  formData.profile_image_url
+                                  formData.profile_image_url,
                                 )}
                                 alt="Doctor preview"
                                 className="w-32 h-32 rounded-full object-cover border-2 border-gray-200 mb-2"
@@ -461,7 +461,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                         <h3 className="text-[12px] font-medium text-[#161d1f] mb-1">
                           Doctor Image
                         </h3>
-                        <p className="text-gray-500 text-[10px]">
+                        <p className="text-gray-500 text-[12px]">
                           {typeof formData.profile_image_url === "object" &&
                           formData.profile_image_url instanceof File
                             ? formData.profile_image_url.name
@@ -477,13 +477,13 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                         <h3 className="text-[12px] font-medium text-[#161d1f] mb-2">
                           Upload Doctor Image
                         </h3>
-                        <p className="text-gray-500 mb-2 text-[10px]">
+                        <p className="text-gray-500 mb-2 text-[12px]">
                           Drag and drop your new image here or click to browse
                         </p>
                       </div>
                     )}
 
-                    <p className="text-[10px] text-gray-400 mt-2">
+                    <p className="text-[12px] text-gray-400 mt-2">
                       (supported file format .jpg, .jpeg, .png)
                     </p>
                   </label>
@@ -493,7 +493,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     onClick={() =>
                       document.getElementById("doctorImage")?.click()
                     }
-                    className={`mt-4 text-[10px] px-6 py-2 border rounded-lg hover:bg-gray-50 transition-colors ${
+                    className={`mt-4 text-[12px] px-6 py-2 border rounded-lg hover:bg-gray-50 transition-colors ${
                       formData.profile_image_url
                         ? "border-gray-300 text-[#161D1F]"
                         : "border-gray-300 text-[#161D1F] bg-gray-50"
@@ -511,7 +511,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                         e.preventDefault();
                         handleFileUpload("profile_image_url", null);
                       }}
-                      className="mt-2 ml-2 text-[10px] px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                      className="mt-2 ml-2 text-[12px] px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                     >
                       Remove Image
                     </button>
@@ -521,20 +521,20 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                  <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                     <span className="text-red-500">*</span> Doctor Name
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                    className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     placeholder="Dr. Sarah Johnson"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                  <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                     <span className="text-red-500">*</span> Mobile Number
                   </label>
                   <input
@@ -543,13 +543,13 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     onChange={(e) =>
                       handleInputChange("mobile_number", e.target.value)
                     }
-                    className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                    className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     placeholder="+91 9876543210"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                  <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                     <span className="text-red-500">*</span> Specialization
                   </label>
                   <select
@@ -557,7 +557,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     onChange={(e) =>
                       handleInputChange("specialization_id", e.target.value)
                     }
-                    className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                    className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                   >
                     <option value="">Select Specialization</option>
                     {enumData.specializations.map((spec) => (
@@ -569,7 +569,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                  <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                     <span className="text-red-500">*</span> Department
                   </label>
                   <select
@@ -577,7 +577,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     onChange={(e) =>
                       handleInputChange("department_id", e.target.value)
                     }
-                    className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                    className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                   >
                     <option value="">Select a Department</option>
                     {enumData.departments.map((dept) => (
@@ -589,7 +589,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                  <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                     Experience (Years)
                   </label>
                   <input
@@ -598,7 +598,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     onChange={(e) =>
                       handleInputChange("experience_in_yrs", e.target.value)
                     }
-                    className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                    className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     placeholder="Years of experience"
                   />
                 </div>
@@ -609,20 +609,20 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           {activeTab === 1 && (
             <div className="space-y-6">
               <div>
-                <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                   <span className="text-red-500">*</span> About Doctor
                 </label>
                 <textarea
                   value={formData.about}
                   onChange={(e) => handleInputChange("about", e.target.value)}
                   rows={4}
-                  className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                  className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                   placeholder="Brief description of the doctor's expertise & experience"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                   <span className="text-red-500">*</span> Qualifications
                 </label>
                 <textarea
@@ -631,14 +631,14 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     handleInputChange("qualifications", e.target.value)
                   }
                   rows={3}
-                  className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                  className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                   placeholder="Add qualifications (e.g., MBBS - AIIMS Delhi)"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                  <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                     <span className="text-red-500">*</span> Consultation Price
                     (₹)
                   </label>
@@ -648,13 +648,13 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     onChange={(e) =>
                       handleInputChange("consultation_price", e.target.value)
                     }
-                    className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                    className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     placeholder="500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                  <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                     <span className="text-red-500">*</span> Assign Hospital
                   </label>
                   <HospitalSearchInput
@@ -677,12 +677,12 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                       onChange={(e) =>
                         handleInputChange(
                           "is_available_online",
-                          e.target.checked
+                          e.target.checked,
                         )
                       }
                       className="w-3 h-3 text-[#1BA3C7] border-gray-300 rounded focus:ring-[#1BA3C7]"
                     />
-                    <span className="text-[10px] font-medium text-gray-700">
+                    <span className="text-[12px] font-medium text-gray-700">
                       Available for Online Consultations
                     </span>
                   </label>
@@ -694,12 +694,12 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                       onChange={(e) =>
                         handleInputChange(
                           "is_available_in_person",
-                          e.target.checked
+                          e.target.checked,
                         )
                       }
                       className="w-3 h-3 text-[#1BA3C7] border-gray-300 rounded focus:ring-[#1BA3C7]"
                     />
-                    <span className="text-[10px] font-medium text-gray-700">
+                    <span className="text-[12px] font-medium text-gray-700">
                       Available for In-Person Consultations
                     </span>
                   </label>
@@ -707,7 +707,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                   <span className="text-red-500">*</span> Languages Known
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -724,7 +724,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                         }
                         className="w-3 h-3 text-[#1BA3C7] border-gray-300 rounded focus:ring-[#1BA3C7]"
                       />
-                      <span className="text-[10px] text-gray-700">
+                      <span className="text-[12px] text-gray-700">
                         {lang.value}
                       </span>
                     </label>
@@ -741,7 +741,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   <div className="w-2 h-2 bg-[#1BA3C7] rounded-full"></div>
                   Doctor Availability Schedule
                 </h3>
-                <p className="text-[10px] text-gray-500">
+                <p className="text-[12px] text-gray-500">
                   Set up consultation time slots for each day of the week
                 </p>
               </div>
@@ -751,7 +751,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   <button
                     key={day.id}
                     onClick={() => setSelectedDay(day.value)}
-                    className={`p-3 rounded-lg text-[10px] font-medium transition-all ${
+                    className={`p-3 rounded-lg text-[12px] font-medium transition-all ${
                       selectedDay === day.value
                         ? "bg-[#1BA3C7] text-white shadow-md"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -779,7 +779,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                     <div>
-                      <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                      <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                         Start Time
                       </label>
                       <input
@@ -791,12 +791,12 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                             startTime: e.target.value,
                           }))
                         }
-                        className="w-full text-black text-[10px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
+                        className="w-full text-black text-[12px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                      <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                         End Time
                       </label>
                       <input
@@ -808,12 +808,12 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                             endTime: e.target.value,
                           }))
                         }
-                        className="w-full text-black text-[10px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
+                        className="w-full text-black text-[12px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                      <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                         Max Patients
                       </label>
                       <input
@@ -827,7 +827,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                           }))
                         }
                         placeholder="1"
-                        className="w-full text-black text-[10px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
+                        className="w-full text-black text-[12px] px-3 py-2 border border-gray-300 rounded-lg focus:border-[#1BA3C7] focus:ring-1 focus:ring-[#1BA3C7] outline-none"
                       />
                     </div>
 
@@ -837,14 +837,14 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                           <button
                             type="button"
                             onClick={handleUpdateSlot}
-                            className="flex-1 px-4 py-2 bg-green-600 text-white text-[10px] font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                            className="flex-1 px-4 py-2 bg-green-600 text-white text-[12px] font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
                           >
                             Update
                           </button>
                           <button
                             type="button"
                             onClick={handleCancelEdit}
-                            className="px-4 py-2 bg-gray-500 text-white text-[10px] font-medium rounded-lg hover:bg-gray-600 transition-colors"
+                            className="px-4 py-2 bg-gray-500 text-white text-[12px] font-medium rounded-lg hover:bg-gray-600 transition-colors"
                           >
                             Cancel
                           </button>
@@ -853,7 +853,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                         <button
                           type="button"
                           onClick={handleAddTimeSlot}
-                          className="w-full px-4 py-2 bg-[#1BA3C7] text-white text-[10px] font-medium rounded-lg hover:bg-[#1591B8] transition-colors flex items-center justify-center gap-2"
+                          className="w-full px-4 py-2 bg-[#1BA3C7] text-white text-[12px] font-medium rounded-lg hover:bg-[#1591B8] transition-colors flex items-center justify-center gap-2"
                         >
                           <Plus className="w-4 h-4" />
                           Add Slot
@@ -863,7 +863,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   </div>
 
                   <div className="space-y-3">
-                    <h5 className="text-[10px] font-medium text-gray-600 border-b border-gray-200 pb-2">
+                    <h5 className="text-[12px] font-medium text-gray-600 border-b border-gray-200 pb-2">
                       Created Slots (
                       {(formData.availability[selectedDay] || []).length})
                     </h5>
@@ -873,7 +873,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                         <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                           <Plus className="w-6 h-6 text-gray-400" />
                         </div>
-                        <p className="text-[10px]">
+                        <p className="text-[12px]">
                           No slots added for {selectedDay}
                         </p>
                         <p className="text-[8px] text-gray-400 mt-1">
@@ -889,7 +889,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                               className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border"
                             >
                               <div className="flex items-center gap-4">
-                                <div className="text-[10px] font-medium text-[#1BA3C7]">
+                                <div className="text-[12px] font-medium text-[#1BA3C7]">
                                   {slot.startTime} - {slot.endTime}
                                 </div>
                                 <div className="text-[8px] text-gray-600 bg-white px-2 py-1 rounded border">
@@ -907,7 +907,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                                 <Edit className="w-4 h-4" />
                               </button>
                             </div>
-                          )
+                          ),
                         )}
                       </div>
                     )}
@@ -919,40 +919,40 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
 
           {activeTab === 3 && (
             <div className="space-y-6">
-              <h3 className="text-[10px] font-semibold text-[#161d1f] mb-6">
+              <h3 className="text-[12px] font-semibold text-[#161d1f] mb-6">
                 Indian Healthcare Compliance
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                  <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                     MCI Number (Optional)
                   </label>
                   <input
                     type="text"
                     value={formData.mci}
                     onChange={(e) => handleInputChange("mci", e.target.value)}
-                    className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                    className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     placeholder="Ex. - MCI-12345-2020"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                  <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                     NMC Number (Optional)
                   </label>
                   <input
                     type="text"
                     value={formData.nmc}
                     onChange={(e) => handleInputChange("nmc", e.target.value)}
-                    className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                    className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     placeholder="Ex. - NMC-12345-2020"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                   State Registration (Optional)
                 </label>
                 <input
@@ -961,7 +961,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   onChange={(e) =>
                     handleInputChange("state_registration", e.target.value)
                   }
-                  className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                  className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                   placeholder="Ex. - SR-12345-2020"
                 />
               </div>
@@ -972,7 +972,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
         <div className="flex items-center justify-end p-6 border-t border-gray-200 gap-4">
           <button
             onClick={resetForm}
-            className="px-6 py-2 text-[#161D1F] text-[10px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-6 py-2 text-[#161D1F] text-[12px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Reset
           </button>
@@ -980,7 +980,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           {activeTab > 0 && (
             <button
               onClick={() => setActiveTab(activeTab - 1)}
-              className="px-6 py-2 text-[#16181b] text-[10px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 text-[#16181b] text-[12px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Previous
             </button>
@@ -989,14 +989,14 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           {activeTab < tabs.length - 1 ? (
             <button
               onClick={() => setActiveTab(activeTab + 1)}
-              className="px-6 py-2 text-[#16181b] text-[10px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 text-[#16181b] text-[12px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Next
             </button>
           ) : (
             <button
               onClick={handleSubmit}
-              className="px-6 py-2 text-[#fffff] text-[10px] bg-[#1BA3C7] border border-gray-300 rounded-lg hover:bg-[#1BA3C7] transition-colors"
+              className="px-6 py-2 text-[#fffff] text-[12px] bg-[#1BA3C7] border border-gray-300 rounded-lg hover:bg-[#1BA3C7] transition-colors"
             >
               {editingDoctor ? "Update Doctor" : "Add Doctor"}
             </button>

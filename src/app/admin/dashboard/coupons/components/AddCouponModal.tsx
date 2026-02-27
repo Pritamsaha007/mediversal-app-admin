@@ -135,7 +135,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
         <div className="p-6 overflow-y-auto max-h-[calc(80vh-150px)]">
           <div className="grid grid-cols-1 md:grid-row-2 gap-4">
             <div className="space-y-1 col-span-2">
-              <label className="block text-[10px] font-medium text-[#161D1F]">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
                 Coupon Code
               </label>
               <div className="flex gap-2">
@@ -148,21 +148,21 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                       e.target.value.toUpperCase(),
                     )
                   }
-                  className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[10px] text-gray-500"
+                  className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[12px] text-gray-500"
                   placeholder="e.g., WELCOME10"
                   required
                 />
                 {/* <button
                   type="button"
                   onClick={handleGenerateCode}
-                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-[10px]"
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-[12px]"
                 >
                   Generate
                 </button> */}
               </div>
 
               <div className="space-y-1">
-                <label className="block text-[10px] font-medium text-[#161D1F]">
+                <label className="block text-[12px] font-medium text-[#161D1F]">
                   Discount Type
                 </label>
                 <div className="flex gap-2">
@@ -171,7 +171,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                     onClick={() =>
                       handleInputChange("discount_type", "percentage")
                     }
-                    className={`flex-1 py-2 px-3 rounded-md border text-[10px] ${
+                    className={`flex-1 py-2 px-3 rounded-md border text-[12px] ${
                       formData.discount_type === "percentage"
                         ? "bg-[#0088B1]  text-white"
                         : "bg-white border-gray-300 text-gray-700"
@@ -182,7 +182,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                   <button
                     type="button"
                     onClick={() => handleInputChange("discount_type", "fixed")}
-                    className={`flex-1 py-2 px-3 rounded-md border text-[10px] ${
+                    className={`flex-1 py-2 px-3 rounded-md border text-[12px] ${
                       formData.discount_type === "fixed"
                         ? "bg-[#0088B1]  text-white"
                         : "bg-white border-gray-300 text-gray-700"
@@ -195,7 +195,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[10px] font-medium text-[#161D1F]">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
                 {formData.discount_type === "percentage"
                   ? "Discount Percentage"
                   : "Discount Amount"}
@@ -214,17 +214,17 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                   max={
                     formData.discount_type === "percentage" ? "100" : undefined
                   }
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[10px] text-gray-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[12px] text-gray-500"
                   required
                 />
-                <span className="absolute right-3 top-2 text-gray-500 text-[10px]">
+                <span className="absolute right-3 top-2 text-gray-500 text-[12px]">
                   {formData.discount_type === "percentage" ? "%" : "₹"}
                 </span>
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[10px] font-medium text-[#161D1F]">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
                 Minimum Order Value (₹)
               </label>
               <input
@@ -237,12 +237,12 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                   )
                 }
                 min="0"
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[10px] text-gray-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[12px] text-gray-500"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[10px] font-medium text-[#161D1F]">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
                 Usage Limit
               </label>
               <input
@@ -252,12 +252,12 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                   handleInputChange("uses_limit", parseInt(e.target.value))
                 }
                 min="1"
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[10px] text-gray-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[12px] text-gray-500"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[10px] font-medium text-[#161D1F]">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
                 Start Date (Optional)
               </label>
               <div className="relative">
@@ -271,13 +271,13 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                   onChange={(e) =>
                     handleInputChange("start_date", e.target.value)
                   }
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[10px] text-gray-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[12px] text-gray-500"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[10px] font-medium text-[#161D1F]">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
                 Expiry Date
               </label>
               <div className="relative">
@@ -291,14 +291,14 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                   onChange={(e) =>
                     handleInputChange("expiry_date", e.target.value)
                   }
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[10px] text-gray-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[12px] text-gray-500"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-1 relative">
-              <label className="block text-[10px] font-medium text-[#161D1F]">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
                 Category
               </label>
               <div className="relative" onClick={toggleCategoryDropdown}>
@@ -306,7 +306,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                   type="text"
                   value={formData.category}
                   readOnly
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-[10px] text-gray-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-[12px] text-gray-500"
                   placeholder="Select category"
                 />
                 <ChevronDown className="absolute right-3 top-2 h-4 w-4 text-gray-400" />
@@ -317,7 +317,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                     <button
                       key={category}
                       type="button"
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-[10px] text-gray-500 w-full text-left bg-white"
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-[12px] text-gray-500 w-full text-left bg-white"
                       onClick={() => handleCategorySelect(category)}
                     >
                       {category}
@@ -328,7 +328,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[10px] font-medium text-[#161D1F]">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
                 Status
               </label>
               <select
@@ -339,7 +339,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                     e.target.value as "active" | "inactive",
                   )
                 }
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[10px] text-gray-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[12px] text-gray-500"
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
@@ -348,14 +348,14 @@ export const CouponModal: React.FC<CouponModalProps> = ({
           </div>
 
           <div className="space-y-1 mt-4 col-span-2">
-            <label className="block text-[10px] font-medium text-[#161D1F]">
+            <label className="block text-[12px] font-medium text-[#161D1F]">
               Coupon Description
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
               rows={3}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[10px] text-gray-500"
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[12px] text-gray-500"
               placeholder="Enter coupon description"
             />
           </div>
@@ -364,13 +364,13 @@ export const CouponModal: React.FC<CouponModalProps> = ({
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
           <button
             onClick={handleReset}
-            className="px-4 py-3 text-[10px] text-[#161D1F] hover:text-gray-900"
+            className="px-4 py-3 text-[12px] text-[#161D1F] hover:text-gray-900"
           >
             Reset
           </button>
           <button
             onClick={handleSubmit}
-            className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[10px] rounded-lg hover:bg-[#00729A]"
+            className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[12px] rounded-lg hover:bg-[#00729A]"
           >
             {isEditMode ? "Update Coupon" : "Create Coupon"}
           </button>

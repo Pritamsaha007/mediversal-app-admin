@@ -43,8 +43,8 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
                 staff.status === "Busy"
                   ? "bg-red-100 text-red-600"
                   : staff.status === "Available"
-                  ? "bg-green-100 text-green-600"
-                  : "bg-gray-100 text-gray-500"
+                    ? "bg-green-100 text-green-600"
+                    : "bg-gray-100 text-gray-500"
               }`}
             >
               {staff.status}

@@ -562,14 +562,13 @@ const Consultations: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-2">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        {/* <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
             Consultation & Scheduling
           </h1>
-          <div className="flex gap-3">
+          {/* <div className="flex gap-3">
             <button
               className="flex items-center text-[12px] gap-2 text-black border border-[#D3D7D8] px-6 py-2 rounded-lg transition-colors"
               onClick={() => {
@@ -592,8 +591,8 @@ const Consultations: React.FC = () => {
               <Plus className="w-4 h-4" />
               Schedule Online Consultation
             </button>
-          </div>
-        </div> */}
+          </div> */}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <StatsCard

@@ -682,12 +682,14 @@ export default function HealthcareDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-2">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+              <h1 className="text-2xl font-semibold text-gray-900">
+                Dashboard
+              </h1>
               <p className="text-sm text-gray-600 mt-1">
                 Welcome back, {admin.name || admin.email || "Admin"}
               </p>
@@ -715,25 +717,21 @@ export default function HealthcareDashboard() {
               icon={<Users className="w-5 h-5" />}
               subtitle="Active Customers in system"
               color="text-[#0088b1]"
-              stats={
-                customerMetrics
-                  ? customerMetrics.total_active_customers
-                  : "Loading..."
-              }
+              stats={customerMetrics ? customerMetrics.total_customers : 0}
             />
             <StatsCard
               title="Total Products"
               icon={<Package className="w-5 h-5" />}
               subtitle="Products in inventory"
               color="text-[#0088b1]"
-              stats={statistics ? statistics.activeproducts : "Loading..."}
+              stats={statistics ? statistics.activeproducts : 0}
             />
             <StatsCard
               title="Total Doctors"
               icon={<User className="w-5 h-5" />}
               subtitle="Active doctors"
               color="text-[#0088b1]"
-              stats={doctorCount > 0 ? doctorCount : "Loading..."}
+              stats={doctorCount > 0 ? doctorCount : 0}
             />
           </div>
         </div>

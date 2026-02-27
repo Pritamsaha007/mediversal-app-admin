@@ -64,9 +64,6 @@ const OfferingCard: React.FC<OfferingCardProps> = ({
             >
               {offering.status}
             </span>
-            {/* <span className="px-3 py-1 text-[8px] text-blue-600 border border-blue-600 rounded-full bg-blue-50">
-              Available
-            </span> */}
           </div>
         </div>
         <div className="relative" ref={dropdownRef}>
@@ -104,29 +101,24 @@ const OfferingCard: React.FC<OfferingCardProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <h4 className="text-[10px] font-medium text-[#161D1F] mb-2">
+          <h4 className="text-[12px] font-medium text-[#161D1F] mb-2">
             Features & Inclusions:
           </h4>
           <ul className="space-y-1">
             {offering.features.map((feature, index) => (
               <li
                 key={index}
-                className="flex items-center text-[10px] text-gray-600"
+                className="flex items-center text-[12px] text-gray-600"
               >
-                <div className="w-2 h-2 text-[10px] bg-green-500 rounded-full mr-2"></div>
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
                 {feature}
               </li>
             ))}
           </ul>
-          {offering.features.length > 5 && (
-            <button className="text-sm text-[#0088B1] mt-2">
-              +2 more features
-            </button>
-          )}
         </div>
 
         <div>
-          <h4 className="text-[10px] font-medium text-[#161D1F] mb-2">
+          <h4 className="text-[12px] font-medium text-[#161D1F] mb-2">
             Staff Requirements:
           </h4>
           <div className="flex flex-wrap gap-2">
@@ -142,7 +134,7 @@ const OfferingCard: React.FC<OfferingCardProps> = ({
         </div>
 
         <div>
-          <h4 className="text-[10px] font-medium text-[#161D1F] mb-2">
+          <h4 className="text-[12px] font-medium text-[#161D1F] mb-2">
             Equipment Included:
           </h4>
           <div className="flex flex-wrap gap-2">

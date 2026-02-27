@@ -237,12 +237,12 @@ export default function CouponsManagement() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-[16px] font-semibold text-[#161D1F]">Coupons</h1>
-          <p className="text-[16px] text-gray-600">
+          <h1 className="text-[20px] font-semibold text-[#161D1F]">Coupons</h1>
+          {/* <p className="text-[16px] text-gray-600">
             Manage all coupon codes for customer discounts
-          </p>
+          </p> */}
         </div>
       </div>
 
