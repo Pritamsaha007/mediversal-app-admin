@@ -56,7 +56,7 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
             </span>
             <div className="inline-flex gap-2">
               {hospital.emergencyServices && (
-                <span className="px-3 py-1 text-[10px] bg-red-100 text-red-700 rounded border border-red-200">
+                <span className="px-3 py-1 text-[12px] bg-red-100 text-red-700 rounded border border-red-200">
                   24/7 Emergency
                 </span>
               )}
@@ -100,7 +100,7 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
                 {hospital.departments.slice(0, 6).map((dept, index) => (
                   <span
                     key={index}
-                    className="px-3 py-2 text-[10px] bg-white text-gray-700 rounded-lg border"
+                    className="px-3 py-2 text-[12px] bg-white text-gray-700 rounded-lg border"
                   >
                     {dept}
                   </span>
@@ -108,7 +108,7 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
                 {hospital.departments.slice(6, 9).map((dept, index) => (
                   <span
                     key={index + 6}
-                    className="px-3 py-2 text-[10px] bg-white text-gray-700 rounded-lg border"
+                    className="px-3 py-2 text-[12px] bg-white text-gray-700 rounded-lg border"
                   >
                     {dept}
                   </span>
@@ -121,7 +121,7 @@ const HospitalDetailsModal: React.FC<HospitalDetailsModalProps> = ({
         <div className="flex items-center justify-end p-6 border-t border-gray-200">
           <button
             onClick={handleEdit}
-            className="px-6 py-2 text-[10px] bg-[#1BA3C7] text-white rounded-lg hover:bg-[#1591B8] transition-colors"
+            className="px-6 py-2 text-[12px] bg-[#1BA3C7] text-white rounded-lg hover:bg-[#1591B8] transition-colors"
           >
             Edit
           </button>

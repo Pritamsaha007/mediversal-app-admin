@@ -6,21 +6,17 @@ import AddOfferingForm from "./AddOfferingForm";
 import toast from "react-hot-toast";
 import { getHomecareOfferings, deleteHomecareOffering } from "../service";
 import { useAdminStore } from "@/app/store/adminStore";
-import { Offering, OfferingResponse } from "../types";
-
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  offerings: Offering[];
-  rating?: number;
-  reviewCount?: number;
-}
+import {
+  HomecareService,
+  Offering,
+  OfferingResponse,
+  transformOffering,
+} from "../types";
 
 interface ManageOfferingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  service: Service | null;
+  service: HomecareService | null;
 }
 
 const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
@@ -34,107 +30,47 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
   const [editingOffering, setEditingOffering] = useState<Offering | null>(null);
   const [loadingOfferings, setLoadingOfferings] = useState(false);
 
-  useEffect(() => {
-    const fetchOfferings = async () => {
-      if (!service || !token) return;
+  const fetchOfferings = async () => {
+    if (!service || !token) return;
 
-      setLoadingOfferings(true);
-      console.log("Fetching offerings for service:", service.id);
+    setLoadingOfferings(true);
+    try {
+      const response = await getHomecareOfferings(
+        { service_id: service.id },
+        token,
+      );
 
-      try {
-        const response = await getHomecareOfferings(
-          { service_id: service.id },
-          token,
-        );
-
-        if (response.success) {
-          console.log("Fetched offerings:", response.offerings);
-
-          const transformedOfferings: Offering[] = response.offerings.map(
-            (offering: OfferingResponse) => ({
-              id: offering.id,
-              name: offering.name,
-              description: offering.description,
-              price: parseFloat(offering.price),
-              duration: `${offering.duration_in_hrs} ${offering.duration_type}`,
-              duration_in_hrs: offering.duration_in_hrs,
-              duration_type: offering.duration_type,
-              staffRequirements: offering.staff_requirements,
-              equipmentIncluded: offering.equipment_requirements,
-              features: offering.features,
-              is_device: offering.is_device,
-              device_stock_count: offering.device_stock_count,
-
-              status:
-                offering.status === "Active" ? "Available" : ("Good" as const),
-            }),
-          );
-
-          setOfferings(transformedOfferings);
-        }
-      } catch (error) {
-        console.error("Error fetching offerings:", error);
-        toast.error("Failed to load offerings");
-        setOfferings([]);
-      } finally {
-        setLoadingOfferings(false);
+      if (response.success) {
+        const transformedOfferings = response.offerings.map(transformOffering);
+        setOfferings(transformedOfferings);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching offerings:", error);
+      toast.error("Failed to load offerings");
+      setOfferings([]);
+    } finally {
+      setLoadingOfferings(false);
+    }
+  };
 
+  useEffect(() => {
     if (isOpen && service) {
       fetchOfferings();
     }
   }, [isOpen, service, token]);
 
-  const handleAddOffering = async (newOffering: Omit<Offering, "id">) => {
-    try {
-      const response = await getHomecareOfferings(
-        { service_id: service!.id },
-        token!,
-      );
-
-      if (response.success) {
-        const transformedOfferings: Offering[] = response.offerings.map(
-          (offering: OfferingResponse) => ({
-            id: offering.id,
-            name: offering.name,
-            description: offering.description,
-            price: parseFloat(offering.price),
-            duration: `${offering.duration_in_hrs} ${offering.duration_type}`,
-            duration_in_hrs: offering.duration_in_hrs,
-            duration_type: offering.duration_type,
-            staffRequirements: offering.staff_requirements,
-            equipmentIncluded: offering.equipment_requirements,
-            features: offering.features,
-            is_device: offering.is_device,
-            device_stock_count: offering.device_stock_count,
-            status:
-              offering.status === "Active" ? "Available" : ("Good" as const),
-          }),
-        );
-
-        setOfferings(transformedOfferings);
-        toast.success(
-          editingOffering
-            ? "Offering updated successfully!"
-            : "Offering added successfully!",
-        );
-      }
-    } catch (error) {
-      console.error("Error refreshing offerings:", error);
-    }
-
+  const handleAddOffering = async () => {
+    await fetchOfferings();
     setShowAddForm(false);
     setEditingOffering(null);
   };
+
   const handleEditOffering = (offering: Offering) => {
     setEditingOffering(offering);
     setShowAddForm(true);
   };
 
   const handleDeleteOffering = async (offeringId: string) => {
-    console.log("Delete offering requested for ID:", offeringId);
-
     const confirmed = await new Promise<boolean>((resolve) => {
       const toastId = toast(
         (t) => (
@@ -162,49 +98,16 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
             </div>
           </div>
         ),
-        {
-          duration: Infinity,
-        },
+        { duration: Infinity },
       );
     });
 
     if (confirmed) {
       try {
         setLoadingOfferings(true);
-        console.log("Proceeding with delete for offering:", offeringId);
-
         await deleteHomecareOffering(offeringId, token!);
-
-        console.log("Offering deleted successfully, refreshing list...");
         toast.success("Offering deleted successfully!");
-
-        const response = await getHomecareOfferings(
-          { service_id: service!.id },
-          token!,
-        );
-
-        if (response.success) {
-          const transformedOfferings: Offering[] = response.offerings.map(
-            (offering: OfferingResponse) => ({
-              id: offering.id,
-              name: offering.name,
-              description: offering.description,
-              price: parseFloat(offering.price),
-              duration: `${offering.duration_in_hrs} ${offering.duration_type}`,
-              duration_in_hrs: offering.duration_in_hrs,
-              duration_type: offering.duration_type,
-              staffRequirements: offering.staff_requirements,
-              equipmentIncluded: offering.equipment_requirements,
-              features: offering.features,
-              is_device: offering.is_device,
-              device_stock_count: offering.device_stock_count,
-
-              status:
-                offering.status === "Active" ? "Available" : ("Good" as const),
-            }),
-          );
-          setOfferings(transformedOfferings);
-        }
+        await fetchOfferings();
       } catch (error: any) {
         console.error("Error deleting offering:", error);
         toast.error(error.message || "Failed to delete offering");
@@ -238,15 +141,15 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
                 <h3 className="text-[12px] font-semibold text-[#F8F8F8] mb-2">
                   {service.name}
                 </h3>
-                <p className=" text-[10px] text-[#F8F8F8]">
+                <p className="text-[12px] text-[#F8F8F8]">
                   {service.description}
                 </p>
               </div>
               <div className="text-right">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px]">Rating & Review:</span>
+                  <span className="text-[12px]">Rating & Review:</span>
                   <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                  <span className="font-medium text-[10px]">
+                  <span className="font-medium text-[12px]">
                     {service.rating || 4.6} ({service.reviewCount || 420})
                   </span>
                 </div>
@@ -261,7 +164,7 @@ const ManageOfferingsModal: React.FC<ManageOfferingsModalProps> = ({
               </h3>
               <button
                 onClick={() => setShowAddForm(true)}
-                className="px-4 py-2 bg-[#0088B1] text-white rounded-md hover:bg-[#00729A] text-[10px]"
+                className="px-4 py-2 bg-[#0088B1] text-white rounded-md hover:bg-[#00729A] text-[12px]"
               >
                 Add Offering
               </button>

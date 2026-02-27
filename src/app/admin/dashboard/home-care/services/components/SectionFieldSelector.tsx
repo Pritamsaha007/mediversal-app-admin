@@ -4,25 +4,7 @@ import { X } from "lucide-react";
 import { createOrUpdateHomecareService } from "../service";
 import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
-
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  status: "Active" | "Inactive";
-  offerings: any[];
-  rating?: number;
-  reviewCount?: number;
-  consents?: Array<{
-    id: string;
-    consent: string;
-    is_active: boolean;
-    consent_category_id: string;
-  }>;
-  display_sections: string[];
-  custom_medical_info: any;
-}
+import { HomecareService } from "../types";
 
 interface SectionFieldData {
   sections: string[];
@@ -34,7 +16,7 @@ interface SectionFieldSelectorProps {
   onClose: () => void;
   onSave: (data: SectionFieldData) => void;
   initialData?: SectionFieldData;
-  editService?: Service | null;
+  editService?: HomecareService | null;
   serviceData: {
     name: string;
     description: string;
@@ -42,8 +24,8 @@ interface SectionFieldSelectorProps {
     tags: string[];
     consents: string[];
   };
-  onAddService: (service: Omit<Service, "id">) => void;
-  onUpdateService?: (service: Service) => void;
+  onAddService: (service: Omit<HomecareService, "id">) => void;
+  onUpdateService?: (service: HomecareService) => void;
   onCloseMainModal: () => void;
   onResetMainForm: () => void;
 }
@@ -62,10 +44,10 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
 }) => {
   const { token, admin } = useAdminStore();
   const [selectedSections, setSelectedSections] = useState<string[]>(
-    initialData?.sections || []
+    initialData?.sections || [],
   );
   const [selectedMedicalFields, setSelectedMedicalFields] = useState<string[]>(
-    initialData?.medicalFields || []
+    initialData?.medicalFields || [],
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -127,7 +109,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
 
   useEffect(() => {
     if (editService && isOpen) {
-      const mappedSections = editService.display_sections
+      const mappedSections = (editService.display_sections || [])
         .map((section) => reverseSectionMapping[section] || section)
         .filter((section) => section !== "Patient Information");
 
@@ -177,7 +159,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
       return;
     }
 
-    if (!token || !admin.id) {
+    if (!token || !admin?.id) {
       toast.error("Authentication required");
       return;
     }
@@ -188,7 +170,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
       const displaySections = ["PatientInfo"];
       if (selectedSections.length > 0) {
         const mappedSections = selectedSections.map(
-          (section) => sectionMapping[section] || section
+          (section) => sectionMapping[section] || section,
         );
         displaySections.push(...mappedSections);
       }
@@ -196,7 +178,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
       const consentsPayload = serviceData.consents.map((consent) => {
         if (editService) {
           const existingConsent = editService.consents?.find(
-            (c) => c.consent === consent
+            (c) => c.consent === consent,
           );
           return {
             id: existingConsent?.id || null,
@@ -221,7 +203,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
       }
 
       if (
-        Object.keys(customMedicalInfo).length === 0 ||
+        Object.keys(customMedicalInfo).length === 0 &&
         selectedSections.includes("Medical Information")
       ) {
         customMedicalInfo.medicalhistory = "textbox";
@@ -243,19 +225,19 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
 
       if (response.success) {
         if (editService && onUpdateService) {
-          const updatedService: Service = {
+          const updatedService: HomecareService = {
             ...editService,
             name: serviceData.name.trim(),
             description: serviceData.description.trim(),
             status: serviceData.status,
-            category: serviceData.tags[0] || "General",
+            service_tags: serviceData.tags,
             display_sections: displaySections,
             custom_medical_info: customMedicalInfo,
           };
           onUpdateService(updatedService);
           toast.success("Service updated successfully!");
         } else {
-          onAddService({} as Omit<Service, "id">);
+          onAddService({} as Omit<HomecareService, "id">);
           toast.success("Service created successfully!");
         }
 
@@ -275,7 +257,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
 
   const handleReset = () => {
     if (editService) {
-      const mappedSections = editService.display_sections
+      const mappedSections = (editService.display_sections || [])
         .map((section) => reverseSectionMapping[section] || section)
         .filter((section) => section !== "Patient Information");
 
@@ -491,8 +473,8 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
               {isSubmitting
                 ? "Saving..."
                 : editService
-                ? "Update Service"
-                : "Add Service"}
+                  ? "Update Service"
+                  : "Add Service"}
             </button>
           </div>
         </div>

@@ -3,25 +3,14 @@ import React, { useEffect, useState } from "react";
 import { X, ChevronDown } from "lucide-react";
 import { useAdminStore } from "@/app/store/adminStore";
 import SectionFieldSelector from "./SectionFieldSelector";
-import { Offering } from "../types";
+import { HomecareService, Offering } from "../types";
 
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  status: "Active" | "Inactive";
-  offerings: Offering[];
-  rating?: number;
-  reviewCount?: number;
-  consents?: Array<{
-    id: string;
-    consent: string;
-    is_active: boolean;
-    consent_category_id: string;
-  }>;
-  display_sections: string[];
-  custom_medical_info: any;
+interface AddServiceModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onAddService: (service: Omit<HomecareService, "id">) => void;
+  onUpdateService?: (service: HomecareService) => void;
+  editService?: HomecareService | null;
 }
 
 interface SectionFieldData {
@@ -29,13 +18,6 @@ interface SectionFieldData {
   medicalFields: string[];
 }
 
-interface AddServiceModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onAddService: (service: Omit<Service, "id">) => void;
-  onUpdateService?: (service: Service) => void;
-  editService?: Service | null;
-}
 const AddServiceModal: React.FC<AddServiceModalProps> = ({
   isOpen,
   onClose,
@@ -64,8 +46,7 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
       setServiceName(editService.name);
       setServiceDescription(editService.description);
       setServiceStatus(editService.status);
-      setServiceTags(editService.offerings.map((offering) => offering.name));
-      setConsents(editService.consents?.map((c) => c.consent) || []);
+      setServiceTags(editService.service_tags || []);
       setConsents(editService.consents?.map((c) => c.consent) || []);
     } else if (isOpen) {
       handleReset();
@@ -84,7 +65,7 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
   };
 
   const handleAddConsent = () => {
-    if (newConsent.trim()) {
+    if (newConsent.trim() && !consents.includes(newConsent.trim())) {
       setConsents([...consents, newConsent.trim()]);
       setNewConsent("");
     }
@@ -120,7 +101,7 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
             <h3 className="text-[16px] font-semibold text-[#161D1F]">
               {editService ? "Edit Service" : "Add New Service"}
             </h3>
-            <p className="text-[10px] text-[#899193] mt-1">
+            <p className="text-[12px] text-[#899193] mt-1">
               {editService
                 ? "Update the service details below"
                 : "Enter the service details below"}
@@ -137,7 +118,7 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
         <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-6">
             <div>
-              <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+              <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                 <span className="text-red-500">*</span> Service Name
               </label>
               <input
@@ -145,12 +126,13 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
                 value={serviceName}
                 onChange={(e) => setServiceName(e.target.value)}
                 placeholder="Enter service name"
-                className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                required
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+              <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                 <span className="text-red-500">*</span> Service Description
               </label>
               <textarea
@@ -158,21 +140,23 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
                 onChange={(e) => setServiceDescription(e.target.value)}
                 placeholder="Enter service description"
                 rows={4}
-                className="w-full text-[10px] px-4 py-2 border border-gray-300 rounded-lg  focus:border-transparent resize-none text-[#161D1F] placeholder-gray-400"
+                className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent resize-none text-[#161D1F] placeholder-gray-400"
+                required
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+                <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                   <span className="text-red-500">*</span> Service Status
                 </label>
                 <div className="relative">
                   <button
+                    type="button"
                     onClick={() =>
                       setIsStatusDropdownOpen(!isStatusDropdownOpen)
                     }
-                    className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg text-[10px]  focus:border-black flex items-center justify-between text-[#161D1F]"
+                    className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg text-[12px] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent flex items-center justify-between text-[#161D1F]"
                   >
                     {serviceStatus}
                     <ChevronDown className="w-4 h-4" />
@@ -182,11 +166,12 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
                       {(["Active", "Inactive"] as const).map((status) => (
                         <button
                           key={status}
+                          type="button"
                           onClick={() => {
                             setServiceStatus(status);
                             setIsStatusDropdownOpen(false);
                           }}
-                          className="w-full text-[10px] px-4 py-2 text-left hover:bg-gray-50 text-[#161D1F]"
+                          className="w-full text-[12px] px-4 py-2 text-left hover:bg-gray-50 text-[#161D1F] first:rounded-t-lg last:rounded-b-lg"
                         >
                           {status}
                         </button>
@@ -196,8 +181,8 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
-                  Service Tags
+                <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
+                  Service Tags (Offerings)
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -205,12 +190,13 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
                     placeholder="Enter service tag"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-[10px] focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-[12px] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     onKeyPress={(e) => e.key === "Enter" && handleAddTag()}
                   />
                   <button
+                    type="button"
                     onClick={handleAddTag}
-                    className="px-6 py-2 bg-[#0088B1] text-[10px] text-white rounded-lg hover:bg-teal-600 transition-colors"
+                    className="px-6 py-2 bg-[#0088B1] text-[12px] text-white rounded-lg hover:bg-[#00729A] transition-colors"
                   >
                     Add
                   </button>
@@ -220,11 +206,11 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
                     {serviceTags.map((tag, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center gap-1 px-3 py-1 text-white text-[10px] rounded-full"
-                        style={{ backgroundColor: "#0088B1" }}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-[#0088B1] text-white text-[12px] rounded-full"
                       >
                         {tag}
                         <button
+                          type="button"
                           onClick={() => handleRemoveTag(tag)}
                           className="hover:bg-black/20 rounded-full p-0.5"
                         >
@@ -238,7 +224,7 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+              <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                 Consents
               </label>
               <div className="flex gap-2 mb-3">
@@ -247,11 +233,12 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
                   value={newConsent}
                   onChange={(e) => setNewConsent(e.target.value)}
                   placeholder="Enter consent text"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-[10px] focus:border-transparent text-[#161D1F] placeholder-gray-400"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-[12px] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent text-[#161D1F] placeholder-gray-400"
                 />
                 <button
+                  type="button"
                   onClick={handleAddConsent}
-                  className="px-6 py-2 text-[10px] bg-[#0088B1] text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  className="px-6 py-2 text-[12px] bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors"
                 >
                   Add
                 </button>
@@ -259,7 +246,7 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
 
               {consents.length > 0 && (
                 <div>
-                  <h4 className="text-[10px] font-medium text-[#161D1F] mb-3">
+                  <h4 className="text-[12px] font-medium text-[#161D1F] mb-3">
                     Added Consents
                   </h4>
                   <div className="space-y-3">
@@ -275,8 +262,9 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
                           {consent}
                         </p>
                         <button
+                          type="button"
                           onClick={() => handleRemoveConsent(index)}
-                          className="text-red-500 hover:text-red-700 text-[10px] font-medium"
+                          className="text-red-500 hover:text-red-700 text-[12px] font-medium"
                         >
                           Remove
                         </button>
@@ -291,19 +279,23 @@ const AddServiceModal: React.FC<AddServiceModalProps> = ({
 
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 flex-shrink-0">
           <button
+            type="button"
             onClick={handleReset}
-            className="px-6 py-2 text-[#161D1F] text-[10px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-6 py-2 text-[#161D1F] text-[12px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Reset
           </button>
           <button
+            type="button"
             onClick={() => setShowSectionSelector(true)}
-            className="px-6 py-2 text-[#161D1F] text-[10px] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-6 py-2 bg-[#0088B1] text-white text-[12px] rounded-lg hover:bg-[#00729A] transition-colors"
+            disabled={!serviceName || !serviceDescription}
           >
             Next
           </button>
         </div>
       </div>
+
       <SectionFieldSelector
         isOpen={showSectionSelector}
         onClose={() => setShowSectionSelector(false)}

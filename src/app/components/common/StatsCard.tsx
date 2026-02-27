@@ -35,7 +35,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   if (isDetailedVariant) {
     const detailedStats = stats as Status[];
     return (
-      <div className="bg-white p-4 rounded-lg border border-gray-200 flex flex-row justify-between items-start">
+      <div className="bg-white p-4 rounded-lg border border-gray-200 flex flex-row justify-between items-start shadow-md hover:bg-gray-100">
         <div className="flex flex-col items-start">
           <p className="text-[10px] text-[#161D1F] mb-1">{title}</p>
 
@@ -63,7 +63,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   }
 
   return (
-    <div className="bg-white p-4 rounded-lg border border-gray-200">
+    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-md hover:bg-gray-100">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-[12px] text-[#899193] mb-1">{title}</h3>

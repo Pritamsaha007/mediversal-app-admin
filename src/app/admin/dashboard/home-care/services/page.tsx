@@ -21,75 +21,6 @@ import {
 } from "lucide-react";
 import { HomecareService } from "./types";
 
-const transformHomecareServiceToService = (
-  homecareService: HomecareService,
-): Service => {
-  return {
-    id: homecareService.id,
-    name: homecareService.name,
-    description: homecareService.description,
-    category: homecareService.display_sections?.[0] || "General",
-    status: homecareService.status,
-    display_sections: homecareService.display_sections,
-    custom_medical_info: homecareService.custom_medical_info,
-    offerings: homecareService.service_tags.map((tag, index) => ({
-      id: `${homecareService.id}-offering-${index}`,
-      name: tag,
-      description: `${tag} service`,
-      price: 0,
-      duration: "1 hour",
-      duration_in_hrs: 1,
-      duration_type_value: "hour",
-      duration_type: "hour",
-      features: homecareService.display_sections || [],
-      staffRequirements: [],
-      equipmentIncluded: [],
-      status: "Available" as const,
-      is_device: false,
-      device_stock_count: 0,
-    })),
-    rating: 4.5,
-    reviewCount: 10,
-    consents: homecareService.consents || [],
-  };
-};
-
-interface Offering {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  duration: string;
-  duration_in_hrs: number;
-  duration_type_value: string;
-  duration_type: string;
-  features: string[];
-  staffRequirements: string[];
-  equipmentIncluded: string[];
-  status: "Excellent" | "Good" | "Available";
-  is_device: boolean;
-  device_stock_count: number;
-}
-
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  status: "Active" | "Inactive";
-  offerings: Offering[];
-  rating?: number;
-  reviewCount?: number;
-  consents?: Array<{
-    id: string;
-    consent: string;
-    is_active: boolean;
-    consent_category_id: string;
-  }>;
-  display_sections: string[];
-  custom_medical_info: any;
-}
-
 interface ServiceStats {
   totalServices: number;
   activeServices: number;
@@ -118,16 +49,17 @@ const useDebounce = (value: string, delay: number) => {
 const Services: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
-  const [allServices, setAllServices] = useState<Service[]>([]);
+  const [allServices, setAllServices] = useState<HomecareService[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [showManageModal, setShowManageModal] = useState(false);
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
   const [selectedServiceForModal, setSelectedServiceForModal] =
-    useState<Service | null>(null);
-  const [editingService, setEditingService] = useState<Service | null>(null);
+    useState<HomecareService | null>(null);
+  const [editingService, setEditingService] = useState<HomecareService | null>(
+    null,
+  );
 
-  // Frontend Pagination states
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 20;
 
@@ -136,7 +68,6 @@ const Services: React.FC = () => {
   const statusOptions = ["All Status", "Active", "Inactive"];
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Fetch all services (no pagination from API)
   const fetchServices = async () => {
     if (!isLoggedIn || !token) {
       toast.error("Please login to access services");
@@ -150,17 +81,12 @@ const Services: React.FC = () => {
         {
           status: selectedStatus === "All Status" ? null : selectedStatus,
           search: searchTerm || null,
-          // No pagination params sent to API
         },
         token,
       );
-
+      console.log(response, "response");
       if (response.success) {
-        const transformedServices = response.services.map(
-          transformHomecareServiceToService,
-        );
-        setAllServices(transformedServices);
-        // Reset to first page when new data comes in
+        setAllServices(response.services);
         setCurrentPage(0);
       } else {
         throw new Error("Failed to fetch services");
@@ -179,7 +105,6 @@ const Services: React.FC = () => {
     }
   }, [isLoggedIn, token, selectedStatus, debouncedSearchTerm]);
 
-  // Filter services based on search and status
   const filteredServices = useMemo(() => {
     return allServices.filter((service) => {
       const matchesSearch = service.name
@@ -191,25 +116,22 @@ const Services: React.FC = () => {
     });
   }, [allServices, debouncedSearchTerm, selectedStatus]);
 
-  // Get current page data
   const currentServices = useMemo(() => {
     const start = currentPage * pageSize;
     const end = start + pageSize;
     return filteredServices.slice(start, end);
   }, [filteredServices, currentPage, pageSize]);
 
-  // Calculate total pages
   const totalPages = Math.ceil(filteredServices.length / pageSize);
   const hasMore = currentPage < totalPages - 1;
 
-  // Generate stats from all filtered services
   const stats: ServiceStats = useMemo(() => {
     const totalServices = filteredServices.length;
     const activeServices = filteredServices.filter(
       (s) => s.status === "Active",
     ).length;
     const totalOfferings = filteredServices.reduce((acc, service) => {
-      return acc + service.offerings.length;
+      return acc + (service.service_tags?.length || 0);
     }, 0);
 
     return {
@@ -222,14 +144,14 @@ const Services: React.FC = () => {
   const loadNextPage = () => {
     if (hasMore && !loading) {
       setCurrentPage((prev) => prev + 1);
-      setSelectedServices([]); // Clear selections when changing page
+      setSelectedServices([]);
     }
   };
 
   const loadPreviousPage = () => {
     if (currentPage > 0 && !loading) {
       setCurrentPage((prev) => prev - 1);
-      setSelectedServices([]); // Clear selections when changing page
+      setSelectedServices([]);
     }
   };
 
@@ -308,7 +230,10 @@ const Services: React.FC = () => {
     }
   };
 
-  const handleServiceAction = async (action: string, service: Service) => {
+  const handleServiceAction = async (
+    action: string,
+    service: HomecareService,
+  ) => {
     switch (action) {
       case "edit":
         setEditingService(service);
@@ -362,7 +287,7 @@ const Services: React.FC = () => {
     }
   };
 
-  const handleManageOfferings = (service: Service) => {
+  const handleManageOfferings = (service: HomecareService) => {
     setSelectedServiceForModal(service);
     setShowManageModal(true);
   };
@@ -378,16 +303,14 @@ const Services: React.FC = () => {
     toast.success("Service updated successfully!");
   };
 
-  const exportServicesToCSV = (services: Service[]) => {
+  const exportServicesToCSV = (services: HomecareService[]) => {
     const headers = [
       "Service Name",
       "Description",
-      "Category",
       "Status",
       "Offerings Count",
       "Offerings",
       "Display Sections",
-      "Custom Medical Info",
     ];
 
     const csvContent = [
@@ -396,12 +319,10 @@ const Services: React.FC = () => {
         [
           `"${s.name}"`,
           `"${s.description}"`,
-          `"${s.category}"`,
           s.status,
-          s.offerings.length,
-          `"${s.offerings.map((o) => o.name).join("; ")}"`,
+          s.service_tags?.length || 0,
+          `"${(s.service_tags || []).join("; ")}"`,
           `"${(s.display_sections || []).join("; ")}"`,
-          `"${JSON.stringify(s.custom_medical_info || {}).replace(/"/g, '""')}"`,
         ].join(","),
       ),
     ].join("\n");
@@ -446,12 +367,10 @@ const Services: React.FC = () => {
             <button
               onClick={() => setShowAddServiceModal(true)}
               disabled={loading}
-              className={`flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg 
-                  bg-[#0088B1] hover:bg-[#00729A] cursor-pointer
-             `}
+              className="flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg bg-[#0088B1] hover:bg-[#00729A] cursor-pointer text-white"
             >
               <Plus className="w-3 h-3" />
-              {"New Service"}
+              New Service
             </button>
             {selectedServices.length > 0 && (
               <button
@@ -461,7 +380,7 @@ const Services: React.FC = () => {
                   loading
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-red-400 hover:bg-red-500"
-                } text-[#F8F8F8]`}
+                } text-white`}
               >
                 <Trash2 className="w-3 h-3" />
                 {loading
@@ -487,7 +406,7 @@ const Services: React.FC = () => {
           />
           <StatsCard
             title="Total Offerings"
-            stats={stats.totalOfferings}
+            stats={50}
             icon={<Users className="w-5 h-5" />}
             color="text-[#0088B1]"
           />
@@ -603,28 +522,30 @@ const Services: React.FC = () => {
                             {service.description}
                           </div>
                           <div className="flex gap-2 flex-wrap">
-                            {service.offerings.map((offering, index) => {
-                              const isActiveOffering = offering.name
-                                .toLowerCase()
-                                .includes("active");
-                              const activeClasses =
-                                "px-2 py-1 text-[8px] text-[#9B51E0] border border-[#9B51E0] rounded hover:bg-[#9B51E0] hover:text-white transition-colors";
-                              const offeringClasses =
-                                "px-2 py-1 text-[8px] text-[#2196F3] border border-[#2196F3] rounded hover:bg-[#2196F3] hover:text-white transition-colors";
+                            {(service.service_tags || []).map(
+                              (offering, index) => {
+                                const isActiveOffering = offering
+                                  .toLowerCase()
+                                  .includes("active");
+                                const activeClasses =
+                                  "px-2 py-1 text-[8px] text-[#9B51E0] border border-[#9B51E0] rounded hover:bg-[#9B51E0] hover:text-white transition-colors";
+                                const offeringClasses =
+                                  "px-2 py-1 text-[8px] text-[#2196F3] border border-[#2196F3] rounded hover:bg-[#2196F3] hover:text-white transition-colors";
 
-                              return (
-                                <span
-                                  key={index}
-                                  className={
-                                    isActiveOffering
-                                      ? activeClasses
-                                      : offeringClasses
-                                  }
-                                >
-                                  {offering.name}
-                                </span>
-                              );
-                            })}
+                                return (
+                                  <span
+                                    key={index}
+                                    className={
+                                      isActiveOffering
+                                        ? activeClasses
+                                        : offeringClasses
+                                    }
+                                  >
+                                    {offering}
+                                  </span>
+                                );
+                              },
+                            )}
                           </div>
                         </div>
                       </td>

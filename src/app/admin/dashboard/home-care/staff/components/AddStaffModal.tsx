@@ -30,10 +30,10 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
 
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [specializationTags, setSpecializationTags] = useState<string[]>(
-    initialData?.departments || []
+    initialData?.departments || [],
   );
   const [certificationTags, setCertificationTags] = useState<string[]>(
-    initialData?.certifications || []
+    initialData?.certifications || [],
   );
   const [specializationInput, setSpecializationInput] = useState("");
   const [certificationInput, setCertificationInput] = useState("");
@@ -41,7 +41,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [roleOptions, setRoleOptions] = useState<RoleApiResponse[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<string>(
-    initialData?.position || ""
+    initialData?.position || "",
   );
 
   // const roleOptions = [
@@ -95,7 +95,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
 
         if (initialData?.position) {
           const matchingRole = roles.find(
-            (role) => role.role_name === initialData.position
+            (role) => role.role_name === initialData.position,
           );
           if (matchingRole) {
             setSelectedRoleId(matchingRole.id);
@@ -154,7 +154,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
 
   const handleKeyPress = (
     e: React.KeyboardEvent,
-    type: "specialization" | "certification"
+    type: "specialization" | "certification",
   ) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -208,7 +208,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
       };
       console.log(
         "Submitting Staff Payload:",
-        JSON.stringify(payload, null, 2)
+        JSON.stringify(payload, null, 2),
       );
 
       if (initialData?.id) {
@@ -239,7 +239,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
       onClose();
     } catch (error) {
       setSubmitError(
-        error instanceof Error ? error.message : "Failed to save staff"
+        error instanceof Error ? error.message : "Failed to save staff",
       );
       console.error("Error saving staff:", error);
     } finally {
@@ -308,28 +308,28 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block text-[10px] font-medium text-[#161D1F]">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
                 Full Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.fullName}
                 onChange={(e) => handleInputChange("fullName", e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[10px] placeholder-[#899193] text-black"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[12px] placeholder-[#899193] text-black"
                 placeholder="Enter Full Name"
                 required
               />
             </div>
 
             <div className="space-y-2 relative">
-              <label className="block text-[10px] font-medium text-[#161D1F]">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
                 Role <span className="text-red-500">*</span>
               </label>
               <div className="role-dropdown relative">
                 <button
                   type="button"
                   onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[10px] text-left flex items-center justify-between  "
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[12px] text-left flex items-center justify-between  "
                 >
                   <span
                     className={
@@ -351,7 +351,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                         key={role.id}
                         type="button"
                         onClick={() => handleRoleSelect(role)}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-50 text-[10px] border-b border-gray-100 last:border-b-0 text-black"
+                        className="w-full px-4 py-3 text-left hover:bg-gray-50 text-[12px] border-b border-gray-100 last:border-b-0 text-black"
                       >
                         {role.role_name}
                       </button>
@@ -362,7 +362,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-medium text-[#161D1F]">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
                 Phone Number <span className="text-red-500">*</span>
               </label>
               <input
@@ -371,14 +371,14 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                 onChange={(e) =>
                   handleInputChange("phoneNumber", e.target.value)
                 }
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[10px] placeholder-[#899193] text-black"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[12px] placeholder-[#899193] text-black"
                 placeholder="+91 XXXXX XXXXX"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-medium text-[#161D1F]">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
                 Email Address
               </label>
               <input
@@ -387,13 +387,13 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                 onChange={(e) =>
                   handleInputChange("emailAddress", e.target.value)
                 }
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[10px] placeholder-[#899193] text-black"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[12px] placeholder-[#899193] text-black"
                 placeholder="name@example.com"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-medium text-[#161D1F]">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
                 Experience
               </label>
               <input
@@ -402,27 +402,27 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                 onChange={(e) =>
                   handleInputChange("experience", e.target.value)
                 }
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[10px] placeholder-[#899193] text-black"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[12px] placeholder-[#899193] text-black"
                 placeholder="e.g. 5 years"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-medium text-[#161D1F]">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
                 Location
               </label>
               <input
                 type="text"
                 value={formData.location}
                 onChange={(e) => handleInputChange("location", e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[10px] placeholder-[#899193] text-black"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[12px] placeholder-[#899193] text-black"
                 placeholder="Area, City, State"
               />
             </div>
           </div>
 
           <div className="space-y-2 mt-6">
-            <label className="block text-[10px] font-medium text-[#161D1F]">
+            <label className="block text-[12px] font-medium text-[#161D1F]">
               Specialization
             </label>
             <div className="flex items-center gap-2">
@@ -431,13 +431,13 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                 value={specializationInput}
                 onChange={(e) => setSpecializationInput(e.target.value)}
                 onKeyPress={(e) => handleKeyPress(e, "specialization")}
-                className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[10px] placeholder-[#899193] text-black"
+                className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[12px] placeholder-[#899193] text-black"
                 placeholder="Enter specialization and press Enter"
               />
               <button
                 type="button"
                 onClick={addSpecializationTag}
-                className="px-4 py-3 bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors text-[10px] font-medium"
+                className="px-4 py-3 bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors text-[12px] font-medium"
               >
                 Add
               </button>
@@ -448,7 +448,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                 {specializationTags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center gap-2 px-3 py-1 bg-[#0088B1] text-white rounded-full text-[10px]"
+                    className="inline-flex items-center gap-2 px-3 py-1 bg-[#0088B1] text-white rounded-full text-[12px]"
                   >
                     {tag}
                     <button
@@ -465,7 +465,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
           </div>
 
           <div className="space-y-2 mt-6">
-            <label className="block text-[10px] font-medium text-[#161D1F]">
+            <label className="block text-[12px] font-medium text-[#161D1F]">
               Certifications
             </label>
             <div className="flex items-center gap-2">
@@ -474,13 +474,13 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                 value={certificationInput}
                 onChange={(e) => setCertificationInput(e.target.value)}
                 onKeyPress={(e) => handleKeyPress(e, "certification")}
-                className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[10px] placeholder-[#899193]"
+                className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[12px] placeholder-[#899193]"
                 placeholder="Enter certification and press Enter"
               />
               <button
                 type="button"
                 onClick={addCertificationTag}
-                className="px-4 py-3 bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors text-[10px] font-medium"
+                className="px-4 py-3 bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors text-[12px] font-medium"
               >
                 Add
               </button>
@@ -491,7 +491,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                 {certificationTags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center gap-2 px-3 py-1 bg-[#0088B1] text-white rounded-full text-[10px]"
+                    className="inline-flex items-center gap-2 px-3 py-1 bg-[#0088B1] text-white rounded-full text-[12px]"
                   >
                     {tag}
                     <button
@@ -512,7 +512,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
           <button
             type="button"
             onClick={handleReset}
-            className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors text-[10px] font-medium"
+            className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors text-[12px] font-medium"
           >
             Reset
           </button>
@@ -531,15 +531,15 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
               isSubmitting
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-[#0088B1] hover:bg-[#00729A]"
-            } text-white rounded-lg transition-colors text-[10px] font-medium`}
+            } text-white rounded-lg transition-colors text-[12px] font-medium`}
           >
             {isSubmitting
               ? initialData
                 ? "Updating..."
                 : "Adding..."
               : initialData
-              ? "Update Staff"
-              : "Add Staff Member"}
+                ? "Update Staff"
+                : "Add Staff Member"}
           </button>
         </div>
       </div>

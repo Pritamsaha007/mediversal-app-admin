@@ -52,7 +52,7 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-[16px] font-medium text-[#161d1f]">
-            Doctor Details
+            {doctor.name}'s Details
           </h2>
           <button
             onClick={onClose}
@@ -68,19 +68,19 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
               Tags:
             </span>
             <div className="inline-flex gap-2">
-              <span className="px-3 py-1 text-[10px] bg-cyan-100 text-cyan-700 rounded-lg border border-cyan-200">
+              <span className="px-3 py-1 text-[12px] bg-cyan-100 text-cyan-700 rounded-lg border border-cyan-200">
                 {doctor.experience_in_yrs} yrs. exp.
               </span>
-              <span className="px-3 py-1 text-[10px] bg-purple-100 text-purple-700 rounded-lg border border-purple-200">
+              <span className="px-3 py-1 text-[12px] bg-purple-100 text-purple-700 rounded-lg border border-purple-200">
                 {doctor.rating || 4.2} rating
               </span>
               {doctor.is_available_online && (
-                <span className="px-3 py-1 text-[10px] bg-green-100 text-green-700 rounded-lg border border-green-200">
+                <span className="px-3 py-1 text-[12px] bg-green-100 text-green-700 rounded-lg border border-green-200">
                   Online
                 </span>
               )}
               {doctor.is_available_in_person && (
-                <span className="px-3 py-1 text-[10px] bg-orange-100 text-orange-700 rounded-lg border border-orange-200">
+                <span className="px-3 py-1 text-[12px] bg-orange-100 text-orange-700 rounded-lg border border-orange-200">
                   In-Person
                 </span>
               )}
@@ -88,10 +88,10 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
           </div>
 
           <div className="mb-6">
-            <span className="text-[10px] font-medium text-[#161d1f]">
+            <span className="text-[12px] font-medium text-[#161d1f]">
               Description:
             </span>
-            <p className="text-[10px] text-gray-600 mt-1 leading-relaxed">
+            <p className="text-[12px] text-gray-600 mt-1 leading-relaxed">
               {doctor.about ||
                 `${doctor.name} is a ${doctor.specialization_id} specialist. He has trained in the best institution in India. He has done his MBBS from a prestigious university. Done his post-graduation in ${doctor.specialization_id}.`}
             </p>
@@ -99,50 +99,50 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <span className="text-[10px] font-medium text-[#161d1f]">
+              <span className="text-[12px] font-medium text-[#161d1f]">
                 Qualifications:
               </span>
-              <p className="text-[10px] text-gray-600 mt-1">
+              <p className="text-[12px] text-gray-600 mt-1">
                 {doctor.qualifications || "MBBS, MD (Oncology)"}
               </p>
             </div>
             <div>
-              <span className="text-[10px] font-medium text-[#161d1f]">
+              <span className="text-[12px] font-medium text-[#161d1f]">
                 Consultation Pricing:
               </span>
-              <p className="text-[10px] text-gray-600 mt-1">
+              <p className="text-[12px] text-gray-600 mt-1">
                 Rs. {doctor.consultation_price}
               </p>
             </div>
           </div>
 
           <div className="mb-6">
-            <h4 className="text-[10px] font-medium text-[#161d1f] mb-3">
+            <h4 className="text-[12px] font-medium text-[#161d1f] mb-3">
               Compliances
             </h4>
             <div className="bg-blue-50 rounded-lg p-4 border border-[#D3D7D8]">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex justify-between">
-                  <span className="text-[10px] font-medium text-[#161d1f]">
+                  <span className="text-[12px] font-medium text-[#161d1f]">
                     MCI Registration:
                   </span>
-                  <span className="text-[10px] text-gray-600">
+                  <span className="text-[12px] text-gray-600">
                     {doctor.mci || "MCI-12345-2020"}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[10px] font-medium text-[#161d1f]">
+                  <span className="text-[12px] font-medium text-[#161d1f]">
                     NMC Registration:
                   </span>
-                  <span className="text-[10px] text-gray-600">
+                  <span className="text-[12px] text-gray-600">
                     {doctor.nmc || "NMC-12345-2020"}
                   </span>
                 </div>
                 <div className="flex justify-between md:col-span-2">
-                  <span className="text-[10px] font-medium text-[#161d1f]">
+                  <span className="text-[12px] font-medium text-[#161d1f]">
                     State Registration:
                   </span>
-                  <span className="text-[10px] text-gray-600">
+                  <span className="text-[12px] text-gray-600">
                     {doctor.state_registration || "SR-001-2024"}
                   </span>
                 </div>
@@ -194,7 +194,7 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
                         <span className="text-[9px] text-gray-500">
                           {
                             daySlots.filter(
-                              (slot) => slot.startTime && slot.endTime
+                              (slot) => slot.startTime && slot.endTime,
                             ).length
                           }{" "}
                           slots
@@ -210,7 +210,7 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
                                 key={index}
                                 className="bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg text-center"
                               >
-                                <div className="text-[10px] font-medium text-blue-800">
+                                <div className="text-[12px] font-medium text-blue-800">
                                   {slot.startTime} - {slot.endTime}
                                 </div>
                                 <div className="text-[8px] text-blue-600 mt-1">
@@ -220,7 +220,7 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
                             ))}
                         </div>
                       ) : (
-                        <div className="text-center py-3 text-[10px] text-gray-400 bg-gray-50 rounded-lg">
+                        <div className="text-center py-3 text-[12px] text-gray-400 bg-gray-50 rounded-lg">
                           No slots available
                         </div>
                       )}
@@ -235,7 +235,7 @@ const DoctorDetailsModal: React.FC<DoctorDetailsModalProps> = ({
         <div className="flex items-center justify-end p-6 border-t border-gray-200">
           <button
             onClick={handleEdit}
-            className="px-6 py-2 text-[10px] bg-[#1BA3C7] text-white rounded-lg hover:bg-[#1591B8] transition-colors"
+            className="px-6 py-2 text-[12px] bg-[#1BA3C7] text-white rounded-lg hover:bg-[#1591B8] transition-colors"
           >
             Edit
           </button>

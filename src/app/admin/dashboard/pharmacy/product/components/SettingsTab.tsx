@@ -33,13 +33,13 @@ export const SettingsTab = ({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+          <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
             Cold Chain
           </label>
           <div className="relative">
             <button
               onClick={() => setScheduleDropdownOpen(!scheduleDropdownOpen)}
-              className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
+              className="w-full px-3 py-3 text-[#899193] text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
             >
               <span
                 className={formData.ColdChain ? "text-black" : "text-gray-500"}
@@ -59,7 +59,7 @@ export const SettingsTab = ({
                     onInputChange("ColdChain", "Yes");
                     setScheduleDropdownOpen(false);
                   }}
-                  className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg"
+                  className="block w-full px-3 py-3 text-[#899193] text-[12px] text-left hover:bg-gray-100 first:rounded-t-lg"
                 >
                   Yes - Cold Chain Required
                 </button>
@@ -68,7 +68,7 @@ export const SettingsTab = ({
                     onInputChange("ColdChain", "No");
                     setScheduleDropdownOpen(false);
                   }}
-                  className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 last:rounded-b-lg"
+                  className="block w-full px-3 py-3 text-[#899193] text-[12px] text-left hover:bg-gray-100 last:rounded-b-lg"
                 >
                   No - No Cold Chain
                 </button>
@@ -77,7 +77,7 @@ export const SettingsTab = ({
           </div>
         </div>
         <div>
-          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+          <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
             <span className="text-red-500">*</span> GST (%)
           </label>
           <input
@@ -85,14 +85,14 @@ export const SettingsTab = ({
             placeholder="e.g., 5%, 12%, 18%"
             value={formData.GST || ""}
             onChange={(e) => onInputChange("GST", e.target.value)}
-            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+          <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
             HSN Code
           </label>
           <input
@@ -100,11 +100,11 @@ export const SettingsTab = ({
             placeholder="Enter HSN code"
             value={formData.HSN_Code}
             onChange={(e) => onInputChange("HSN_Code", e.target.value)}
-            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
         <div>
-          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+          <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
             Tax Rate (%)
           </label>
           <input
@@ -114,20 +114,20 @@ export const SettingsTab = ({
             onChange={(e) =>
               onInputChange("tax", parseFloat(e.target.value) || 0)
             }
-            className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
+            className="w-full px-3 py-3 text-[#899193] text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+          <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
             Symptoms
           </label>
           <div className="relative">
             <button
               onClick={() => setSymptomsDropdownOpen(!symptomsDropdownOpen)}
-              className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
+              className="w-full px-3 py-3 text-[#899193] text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
             >
               <span className={formData.Type ? "text-black" : "text-gray-500"}>
                 {formData.Type || "Select symptoms"}
@@ -143,7 +143,7 @@ export const SettingsTab = ({
                       onInputChange("Type", symptom);
                       setSymptomsDropdownOpen(false);
                     }}
-                    className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
+                    className="block w-full px-3 py-3 text-[#899193] text-[12px] text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
                   >
                     {symptom}
                   </button>
@@ -153,13 +153,13 @@ export const SettingsTab = ({
           </div>
         </div>
         {/* <div>
-          <label className="block text-[10px] font-medium text-[#161D1F] mb-1">
+          <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
             Storage Conditions
           </label>
           <div className="relative">
             <button
               onClick={() => setStorageDropdownOpen(!storageDropdownOpen)}
-              className="w-full px-3 py-3 text-[#899193] text-[10px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
+              className="w-full px-3 py-3 text-[#899193] text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-transparent outline-none text-left flex items-center justify-between"
             >
               <span
                 className={
@@ -179,7 +179,7 @@ export const SettingsTab = ({
                       onInputChange("storageConditions", condition);
                       setStorageDropdownOpen(false);
                     }}
-                    className="block w-full px-3 py-3 text-[#899193] text-[10px] text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
+                    className="block w-full px-3 py-3 text-[#899193] text-[12px] text-left hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg"
                   >
                     {condition}
                   </button>
@@ -211,7 +211,7 @@ export const SettingsTab = ({
               className="mt-0.5 accent-[#0088B1]"
             />
             <div>
-              <div className="font-medium text-[10px] text-[#161D1F]">
+              <div className="font-medium text-[12px] text-[#161D1F]">
                 <span className="text-red-500">*</span> Prescription Required
               </div>
               <div className="text-[8px] text-[#899193]">
@@ -237,7 +237,7 @@ export const SettingsTab = ({
               className="mt-0.5 accent-[#0088B1]"
             />
             <div>
-              <div className="font-medium text-[10px] text-[#161D1F]">
+              <div className="font-medium text-[12px] text-[#161D1F]">
                 Featured Product
               </div>
               <div className="text-[8px] text-[#899193]">
@@ -261,7 +261,7 @@ export const SettingsTab = ({
               className="mt-0.5 accent-[#0088B1]"
             />
             <div>
-              <div className="font-medium text-[10px] text-[#161D1F]">
+              <div className="font-medium text-[12px] text-[#161D1F]">
                 Active Product
               </div>
               <div className="text-[8px] text-[#899193]">
@@ -287,7 +287,7 @@ export const SettingsTab = ({
               className="mt-0.5 accent-[#0088B1]"
             />
             <div>
-              <div className="font-medium text-[10px] text-[#161D1F]">
+              <div className="font-medium text-[12px] text-[#161D1F]">
                 Eligible for Discount
               </div>
               <div className="text-[8px] text-[#899193]">

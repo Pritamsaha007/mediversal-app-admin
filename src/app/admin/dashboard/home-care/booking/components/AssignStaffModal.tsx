@@ -373,7 +373,7 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
                             </span>
                             <button
                               onClick={() => handleRemoveStaff(staff.id)}
-                              className="text-red-500 hover:text-red-700 text-[10px]"
+                              className="text-red-500 hover:text-red-700 text-[12px]"
                             >
                               {isFromAPI ? "Unassign" : "Remove"}
                             </button>
@@ -384,7 +384,7 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
                   })}
                 </div>
               ) : (
-                <p className="text-[10px] text-[#161D1F]">No staff assigned</p>
+                <p className="text-[12px] text-[#161D1F]">No staff assigned</p>
               )}
             </div>
           </div>
@@ -415,7 +415,7 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-medium transition-colors ${
+                  className={`px-3 py-1 rounded-lg text-[12px] font-medium transition-colors ${
                     selectedCategory === category
                       ? "bg-cyan-600 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -495,7 +495,7 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
                             {staff.initials}
                           </div>
                           <div>
-                            <p className="font-medium text-[#161D1F] text-[10px]">
+                            <p className="font-medium text-[#161D1F] text-[12px]">
                               {staff.name}
                             </p>
                             <p className="text-xs text-[#899193]">
@@ -554,7 +554,7 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
           <button
             onClick={handleUpdateAssignedStaff}
             disabled={isAssigning || assignedStaffs.length === 0}
-            className={`justify-end text-[#F8F8F8] flex text-[10px] py-3 px-4 rounded-lg transition-colors font-medium ${
+            className={`justify-end text-[#F8F8F8] flex text-[12px] py-3 px-4 rounded-lg transition-colors font-medium ${
               isAssigning || assignedStaffs.length === 0
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-cyan-600 hover:bg-cyan-700"
