@@ -2,30 +2,24 @@ import { create } from "zustand";
 import { CouponItem } from "@/app/types/auth.types";
 
 interface CouponStore {
-  // Data state
   coupons: CouponItem[];
   filteredCoupons: CouponItem[];
   searchTerm: string;
   selectedItems: string[];
 
-  // Modal state
   modalOpen: boolean;
   couponToEdit: CouponItem | null;
   isEditMode: boolean;
 
-  // Modal form state
   formData: CouponItem;
   categoryDropdownOpen: boolean;
 
-  // Pagination state
   currentPage: number;
   itemsPerPage: number;
 
-  // Loading and error state
   isLoading: boolean;
   error: string | null;
 
-  // Actions
   setCoupons: (coupons: CouponItem[]) => void;
   setSearchTerm: (term: string) => void;
   setSelectedItems: (items: string[]) => void;
@@ -36,14 +30,12 @@ interface CouponStore {
   setIsLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
 
-  // Form actions
   setFormData: (data: CouponItem) => void;
   updateFormField: (field: keyof CouponItem, value: any) => void;
   setCategoryDropdownOpen: (open: boolean) => void;
   resetForm: () => void;
   generateRandomCode: () => void;
 
-  // Complex actions
   addCoupon: (coupon: CouponItem) => void;
   updateCouponInStore: (coupon: CouponItem) => void;
   removeCoupon: (id: string) => void;
@@ -60,10 +52,10 @@ export const useCouponStore = create<CouponStore>((set, get) => {
     id: 0,
     coupon_code: "",
     coupon_name: "",
-    discount_value: 10,
+    discount_value: 0,
     minimum_item_quantity: 0,
     minimum_order_value: 0,
-    uses_limit: 100,
+    uses_limit: 0,
     start_date: null,
     expiry_date: "",
     status: "active",
@@ -149,7 +141,7 @@ export const useCouponStore = create<CouponStore>((set, get) => {
     updateCouponInStore: (updatedCoupon) => {
       const { coupons } = get();
       const newCoupons = coupons.map((c) =>
-        c.id === updatedCoupon.id ? updatedCoupon : c
+        c.id === updatedCoupon.id ? updatedCoupon : c,
       );
       set({ coupons: newCoupons });
       get().filterCoupons();
@@ -188,7 +180,7 @@ export const useCouponStore = create<CouponStore>((set, get) => {
           coupon.description
             ?.toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
-          coupon.category?.toLowerCase().includes(searchTerm.toLowerCase())
+          coupon.category?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
       set({ filteredCoupons: filtered });
     },

@@ -52,8 +52,8 @@ export interface CouponItem {
   discount_value: number;
   minimum_item_quantity: number;
   minimum_order_value: number;
-  start_date: string | null; // Allow null values
-  expiry_date: string | null; // Allow null values
+  start_date: string | null;
+  expiry_date: string | null;
   uses_limit: number | null;
   category: string;
   description: string;
