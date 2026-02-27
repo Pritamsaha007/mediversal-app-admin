@@ -244,13 +244,21 @@ export default function CouponsManagement() {
             Manage all coupon codes for customer discounts
           </p> */}
         </div>
+        <div className="flex justify-end">
+          <button
+            onClick={handleAddCoupon}
+            className="flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg bg-[#0088B1] hover:bg-[#00729A] cursor-pointer w-auto min-w-[120px] justify-center"
+          >
+            <Plus className="w-3 h-3" />
+            Add Coupon
+          </button>
+        </div>
       </div>
 
       <SearchAndActions
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         selectedItems={selectedItems}
-        onAddCoupon={handleAddCoupon}
         onExport={handleExport}
       />
 

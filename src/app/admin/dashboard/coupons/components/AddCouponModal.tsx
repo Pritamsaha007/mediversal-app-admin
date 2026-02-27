@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect } from "react";
-import { X, ChevronDown, Calendar as CalendarIcon } from "lucide-react";
+import { X, ChevronDown } from "lucide-react";
 import { CouponItem } from "@/app/types/auth.types";
 import toast from "react-hot-toast";
 import { useCouponStore } from "@/app/store/couponStore";
@@ -133,7 +133,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[calc(80vh-150px)]">
-          <div className="grid grid-cols-1 md:grid-row-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1 col-span-2">
               <label className="block text-[12px] font-medium text-[#161D1F]">
                 Coupon Code
@@ -152,45 +152,38 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                   placeholder="e.g., WELCOME10"
                   required
                 />
-                {/* <button
-                  type="button"
-                  onClick={handleGenerateCode}
-                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-[12px]"
-                >
-                  Generate
-                </button> */}
               </div>
+            </div>
 
-              <div className="space-y-1">
-                <label className="block text-[12px] font-medium text-[#161D1F]">
-                  Discount Type
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleInputChange("discount_type", "percentage")
-                    }
-                    className={`flex-1 py-2 px-3 rounded-md border text-[12px] ${
-                      formData.discount_type === "percentage"
-                        ? "bg-[#0088B1]  text-white"
-                        : "bg-white border-gray-300 text-gray-700"
-                    }`}
-                  >
-                    Percentage (%)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleInputChange("discount_type", "fixed")}
-                    className={`flex-1 py-2 px-3 rounded-md border text-[12px] ${
-                      formData.discount_type === "fixed"
-                        ? "bg-[#0088B1]  text-white"
-                        : "bg-white border-gray-300 text-gray-700"
-                    }`}
-                  >
-                    Fixed Amount
-                  </button>
-                </div>
+            <div className="space-y-1">
+              <label className="block text-[12px] font-medium text-[#161D1F]">
+                Discount Type
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleInputChange("discount_type", "percentage")
+                  }
+                  className={`flex-1 py-2 px-3 rounded-md border text-[12px] ${
+                    formData.discount_type === "percentage"
+                      ? "bg-[#0088B1] text-white"
+                      : "bg-white border-gray-300 text-gray-700"
+                  }`}
+                >
+                  Percentage (%)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInputChange("discount_type", "fixed")}
+                  className={`flex-1 py-2 px-3 rounded-md border text-[12px] ${
+                    formData.discount_type === "fixed"
+                      ? "bg-[#0088B1] text-white"
+                      : "bg-white border-gray-300 text-gray-700"
+                  }`}
+                >
+                  Fixed Amount
+                </button>
               </div>
             </div>
 
@@ -203,18 +196,26 @@ export const CouponModal: React.FC<CouponModalProps> = ({
               <div className="relative">
                 <input
                   type="number"
-                  value={formData.discount_value}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "discount_value",
-                      parseFloat(e.target.value),
-                    )
+                  value={
+                    formData.discount_value === 0 ? "" : formData.discount_value
                   }
+                  onChange={(e) => {
+                    const rawValue = e.target.value;
+                    if (rawValue === "") {
+                      handleInputChange("discount_value", 0);
+                    } else {
+                      const numValue = parseFloat(rawValue);
+                      if (!isNaN(numValue)) {
+                        handleInputChange("discount_value", numValue);
+                      }
+                    }
+                  }}
                   min="0"
                   max={
-                    formData.discount_type === "percentage" ? "100" : undefined
+                    formData.discount_type === "percentage" ? 100 : undefined
                   }
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[12px] text-gray-500"
+                  placeholder={`Enter ${formData.discount_type === "percentage" ? "percentage" : "amount"}`}
                   required
                 />
                 <span className="absolute right-3 top-2 text-gray-500 text-[12px]">
@@ -229,15 +230,15 @@ export const CouponModal: React.FC<CouponModalProps> = ({
               </label>
               <input
                 type="number"
-                value={formData.minimum_order_value}
-                onChange={(e) =>
-                  handleInputChange(
-                    "minimum_order_value",
-                    parseFloat(e.target.value),
-                  )
-                }
+                value={formData.minimum_order_value || ""}
+                onChange={(e) => {
+                  const value =
+                    e.target.value === "" ? 0 : parseFloat(e.target.value);
+                  handleInputChange("minimum_order_value", value);
+                }}
                 min="0"
                 className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[12px] text-gray-500"
+                placeholder="Enter minimum order value"
               />
             </div>
 
@@ -247,12 +248,17 @@ export const CouponModal: React.FC<CouponModalProps> = ({
               </label>
               <input
                 type="number"
-                value={formData.uses_limit ?? ""}
-                onChange={(e) =>
-                  handleInputChange("uses_limit", parseInt(e.target.value))
-                }
+                value={formData.uses_limit || ""}
+                onChange={(e) => {
+                  const value =
+                    e.target.value === ""
+                      ? undefined
+                      : parseInt(e.target.value);
+                  handleInputChange("uses_limit", value);
+                }}
                 min="1"
                 className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[12px] text-gray-500"
+                placeholder="Enter usage limit (optional)"
               />
             </div>
 
@@ -339,7 +345,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                     e.target.value as "active" | "inactive",
                   )
                 }
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-[12px] text-gray-500"
+                className="w-full p-2 border border-gray-300 rounded-md  text-[12px] text-gray-500"
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>

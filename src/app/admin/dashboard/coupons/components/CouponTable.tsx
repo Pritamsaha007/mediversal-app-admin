@@ -45,7 +45,7 @@ export default function CouponTable({
 
   const currentCoupons = coupons.slice(
     currentPage * itemsPerPage,
-    (currentPage + 1) * itemsPerPage
+    (currentPage + 1) * itemsPerPage,
   );
 
   const handleNextPage = () => {
@@ -76,7 +76,7 @@ export default function CouponTable({
                   onChange={(e) => {
                     if (e.target.checked) {
                       setSelectedCoupons(
-                        currentCoupons.map((coupon) => coupon.id.toString())
+                        currentCoupons.map((coupon) => coupon.id.toString()),
                       );
                     } else {
                       setSelectedCoupons([]);
