@@ -200,7 +200,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                 <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                   * Services
                 </label>
-                <div className="w-full px-3 py-2 border border-gray-300 rounded-md text-[10px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent">
+                <div className="w-full px-3 py-2 border border-gray-300 rounded-md text-[12px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent">
                   <option>{serviceName}</option>
                 </div>
               </div>
@@ -215,7 +215,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="Enter Offering Name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-[10px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-[12px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent"
                   required
                 />
               </div>
@@ -232,7 +232,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                   value={formData.price}
                   onChange={handleInputChange}
                   placeholder="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-[10px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-[12px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent"
                   required
                 />
               </div>
@@ -282,10 +282,10 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                           value={formData.duration_in_hrs}
                           onChange={handleInputChange}
                           placeholder="Enter Value"
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-[10px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-[12px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent"
                           required
                         />
-                        <div className="text-[10px] text-[#0088B1] bg-blue-50 px-2 py-1 rounded">
+                        <div className="text-[12px] text-[#0088B1] bg-blue-50 px-2 py-1 rounded">
                           {
                             durationTypes.find(
                               (t) => t.id === formData.duration_type_id,
@@ -295,7 +295,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="text-[10px] text-[#899193] py-6 text-center border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
+                    <div className="text-[12px] text-[#899193] py-6 text-center border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
                       Please select a duration type above to continue
                     </div>
                   )}
@@ -313,7 +313,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                 onChange={handleInputChange}
                 placeholder="Detailed description of the service"
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-[10px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-[12px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent"
                 required
               />
             </div>
@@ -328,7 +328,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                 onChange={handleInputChange}
                 placeholder="Required qualifications (comma separated)"
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-[10px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-[12px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent"
                 required
               />
             </div>
@@ -343,7 +343,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                 onChange={handleInputChange}
                 placeholder="Required equipment (comma separated)"
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-[10px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-[12px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent"
                 required
               />
             </div>
@@ -358,7 +358,7 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                 onChange={handleInputChange}
                 placeholder="Service features and inclusions (comma separated)"
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-[10px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-[12px] text-[#899193] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent  "
                 required
               />
             </div>
@@ -380,19 +380,19 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                     />
                     <label
                       htmlFor="is_device"
-                      className="text-[10px] font-medium text-[#161D1F] cursor-pointer select-none"
+                      className="text-[12px] font-medium text-[#161D1F] cursor-pointer select-none"
                     >
                       Device Required
                     </label>
                   </div>
-                  <div className="text-[10px] text-gray-500 mt-1">
+                  <div className="text-[12px] text-gray-500 mt-1">
                     Check if this offering requires a device
                   </div>
                 </div>
                 <div className="bg-white p-3 rounded-lg border border-gray-200">
                   <label
                     htmlFor="device_stock_count"
-                    className="block text-[10px] font-medium text-[#161D1F] mb-2"
+                    className="block text-[12px] font-medium text-[#161D1F] mb-2"
                   >
                     Device Stock Count
                   </label>
@@ -404,14 +404,14 @@ const AddOfferingForm: React.FC<AddOfferingFormProps> = ({
                     onChange={handleInputChange}
                     placeholder="0"
                     disabled={!formData.is_device}
-                    className={`w-full px-3 py-2 border rounded-lg text-[10px] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent ${
+                    className={`w-full px-3 py-2 border rounded-lg text-[12px] focus:outline-none focus:ring-2 focus:ring-[#0088B1] focus:border-transparent ${
                       formData.is_device
                         ? "border-gray-300 text-[#161D1F] bg-white"
                         : "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
                     }`}
                     min="0"
                   />
-                  <div className="text-[10px] text-gray-500 mt-1">
+                  <div className="text-[12px] text-gray-500 mt-1">
                     {formData.is_device
                       ? "Available devices in stock"
                       : "Enable device option first"}

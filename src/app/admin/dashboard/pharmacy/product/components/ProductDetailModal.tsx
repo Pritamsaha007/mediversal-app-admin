@@ -1,4 +1,5 @@
-import React from "react";
+"use client";
+import React, { useState } from "react";
 import { Product } from "../types/product";
 
 interface ProductDetailModalProps {
@@ -12,6 +13,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onClose,
   product,
 }) => {
+  const [showFullDescription, setShowFullDescription] = useState(false);
+  const description =
+    product?.ProductInformation || "No description available.";
+  const isLongDescription = description.length > 300;
   if (!isOpen || !product) return null;
 
   return (
@@ -60,13 +65,22 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         </div>
 
         <div className="mt-2 text-sm text-gray-700">
-          <p>
-            <span className=" text-[#161D1F] font-semibold text-[12px]">
+          <p className="flex flex-col gap-1">
+            <span className="text-[#161D1F] font-semibold text-[12px]">
               Description:
             </span>
             <span className="text-[#161D1F] text-[12px]">
-              {product.ProductInformation || "No1234 description available."}
+              {showFullDescription ? description : description.slice(0, 300)}
+              {isLongDescription && !showFullDescription && "..."}
             </span>
+            {isLongDescription && (
+              <button
+                onClick={() => setShowFullDescription(!showFullDescription)}
+                className="text-[#0088B1] text-[10px] font-medium hover:underline mt-1 self-start"
+              >
+                {showFullDescription ? "View Less" : "View Full Description"}
+              </button>
+            )}
           </p>
           <p>
             <span className="text-[#161D1F] font-semibold text-[12px]">

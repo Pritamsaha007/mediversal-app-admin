@@ -1,6 +1,5 @@
 import {
   CreateUpdateOfferingPayload,
-  CreateUpdateServicePayload,
   GetOfferingsParams,
   GetOfferingsResponse,
   GetServicesParams,
@@ -12,7 +11,7 @@ const HOMECARE_API_BASE_URL = process.env.NEXT_PUBLIC_HOMECARE_API_BASE_URL;
 
 export async function getHomecareServices(
   params: GetServicesParams = {},
-  token: string
+  token: string,
 ): Promise<GetServicesResponse> {
   const { status = null, search = null, start = null, max = null } = params;
 
@@ -33,7 +32,7 @@ export async function getHomecareServices(
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(
-      errorData?.message || `HTTP error! status: ${response.status}`
+      errorData?.message || `HTTP error! status: ${response.status}`,
     );
   }
 
@@ -41,8 +40,8 @@ export async function getHomecareServices(
 }
 
 export async function createOrUpdateHomecareService(
-  payload: CreateUpdateServicePayload,
-  token: string
+  payload: CreateUpdateOfferingPayload,
+  token: string,
 ): Promise<{ success: boolean; service?: HomecareService; message?: string }> {
   console.log("Making API call to:", `${HOMECARE_API_BASE_URL}/api/homecare/`);
   console.log("With payload:", JSON.stringify(payload, null, 2));
@@ -59,7 +58,7 @@ export async function createOrUpdateHomecareService(
   console.log("Response status:", response.status);
   console.log(
     "Response headers:",
-    Object.fromEntries(response.headers.entries())
+    Object.fromEntries(response.headers.entries()),
   );
 
   if (!response.ok) {
@@ -77,7 +76,7 @@ export async function createOrUpdateHomecareService(
     throw new Error(
       errorData?.message ||
         errorData?.error ||
-        `HTTP error! status: ${response.status}`
+        `HTTP error! status: ${response.status}`,
     );
   }
 
@@ -88,7 +87,7 @@ export async function createOrUpdateHomecareService(
 
 export async function deleteHomecareService(
   serviceId: string,
-  token: string
+  token: string,
 ): Promise<{ success: boolean; message?: string }> {
   const response = await fetch(
     `${HOMECARE_API_BASE_URL}/api/homecare/${serviceId}`,
@@ -98,13 +97,13 @@ export async function deleteHomecareService(
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-    }
+    },
   );
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(
-      errorData?.message || `HTTP error! status: ${response.status}`
+      errorData?.message || `HTTP error! status: ${response.status}`,
     );
   }
 
@@ -138,7 +137,7 @@ export async function getDurationTypes(token: string): Promise<{
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(
-      errorData?.message || `HTTP error! status: ${response.status}`
+      errorData?.message || `HTTP error! status: ${response.status}`,
     );
   }
 
@@ -147,7 +146,7 @@ export async function getDurationTypes(token: string): Promise<{
 
 export async function createOrUpdateOffering(
   payload: CreateUpdateOfferingPayload,
-  token: string
+  token: string,
 ): Promise<{ success: boolean; offering?: any; message?: string }> {
   const response = await fetch(
     `${HOMECARE_API_BASE_URL}/api/homecare/offerings`,
@@ -158,13 +157,13 @@ export async function createOrUpdateOffering(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    }
+    },
   );
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(
-      errorData?.message || `HTTP error! status: ${response.status}`
+      errorData?.message || `HTTP error! status: ${response.status}`,
     );
   }
 
@@ -173,7 +172,7 @@ export async function createOrUpdateOffering(
 
 export async function getHomecareOfferings(
   params: GetOfferingsParams = {},
-  token: string
+  token: string,
 ): Promise<GetOfferingsResponse> {
   const { status = null, service_id = null, offering_name = null } = params;
 
@@ -195,7 +194,7 @@ export async function getHomecareOfferings(
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(
-      errorData?.message || `HTTP error! status: ${response.status}`
+      errorData?.message || `HTTP error! status: ${response.status}`,
     );
   }
 
@@ -206,7 +205,7 @@ export async function getHomecareOfferings(
 
 export async function deleteHomecareOffering(
   offeringId: string,
-  token: string
+  token: string,
 ): Promise<{ success: boolean; message?: string }> {
   console.log("Deleting offering with ID:", offeringId);
 
@@ -218,7 +217,7 @@ export async function deleteHomecareOffering(
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-    }
+    },
   );
 
   console.log("Delete offering response status:", response.status);
@@ -227,7 +226,7 @@ export async function deleteHomecareOffering(
     const errorData = await response.json().catch(() => ({}));
     console.error("Delete offering error:", errorData);
     throw new Error(
-      errorData?.message || `HTTP error! status: ${response.status}`
+      errorData?.message || `HTTP error! status: ${response.status}`,
     );
   }
 

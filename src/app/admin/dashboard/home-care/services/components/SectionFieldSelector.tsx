@@ -211,6 +211,7 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
 
       const payload = {
         ...(editService && { id: editService.id }),
+        homecare_service_id: editService?.id || "",
         name: serviceData.name.trim(),
         description: serviceData.description.trim(),
         is_active: serviceData.status === "Active",
@@ -219,6 +220,14 @@ const SectionFieldSelector: React.FC<SectionFieldSelectorProps> = ({
         display_sections: displaySections,
         custom_medical_info: customMedicalInfo,
         consents: consentsPayload,
+        price: 0,
+        duration_in_hrs: 0,
+        duration_type_id: "",
+        staff_requirements: [],
+        equipment_requirements: [],
+        features: [],
+        is_device: false,
+        device_stock_count: 0,
       };
 
       const response = await createOrUpdateHomecareService(payload, token);
