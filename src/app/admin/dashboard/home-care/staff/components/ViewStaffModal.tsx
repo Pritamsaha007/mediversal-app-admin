@@ -16,7 +16,7 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
 }) => {
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 flex items-center justify-center z-50 p-4 animate-fade-in"
       style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
     >
       <div className="bg-[#F3F9FB] rounded-xl shadow-xl w-[700px] relative">

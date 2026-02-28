@@ -289,7 +289,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 flex items-center justify-center z-50 p-4 animate-fade-in"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >
       <div className="bg-white rounded-lg w-full max-w-3xl max-h-[90vh] overflow-hidden">

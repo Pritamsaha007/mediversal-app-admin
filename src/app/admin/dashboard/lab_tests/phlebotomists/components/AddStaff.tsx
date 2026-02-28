@@ -88,7 +88,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
 
   const [daysData, setDaysData] = useState<EnumItem[]>([]);
   const [specializationsData, setSpecializationsData] = useState<EnumItem[]>(
-    []
+    [],
   );
   const [serviceCitiesData, setServiceCitiesData] = useState<EnumItem[]>([]);
   const [serviceAreasData, setServiceAreasData] = useState<EnumItem[]>([]);
@@ -212,7 +212,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
     if (!matched) {
       console.warn(
         `Time "${time}" not found in timeOptions. Available options:`,
-        timeOptions
+        timeOptions,
       );
     }
     return matched || timeOptions[0] || "09:00 AM";
@@ -242,7 +242,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
 
   const getSpecializationId = (specializationName: string): string => {
     const specialization = specializationsData.find(
-      (item) => item.value === specializationName
+      (item) => item.value === specializationName,
     );
     return specialization?.id || "";
   };
@@ -251,7 +251,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
     if (editPhlebotomist && isOpen && enumDataLoaded && daysData.length > 0) {
       console.log(
         "Initializing edit form with phlebotomist:",
-        editPhlebotomist
+        editPhlebotomist,
       );
 
       setFormData({
@@ -281,7 +281,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
         editPhlebotomist.availability.forEach((schedule) => {
           const dayName = getDayName(schedule.day_id);
           console.log(
-            `Converting schedule: day_id=${schedule.day_id}, dayName=${dayName}`
+            `Converting schedule: day_id=${schedule.day_id}, dayName=${dayName}`,
           );
 
           if (dayName) {
@@ -347,14 +347,14 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
   useEffect(() => {
     if (sameAsPrevious && selectedDays.length > 1 && timeRanges.length > 0) {
       const firstDayRanges = timeRanges.filter(
-        (range) => range.day === selectedDays[0]
+        (range) => range.day === selectedDays[0],
       );
 
       if (firstDayRanges.length > 0) {
         const updatedRanges = [...timeRanges];
 
         const filteredRanges = updatedRanges.filter(
-          (range) => range.day === selectedDays[0]
+          (range) => range.day === selectedDays[0],
         );
 
         selectedDays.slice(1).forEach((day) => {
@@ -416,7 +416,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
   const updateTimeRange = (
     index: number,
     field: "startTime" | "endTime" | "slot_capacity",
-    value: string | number
+    value: string | number,
   ) => {
     const updatedRanges = [...timeRanges];
 
@@ -465,7 +465,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
           start_time: convertTo24Hour(range.startTime),
           end_time: convertTo24Hour(range.endTime),
           slot_capacity: range.slot_capacity || 0,
-        })
+        }),
       );
 
       const serviceCityId = getCityId(formData.serviceCityTown);
@@ -474,7 +474,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
 
       if (!serviceCityId || !serviceAreaId || !specializationId) {
         toast.error(
-          "Please select valid service city, area, and specialization"
+          "Please select valid service city, area, and specialization",
         );
         return;
       }
@@ -627,7 +627,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
   }
 
   const renderBasicDetails = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
@@ -877,7 +877,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
   );
 
   const renderAvailabilityDetails = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <label className="block text-xs font-medium text-[#161D1F] mb-2">
           * Availability (weekly)
@@ -937,7 +937,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
           const previousDayRanges =
             dayIndex > 0
               ? timeRanges.filter(
-                  (range) => range.day === selectedDays[dayIndex - 1]
+                  (range) => range.day === selectedDays[dayIndex - 1],
                 )
               : [];
 
@@ -974,7 +974,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
                             updateTimeRange(
                               globalIndex,
                               "startTime",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:border-[#0088B1] focus:outline-none text-black"
@@ -987,7 +987,6 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
                               key={`start-${time}`}
                               value={time}
                               className="text-gray-500"
-                              selected={time === range.startTime}
                             >
                               {time}
                             </option>
@@ -1002,7 +1001,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
                             updateTimeRange(
                               globalIndex,
                               "endTime",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:border-[#0088B1] focus:outline-none text-black"
@@ -1089,7 +1088,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
       <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h3 className="text-[16px] font-semibold text-[#161D1F]">
@@ -1167,8 +1166,8 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
                 {loading
                   ? "Saving..."
                   : editPhlebotomist
-                  ? "Update Phlebotomist"
-                  : "Add Phlebotomist"}
+                    ? "Update Phlebotomist"
+                    : "Add Phlebotomist"}
               </button>
             )}
           </div>

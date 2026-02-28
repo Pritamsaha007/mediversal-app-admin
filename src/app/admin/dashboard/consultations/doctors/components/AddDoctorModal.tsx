@@ -332,7 +332,6 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       id: "",
       profile_image_url: null,
       name: "",
-      specializations: "",
       specialization_id: "",
       department_id: "",
       experience_in_yrs: 0,
@@ -365,7 +364,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 ">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in ">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl mx-4 max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between p-6 border-gray-200">
           <h2 className="text-[16px] font-medium text-[#161d1f]">
@@ -378,16 +377,15 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
-
-        <div className="flex mx-2">
+        <div className="flex border-1 border-gray-200 ">
           {tabs.map((tab, index) => (
             <button
               key={index}
               onClick={() => setActiveTab(index)}
               className={`flex-1 py-3 px-3 ${
                 activeTab === index
-                  ? "bg-[#0088B1] text-white rounded-lg text-[12px]"
-                  : "bg-gray-100 text-[#161D1F] text-[12px]"
+                  ? "bg-[#0088B1] mx-4 text-white rounded-lg text-[12px] "
+                  : "bg-white mx-4 text-[#161D1F] text-[12px]"
               }`}
             >
               {tab}
@@ -397,7 +395,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
 
         <div className="p-8 overflow-y-auto max-h-[60vh]">
           {activeTab === 0 && (
-            <div className="space-y-8">
+            <div className="space-y-8 animate-fade-in">
               <div className="flex flex-col items-center">
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 h-auto w-full text-center hover:border-[#1BA3C7] transition-colors">
                   <input
@@ -526,7 +524,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={formData.name}
+                    value={formData.name || ""}
                     onChange={(e) => handleInputChange("name", e.target.value)}
                     className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     placeholder="Dr. Sarah Johnson"
@@ -539,7 +537,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   </label>
                   <input
                     type="tel"
-                    value={formData.mobile_number}
+                    value={formData.mobile_number || ""}
                     onChange={(e) =>
                       handleInputChange("mobile_number", e.target.value)
                     }
@@ -553,7 +551,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     <span className="text-red-500">*</span> Specialization
                   </label>
                   <select
-                    value={formData.specialization_id}
+                    value={formData.specialization_id || ""}
                     onChange={(e) =>
                       handleInputChange("specialization_id", e.target.value)
                     }
@@ -573,7 +571,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     <span className="text-red-500">*</span> Department
                   </label>
                   <select
-                    value={formData.department_id}
+                    value={formData.department_id || ""}
                     onChange={(e) =>
                       handleInputChange("department_id", e.target.value)
                     }
@@ -594,7 +592,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   </label>
                   <input
                     type="number"
-                    value={formData.experience_in_yrs}
+                    value={formData.experience_in_yrs || 0}
                     onChange={(e) =>
                       handleInputChange("experience_in_yrs", e.target.value)
                     }
@@ -607,13 +605,13 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           )}
 
           {activeTab === 1 && (
-            <div className="space-y-6">
+            <div className="space-y-6 animate-fade-in">
               <div>
                 <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                   <span className="text-red-500">*</span> About Doctor
                 </label>
                 <textarea
-                  value={formData.about}
+                  value={formData.about || ""}
                   onChange={(e) => handleInputChange("about", e.target.value)}
                   rows={4}
                   className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
@@ -626,7 +624,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   <span className="text-red-500">*</span> Qualifications
                 </label>
                 <textarea
-                  value={formData.qualifications}
+                  value={formData.qualifications || ""}
                   onChange={(e) =>
                     handleInputChange("qualifications", e.target.value)
                   }
@@ -644,7 +642,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   </label>
                   <input
                     type="number"
-                    value={formData.consultation_price}
+                    value={formData.consultation_price || 0}
                     onChange={(e) =>
                       handleInputChange("consultation_price", e.target.value)
                     }
@@ -735,7 +733,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           )}
 
           {activeTab === 2 && (
-            <div className="space-y-6">
+            <div className="space-y-6 animate-fade-in">
               <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-6 rounded-xl border border-blue-100">
                 <h3 className="text-[12px] font-medium text-[#161D1F] mb-2 flex items-center gap-2">
                   <div className="w-2 h-2 bg-[#1BA3C7] rounded-full"></div>
@@ -918,7 +916,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           )}
 
           {activeTab === 3 && (
-            <div className="space-y-6">
+            <div className="space-y-6 animate-fade-in">
               <h3 className="text-[12px] font-semibold text-[#161d1f] mb-6">
                 Indian Healthcare Compliance
               </h3>
@@ -930,7 +928,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={formData.mci}
+                    value={formData.mci || ""}
                     onChange={(e) => handleInputChange("mci", e.target.value)}
                     className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     placeholder="Ex. - MCI-12345-2020"
@@ -943,7 +941,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={formData.nmc}
+                    value={formData.nmc || ""}
                     onChange={(e) => handleInputChange("nmc", e.target.value)}
                     className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     placeholder="Ex. - NMC-12345-2020"
@@ -957,7 +955,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                 </label>
                 <input
                   type="text"
-                  value={formData.state_registration}
+                  value={formData.state_registration || ""}
                   onChange={(e) =>
                     handleInputChange("state_registration", e.target.value)
                   }
@@ -996,7 +994,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           ) : (
             <button
               onClick={handleSubmit}
-              className="px-6 py-2 text-[#fffff] text-[12px] bg-[#1BA3C7] border border-gray-300 rounded-lg hover:bg-[#1BA3C7] transition-colors"
+              className="px-6 py-2 text-white text-[12px] bg-[#1BA3C7] border border-gray-300 rounded-lg hover:bg-[#1591B8] transition-colors"
             >
               {editingDoctor ? "Update Doctor" : "Add Doctor"}
             </button>

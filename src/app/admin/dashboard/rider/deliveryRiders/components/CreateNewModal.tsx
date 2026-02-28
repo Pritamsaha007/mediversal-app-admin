@@ -220,7 +220,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
   };
 
   const handlePincodeSearchChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const value = e.target.value;
     setSearchPincodeQuery(value);
@@ -287,7 +287,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
       is_available: true,
       is_POI_verified: false,
     });
-    // Clean up image previews properly
+
     if (licensePreview && licensePreview.startsWith("blob:")) {
       URL.revokeObjectURL(licensePreview);
     }
@@ -306,7 +306,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
 
   const uploadImageToServer = async (
     file: File,
-    folder: string
+    folder: string,
   ): Promise<string> => {
     if (!token) {
       throw new Error("Authentication required");
@@ -369,7 +369,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -391,7 +391,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
 
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    type: "license" | "profile"
+    type: "license" | "profile",
   ) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -437,7 +437,6 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
       let licenseImageUrl = editRider?.license_image_url || "";
       let profileImageUrl = editRider?.profile_image_url || "";
 
-      // Handle removed images - if preview is cleared, set empty string
       if (!licensePreview && editRider?.license_image_url) {
         licenseImageUrl = "";
       }
@@ -445,7 +444,6 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
         profileImageUrl = "";
       }
 
-      // Upload new images if selected
       if (licenseImage) {
         licenseImageUrl = await uploadImageToServer(licenseImage, "licenses");
       }
@@ -492,7 +490,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
   };
 
   const renderBasicInformation = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="flex items-center gap-1 text-xs font-medium text-[#161D1F] mb-2">
@@ -689,8 +687,8 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
                 !formData.service_city
                   ? "Select a city first"
                   : fetchingPincodes
-                  ? "Loading pincodes..."
-                  : "Search pincodes..."
+                    ? "Loading pincodes..."
+                    : "Search pincodes..."
               }
             />
 
@@ -703,7 +701,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
                 >
                   {availablePincodes.map((pincode) => {
                     const isSelected = selectedPincodes.some(
-                      (p) => p.pincode === pincode.pincode
+                      (p) => p.pincode === pincode.pincode,
                     );
                     return (
                       <div
@@ -761,7 +759,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
       <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h3 className="text-[16px] font-semibold text-[#161D1F]">
@@ -805,7 +803,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
           {activeTab === "basic" && renderBasicInformation()}
           {activeTab === "documents" && (
             <>
-              <div className="flex flex-row gap-6 mb-10">
+              <div className="flex flex-row gap-6 mb-10 animate-fade-in">
                 <div className="flex-1">
                   <label className="block text-xs font-medium text-[#161D1F] mb-3">
                     Profile Photo
@@ -1029,8 +1027,8 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
                 {loading
                   ? "Saving..."
                   : editRider
-                  ? "Update Rider"
-                  : "Add Rider"}
+                    ? "Update Rider"
+                    : "Add Rider"}
               </button>
             )}
           </div>

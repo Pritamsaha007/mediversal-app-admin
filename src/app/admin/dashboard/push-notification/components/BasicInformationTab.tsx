@@ -42,7 +42,7 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
 
       if (node) observerRef.current.observe(node);
     },
-    [loadingMore, hasMoreCustomers]
+    [loadingMore, hasMoreCustomers],
   );
 
   useEffect(() => {
@@ -133,7 +133,7 @@ const BasicInformationTab: React.FC<BasicInformationTabProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div>
         <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
           <span className="text-red-500">*</span> Title

@@ -7,7 +7,7 @@ interface OrderShippingProps {
 
 const OrderShipping: React.FC<OrderShippingProps> = ({ order }) => {
   return (
-    <div className="space-y-6 h-80">
+    <div className="space-y-6 h-80 animate-fade-in">
       <div>
         <div className="bg-white p-4 rounded-lg  border border-gray-300">
           <h3 className="text-sm font-medium text-gray-700 mb-4">
@@ -59,7 +59,7 @@ const OrderShipping: React.FC<OrderShippingProps> = ({ order }) => {
 
                     const deliveryDate = new Date(
                       new Date(order.created_date).getTime() +
-                        deliveryDays * 24 * 60 * 60 * 1000
+                        deliveryDays * 24 * 60 * 60 * 1000,
                     );
 
                     return deliveryDate.toLocaleString("en-US", {
@@ -89,7 +89,7 @@ const OrderShipping: React.FC<OrderShippingProps> = ({ order }) => {
 
                     const deliveryDate = new Date(
                       new Date(order.created_date).getTime() +
-                        deliveryDays * 24 * 60 * 60 * 1000
+                        deliveryDays * 24 * 60 * 60 * 1000,
                     );
 
                     return deliveryDate.toLocaleString("en-US", {

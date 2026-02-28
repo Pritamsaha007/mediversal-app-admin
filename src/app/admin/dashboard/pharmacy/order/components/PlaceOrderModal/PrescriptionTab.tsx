@@ -47,7 +47,7 @@ const PrescriptionTab: React.FC = () => {
   };
 
   const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = event.target.files;
     if (!files || !prescriptionItems || !token) return;
@@ -136,7 +136,7 @@ const PrescriptionTab: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center p-4 border border-gray-200 rounded-lg">
         <input
           type="checkbox"
@@ -232,7 +232,7 @@ const PrescriptionTab: React.FC = () => {
                         >
                           {url.length > 50
                             ? `${url.substring(0, 25)}...${url.substring(
-                                url.length - 25
+                                url.length - 25,
                               )}`
                             : url}
                         </a>

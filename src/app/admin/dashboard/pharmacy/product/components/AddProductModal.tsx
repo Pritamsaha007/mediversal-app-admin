@@ -319,15 +319,14 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     }
   };
   if (!isOpen) return null;
-
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 flex items-center justify-center z-50 p-4 "
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >
-      <div className="bg-white rounded-lg w-full max-w-3xl max-h-[80vh] flex flex-col">
+      <div className="bg-white rounded-xl w-full max-w-3xl max-h-[80vh] flex flex-col overflow-hidden shadow-lg animate-fade-in">
         <div className="sticky top-0 bg-white z-20">
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between p-4  border-gray-200">
             <h2 className="text-[16px] font-semibold text-[#161D1F] ">
               {isEditMode ? "Edit Product" : "Add New Product"}
             </h2>
@@ -340,7 +339,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             </button>
           </div>
 
-          <div className="flex p-1 bg-[#F8F8F8] border-b border-gray-200">
+          <div className="flex border-1 border-gray-200 ">
             {["Basic Information", "Product Details", "Settings"].map((tab) => (
               <button
                 key={tab}
@@ -348,10 +347,10 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                   setActiveTab(tab);
                   setTabAnimationKey((prev) => prev + 1);
                 }}
-                className={`flex-1 text-center px-4 py-2 text-[14px] font-medium transition-colors rounded-md ${
+                className={`flex-1 text-center px-4 py-2 text-[13px] font-medium transition-colors rounded-md ${
                   activeTab === tab
-                    ? "bg-[#0088B1] text-[#F8F8F8]"
-                    : "text-[#161D1F] hover:text-gray-500 hover:bg-gray-50"
+                    ? "bg-[#0088B1] mx-4 text-[#F8F8F8]"
+                    : "text-[#161D1F] mx-4 "
                 }`}
               >
                 {tab}

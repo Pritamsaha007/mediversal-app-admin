@@ -74,7 +74,7 @@ export const ManageRelationshipsModal: React.FC<
 
         if (test.related_lab_test_ids && test.related_lab_test_ids.length > 0) {
           const currentRelatedTests = allTests.filter((t) =>
-            test.related_lab_test_ids!.includes(t.id)
+            test.related_lab_test_ids!.includes(t.id),
           );
           setRelatedTests(currentRelatedTests);
         } else {
@@ -95,7 +95,7 @@ export const ManageRelationshipsModal: React.FC<
     (availableTest) =>
       (availableTest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         availableTest.code.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      !relatedTests.some((rt) => rt.id === availableTest.id)
+      !relatedTests.some((rt) => rt.id === availableTest.id),
   );
 
   const handleAddTest = (testId: string) => {
@@ -157,10 +157,8 @@ export const ManageRelationshipsModal: React.FC<
 
       toast.success("Lab test relationships updated successfully!");
 
-      // Close the modal first
       onClose();
 
-      // Then refresh the entire screen after a short delay
       setTimeout(() => {
         window.location.reload();
       }, 500);
@@ -175,7 +173,7 @@ export const ManageRelationshipsModal: React.FC<
   if (!isOpen || !test) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
       <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-lg shadow-xl overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 text-black">
           <div>

@@ -47,7 +47,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   });
 
   const [activeSection, setActiveSection] = useState<"basic" | "settings">(
-    "basic"
+    "basic",
   );
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -55,7 +55,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   const [selectedTests, setSelectedTests] = useState<PathologyTest[]>([]);
   const [availableTests, setAvailableTests] = useState<PathologyTest[]>([]);
   const [allAvailableTests, setAllAvailableTests] = useState<PathologyTest[]>(
-    []
+    [],
   );
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -110,7 +110,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       const filteredTests = allTests.filter((test) =>
         activeCategory === "Pathology"
           ? test.category_id === pathologyId
-          : test.category_id === radiologyId
+          : test.category_id === radiologyId,
       );
 
       setAvailableTests(filteredTests);
@@ -132,7 +132,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
       const filteredTests = allAvailableTests.filter((test) =>
         activeCategory === "Pathology"
           ? test.category_id === pathologyId
-          : test.category_id === radiologyId
+          : test.category_id === radiologyId,
       );
 
       setAvailableTests(filteredTests);
@@ -206,7 +206,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
       if (editTest.linked_test_ids && editTest.linked_test_ids.length > 0) {
         const selected = allAvailableTests.filter((test) =>
-          editTest.linked_test_ids?.includes(test.id)
+          editTest.linked_test_ids?.includes(test.id),
         );
         setSelectedTests(selected);
       }
@@ -362,7 +362,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
   const handleAddInstruction = () => {
     const instruction = document.getElementById(
-      "instruction-input"
+      "instruction-input",
     ) as HTMLInputElement;
     if (instruction?.value.trim()) {
       setFormData({
@@ -380,7 +380,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     setFormData({
       ...formData,
       preparation_instructions: formData.preparation_instructions.filter(
-        (inst) => inst !== instruction
+        (inst) => inst !== instruction,
       ),
     });
   };
@@ -437,7 +437,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         is_fasting_reqd: Boolean(formData.is_fasting_reqd),
         in_person_visit_reqd: Boolean(formData.in_person_visit_reqd),
         is_home_collection_available: Boolean(
-          formData.is_home_collection_available
+          formData.is_home_collection_available,
         ),
       };
 
@@ -459,7 +459,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             ...payload,
             prepare_instructions: payload.preparation_instructions,
           },
-          token
+          token,
         );
 
         const newPackage: HealthPackage = {
@@ -508,7 +508,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   if (!isOpen) return null;
 
   const renderBasicInformation = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <h4 className="text-xs font-medium text-[#161D1F] mb-3">
           Upload Health Package Image
@@ -625,7 +625,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
               availableTests.map((test) => (
                 <div
                   key={test.id}
-                  className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+                  className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 animate-fade-in"
                 >
                   <div className="p-3 flex items-center justify-between">
                     <div className="flex-1">
@@ -703,7 +703,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   );
 
   const renderSettings = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="p-4 rounded-lg border border-gray-200">
         <h4 className="text-xs font-medium text-[#161D1F] mb-4">
           Pricing Details
@@ -946,7 +946,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
       <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h3 className="text-[16px] font-semibold text-[#161D1F]">
@@ -1024,8 +1024,8 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 {submitting
                   ? "Saving..."
                   : editTest
-                  ? "Update Package"
-                  : "Add Package"}
+                    ? "Update Package"
+                    : "Add Package"}
               </button>
             )}
           </div>

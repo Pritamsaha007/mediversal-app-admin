@@ -17,7 +17,7 @@ const OrderItems: React.FC<OrderItemsProps> = ({ order }) => {
   };
 
   return (
-    <div className="space-y-20 h-80">
+    <div className="space-y-20 h-80 animate-fade-in">
       <div>
         <div className="bg-white p-4 rounded-lg border border-gray-300">
           <h3 className="text-sm font-medium text-gray-700 mb-4">
@@ -32,7 +32,7 @@ const OrderItems: React.FC<OrderItemsProps> = ({ order }) => {
           </div>
           {order.order_items.map((item) => {
             const requiresPrescription = isPrescriptionRequired(
-              Number(item.productId)
+              Number(item.productId),
             );
 
             return (

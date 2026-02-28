@@ -36,7 +36,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div>
         <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
           Add URL <span className="text-[#899193]">(optional)</span>

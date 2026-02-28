@@ -405,7 +405,7 @@ const BookingManagement: React.FC = () => {
     selectedBookings.length < paginatedBookings.length;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-2">
+    <div className="min-h-screen bg-gray-50 p-2 ">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">

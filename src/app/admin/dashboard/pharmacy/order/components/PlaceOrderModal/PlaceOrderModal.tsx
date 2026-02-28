@@ -162,7 +162,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
       const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
       if (currentIndex < tabs.length - 1) {
         setActiveTab(tabs[currentIndex + 1].id);
-        // Clear errors when moving to next tab
+
         setTabErrors((prev) => ({ ...prev, [activeTab]: [] }));
       }
     }
@@ -318,7 +318,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-fade-in">
       <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-[#161D1F]">
@@ -341,7 +341,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
                 className={`px-6 py-3 text-xs font-medium transition-all duration-200 flex-1 max-w-[200px] mx-1 first:ml-0 last:mr-0 ${
                   activeTab === tab.id
                     ? "bg-[#0088B1]  rounded-md text-white  border-b-2 border-[#0088B1]"
-                    : "text-[#899193]  rounded-md  border-b-2 border-transparent hover:text-[#161D1F] hover:bg-gray-100"
+                    : "text-[#899193]  rounded-md  border-b-2 border-transparent "
                 }`}
               >
                 {tab.label}

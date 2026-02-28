@@ -293,7 +293,7 @@ const OrderItemsTab: React.FC = () => {
   const charges = calculateCharges();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="relative">
         <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#B0B6B8]" />
         <input

@@ -21,7 +21,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 flex items-center justify-center z-50 p-4 animate-fade-in"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.7)" }}
     >
       <div className="bg-white rounded-xl shadow-xl w-[600px] p-6 relative">
