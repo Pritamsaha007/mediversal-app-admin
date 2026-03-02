@@ -480,7 +480,7 @@ export const ProductRelationshipsModal: React.FC<
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 flex items-center justify-center z-50 p-4 animate-fade-in"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >
       <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
@@ -634,7 +634,7 @@ export const ProductRelationshipsModal: React.FC<
               />
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 ">
               {filteredAvailableProducts.length > 0 ? (
                 <>
                   {filteredAvailableProducts.map((product) => {
@@ -728,7 +728,6 @@ export const ProductRelationshipsModal: React.FC<
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
           <button
             onClick={onClose}

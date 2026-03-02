@@ -108,20 +108,18 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
       errors.push("Hospital selection is required for in-person consultations");
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.patientEmail)) {
       errors.push("Please enter a valid email address");
     }
 
-    // Validate phone number (10 digits)
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(formData.patientContact.replace(/\D/g, ""))) {
       errors.push("Please enter a valid 10-digit phone number");
     }
 
     if (errors.length > 0) {
-      toast.error(errors[0]); // Show first error
+      toast.error(errors[0]);
       return false;
     }
 
@@ -152,7 +150,7 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
       try {
         const response = await searchHospitals(
           hospitalSearchTerm || null,
-          token
+          token,
         );
         setHospitals(response.hospitals);
       } catch (error) {
@@ -232,23 +230,21 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
     setFormData((prev) => {
       const newData = { ...prev, [field]: value };
 
-      // When payment method changes, also update the ID
       if (field === "paymentMethod") {
         const selectedMode = enumData.paymentModes.find(
-          (mode) => mode.id === value
+          (mode) => mode.id === value,
         );
       }
 
-      // When language changes, also update the ID
       if (field === "consultationLanguage") {
         const selectedLang = enumData.languages.find(
-          (lang) => lang.id === value
+          (lang) => lang.id === value,
         );
       }
 
       if (field === "paymentStatus") {
         const selectedStatus = enumData.paymentStatuses.find(
-          (status) => status.value === value
+          (status) => status.value === value,
         );
       }
 
@@ -267,7 +263,7 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
     const loadingToast = toast.loading(
       editingConsultation
         ? "Updating consultation..."
-        : "Scheduling consultation..."
+        : "Scheduling consultation...",
     );
 
     try {
@@ -300,7 +296,6 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
         aadhar_id: formData.aadhaarNumber?.replace(/\D/g, "") || undefined,
         staff_id: formData.doctorId || "",
 
-        // ⭐ REQUIRED FIELD (missing earlier)
         status: editingConsultation ? editingConsultation.status : "scheduled",
       };
 
@@ -310,7 +305,7 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
       toast.success(
         editingConsultation
           ? "Consultation updated successfully!"
-          : "Consultation scheduled successfully!"
+          : "Consultation scheduled successfully!",
       );
 
       onAddConsultation(formData);
@@ -321,7 +316,7 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to save consultation. Please try again."
+          : "Failed to save consultation. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -362,7 +357,7 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
     const isOpen = openDropdown === field;
 
     return (
-      <div className="relative">
+      <div className="relative animate-fade-in">
         <button
           type="button"
           onClick={() => setOpenDropdown(isOpen ? null : field)}
@@ -675,7 +670,7 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
                   value={formData.paymentStatus}
                   placeholder="Choose Payment Status"
                   options={enumData.paymentStatuses.map(
-                    (status) => status.value
+                    (status) => status.value,
                   )}
                   field="paymentStatus"
                 />
@@ -729,8 +724,8 @@ const AddConsultationModal: React.FC<AddConsultationModalProps> = ({
                 ? "Updating..."
                 : "Scheduling..."
               : editingConsultation
-              ? "Update Consultation"
-              : "Schedule Consultation"}
+                ? "Update Consultation"
+                : "Schedule Consultation"}
           </button>
         </div>
       </div>

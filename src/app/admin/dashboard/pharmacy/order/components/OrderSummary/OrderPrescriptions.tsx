@@ -46,7 +46,7 @@ const OrderPrescriptions: React.FC<OrderPrescriptionsProps> = ({ order }) => {
   }
 
   return (
-    <div className="space-y-4 h-80">
+    <div className="space-y-4 h-80 animate-fade-in">
       <div className="bg-white p-4 rounded-lg border border-gray-300">
         <h3 className="text-sm font-medium text-gray-700 mb-4">
           Prescription Information

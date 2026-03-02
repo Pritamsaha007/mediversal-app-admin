@@ -29,7 +29,7 @@ const OrderPayment: React.FC<OrderPaymentProps> = ({ order }) => {
   const paymentStatus = order?.paymentstatus || "Unknown";
 
   return (
-    <div className="space-y-6 h-80">
+    <div className="space-y-6 h-80 animate-fade-in">
       <div>
         <div className="bg-white p-4 rounded-lg border border-gray-300 space-y-4">
           <h3 className="text-sm font-medium text-gray-700 mb-4">

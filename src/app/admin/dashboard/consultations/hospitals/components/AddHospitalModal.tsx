@@ -535,7 +535,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
   };
 
   const renderDepartmentsAndTestsSection = () => (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       <div className="space-y-4">
         <h3 className="text-[12px] font-semibold text-[#161d1f]">
           <span className="text-red-500">*</span> Available Departments
@@ -792,7 +792,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl mx-4 max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between p-6 border-gray-200">
           <h2 className="text-[16px] font-medium text-[#161d1f]">
@@ -806,7 +806,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
           </button>
         </div>
 
-        <div className="flex mx-2">
+        <div className="flex border-1 border-gray-200 ">
           {[
             "Basic Information",
             "Hospital Details",
@@ -818,8 +818,8 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
               onClick={() => setActiveTab(index)}
               className={`flex-1 py-3 px-3 ${
                 activeTab === index
-                  ? "bg-[#0088B1] text-white rounded-lg text-[12px]"
-                  : "bg-gray-100 text-[#161D1F] text-[12px]"
+                  ? "bg-[#0088B1] mx-4 text-white rounded-lg text-[12px]"
+                  : "bg-white mx-4 text-[#161D1F] text-[12px]"
               }`}
             >
               {tab}
@@ -829,7 +829,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
 
         <div className="p-8 overflow-y-auto max-h-[60vh]">
           {activeTab === 0 && (
-            <div className="space-y-8">
+            <div className="space-y-8 animate-fade-in">
               <div className="flex flex-col items-center">
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 h-auto w-full text-center hover:border-[#1BA3C7] transition-colors">
                   <input
@@ -1085,7 +1085,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
           )}
 
           {activeTab === 1 && (
-            <div className="space-y-6">
+            <div className="space-y-6 animate-fade-in">
               <div>
                 <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                   <span className="text-red-500">*</span> Brief Description
@@ -1232,7 +1232,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
           {activeTab === 2 && renderDepartmentsAndTestsSection()}
 
           {activeTab === 3 && (
-            <div className="space-y-6">
+            <div className="space-y-6 animate-fade-in">
               <h3 className="text-[12px] font-semibold text-[#161d1f] mb-6">
                 <span className="text-red-500">*</span> Set Operating Hours
               </h3>

@@ -20,7 +20,7 @@ export const ManageRelationshipsModal: React.FC<
   const [searchTerm, setSearchTerm] = useState("");
   const [relatedPackages, setRelatedPackages] = useState<HealthPackage[]>([]);
   const [availablePackages, setAvailablePackages] = useState<HealthPackage[]>(
-    []
+    [],
   );
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -44,7 +44,7 @@ export const ManageRelationshipsModal: React.FC<
         const allPackages = response.healthpackages || [];
 
         const filteredAvailablePackages = allPackages.filter(
-          (p) => p.id !== test.id
+          (p) => p.id !== test.id,
         );
         setAvailablePackages(filteredAvailablePackages);
 
@@ -53,7 +53,7 @@ export const ManageRelationshipsModal: React.FC<
           test.related_health_package_ids.length > 0
         ) {
           const currentRelatedPackages = allPackages.filter((p) =>
-            test.related_health_package_ids!.includes(p.id)
+            test.related_health_package_ids!.includes(p.id),
           );
           setRelatedPackages(currentRelatedPackages);
         } else {
@@ -76,7 +76,7 @@ export const ManageRelationshipsModal: React.FC<
         availablePackage.description
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase())) &&
-      !relatedPackages.some((rp) => rp.id === availablePackage.id)
+      !relatedPackages.some((rp) => rp.id === availablePackage.id),
   );
 
   const handleAddPackage = (packageId: string) => {
@@ -138,10 +138,8 @@ export const ManageRelationshipsModal: React.FC<
 
       toast.success("Health package relationships updated successfully!");
 
-      // Close the modal first
       onClose();
 
-      // Then refresh the entire screen after a short delay
       setTimeout(() => {
         window.location.reload();
       }, 500);
@@ -156,7 +154,7 @@ export const ManageRelationshipsModal: React.FC<
   if (!isOpen || !test) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
       <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-lg shadow-xl overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 text-black">
           <div>

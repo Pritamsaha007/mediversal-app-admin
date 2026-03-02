@@ -45,15 +45,13 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ order }) => {
           throw new Error("Tracking number (AWB) is required");
         }
 
-        // Use the new ShipRocket API
         const data: TrackingResponse = await getTracking(order.awb);
 
         if (data?.tracking_data?.shipment_track_activities) {
-          // Sort activities by date (newest first) for timeline
           const sortedActivities = [
             ...data.tracking_data.shipment_track_activities,
           ].sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
           );
 
           setTrackingData(sortedActivities);
@@ -62,7 +60,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ order }) => {
         }
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Failed to load tracking details"
+          err instanceof Error
+            ? err.message
+            : "Failed to load tracking details",
         );
       } finally {
         setLoading(false);
@@ -143,7 +143,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ order }) => {
   }
 
   return (
-    <div className="h-80">
+    <div className="h-80 animate-fade-in">
       <div className="bg-white p-4 rounded-lg border border-gray-300">
         <h2 className="text-sm text-black mb-4">Order Timeline</h2>
 

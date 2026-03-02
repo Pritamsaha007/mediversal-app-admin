@@ -66,7 +66,7 @@ const SetFrequencyTab: React.FC<SetFrequencyTabProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div>
         <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
           <span className="text-red-500">*</span> Frequency Type

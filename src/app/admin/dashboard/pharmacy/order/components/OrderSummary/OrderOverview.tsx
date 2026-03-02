@@ -8,8 +8,7 @@ interface OrderOverviewProps {
 
 const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 h-80">
-      {/* Customer Information */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 h-80 animate-fade-in">
       <div className="bg-white rounded-lg  border border-gray-300">
         <div className="p-6">
           <h3 className="text-sm font-semibold text-gray-800 mb-6">
@@ -17,7 +16,6 @@ const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
           </h3>
 
           <div className="flex items-center gap-3 mb-4">
-            {/* Avatar initials or fallback */}
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 text-gray-700 font-bold">
               {order?.customername
                 ? order.customername
@@ -28,7 +26,6 @@ const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
                 : "M"}
             </div>
 
-            {/* Customer info */}
             <div>
               <div className="font-semibold text-gray-800 text-xs">
                 {order?.customername || "Guest User"}
@@ -59,7 +56,6 @@ const OrderOverview: React.FC<OrderOverviewProps> = ({ order }) => {
         </div>
       </div>
 
-      {/* Order Details */}
       <div className="bg-white rounded-lg  border border-gray-300">
         <div className="p-6">
           <h3 className="text-sm font-semibold text-gray-800 mb-6">

@@ -29,7 +29,7 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
   const { token } = useAdminStore();
   const [healthPackages, setHealthPackages] = useState<HealthPackage[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<HealthPackage | null>(
-    null
+    null,
   );
 
   const fetchDetails = async () => {
@@ -52,7 +52,8 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
 
         const testsResponse = await searchPathologyTests(testsPayload, token);
         const filteredTests = testsResponse.labTests.filter(
-          (labTest: PathologyTest) => test.linked_test_ids?.includes(labTest.id)
+          (labTest: PathologyTest) =>
+            test.linked_test_ids?.includes(labTest.id),
         );
         setIncludedTests(filteredTests);
       }
@@ -71,11 +72,11 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
 
         const packagesResponse = await searchHeathPackages(
           packagesPayload,
-          token
+          token,
         );
         const filteredPackages = packagesResponse.healthpackages.filter(
           (pkg: HealthPackage) =>
-            test.related_health_package_ids?.includes(pkg.id)
+            test.related_health_package_ids?.includes(pkg.id),
         );
         setRelatedPackages(filteredPackages);
       } else {
@@ -106,7 +107,7 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
   };
   const handleUpdatePackage = (updatedPackage: HealthPackage) => {
     setHealthPackages((prev) =>
-      prev.map((pkg) => (pkg.id === updatedPackage.id ? updatedPackage : pkg))
+      prev.map((pkg) => (pkg.id === updatedPackage.id ? updatedPackage : pkg)),
     );
 
     if (selectedPackage && selectedPackage.id === updatedPackage.id) {
@@ -118,7 +119,7 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
 
   const renderIncludedTests = (
     tests: PathologyTest[],
-    maxVisible: number = 6
+    maxVisible: number = 6,
   ) => {
     const visibleTests = tests.slice(0, maxVisible);
     const remainingCount = tests.length - maxVisible;
@@ -144,7 +145,7 @@ export const ViewTestModal: React.FC<ViewTestModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
         <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h3 className="text-[16px] font-semibold text-[#161D1F]">

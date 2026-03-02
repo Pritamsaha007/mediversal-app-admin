@@ -55,7 +55,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   const [newInstruction, setNewInstruction] = useState("");
   const [newPrecaution, setNewPrecaution] = useState("");
   const [activeSection, setActiveSection] = useState<"basic" | "settings">(
-    "basic"
+    "basic",
   );
 
   const { token } = useAdminStore();
@@ -232,7 +232,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     setFormData({
       ...formData,
       preparation_instructions: formData.preparation_instructions.filter(
-        (inst) => inst !== instruction
+        (inst) => inst !== instruction,
       ),
     });
   };
@@ -299,7 +299,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     setFormData({
       ...formData,
       inspection_parts_ids: formData.inspection_parts_ids.filter(
-        (p) => p !== partId
+        (p) => p !== partId,
       ),
     });
   };
@@ -391,7 +391,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     try {
       let imageUrl = formData.image_url;
 
-      // Upload new image if selected
       if (imageFile) {
         try {
           imageUrl = await uploadImageAndGetUrl();
@@ -403,7 +402,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
       const duration_range = formatDurationRange(
         formData.minDuration,
-        formData.maxDuration
+        formData.maxDuration,
       );
 
       const payload = {
@@ -422,7 +421,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         in_person_visit_reqd: Boolean(formData.in_person_visit_reqd),
         is_featured_lab_test: Boolean(formData.is_featured_lab_test),
         is_home_collection_available: Boolean(
-          formData.is_home_collection_available
+          formData.is_home_collection_available,
         ),
         is_active: Boolean(formData.is_active),
         image_url: imageUrl || "",
@@ -524,7 +523,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   if (!isOpen) return null;
 
   const renderBasicInformation = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <h4 className="text-xs font-medium text-[#161D1F] mb-3">
           Upload Lab Test Image
@@ -633,10 +632,10 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 {loading
                   ? "Loading..."
                   : formData.modality_type_id
-                  ? modalityOptions.find(
-                      (m) => m.id === formData.modality_type_id
-                    )?.value || formData.modality_type_id
-                  : "Select modality"}
+                    ? modalityOptions.find(
+                        (m) => m.id === formData.modality_type_id,
+                      )?.value || formData.modality_type_id
+                    : "Select modality"}
               </span>
               <ChevronDown className="w-4 h-4 text-gray-400" />
             </button>
@@ -794,7 +793,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             <div className="mt-2 space-y-1">
               {formData.inspection_parts_ids.map((partId, index) => {
                 const part = inspectionPartsOptions.find(
-                  (p) => p.id === partId
+                  (p) => p.id === partId,
                 );
                 return (
                   <div
@@ -822,7 +821,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   );
 
   const renderSettings = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="p-4 rounded-lg border border-gray-200">
         <h4 className="text-xs font-medium text-[#161D1F] mb-4">
           Pricing Details
@@ -1116,7 +1115,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
       <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h3 className="text-[16px] font-semibold text-[#161D1F]">
@@ -1194,8 +1193,8 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 {submitting
                   ? "Saving..."
                   : editTest
-                  ? "Update Test"
-                  : "Add Test"}
+                    ? "Update Test"
+                    : "Add Test"}
               </button>
             )}
           </div>

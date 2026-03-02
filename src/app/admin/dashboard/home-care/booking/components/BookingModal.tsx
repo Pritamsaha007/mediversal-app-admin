@@ -173,7 +173,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4 animate-fade-in">
       <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-[16px] font-semibold text-[#161D1F]">

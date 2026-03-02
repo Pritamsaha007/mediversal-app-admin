@@ -235,7 +235,7 @@ const ShippingDetailsTab = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <h3 className="text-lg font-medium text-[#161D1F]">Shipping Addresses</h3>
 
       {customerInfo.customerId && (

@@ -281,9 +281,8 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
       <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Fixed Top Header */}
         <div className="flex items-center justify-between p-4 border-b shrink-0">
           <h2 className="text-[16px] font-medium text-[#161D1F]">
             Assign Staff
@@ -296,13 +295,11 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Content Area */}
         <div
           ref={contentRef}
           className="flex-1 overflow-y-auto"
-          style={{ scrollPaddingTop: "180px" }} // Add padding for fixed header
+          style={{ scrollPaddingTop: "180px" }}
         >
-          {/* Order Info - Fixed after scrolling */}
           <div
             ref={headerRef}
             className="sticky top-0 z-10 bg-white border-b"
@@ -316,7 +313,6 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
               </div>
             </div>
 
-            {/* Assigned Staffs Section */}
             <div className="p-4 border-b bg-white">
               <h3 className="font-medium text-[12px] text-[#161D1F] mb-3">
                 Assigned Staffs
@@ -389,13 +385,11 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
             </div>
           </div>
 
-          {/* All Staffs Section (Scrollable) */}
           <div className="p-4">
             <h3 className="font-semibold text-[#161D1F] text-[12px] mb-3">
               All Staffs
             </h3>
 
-            {/* Search */}
             <div className="relative mb-4">
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
@@ -409,7 +403,6 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
               />
             </div>
 
-            {/* Category Tabs */}
             <div className="flex flex-wrap gap-2 mb-4">
               {staffCategories.map((category) => (
                 <button
@@ -426,7 +419,6 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
               ))}
             </div>
 
-            {/* Staff List */}
             <div className="space-y-2 pb-4">
               {loading ? (
                 <div className="flex items-center justify-center py-8">
@@ -549,7 +541,6 @@ const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
           </div>
         </div>
 
-        {/* Fixed Bottom Button */}
         <div className="p-4 border-t bg-gray-50 shrink-0">
           <button
             onClick={handleUpdateAssignedStaff}

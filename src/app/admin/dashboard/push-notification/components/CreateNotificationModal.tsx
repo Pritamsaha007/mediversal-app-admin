@@ -92,12 +92,12 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
           getEnums("NOTIFICATION_FREQ", token),
           getEnums("TARGET_USER_GROUP", token),
           getEnums("DAYS_IN_WEEK", token),
-        ]
+        ],
       );
 
       if (freqResponse.success) {
         setFrequencies(freqResponse.roles);
-        // Set default frequency to ONCE
+
         const onceFreq = freqResponse.roles.find((f) => f.value === "ONCE");
         if (onceFreq && !editNotification) {
           setFormData((prev) => ({
@@ -224,7 +224,7 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
       const scheduleArray = Object.entries(formData.customSchedule).map(
         ([dayId, times]) => ({
           [dayId]: times,
-        })
+        }),
       );
       customSchedulePayload = { schedule: scheduleArray };
     }
@@ -262,7 +262,7 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
         toast.success(
           `Notification ${
             editNotification ? "updated" : "created"
-          } successfully!`
+          } successfully!`,
         );
         onSuccess();
         handleClose();
@@ -332,9 +332,8 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
       <div className="bg-white rounded-2xl w-full max-w-6xl max-h-[80vh] overflow-hidden flex flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 ">
           <h2 className="text-[18px] font-semibold text-[#161D1F]">
             {editNotification ? "Edit" : "Create"} Push Notification
@@ -347,7 +346,6 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="flex bg-[#F8F8F8] px-6">
           <button
             onClick={() => setActiveTab("basic")}
@@ -381,10 +379,8 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="grid grid-cols-3 gap-6 p-6">
-            {/* Form Section */}
             <div className="col-span-2">
               {activeTab === "basic" && (
                 <BasicInformationTab
@@ -413,7 +409,6 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
               )}
             </div>
 
-            {/* Preview Section */}
             <div className="col-span-1">
               <NotificationPreview
                 formData={formData}
@@ -423,7 +418,6 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-end px-6 py-4 border-t border-gray-200">
           <div className="flex items-center gap-3">
             <button

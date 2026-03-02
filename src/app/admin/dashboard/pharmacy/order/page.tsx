@@ -467,7 +467,7 @@ const Orders: React.FC = () => {
   const stats = OrderService.generateOrderStats(allOrdersForStats);
   const hasMore = (currentPage + 1) * itemsPerPage < stats.totalOrders;
   return (
-    <div className="min-h-screen bg-gray-50 p-2">
+    <div className="min-h-screen bg-gray-50 p-2 ">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">Orders</h1>

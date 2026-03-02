@@ -48,7 +48,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   const [newInstruction, setNewInstruction] = useState("");
   const [newTestParameter, setNewTestParameter] = useState("");
   const [activeSection, setActiveSection] = useState<"basic" | "settings">(
-    "basic"
+    "basic",
   );
   const { token } = useAdminStore();
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
@@ -163,7 +163,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     setFormData({
       ...formData,
       preparation_instructions: formData.preparation_instructions.filter(
-        (inst) => inst !== instruction
+        (inst) => inst !== instruction,
       ),
     });
   };
@@ -202,7 +202,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
 
   const handleAddSampleType = (sampleTypeId: string) => {
     const sampleTypeObj = sampleTypeOptions.find(
-      (st) => st.id === sampleTypeId
+      (st) => st.id === sampleTypeId,
     );
     if (sampleTypeObj && !formData.sample_type_ids.includes(sampleTypeObj.id)) {
       setFormData({
@@ -217,7 +217,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
     setFormData({
       ...formData,
       sample_type_ids: formData.sample_type_ids.filter(
-        (id) => id !== sampleTypeId
+        (id) => id !== sampleTypeId,
       ),
     });
   };
@@ -361,7 +361,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
         in_person_visit_reqd: Boolean(formData.in_person_visit_reqd),
         is_featured_lab_test: Boolean(formData.is_featured_lab_test),
         is_home_collection_available: Boolean(
-          formData.is_home_collection_available
+          formData.is_home_collection_available,
         ),
         is_active: Boolean(formData.is_active),
         image_url: imageUrl || "",
@@ -458,7 +458,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   if (!isOpen) return null;
 
   const renderBasicInformation = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <h4 className="text-xs font-medium text-[#161D1F] mb-3">
           Upload Lab Test Image
@@ -593,7 +593,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             <div className="mt-2 space-y-1">
               {formData.sample_type_ids.map((sampleTypeId, index) => {
                 const sampleType = sampleTypeOptions.find(
-                  (st) => st.id === sampleTypeId
+                  (st) => st.id === sampleTypeId,
                 );
                 return (
                   <div
@@ -656,7 +656,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
           </div>
         </div>
 
-        {/* Test Parameters - Changed to Input Box */}
         <div>
           <label className="block text-xs font-medium text-[#161D1F] mb-2">
             Test Parameters
@@ -680,7 +679,6 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
             </button>
           </div>
 
-          {/* Test Parameters Chips */}
           {formData.test_params.length > 0 && (
             <div className="mt-2 space-y-1">
               {formData.test_params.map((parameter, index) => (
@@ -706,7 +704,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   );
 
   const renderSettings = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="p-4 rounded-lg border border-gray-200">
         <h4 className="text-xs font-medium text-[#161D1F] mb-4">
           Pricing Details
@@ -947,7 +945,7 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
       <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col relative">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h3 className="text-[16px] font-semibold text-[#161D1F]">
@@ -1025,8 +1023,8 @@ export const AddTestModal: React.FC<AddTestModalProps> = ({
                 {submitting
                   ? "Saving..."
                   : editTest
-                  ? "Update Test"
-                  : "Add Test"}
+                    ? "Update Test"
+                    : "Add Test"}
               </button>
             )}
           </div>

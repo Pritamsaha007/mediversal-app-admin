@@ -57,7 +57,7 @@ export const ViewRiderModal: React.FC<ViewRiderModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
         <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
           <div className="flex items-center justify-between p-6  ">
             <h3 className="text-[16px] font-semibold text-[#161D1F]">
@@ -109,8 +109,8 @@ export const ViewRiderModal: React.FC<ViewRiderModalProps> = ({
                     rider.is_poi_verified_status === "approved"
                       ? " text-[#0088B1] border-[#0088B1]"
                       : rider.is_poi_verified_status === "pending"
-                      ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                      : "bg-red-50 text-red-700 border-red-200"
+                        ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                        : "bg-red-50 text-red-700 border-red-200"
                   }`}
                 >
                   {rider.is_poi_verified_status.charAt(0).toUpperCase() +
