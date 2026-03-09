@@ -1,12 +1,14 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { X, Plus, ImagePlus, Edit } from "lucide-react";
+import { X, Plus, ImagePlus, Edit, Upload } from "lucide-react";
 import { tabs, convertAvailabilityToSlots } from "../utils";
 
 import HospitalSearchInput from "./HospitalSearchInput";
 import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
 import { Doctor, EnumItem } from "../types";
+import { uploadFile } from "../../../lab_tests/services";
+import { fileToBase64 } from "@/app/utils/functions";
 
 interface AddDoctorModalProps {
   isOpen: boolean;
@@ -280,38 +282,68 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       return;
     }
 
-    const daysMapping: Record<string, string> = {};
-    enumData.days.forEach((day) => {
-      daysMapping[day.value] = day.id;
-    });
+    try {
+      let profileImageUrl = null;
 
-    const doctorSlots = convertAvailabilityToSlots(
-      formData.availability,
-      daysMapping,
-    );
-
-    console.log("Converted doctor slots:", doctorSlots);
-    let profileImageUrl = null;
-    if (formData.profile_image_url) {
       if (
-        typeof formData.profile_image_url === "object" &&
-        "name" in formData.profile_image_url
+        formData.profile_image_url &&
+        formData.profile_image_url instanceof File
       ) {
-        profileImageUrl = null;
-      } else {
+        const file = formData.profile_image_url;
+
+        const fileUri = URL.createObjectURL(file);
+        const fileContent = await fileToBase64(fileUri);
+
+        URL.revokeObjectURL(fileUri);
+        const bucketName =
+          process.env.NODE_ENV === "development"
+            ? process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_DEV
+            : process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_PROD;
+
+        if (!bucketName) {
+          throw new Error("S3 bucket name is not configured properly.");
+        }
+
+        const uploadRequest = {
+          bucketName,
+          folderPath: "doctor-profiles",
+          fileName: `doctor_${Date.now()}_${file.name}`,
+          fileContent: fileContent,
+        };
+
+        const uploadRes = await uploadFile(token!, uploadRequest);
+        console.log(uploadRes, "upload Res");
+
+        if (uploadRes && uploadRes.result) {
+          profileImageUrl = uploadRes.result;
+        } else {
+          toast.error("Failed to upload image");
+          return;
+        }
+      } else if (typeof formData.profile_image_url === "string") {
         profileImageUrl = formData.profile_image_url;
       }
-    }
 
-    const submitData = {
-      ...formData,
-      profile_image_url: profileImageUrl,
-      doctor_slots: doctorSlots,
-    };
+      const daysMapping: Record<string, string> = {};
+      enumData.days.forEach((day) => {
+        daysMapping[day.value] = day.id;
+      });
 
-    console.log("Doctor Data:", submitData);
+      const doctorSlots = convertAvailabilityToSlots(
+        formData.availability,
+        daysMapping,
+      );
 
-    try {
+      console.log("Converted doctor slots:", doctorSlots);
+
+      const submitData = {
+        ...formData,
+        profile_image_url: profileImageUrl,
+        doctor_slots: doctorSlots,
+      };
+
+      console.log("Doctor Data:", submitData);
+
       await onAddDoctor(submitData);
       toast.success(
         editingDoctor
@@ -321,12 +353,12 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       onClose();
       resetForm();
     } catch (error) {
+      console.error("Error submitting doctor:", error);
       toast.error(
         editingDoctor ? "Failed to update doctor" : "Failed to create doctor",
       );
     }
   };
-
   const resetForm = () => {
     setFormData({
       id: "",
@@ -468,10 +500,7 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                       </div>
                     ) : (
                       <div className="flex flex-col items-center">
-                        <ImagePlus
-                          className="w-16 h-16 text-[#161D1F] mb-3"
-                          strokeWidth={1}
-                        />
+                        <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                         <h3 className="text-[12px] font-medium text-[#161d1f] mb-2">
                           Upload Doctor Image
                         </h3>
@@ -491,29 +520,16 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     onClick={() =>
                       document.getElementById("doctorImage")?.click()
                     }
-                    className={`mt-4 text-[12px] px-6 py-2 border rounded-lg hover:bg-gray-50 transition-colors ${
+                    className={`mt-4 text-[12px] px-6 py-2 border rounded-lg  transition-colors ${
                       formData.profile_image_url
-                        ? "border-gray-300 text-[#161D1F]"
-                        : "border-gray-300 text-[#161D1F] bg-gray-50"
+                        ? "border-gray-300 text-[#FFF] bg-gray-600"
+                        : "border-gray-300 text-[#FFF] bg-[#0088B1] hover:bg-[#00729A]"
                     }`}
                   >
                     {formData.profile_image_url
                       ? "Change Image"
                       : "Select File"}
                   </button>
-
-                  {formData.profile_image_url && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleFileUpload("profile_image_url", null);
-                      }}
-                      className="mt-2 ml-2 text-[12px] px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                    >
-                      Remove Image
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -592,9 +608,12 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   </label>
                   <input
                     type="number"
-                    value={formData.experience_in_yrs || 0}
+                    value={formData.experience_in_yrs || ""}
                     onChange={(e) =>
-                      handleInputChange("experience_in_yrs", e.target.value)
+                      handleInputChange(
+                        "experience_in_yrs",
+                        e.target.value === "" ? 0 : Number(e.target.value),
+                      )
                     }
                     className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
                     placeholder="Years of experience"
@@ -642,12 +661,15 @@ const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   </label>
                   <input
                     type="number"
-                    value={formData.consultation_price || 0}
+                    value={formData.consultation_price || ""}
                     onChange={(e) =>
-                      handleInputChange("consultation_price", e.target.value)
+                      handleInputChange(
+                        "consultation_price",
+                        e.target.value === "" ? 0 : Number(e.target.value),
+                      )
                     }
                     className="w-full text-[12px] px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent text-[#161D1F] placeholder-gray-400"
-                    placeholder="500"
+                    placeholder="Enter consultation price"
                   />
                 </div>
 

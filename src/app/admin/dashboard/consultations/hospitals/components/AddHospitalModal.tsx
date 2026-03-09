@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { X, ImagePlus, Search, Plus } from "lucide-react";
+import { X, ImagePlus, Search, Plus, Upload } from "lucide-react";
 import { tabs } from "../utils";
 import { getEnumValues, addOrUpdateHospital } from "../services";
 import { useAdminStore } from "@/app/store/adminStore";
@@ -11,8 +11,10 @@ import {
   fetchCategories,
   searchHeathPackages,
   searchPathologyTests,
+  uploadFile,
 } from "../../../lab_tests/services";
 import { EnumItem, Hospital, HospitalFormData } from "../types";
+import { fileToBase64 } from "@/app/utils/functions";
 
 interface AddHospitalModalProps {
   isOpen: boolean;
@@ -426,6 +428,43 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
     if (!token) return;
 
     try {
+      let displayPicUrl = undefined;
+
+      if (formData.image && formData.image instanceof File) {
+        const file = formData.image;
+
+        const fileUri = URL.createObjectURL(file);
+        const fileContent = await fileToBase64(fileUri);
+
+        URL.revokeObjectURL(fileUri);
+        const bucketName =
+          process.env.NODE_ENV === "development"
+            ? process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_DEV
+            : process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_PROD;
+
+        if (!bucketName) {
+          throw new Error("S3 bucket name is not configured properly.");
+        }
+
+        const uploadRequest = {
+          bucketName,
+          folderPath: "hospital-profiles",
+          fileName: `hospital_${Date.now()}_${file.name}`,
+          fileContent: fileContent,
+        };
+
+        const uploadRes = await uploadFile(token, uploadRequest);
+
+        if (uploadRes && uploadRes.result) {
+          displayPicUrl = uploadRes.result;
+        } else {
+          toast.error("Failed to upload image");
+          return;
+        }
+      } else if (typeof formData.image === "string") {
+        displayPicUrl = formData.image;
+      }
+
       const allDaysOperatingHours = enumDays.map((dayEnum) => {
         const existingHours = formData.operatingHours[dayEnum.value];
         const operatingHour: any = {
@@ -447,8 +486,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
         ...(editingHospital?.id && { id: editingHospital.id }),
         name: formData.name,
         description: formData.description,
-        display_pic:
-          typeof formData.image === "string" ? formData.image : undefined,
+        display_pic: displayPicUrl,
         address_line1: formData.address.line1,
         address_line2: formData.address.line2,
         city: formData.address.city,
@@ -487,7 +525,6 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
       );
     }
   };
-
   const resetForm = () => {
     setFormData({
       id: "",
@@ -831,7 +868,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
           {activeTab === 0 && (
             <div className="space-y-8 animate-fade-in">
               <div className="flex flex-col items-center">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 h-auto w-full text-center hover:border-[#1BA3C7] transition-colors">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 h-auto w-full text-center  transition-colors">
                   <input
                     type="file"
                     onChange={(e) =>
@@ -900,10 +937,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                       </div>
                     ) : (
                       <div className="flex flex-col items-center mb-6">
-                        <ImagePlus
-                          className="w-16 h-16 text-[#161D1F] mb-3"
-                          strokeWidth={1}
-                        />
+                        <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                         <h3 className="text-[12px] font-medium text-[#161d1f] mb-2">
                           Upload Hospital Image
                         </h3>
@@ -923,27 +957,14 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
                     onClick={() =>
                       document.getElementById("hospitalImage")?.click()
                     }
-                    className={`mt-4 text-[12px] px-6 py-2 border rounded-lg hover:bg-gray-50 transition-colors ${
+                    className={`mt-4 text-[12px] px-6 py-2 border rounded-lg  transition-colors ${
                       formData.image
-                        ? "border-gray-300 text-[#161D1F]"
-                        : "border-gray-300 text-[#161D1F] bg-gray-50"
+                        ? "border-gray-300 text-[#FFF] bg-gray-600"
+                        : "border-gray-300 text-[#FFF] bg-[#0088b1] hover:border-[#1BA3C7]"
                     }`}
                   >
                     {formData.image ? "Change Image" : "Select File"}
                   </button>
-
-                  {formData.image && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleFileUpload("image", null);
-                      }}
-                      className="mt-2 ml-2 text-[12px] px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                    >
-                      Remove Image
-                    </button>
-                  )}
                 </div>
               </div>
 

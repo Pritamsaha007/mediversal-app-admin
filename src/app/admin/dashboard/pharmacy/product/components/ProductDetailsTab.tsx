@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Upload } from "lucide-react";
 import { dosageForms, ProductFormData } from "../types/productForm.type";
 
 interface ProductDetailsTabProps {
@@ -60,10 +60,14 @@ export const ProductDetailsTab = ({
           onDrop={handleDrop}
           onDragOver={handleDragOver}
         >
+          <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
           <p className="text-sm text-gray-600">Drag and drop images here</p>
           <p className="text-xs text-gray-500">or click to upload</p>
-          <label className="mt-2 inline-block cursor-pointer text-white bg-[#0088B1] px-4 py-2 text-sm rounded hover:bg-[#00779d]">
-            Upload Images
+          <p className="text-[12px] text-gray-400 mt-2">
+            (supported file format .jpg, .jpeg, .png)
+          </p>
+          <label className="mt-4 inline-block cursor-pointer text-white bg-[#0088B1] px-4 py-2 text-sm rounded-lg hover:bg-[#00779d]">
+            Select Files
             <input
               type="file"
               id="image-upload"
