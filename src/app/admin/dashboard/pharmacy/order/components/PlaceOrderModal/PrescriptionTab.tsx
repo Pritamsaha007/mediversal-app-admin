@@ -3,6 +3,7 @@ import { Upload, X, FileText, Camera, Link } from "lucide-react";
 import { useOrderStore } from "../../store/placeOrderStore";
 import { uploadFile } from "@/app/admin/dashboard/lab_tests/services";
 import { useAdminStore } from "@/app/store/adminStore";
+import { fileToBase64 } from "@/app/utils/functions";
 
 const PrescriptionTab: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -30,22 +31,6 @@ const PrescriptionTab: React.FC = () => {
     return `prescription-${Date.now()}-${fileName}`;
   };
 
-  const fileToBase64 = async (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result?.toString().split(",")[1];
-        if (base64) {
-          resolve(base64);
-        } else {
-          reject(new Error("Failed to convert file to base64"));
-        }
-      };
-      reader.onerror = (error) => reject(error);
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -65,8 +50,8 @@ const PrescriptionTab: React.FC = () => {
           console.error("File size should be less than 10MB.");
           continue;
         }
-
-        const base64Content = await fileToBase64(file);
+        const fileUri = URL.createObjectURL(file);
+        const base64Content = await fileToBase64(fileUri);
 
         const uploadData = {
           bucketName: getBucketName(),
