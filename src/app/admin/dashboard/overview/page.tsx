@@ -385,7 +385,7 @@ export default function HealthcareDashboard() {
       const params = {
         search: "",
         start: 0,
-        max: 2000,
+        max: 1000,
       };
 
       const response = await OrderService.fetchOrders(params);

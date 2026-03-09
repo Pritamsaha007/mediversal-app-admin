@@ -269,7 +269,7 @@ const Orders: React.FC = () => {
   const fetchAllOrdersForStats = async () => {
     try {
       const { orders: allOrders } = await OrderService.fetchOrders({
-        max: 10000,
+        max: 1000,
         start: 0,
       });
       setAllOrdersForStats(allOrders);
