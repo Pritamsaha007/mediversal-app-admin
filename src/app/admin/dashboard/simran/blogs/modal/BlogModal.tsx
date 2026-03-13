@@ -1,0 +1,470 @@
+import React, { useEffect, useRef, useState } from "react";
+import { X, Plus, ImagePlus, Clock } from "lucide-react";
+import {
+  Blog,
+  BlogFormData,
+  BlogModalMode,
+  BlogModalStep,
+  BlogSection,
+  BLOG_CATEGORIES,
+} from "../types/types";
+
+interface BlogModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  mode: BlogModalMode;
+  initialData?: Blog;
+  onSubmit: (data: BlogFormData) => void;
+}
+
+const emptySection = (): BlogSection => ({
+  id: crypto.randomUUID(),
+  subtitle: "",
+  content: "",
+});
+
+const defaultForm = (): BlogFormData => ({
+  title: "",
+  shortDescription: "",
+  author: "",
+  estimatedReadTime: "",
+  publishDate: "",
+  coverImage: undefined,
+  coverImageFile: undefined,
+  category: "",
+  sections: [emptySection()],
+  active: false,
+});
+
+const BlogModal: React.FC<BlogModalProps> = ({
+  isOpen,
+  onClose,
+  mode,
+  initialData,
+  onSubmit,
+}) => {
+  const [step, setStep] = useState<BlogModalStep>("basic");
+  const [formData, setFormData] = useState<BlogFormData>(defaultForm());
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setStep("basic");
+      return;
+    }
+    if (mode === "edit" && initialData) {
+      setFormData({
+        title: initialData.title,
+        shortDescription: initialData.shortDescription,
+        author: initialData.author,
+        estimatedReadTime: initialData.estimatedReadTime,
+        publishDate: initialData.publishDate,
+        coverImage: initialData.coverImage,
+        coverImageFile: undefined,
+        category: initialData.category,
+        sections:
+          initialData.sections.length > 0
+            ? initialData.sections.map((s) => ({ ...s }))
+            : [emptySection()],
+        active: initialData.active,
+      });
+    } else {
+      setFormData(defaultForm());
+    }
+    setStep("basic");
+  }, [isOpen, mode, initialData]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFormData((prev) => ({
+      ...prev,
+      coverImageFile: file,
+      coverImage: URL.createObjectURL(file),
+    }));
+  };
+
+  const handleSectionChange = (
+    id: string,
+    field: keyof BlogSection,
+    value: string,
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s) =>
+        s.id === id ? { ...s, [field]: value } : s,
+      ),
+    }));
+  };
+
+  const handleAddSection = () => {
+    setFormData((prev) => ({
+      ...prev,
+      sections: [...prev.sections, emptySection()],
+    }));
+  };
+
+  const handleRemoveSection = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      sections: prev.sections.filter((s) => s.id !== id),
+    }));
+  };
+
+  const handleReset = () => {
+    if (mode === "edit" && initialData) {
+      setFormData({
+        title: initialData.title,
+        shortDescription: initialData.shortDescription,
+        author: initialData.author,
+        estimatedReadTime: initialData.estimatedReadTime,
+        publishDate: initialData.publishDate,
+        coverImage: initialData.coverImage,
+        coverImageFile: undefined,
+        category: initialData.category,
+        sections: initialData.sections.map((s) => ({ ...s })),
+        active: initialData.active,
+      });
+    } else {
+      setFormData(defaultForm());
+    }
+    setStep("basic");
+  };
+
+  const handleSubmit = () => {
+    onSubmit(formData);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  const isEdit = mode === "edit";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 flex-shrink-0">
+          <h2 className="text-[16px] font-semibold text-[#161D1F]">
+            {isEdit ? "Update Blog:" : "Create New Blog"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-[#899193] hover:text-[#161D1F]"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex mx-6 mb-4 rounded-lg overflow-hidden border border-[#E5E8E9] flex-shrink-0">
+          <button
+            className={`flex-1 py-2 text-[12px] font-medium transition-colors ${
+              step === "basic"
+                ? "bg-[#0088B1] text-white"
+                : "bg-white text-[#899193]"
+            }`}
+            onClick={() => setStep("basic")}
+          >
+            Basic Information
+          </button>
+          <button
+            className={`flex-1 py-2 text-[12px] font-medium transition-colors ${
+              step === "sections"
+                ? "bg-[#0088B1] text-white"
+                : "bg-white text-[#899193]"
+            }`}
+            onClick={() => setStep("sections")}
+          >
+            Blog Sections
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 px-6">
+          {step === "basic" ? (
+            <div className="space-y-4 pb-4">
+              <div
+                className="border-2 border-dashed border-[#E5E8E9] rounded-lg p-5 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-[#0088B1] transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {formData.coverImage ? (
+                  <>
+                    <img
+                      src={formData.coverImage}
+                      alt="cover"
+                      className="h-14 w-auto object-contain"
+                    />
+                    <p className="text-[11px] text-[#161D1F] font-medium mt-1">
+                      {formData.coverImageFile?.name || "Cover Image"}
+                    </p>
+                    <p className="text-[10px] text-[#899193]">
+                      Drag and drop your new image here or click to browse
+                    </p>
+                    <p className="text-[10px] text-[#899193]">
+                      (supported file format .jpg, .jpeg, .png)
+                    </p>
+                    <button
+                      type="button"
+                      className="mt-1 px-3 py-1 border border-gray-300 rounded text-[11px] text-[#161D1F] hover:bg-gray-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      Select File
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <ImagePlus className="w-7 h-7 text-[#899193]" />
+                    <p className="text-[11px] font-medium text-[#161D1F]">
+                      * Upload Blog Cover Image
+                    </p>
+                    <p className="text-[10px] text-[#899193]">
+                      Drag and drop your new image here or click to browse
+                    </p>
+                    <p className="text-[10px] text-[#899193]">
+                      (supported file format .jpg, .jpeg, .png)
+                    </p>
+                    <button
+                      type="button"
+                      className="mt-1 px-3 py-1 border border-gray-300 rounded text-[11px] text-[#161D1F] hover:bg-gray-50"
+                    >
+                      Select File
+                    </button>
+                  </>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".jpg,.jpeg,.png"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-[#161D1F] mb-1">
+                  * Title
+                </label>
+                <input
+                  type="text"
+                  placeholder="Please provide a suitable blog title"
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
+                  className="w-full px-3 py-2.5 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-[#161D1F] mb-1">
+                  * Short Description
+                </label>
+                <textarea
+                  placeholder="Brief about the blog post"
+                  value={formData.shortDescription}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      shortDescription: e.target.value,
+                    })
+                  }
+                  rows={4}
+                  className="w-full px-3 py-2.5 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1] resize-none"
+                />
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="block text-[11px] text-[#161D1F] mb-1">
+                    * Author
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Please Enter Author Name"
+                    value={formData.author}
+                    onChange={(e) =>
+                      setFormData({ ...formData, author: e.target.value })
+                    }
+                    className="w-full px-3 py-2.5 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[11px] text-[#161D1F] mb-1">
+                    * Estimated Read Time (in min.)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      placeholder="Select read time"
+                      value={formData.estimatedReadTime}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          estimatedReadTime:
+                            e.target.value === "" ? "" : Number(e.target.value),
+                        })
+                      }
+                      className="w-full px-3 py-2.5 pr-8 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
+                    />
+                    <Clock className="w-4 h-4 text-[#899193] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] text-[#161D1F] mb-1">
+                  * Publish Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.publishDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, publishDate: e.target.value })
+                  }
+                  className="w-full px-3 py-2.5 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 pb-4">
+              <p className="text-[12px] text-[#161D1F] font-medium">
+                Blog Section{" "}
+                <span className="text-[#899193] font-normal">
+                  (Subtitle + Content)
+                </span>
+              </p>
+
+              {formData.sections.map((section, idx) => (
+                <div
+                  key={section.id}
+                  className="border border-dashed border-[#0088B1] rounded-lg p-4"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[12px] font-semibold text-[#0088B1]">
+                      Section {idx + 1}
+                    </p>
+                    {formData.sections.length > 1 && (
+                      <button
+                        onClick={() => handleRemoveSection(section.id)}
+                        className="text-[#899193] hover:text-red-500"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="mb-3">
+                    <label className="block text-[11px] text-[#161D1F] mb-1">
+                      * Blog Subtitle
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Please provide a suitable subtitle"
+                      value={section.subtitle}
+                      onChange={(e) =>
+                        handleSectionChange(
+                          section.id,
+                          "subtitle",
+                          e.target.value,
+                        )
+                      }
+                      className="w-full px-3 py-2.5 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-[#161D1F] mb-1">
+                      * Content
+                    </label>
+                    <textarea
+                      placeholder="Write section content..."
+                      value={section.content}
+                      onChange={(e) =>
+                        handleSectionChange(
+                          section.id,
+                          "content",
+                          e.target.value,
+                        )
+                      }
+                      rows={4}
+                      className="w-full px-3 py-2.5 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1] resize-none"
+                    />
+                  </div>
+                </div>
+              ))}
+              <button
+                onClick={handleAddSection}
+                className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-[#0088B1] rounded-lg text-[12px] text-[#0088B1] hover:bg-[#E8F4F7] transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Add Another Section
+              </button>
+              <div
+                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${
+                  formData.active
+                    ? "border-[#0088B1] bg-[#E8F4F7]"
+                    : "border-[#E5E8E9] bg-white"
+                }`}
+                onClick={() =>
+                  setFormData({ ...formData, active: !formData.active })
+                }
+              >
+                <div
+                  className={`w-4 h-4 rounded flex items-center justify-center border ${
+                    formData.active
+                      ? "bg-[#0088B1] border-[#0088B1]"
+                      : "border-gray-300"
+                  }`}
+                >
+                  {formData.active && (
+                    <svg
+                      className="w-3 h-3 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={3}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[12px] font-medium text-[#161D1F]">
+                    Active Blog
+                  </p>
+                  <p className="text-[10px] text-[#899193]">
+                    Inactive blogs would not be displayed at website
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="px-6 py-4 border-t border-[#E5E8E9] flex items-center justify-end gap-3 flex-shrink-0">
+          <button
+            onClick={handleReset}
+            className="text-[12px] text-[#161D1F] hover:underline"
+          >
+            Reset
+          </button>
+          {step === "basic" ? (
+            <button
+              onClick={() => setStep("sections")}
+              className="px-5 py-2 bg-[#0088B1] text-white text-[12px] rounded-lg hover:bg-[#00729A] transition-colors"
+            >
+              Next
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              className="px-5 py-2 bg-[#0088B1] text-white text-[12px] rounded-lg hover:bg-[#00729A] transition-colors"
+            >
+              {isEdit ? "Update Blog" : "Create Blog"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default BlogModal;

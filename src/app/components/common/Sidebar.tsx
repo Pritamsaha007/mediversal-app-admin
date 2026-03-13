@@ -12,6 +12,7 @@ import {
   Bike,
   BookUser,
   BellRing,
+  Building,
 } from "lucide-react";
 import MainMediversalLogo from "../../../../public/Mediversal 247 Logo.svg";
 import Image from "next/image";
@@ -168,6 +169,32 @@ const Sidebar = () => {
         {
           name: "Notifications",
           link: "/admin/dashboard/push-notification",
+        },
+      ],
+    },
+    {
+      name: "Simran",
+      icon: <Building size={18} />,
+      subItems: [
+        {
+          name: "Home",
+          link: "/admin/dashboard/simran",
+        },
+        {
+          name: "Services",
+          link: "/admin/dashboard/simran/services",
+        },
+        {
+          name: "Insurance & Tie-Ups",
+          link: "/admin/dashboard/simran/insurance-tie-ups",
+        },
+        {
+          name: "Blogs",
+          link: "/admin/dashboard/simran/blogs",
+        },
+        {
+          name: "Booking Leads",
+          link: "/admin/dashboard/simran/booking-leads",
         },
       ],
     },

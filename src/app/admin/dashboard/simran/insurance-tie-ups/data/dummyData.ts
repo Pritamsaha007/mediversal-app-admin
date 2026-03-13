@@ -1,0 +1,113 @@
+import { InsurancePartner, CorporateTieUp } from "../types/types";
+
+export const dummyInsurancePartners: InsurancePartner[] = [
+  {
+    id: "ins-001",
+    name: "HDFC Ergo",
+    logo: undefined,
+    active: true,
+    dateModified: "17 Sep 2025",
+  },
+  {
+    id: "ins-002",
+    name: "Care Health Insurance",
+    logo: undefined,
+    active: true,
+    dateModified: "22 Aug 2024",
+  },
+  {
+    id: "ins-003",
+    name: "ICICI Lombard",
+    logo: undefined,
+    active: true,
+    dateModified: "19 Nov 2024",
+  },
+  {
+    id: "ins-004",
+    name: "MAX Health Insurance",
+    logo: undefined,
+    active: false,
+    dateModified: "3 Dec 2024",
+  },
+  {
+    id: "ins-005",
+    name: "Bajaj Allianz",
+    logo: undefined,
+    active: true,
+    dateModified: "27 Jan 2025",
+  },
+  {
+    id: "ins-006",
+    name: "Star Health Insurance",
+    logo: undefined,
+    active: true,
+    dateModified: "13 Feb 2026",
+  },
+];
+
+export const dummyCorporateTieUps: CorporateTieUp[] = [
+  {
+    id: "corp-001",
+    companyName: "Infosys",
+    sector: "IT & Software",
+    logo: undefined,
+    active: true,
+    dateModified: "17 Sep 2025",
+  },
+  {
+    id: "corp-002",
+    companyName: "Wipro",
+    sector: "IT & Software",
+    logo: undefined,
+    active: false,
+    dateModified: "22 Aug 2024",
+  },
+  {
+    id: "corp-003",
+    companyName: "Tata Consultancy Services",
+    sector: "IT & Software",
+    logo: undefined,
+    active: true,
+    dateModified: "19 Nov 2024",
+  },
+  {
+    id: "corp-004",
+    companyName: "Reliance Industries",
+    sector: "Manufacturing",
+    logo: undefined,
+    active: true,
+    dateModified: "3 Dec 2025",
+  },
+  {
+    id: "corp-005",
+    companyName: "Adani Group",
+    sector: "Manufacturing",
+    logo: undefined,
+    active: true,
+    dateModified: "24 Feb 2026",
+  },
+  {
+    id: "corp-006",
+    companyName: "Bharti Airtel",
+    sector: "IT & Software",
+    logo: undefined,
+    active: true,
+    dateModified: "27 Jan 2025",
+  },
+  {
+    id: "corp-007",
+    companyName: "State Bank of India",
+    sector: "Banking & Finance",
+    logo: undefined,
+    active: true,
+    dateModified: "13 Feb 2026",
+  },
+  {
+    id: "corp-008",
+    companyName: "Tech Mahindra",
+    sector: "IT & Software",
+    logo: undefined,
+    active: true,
+    dateModified: "28 Feb 2026",
+  },
+];
