@@ -1,13 +1,13 @@
 import React from "react";
 import { X } from "lucide-react";
-import { Blog } from "../types/types";
+import { BlogAPI } from "../types/types";
 import StatusBadge from "@/app/components/common/StatusBadge";
 
 interface BlogViewModalProps {
   isOpen: boolean;
-  blog: Blog | null;
+  blog: BlogAPI | null;
   onClose: () => void;
-  onUpdate: (blog: Blog) => void;
+  onUpdate: (blog: BlogAPI) => void;
 }
 
 const BlogViewModal: React.FC<BlogViewModalProps> = ({
@@ -37,42 +37,54 @@ const BlogViewModal: React.FC<BlogViewModalProps> = ({
           <h3 className="text-[18px] font-bold text-[#161D1F] mb-2">
             {blog.title}
           </h3>
-          <p className="text-[12px] text-[#899193] mb-4">
-            {blog.shortDescription}
-          </p>
+          <p className="text-[12px] text-[#899193] mb-4">{blog.description}</p>
+
           <div className="flex items-center gap-2 mb-4">
             <span className="text-[12px] font-semibold text-[#161D1F]">
               Tags:
             </span>
-            <StatusBadge status={blog.active ? "Active" : "Inactive"} />
-            {blog.featured && <StatusBadge status="Featured" />}
+            <StatusBadge status={blog.is_active ? "Active" : "Inactive"} />
           </div>
+
           <div className="flex gap-8 mb-6">
             <div>
               <span className="text-[12px] font-semibold text-[#161D1F]">
                 Estimated Read Time:{" "}
               </span>
               <span className="text-[12px] text-[#161D1F]">
-                {blog.estimatedReadTime} min.
+                {blog.estimated_read_time_mins} min.
               </span>
             </div>
-            <div>
-              <span className="text-[12px] font-semibold text-[#161D1F]">
-                Category:{" "}
-              </span>
-              <span className="text-[12px] text-[#161D1F]">
-                {blog.category}
-              </span>
-            </div>
+            {blog.doctor_name && (
+              <div>
+                <span className="text-[12px] font-semibold text-[#161D1F]">
+                  Author:{" "}
+                </span>
+                <span className="text-[12px] text-[#161D1F]">
+                  {blog.doctor_name}
+                </span>
+              </div>
+            )}
+            {blog.published_at && (
+              <div>
+                <span className="text-[12px] font-semibold text-[#161D1F]">
+                  Published:{" "}
+                </span>
+                <span className="text-[12px] text-[#161D1F]">
+                  {blog.published_at?.split("T")[0]}
+                </span>
+              </div>
+            )}
           </div>
-          {blog.sections.map((section, idx) => (
-            <div key={section.id} className="mb-6">
+
+          {blog.sections?.map((section, idx) => (
+            <div key={idx} className="mb-6">
               <p className="text-[12px] font-semibold text-[#0088B1] mb-2">
                 Section {idx + 1}:
               </p>
               <div className="border border-[#E5E8E9] rounded-lg p-4">
                 <p className="text-[13px] font-semibold text-[#161D1F] mb-2">
-                  {section.subtitle}
+                  {section.heading}
                 </p>
                 <p className="text-[12px] text-[#161D1F] whitespace-pre-line leading-relaxed">
                   {section.content}
@@ -81,6 +93,7 @@ const BlogViewModal: React.FC<BlogViewModalProps> = ({
             </div>
           ))}
         </div>
+
         <div className="px-8 py-4 border-t border-[#E5E8E9] flex justify-end flex-shrink-0">
           <button
             onClick={() => {

@@ -1,21 +1,38 @@
 "use client";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Plus, Search, ChevronDown, FileText, Users } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
+import toast from "react-hot-toast";
 
-import { Blog, BlogFormData, BlogModalMode } from "./types/types";
-import { dummyBlogs } from "./data/blogDummyData";
+import {
+  BlogAPI,
+  BlogFormData,
+  BlogModalMode,
+  CreateUpdateBlogPayload,
+} from "./types/types";
+import {
+  searchBlogs,
+  createOrUpdateBlog,
+  toggleBlogActive,
+  deleteBlog,
+} from "./services/blogService";
+import { useAdminStore } from "@/app/store/adminStore";
 import { StatsCard } from "@/app/components/common/StatsCard";
 import Pagination from "@/app/components/common/pagination";
 import BlogTable from "./components/BlogTable";
-import BlogModal from "../blogs/modal/BlogModal";
-import BlogViewModal from "../blogs/modal/BlogViewModal";
+import BlogModal from "./modal/BlogModal";
+import BlogViewModal from "./modal/BlogViewModal";
 
 const STATUS_OPTIONS = ["All Status", "Active", "Inactive"];
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 20;
 
 const BlogPage: React.FC = () => {
-  const [blogs, setBlogs] = useState<Blog[]>(dummyBlogs);
+  const { token } = useAdminStore();
+
+  const [blogs, setBlogs] = useState<BlogAPI[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [pageLoading, setPageLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
@@ -24,121 +41,176 @@ const BlogPage: React.FC = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<BlogModalMode>("add");
-  const [editingBlog, setEditingBlog] = useState<Blog | undefined>(undefined);
+  const [editingBlog, setEditingBlog] = useState<BlogAPI | undefined>(
+    undefined,
+  );
 
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [viewingBlog, setViewingBlog] = useState<Blog | null>(null);
+  const [viewingBlog, setViewingBlog] = useState<BlogAPI | null>(null);
 
-  const totalBlogs = blogs.length;
-  const activeBlogs = blogs.filter((b) => b.active).length;
-  const inactiveBlogs = blogs.filter((b) => !b.active).length;
-  const publishedByDoctors = blogs.filter((b) => b.publishedByDoctor).length;
+  // ---- Fetch ----
+  const fetchBlogs = useCallback(
+    async (page: number, search: string, status: string) => {
+      if (!token) return;
+      setPageLoading(true);
+      try {
+        const filterActive =
+          status === "Active" ? true : status === "Inactive" ? false : null;
+        const res = await searchBlogs(
+          {
+            start: page * ITEMS_PER_PAGE,
+            max: ITEMS_PER_PAGE,
+            search: search || null,
+            filter_active: filterActive as any,
+            filter_specialization_name: null,
+            sort_by: "published_at",
+            sort_order: "DESC",
+          },
+          token,
+        );
+        const fetchedBlogs = res.blogs || [];
 
-  const filtered = blogs.filter((b) => {
-    const matchesSearch =
-      !searchTerm ||
-      b.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.author.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "All Status" ||
-      (statusFilter === "Active" && b.active) ||
-      (statusFilter === "Inactive" && !b.active);
-    return matchesSearch && matchesStatus;
-  });
+        setBlogs(fetchedBlogs);
 
-  const totalItems = filtered.length;
-  const hasMore = (currentPage + 1) * ITEMS_PER_PAGE < totalItems;
-  const paged = filtered.slice(
-    currentPage * ITEMS_PER_PAGE,
-    (currentPage + 1) * ITEMS_PER_PAGE,
+        setTotalItems(res.total ?? fetchedBlogs.length ?? 0);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to load blogs");
+      } finally {
+        setPageLoading(false);
+      }
+    },
+    [token],
   );
+
+  useEffect(() => {
+    fetchBlogs(currentPage, searchTerm, statusFilter);
+  }, [currentPage, searchTerm, statusFilter, fetchBlogs]);
+
+  // ---- Stats ----
+  const activeBlogs = blogs.filter((b) => b.is_active).length;
+  const inactiveBlogs = blogs.filter((b) => !b.is_active).length;
+  const publishedByDoctors = blogs.filter((b) => b.doctor_id).length;
+
+  const hasMore = (currentPage + 1) * ITEMS_PER_PAGE < totalItems;
+
+  const buildPayload = (
+    data: BlogFormData,
+    existingBlog?: BlogAPI,
+  ): CreateUpdateBlogPayload => ({
+    id: existingBlog?.id ?? null,
+    title: data.title,
+    description: data.description,
+    image_url: data.coverImageUrl ? [data.coverImageUrl] : [],
+    sections: data.sections.map((s) => ({
+      heading: s.subtitle,
+      content: s.content,
+    })),
+    doctor_id: data.doctorId,
+    published_at: data.publishDate,
+    estimated_read_time_mins: Number(data.estimatedReadTime) || 0,
+    is_active: data.active,
+    is_deleted: false,
+    created_by: null,
+    updated_by: null,
+  });
 
   const handleAddBlog = () => {
     setModalMode("add");
     setEditingBlog(undefined);
     setModalOpen(true);
   };
-
-  const handleEditBlog = (blog: Blog) => {
+  const handleEditBlog = (blog: BlogAPI) => {
     setModalMode("edit");
     setEditingBlog(blog);
     setModalOpen(true);
   };
-
-  const handleViewBlog = (blog: Blog) => {
+  const handleViewBlog = (blog: BlogAPI) => {
     setViewingBlog(blog);
     setViewModalOpen(true);
   };
 
-  const handleModalSubmit = (data: BlogFormData) => {
-    if (modalMode === "add") {
-      const newBlog: Blog = {
-        id: uuidv4(),
-        title: data.title,
-        shortDescription: data.shortDescription,
-        author: data.author,
-        authorSpecialty: "",
-        category: data.category || "General",
-        publishDate: data.publishDate,
-        dateAdded: new Date().toLocaleDateString("en-GB", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        }),
-        estimatedReadTime: Number(data.estimatedReadTime) || 0,
-        coverImage: data.coverImage,
-        sections: data.sections,
-        active: data.active,
-        featured: false,
-        publishedByDoctor: false,
-      };
-      setBlogs((prev) => [newBlog, ...prev]);
-    } else if (editingBlog) {
-      setBlogs((prev) =>
-        prev.map((b) =>
-          b.id === editingBlog.id
-            ? {
-                ...b,
-                title: data.title,
-                shortDescription: data.shortDescription,
-                author: data.author,
-                category: data.category || b.category,
-                publishDate: data.publishDate,
-                estimatedReadTime:
-                  Number(data.estimatedReadTime) || b.estimatedReadTime,
-                coverImage: data.coverImage || b.coverImage,
-                sections: data.sections,
-                active: data.active,
-                dateAdded: new Date().toLocaleDateString("en-GB", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                }),
-              }
-            : b,
-        ),
+  const handleModalSubmit = async (data: BlogFormData) => {
+    if (!token) return;
+    setSubmitLoading(true);
+    try {
+      const payload = buildPayload(
+        data,
+        modalMode === "edit" ? editingBlog : undefined,
       );
+      await createOrUpdateBlog(payload, token);
+      toast.success(
+        modalMode === "add"
+          ? "Blog created successfully"
+          : "Blog updated successfully",
+      );
+      setModalOpen(false);
+      fetchBlogs(currentPage, searchTerm, statusFilter);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save blog");
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
-  const handleToggleActive = (id: string) => {
-    setBlogs((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, active: !b.active } : b)),
-    );
+  const handleToggleActive = async (blog: BlogAPI) => {
+    if (!token) return;
+    try {
+      const payload: CreateUpdateBlogPayload = {
+        id: blog.id,
+        title: blog.title,
+        description: blog.description,
+        image_url: blog.image_url,
+        sections: blog.sections,
+        doctor_id: blog.doctor_id ?? null,
+        published_at: blog.published_at,
+        estimated_read_time_mins: blog.estimated_read_time_mins,
+        is_active: !blog.is_active,
+        is_deleted: false,
+        created_by: null,
+        updated_by: null,
+      };
+      await createOrUpdateBlog(payload, token);
+      toast.success(
+        `Blog marked as ${!blog.is_active ? "Active" : "Inactive"}`,
+      );
+      fetchBlogs(currentPage, searchTerm, statusFilter);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update blog");
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setBlogs((prev) => prev.filter((b) => b.id !== id));
-    setSelectedIds((prev) => prev.filter((s) => s !== id));
+  const handleDelete = async (blog: BlogAPI) => {
+    if (!token) return;
+    try {
+      const payload: CreateUpdateBlogPayload = {
+        id: blog.id,
+        title: blog.title,
+        description: blog.description,
+        image_url: blog.image_url,
+        sections: blog.sections,
+        doctor_id: blog.doctor_id ?? null,
+        published_at: blog.published_at,
+        estimated_read_time_mins: blog.estimated_read_time_mins,
+        is_active: blog.is_active,
+        is_deleted: true,
+        created_by: null,
+        updated_by: null,
+      };
+      await createOrUpdateBlog(payload, token);
+      toast.success("Blog deleted successfully");
+      fetchBlogs(currentPage, searchTerm, statusFilter);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete blog");
+    }
   };
 
-  const handleSelectAll = (checked: boolean) => {
-    setSelectedIds(checked ? paged.map((b) => b.id) : []);
-  };
+  const handleSelectAll = (checked: boolean) =>
+    setSelectedIds(checked ? blogs.map((b) => b.id) : []);
 
   return (
     <div className="min-h-screen bg-gray-50 p-2">
       <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">Blogs</h1>
           <button
@@ -150,6 +222,7 @@ const BlogPage: React.FC = () => {
           </button>
         </div>
 
+        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
           <StatsCard
             title="Total Blogs"
@@ -168,6 +241,7 @@ const BlogPage: React.FC = () => {
           />
         </div>
 
+        {/* Search + Filter */}
         <div className="flex flex-col md:flex-row gap-3 mb-4">
           <div className="flex-1 relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -209,18 +283,20 @@ const BlogPage: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
               All Blogs
               <span className="text-[8px] text-[#899193] font-normal ml-2">
-                Showing {paged.length} of {totalItems} blogs
+                Showing {blogs.length} of {totalItems} blogs
               </span>
             </h3>
           </div>
 
           <BlogTable
-            blogs={paged}
+            blogs={blogs}
             selectedIds={selectedIds}
             onSelectAll={handleSelectAll}
             onSelect={(id, checked) =>
@@ -232,13 +308,14 @@ const BlogPage: React.FC = () => {
             onEdit={handleEditBlog}
             onToggleActive={handleToggleActive}
             onDelete={handleDelete}
+            loading={pageLoading}
           />
 
           {totalItems > 0 && (
             <Pagination
               currentPage={currentPage}
               hasMore={hasMore}
-              loading={false}
+              loading={pageLoading}
               onPrevious={() => setCurrentPage((p) => Math.max(0, p - 1))}
               onNext={() => setCurrentPage((p) => p + 1)}
               totalItems={totalItems}
@@ -247,18 +324,24 @@ const BlogPage: React.FC = () => {
           )}
         </div>
       </div>
+
       <BlogModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         mode={modalMode}
         initialData={editingBlog}
         onSubmit={handleModalSubmit}
+        loading={submitLoading}
       />
+
       <BlogViewModal
         isOpen={viewModalOpen}
         blog={viewingBlog}
         onClose={() => setViewModalOpen(false)}
-        onUpdate={(blog) => handleEditBlog(blog)}
+        onUpdate={(blog) => {
+          setViewModalOpen(false);
+          handleEditBlog(blog);
+        }}
       />
     </div>
   );

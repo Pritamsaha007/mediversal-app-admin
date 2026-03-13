@@ -1,23 +1,27 @@
-import React, { useEffect, useRef, useState } from "react";
-import { X, Plus, ImagePlus, Clock } from "lucide-react";
+"use client";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { X, Plus, ImagePlus, Clock, Search, Loader2 } from "lucide-react";
 import {
-  Blog,
+  BlogAPI,
   BlogFormData,
+  BlogFormSection,
   BlogModalMode,
   BlogModalStep,
-  BlogSection,
-  BLOG_CATEGORIES,
+  DoctorOption,
 } from "../types/types";
+import { searchDoctors } from "../services/blogService";
+import { useAdminStore } from "@/app/store/adminStore";
 
 interface BlogModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode: BlogModalMode;
-  initialData?: Blog;
-  onSubmit: (data: BlogFormData) => void;
+  initialData?: BlogAPI;
+  onSubmit: (data: BlogFormData) => Promise<void>;
+  loading?: boolean;
 }
 
-const emptySection = (): BlogSection => ({
+const emptySection = (): BlogFormSection => ({
   id: crypto.randomUUID(),
   subtitle: "",
   content: "",
@@ -25,16 +29,24 @@ const emptySection = (): BlogSection => ({
 
 const defaultForm = (): BlogFormData => ({
   title: "",
-  shortDescription: "",
-  author: "",
+  description: "",
+  doctorId: null,
+  doctorName: "",
   estimatedReadTime: "",
   publishDate: "",
-  coverImage: undefined,
-  coverImageFile: undefined,
-  category: "",
+  coverImageUrl: "",
   sections: [emptySection()],
   active: false,
 });
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
 
 const BlogModal: React.FC<BlogModalProps> = ({
   isOpen,
@@ -42,10 +54,41 @@ const BlogModal: React.FC<BlogModalProps> = ({
   mode,
   initialData,
   onSubmit,
+  loading = false,
 }) => {
+  const { token } = useAdminStore();
   const [step, setStep] = useState<BlogModalStep>("basic");
   const [formData, setFormData] = useState<BlogFormData>(defaultForm());
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [doctorSearch, setDoctorSearch] = useState("");
+  const [doctorResults, setDoctorResults] = useState<DoctorOption[]>([]);
+  const [doctorLoading, setDoctorLoading] = useState(false);
+  const [showDoctorDropdown, setShowDoctorDropdown] = useState(false);
+  const doctorRef = useRef<HTMLDivElement>(null);
+  const debouncedDoctorSearch = useDebounce(doctorSearch, 400);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (doctorRef.current && !doctorRef.current.contains(e.target as Node)) {
+        setShowDoctorDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen || !token) return;
+    setDoctorLoading(true);
+    searchDoctors(debouncedDoctorSearch, token)
+      .then((doctors) => {
+        setDoctorResults(doctors);
+        setShowDoctorDropdown(true);
+      })
+      .catch(() => setDoctorResults([]))
+      .finally(() => setDoctorLoading(false));
+  }, [debouncedDoctorSearch, isOpen, token]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -55,38 +98,33 @@ const BlogModal: React.FC<BlogModalProps> = ({
     if (mode === "edit" && initialData) {
       setFormData({
         title: initialData.title,
-        shortDescription: initialData.shortDescription,
-        author: initialData.author,
-        estimatedReadTime: initialData.estimatedReadTime,
-        publishDate: initialData.publishDate,
-        coverImage: initialData.coverImage,
-        coverImageFile: undefined,
-        category: initialData.category,
-        sections:
-          initialData.sections.length > 0
-            ? initialData.sections.map((s) => ({ ...s }))
-            : [emptySection()],
-        active: initialData.active,
+        description: initialData.description,
+        doctorId: initialData.doctor_id ?? null,
+        doctorName: initialData.doctor_name || "",
+        estimatedReadTime: initialData.estimated_read_time_mins,
+        publishDate: initialData.published_at?.split("T")[0] || "",
+        coverImageUrl: initialData.image_url?.[0] || "",
+        sections: initialData.sections?.length
+          ? initialData.sections.map((s) => ({
+              id: crypto.randomUUID(),
+              subtitle: s.heading,
+              content: s.content,
+            }))
+          : [emptySection()],
+        active: initialData.is_active,
       });
+      setDoctorSearch(initialData.doctor_name || "");
     } else {
       setFormData(defaultForm());
+      setDoctorSearch("");
     }
     setStep("basic");
+    setShowDoctorDropdown(false);
   }, [isOpen, mode, initialData]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setFormData((prev) => ({
-      ...prev,
-      coverImageFile: file,
-      coverImage: URL.createObjectURL(file),
-    }));
-  };
 
   const handleSectionChange = (
     id: string,
-    field: keyof BlogSection,
+    field: "subtitle" | "content",
     value: string,
   ) => {
     setFormData((prev) => ({
@@ -97,47 +135,58 @@ const BlogModal: React.FC<BlogModalProps> = ({
     }));
   };
 
-  const handleAddSection = () => {
+  const handleAddSection = () =>
     setFormData((prev) => ({
       ...prev,
       sections: [...prev.sections, emptySection()],
     }));
-  };
 
-  const handleRemoveSection = (id: string) => {
+  const handleRemoveSection = (id: string) =>
     setFormData((prev) => ({
       ...prev,
       sections: prev.sections.filter((s) => s.id !== id),
     }));
-  };
 
   const handleReset = () => {
     if (mode === "edit" && initialData) {
       setFormData({
         title: initialData.title,
-        shortDescription: initialData.shortDescription,
-        author: initialData.author,
-        estimatedReadTime: initialData.estimatedReadTime,
-        publishDate: initialData.publishDate,
-        coverImage: initialData.coverImage,
-        coverImageFile: undefined,
-        category: initialData.category,
-        sections: initialData.sections.map((s) => ({ ...s })),
-        active: initialData.active,
+        description: initialData.description,
+        doctorId: initialData.doctor_id ?? null,
+        doctorName: initialData.doctor_name || "",
+        estimatedReadTime: initialData.estimated_read_time_mins,
+        publishDate: initialData.published_at?.split("T")[0] || "",
+        coverImageUrl: initialData.image_url?.[0] || "",
+        sections: initialData.sections?.map((s) => ({
+          id: crypto.randomUUID(),
+          subtitle: s.heading,
+          content: s.content,
+        })) || [emptySection()],
+        active: initialData.is_active,
       });
+      setDoctorSearch(initialData.doctor_name || "");
     } else {
       setFormData(defaultForm());
+      setDoctorSearch("");
     }
     setStep("basic");
   };
 
-  const handleSubmit = () => {
-    onSubmit(formData);
-    onClose();
+  const handleSubmit = async () => {
+    await onSubmit(formData);
+  };
+
+  const selectDoctor = (doctor: DoctorOption) => {
+    setFormData((prev) => ({
+      ...prev,
+      doctorId: doctor.id,
+      doctorName: doctor.name,
+    }));
+    setDoctorSearch(doctor.name);
+    setShowDoctorDropdown(false);
   };
 
   if (!isOpen) return null;
-
   const isEdit = mode === "edit";
 
   return (
@@ -156,88 +205,94 @@ const BlogModal: React.FC<BlogModalProps> = ({
         </div>
 
         <div className="flex mx-6 mb-4 rounded-lg overflow-hidden border border-[#E5E8E9] flex-shrink-0">
-          <button
-            className={`flex-1 py-2 text-[12px] font-medium transition-colors ${
-              step === "basic"
-                ? "bg-[#0088B1] text-white"
-                : "bg-white text-[#899193]"
-            }`}
-            onClick={() => setStep("basic")}
-          >
-            Basic Information
-          </button>
-          <button
-            className={`flex-1 py-2 text-[12px] font-medium transition-colors ${
-              step === "sections"
-                ? "bg-[#0088B1] text-white"
-                : "bg-white text-[#899193]"
-            }`}
-            onClick={() => setStep("sections")}
-          >
-            Blog Sections
-          </button>
+          {(["basic", "sections"] as BlogModalStep[]).map((s) => (
+            <button
+              key={s}
+              className={`flex-1 py-2 text-[12px] font-medium transition-colors ${
+                step === s
+                  ? "bg-[#0088B1] text-white"
+                  : "bg-white text-[#899193]"
+              }`}
+              onClick={() => setStep(s)}
+            >
+              {s === "basic" ? "Basic Information" : "Blog Sections"}
+            </button>
+          ))}
         </div>
 
         <div className="overflow-y-auto flex-1 px-6">
           {step === "basic" ? (
             <div className="space-y-4 pb-4">
-              <div
-                className="border-2 border-dashed border-[#E5E8E9] rounded-lg p-5 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-[#0088B1] transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {formData.coverImage ? (
-                  <>
-                    <img
-                      src={formData.coverImage}
-                      alt="cover"
-                      className="h-14 w-auto object-contain"
-                    />
-                    <p className="text-[11px] text-[#161D1F] font-medium mt-1">
-                      {formData.coverImageFile?.name || "Cover Image"}
-                    </p>
-                    <p className="text-[10px] text-[#899193]">
-                      Drag and drop your new image here or click to browse
-                    </p>
-                    <p className="text-[10px] text-[#899193]">
-                      (supported file format .jpg, .jpeg, .png)
-                    </p>
-                    <button
-                      type="button"
-                      className="mt-1 px-3 py-1 border border-gray-300 rounded text-[11px] text-[#161D1F] hover:bg-gray-50"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fileInputRef.current?.click();
-                      }}
-                    >
-                      Select File
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <ImagePlus className="w-7 h-7 text-[#899193]" />
-                    <p className="text-[11px] font-medium text-[#161D1F]">
-                      * Upload Blog Cover Image
-                    </p>
-                    <p className="text-[10px] text-[#899193]">
-                      Drag and drop your new image here or click to browse
-                    </p>
-                    <p className="text-[10px] text-[#899193]">
-                      (supported file format .jpg, .jpeg, .png)
-                    </p>
-                    <button
-                      type="button"
-                      className="mt-1 px-3 py-1 border border-gray-300 rounded text-[11px] text-[#161D1F] hover:bg-gray-50"
-                    >
-                      Select File
-                    </button>
-                  </>
-                )}
+              <div>
+                <label className="block text-[11px] text-[#161D1F] mb-1">
+                  * Cover Image URL
+                </label>
+                <div
+                  className="border-2 border-dashed border-[#E5E8E9] rounded-lg p-5 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-[#0088B1] transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {formData.coverImageUrl ? (
+                    <>
+                      <img
+                        src={formData.coverImageUrl}
+                        alt="cover"
+                        className="h-14 w-auto object-contain"
+                        onError={(e) =>
+                          (e.currentTarget.style.display = "none")
+                        }
+                      />
+                      <p className="text-[11px] text-[#161D1F] font-medium mt-1 break-all text-center">
+                        {formData.coverImageUrl}
+                      </p>
+                      <p className="text-[10px] text-[#899193]">
+                        Click to change
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <ImagePlus className="w-7 h-7 text-[#899193]" />
+                      <p className="text-[11px] font-medium text-[#161D1F]">
+                        * Upload Blog Cover Image
+                      </p>
+                      <p className="text-[10px] text-[#899193]">
+                        Drag and drop or click to browse
+                      </p>
+                      <p className="text-[10px] text-[#899193]">
+                        (supported file format .jpg, .jpeg, .png)
+                      </p>
+                      <button
+                        type="button"
+                        className="mt-1 px-3 py-1 border border-gray-300 rounded text-[11px] text-[#161D1F] hover:bg-gray-50"
+                      >
+                        Select File
+                      </button>
+                    </>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".jpg,.jpeg,.png"
+                    className="hidden"
+                    onChange={(e) => {
+                      // For now store as object URL; in production upload to S3 and use returned URL
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          coverImageUrl: URL.createObjectURL(file),
+                        }));
+                      }
+                    }}
+                  />
+                </div>
                 <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".jpg,.jpeg,.png"
-                  className="hidden"
-                  onChange={handleFileChange}
+                  type="text"
+                  placeholder="Or paste image URL directly"
+                  value={formData.coverImageUrl}
+                  onChange={(e) =>
+                    setFormData({ ...formData, coverImageUrl: e.target.value })
+                  }
+                  className="mt-2 w-full px-3 py-2 border border-[#E5E8E9] rounded-lg text-[11px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
                 />
               </div>
               <div>
@@ -260,40 +315,93 @@ const BlogModal: React.FC<BlogModalProps> = ({
                 </label>
                 <textarea
                   placeholder="Brief about the blog post"
-                  value={formData.shortDescription}
+                  value={formData.description}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      shortDescription: e.target.value,
-                    })
+                    setFormData({ ...formData, description: e.target.value })
                   }
                   rows={4}
                   className="w-full px-3 py-2.5 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1] resize-none"
                 />
               </div>
               <div className="flex gap-3">
-                <div className="flex-1">
+                <div className="flex-1" ref={doctorRef}>
                   <label className="block text-[11px] text-[#161D1F] mb-1">
-                    * Author
+                    * Author (Doctor)
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Please Enter Author Name"
-                    value={formData.author}
-                    onChange={(e) =>
-                      setFormData({ ...formData, author: e.target.value })
-                    }
-                    className="w-full px-3 py-2.5 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
-                  />
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Search doctor name..."
+                      value={doctorSearch}
+                      onChange={(e) => {
+                        setDoctorSearch(e.target.value);
+                        if (!e.target.value) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            doctorId: null,
+                            doctorName: "",
+                          }));
+                        }
+                        setShowDoctorDropdown(true);
+                      }}
+                      onFocus={() => setShowDoctorDropdown(true)}
+                      className="w-full pl-8 pr-3 py-2.5 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
+                    />
+                    {doctorLoading && (
+                      <Loader2 className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-[#0088B1] animate-spin" />
+                    )}
+                    {showDoctorDropdown && doctorResults.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-[#E5E8E9] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {doctorResults.map((doc) => (
+                          <button
+                            key={doc.id}
+                            type="button"
+                            onClick={() => selectDoctor(doc)}
+                            className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-[#E8F4F7] transition-colors"
+                          >
+                            {doc.profile_image_url && (
+                              <img
+                                src={doc.profile_image_url}
+                                alt={doc.name}
+                                className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                              />
+                            )}
+                            <div>
+                              <p className="text-[12px] text-[#161D1F] font-medium">
+                                {doc.name}
+                              </p>
+                              {doc.specializations && (
+                                <p className="text-[10px] text-[#899193]">
+                                  {doc.specializations}
+                                </p>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {showDoctorDropdown &&
+                      !doctorLoading &&
+                      doctorResults.length === 0 &&
+                      doctorSearch && (
+                        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-[#E5E8E9] rounded-lg shadow-lg px-3 py-2">
+                          <p className="text-[12px] text-[#899193]">
+                            No doctors found
+                          </p>
+                        </div>
+                      )}
+                  </div>
                 </div>
+
                 <div className="flex-1">
                   <label className="block text-[11px] text-[#161D1F] mb-1">
-                    * Estimated Read Time (in min.)
+                    * Read Time (min.)
                   </label>
                   <div className="relative">
                     <input
                       type="number"
-                      placeholder="Select read time"
+                      placeholder="e.g. 5"
                       value={formData.estimatedReadTime}
                       onChange={(e) =>
                         setFormData({
@@ -308,6 +416,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
                   </div>
                 </div>
               </div>
+
               <div>
                 <label className="block text-[11px] text-[#161D1F] mb-1">
                   * Publish Date
@@ -387,6 +496,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
                   </div>
                 </div>
               ))}
+
               <button
                 onClick={handleAddSection}
                 className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-[#0088B1] rounded-lg text-[12px] text-[#0088B1] hover:bg-[#E8F4F7] transition-colors"
@@ -394,6 +504,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
                 <Plus className="w-4 h-4" />
                 Add Another Section
               </button>
+
               <div
                 className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${
                   formData.active
@@ -439,9 +550,11 @@ const BlogModal: React.FC<BlogModalProps> = ({
             </div>
           )}
         </div>
+
         <div className="px-6 py-4 border-t border-[#E5E8E9] flex items-center justify-end gap-3 flex-shrink-0">
           <button
             onClick={handleReset}
+            disabled={loading}
             className="text-[12px] text-[#161D1F] hover:underline"
           >
             Reset
@@ -456,8 +569,10 @@ const BlogModal: React.FC<BlogModalProps> = ({
           ) : (
             <button
               onClick={handleSubmit}
-              className="px-5 py-2 bg-[#0088B1] text-white text-[12px] rounded-lg hover:bg-[#00729A] transition-colors"
+              disabled={loading}
+              className="flex items-center gap-2 px-5 py-2 bg-[#0088B1] text-white text-[12px] rounded-lg hover:bg-[#00729A] transition-colors disabled:opacity-50"
             >
+              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               {isEdit ? "Update Blog" : "Create Blog"}
             </button>
           )}

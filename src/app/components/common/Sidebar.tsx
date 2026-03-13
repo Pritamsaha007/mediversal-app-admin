@@ -205,7 +205,11 @@ const Sidebar = () => {
 
     menuItems.forEach((menu) => {
       if (menu.subItems && menu.subItems.length > 0) {
-        const matchingSubItem = menu.subItems.find((sub) =>
+        const sortedSubItems = [...menu.subItems].sort(
+          (a, b) => b.link.length - a.link.length,
+        );
+
+        const matchingSubItem = sortedSubItems.find((sub) =>
           pathname.startsWith(sub.link),
         );
 
