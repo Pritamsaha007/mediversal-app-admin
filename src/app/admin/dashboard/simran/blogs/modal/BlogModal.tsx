@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { X, Plus, ImagePlus, Clock, Search, Loader2 } from "lucide-react";
 import {
   BlogAPI,
@@ -191,7 +191,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4 flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 pt-5 pb-4 flex-shrink-0">
           <h2 className="text-[16px] font-semibold text-[#161D1F]">
             {isEdit ? "Update Blog:" : "Create New Blog"}
