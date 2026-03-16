@@ -1,11 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { X, ChevronDown } from "lucide-react";
-import {
-  CorporateFormData,
-  CorporateTieUp,
-  ModalMode,
-  SECTOR_OPTIONS,
-} from "../types/types";
+import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import { CorporateTieUp, CorporateFormData, ModalMode } from "../types/types";
+import { EnumItem } from "../services/insuranceCorporateService";
 import LogoUpload from "../components/LogoUpload";
 
 interface CorporateModalProps {
@@ -14,6 +10,7 @@ interface CorporateModalProps {
   mode: ModalMode;
   initialData?: CorporateTieUp;
   onSubmit: (data: CorporateFormData) => void;
+  sectorEnums: EnumItem[];
 }
 
 const CorporateModal: React.FC<CorporateModalProps> = ({
@@ -22,199 +19,138 @@ const CorporateModal: React.FC<CorporateModalProps> = ({
   mode,
   initialData,
   onSubmit,
+  sectorEnums,
 }) => {
-  const [formData, setFormData] = useState<CorporateFormData>({
-    companyName: "",
-    sector: "",
-    logo: undefined,
-    logoFile: undefined,
-    active: false,
-  });
-  const [sectorOpen, setSectorOpen] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+  const [sector, setSector] = useState("");
+  const [logo, setLogo] = useState<string | undefined>(undefined);
+  const [active, setActive] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (mode === "edit" && initialData) {
-      setFormData({
-        companyName: initialData.companyName,
-        sector: initialData.sector,
-        logo: initialData.logo,
-        logoFile: undefined,
-        active: initialData.active,
-      });
-    } else {
-      setFormData({
-        companyName: "",
-        sector: "",
-        logo: undefined,
-        logoFile: undefined,
-        active: false,
-      });
+    if (isOpen) {
+      if (mode === "edit" && initialData) {
+        setCompanyName(initialData.companyName);
+        const match = sectorEnums.find((e) => e.value === initialData.sector);
+        setSector(match?.id || initialData.sector);
+        setLogo(initialData.logo);
+        setActive(initialData.active);
+      } else {
+        setCompanyName("");
+        setSector("");
+        setLogo(undefined);
+        setActive(true);
+      }
     }
-  }, [mode, initialData, isOpen]);
-
-  const handleReset = () => {
-    if (mode === "edit" && initialData) {
-      setFormData({
-        companyName: initialData.companyName,
-        sector: initialData.sector,
-        logo: initialData.logo,
-        logoFile: undefined,
-        active: initialData.active,
-      });
-    } else {
-      setFormData({
-        companyName: "",
-        sector: "",
-        logo: undefined,
-        logoFile: undefined,
-        active: false,
-      });
-    }
-  };
-
-  const handleSubmit = () => {
-    if (!formData.companyName.trim() || !formData.sector) return;
-    onSubmit(formData);
-    onClose();
-  };
+  }, [isOpen, mode, initialData, sectorEnums]);
 
   if (!isOpen) return null;
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!companyName.trim() || !sector) return;
+    setSubmitting(true);
+    try {
+      await onSubmit({ companyName: companyName.trim(), sector, logo, active });
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-[16px] font-semibold text-[#161D1F]">
-            {mode === "add"
-              ? "Add New Corporate Tie-Up"
-              : "Update Corporate Tie-Up:"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-[#899193] hover:text-[#161D1F] transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] mx-4 p-6">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-[#899193] hover:text-[#161D1F] transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
 
-        <div className="flex gap-3 mb-4">
-          <div className="flex-1">
-            <label className="block text-[11px] text-[#161D1F] mb-1.5">
+        <h2 className="text-[16px] font-semibold text-[#161D1F] mb-5">
+          {mode === "add" ? "Add Corporate Tie-Up" : "Edit Corporate Tie-Up"}
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
               * Company Name
             </label>
             <input
               type="text"
-              placeholder="Enter Company Name"
-              value={formData.companyName}
-              onChange={(e) =>
-                setFormData({ ...formData, companyName: e.target.value })
-              }
-              className="w-full px-3 py-2.5 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="Enter company name"
+              required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-[#161D1F] focus:outline-none focus:ring-1 focus:ring-[#0088B1]"
             />
           </div>
-          <div className="flex-1 relative">
-            <label className="block text-[11px] text-[#161D1F] mb-1.5">
+
+          <div>
+            <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
               * Sector
+            </label>
+            <select
+              value={sector}
+              onChange={(e) => setSector(e.target.value)}
+              required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-[#161D1F] focus:outline-none focus:ring-1 focus:ring-[#0088B1] bg-white"
+            >
+              <option value="">Select sector</option>
+              {sectorEnums.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.value}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <LogoUpload
+            currentLogo={logo}
+            onFileSelect={(_file, previewUrl) => setLogo(previewUrl)}
+            label="Upload Company Logo"
+          />
+
+          <div className="flex items-center gap-3">
+            <label className="text-[12px] font-medium text-[#161D1F]">
+              Status
             </label>
             <button
               type="button"
-              className="w-full flex items-center justify-between px-3 py-2.5 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] focus:outline-none focus:border-[#0088B1] hover:border-[#0088B1]"
-              onClick={() => setSectorOpen(!sectorOpen)}
+              onClick={() => setActive((v) => !v)}
+              className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${
+                active ? "bg-[#0088B1]" : "bg-gray-300"
+              }`}
             >
               <span
-                className={
-                  formData.sector ? "text-[#161D1F]" : "text-[#B0B6B8]"
-                }
-              >
-                {formData.sector || "Select Industry Category"}
-              </span>
-              <ChevronDown className="w-4 h-4 text-[#899193]" />
+                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                  active ? "translate-x-5" : "translate-x-1"
+                }`}
+              />
             </button>
-            {sectorOpen && (
-              <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-[#E5E8E9] rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                {SECTOR_OPTIONS.map((sector) => (
-                  <button
-                    key={sector}
-                    type="button"
-                    className="block w-full text-left px-3 py-2 text-[12px] text-[#161D1F] hover:bg-[#E8F4F7]"
-                    onClick={() => {
-                      setFormData({ ...formData, sector });
-                      setSectorOpen(false);
-                    }}
-                  >
-                    {sector}
-                  </button>
-                ))}
-              </div>
-            )}
+            <span className="text-[12px] text-[#899193]">
+              {active ? "Active" : "Inactive"}
+            </span>
           </div>
-        </div>
 
-        <div className="mb-4">
-          <LogoUpload
-            currentLogo={formData.logo}
-            label="Upload Company Logo"
-            onFileSelect={(file, url) =>
-              setFormData({ ...formData, logoFile: file, logo: url })
-            }
-          />
-        </div>
-
-        <div
-          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer mb-5 ${
-            formData.active
-              ? "border-[#0088B1] bg-[#E8F4F7]"
-              : "border-[#E5E8E9] bg-white"
-          }`}
-          onClick={() => setFormData({ ...formData, active: !formData.active })}
-        >
-          <div
-            className={`w-4 h-4 rounded flex items-center justify-center border ${
-              formData.active
-                ? "bg-[#0088B1] border-[#0088B1]"
-                : "border-gray-300"
-            }`}
-          >
-            {formData.active && (
-              <svg
-                className="w-3 h-3 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={3}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            )}
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-[12px] border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-4 py-2 text-[12px] bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors disabled:opacity-60"
+            >
+              {submitting ? "Saving..." : mode === "add" ? "Add" : "Update"}
+            </button>
           </div>
-          <div>
-            <p className="text-[12px] font-medium text-[#161D1F]">
-              Active Corporate
-            </p>
-            <p className="text-[10px] text-[#899193]">
-              Inactive corporates would not be displayed at website
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-end gap-3">
-          <button
-            onClick={handleReset}
-            className="text-[12px] text-[#161D1F] hover:underline"
-          >
-            Reset
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="px-5 py-2 bg-[#0088B1] text-white text-[12px] rounded-lg hover:bg-[#00729A] transition-colors"
-          >
-            {mode === "add" ? "Add Company" : "Update Company"}
-          </button>
-        </div>
+        </form>
       </div>
     </div>
   );

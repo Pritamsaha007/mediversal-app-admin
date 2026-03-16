@@ -1,7 +1,6 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
 
 import {
   TabType,
@@ -11,8 +10,24 @@ import {
   InsuranceFormData,
   CorporateFormData,
 } from "./types/types";
-import { dummyInsurancePartners, dummyCorporateTieUps } from "./data/dummyData";
 
+import {
+  searchInsurancePartners,
+  saveInsurancePartner,
+  toggleInsuranceActive,
+  deleteInsurancePartner,
+  searchCorporateTieUps,
+  saveCorporateTieUp,
+  toggleCorporateActive,
+  deleteCorporateTieUp,
+  fetchEnums,
+  EnumCodes,
+  EnumItem,
+  InsurancePartnerAPI,
+  CorporateTieUpAPI,
+} from "./services/insuranceCorporateService";
+
+import { useAdminStore } from "@/app/store/adminStore";
 import InsuranceTable from "./components/InsuranceTable";
 import CorporateTable from "./components/CorporateTable";
 import InsuranceModal from "./modal/InsuranceModal";
@@ -21,14 +36,44 @@ import Pagination from "@/app/components/common/pagination";
 
 const ITEMS_PER_PAGE = 10;
 
+const mapInsurance = (d: InsurancePartnerAPI): InsurancePartner => ({
+  id: d.id,
+  name: d.name,
+  logo: d.image_url,
+  active: d.is_active,
+  dateModified: new Date(d.updated_date).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }),
+});
+
+const mapCorporate = (d: CorporateTieUpAPI): CorporateTieUp => ({
+  id: d.id,
+  companyName: d.name,
+  sector: d.sector_name,
+  logo: d.image_url,
+  active: d.is_active,
+  dateModified: new Date(d.updated_date).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }),
+});
+
 const InsurancePage: React.FC = () => {
+  const { token } = useAdminStore();
+
   const [activeTab, setActiveTab] = useState<TabType>("Insurance Partners");
 
   const [insurancePartners, setInsurancePartners] = useState<
     InsurancePartner[]
-  >(dummyInsurancePartners);
+  >([]);
+  const [insuranceRaw, setInsuranceRaw] = useState<InsurancePartnerAPI[]>([]);
+  const [insuranceTotal, setInsuranceTotal] = useState(0);
   const [selectedInsurance, setSelectedInsurance] = useState<string[]>([]);
   const [insurancePage, setInsurancePage] = useState(0);
+  const [insuranceLoading, setInsuranceLoading] = useState(false);
   const [insuranceModalOpen, setInsuranceModalOpen] = useState(false);
   const [insuranceModalMode, setInsuranceModalMode] =
     useState<ModalMode>("add");
@@ -36,10 +81,12 @@ const InsurancePage: React.FC = () => {
     InsurancePartner | undefined
   >(undefined);
 
-  const [corporateTieUps, setCorporateTieUps] =
-    useState<CorporateTieUp[]>(dummyCorporateTieUps);
+  const [corporateTieUps, setCorporateTieUps] = useState<CorporateTieUp[]>([]);
+  const [corporateRaw, setCorporateRaw] = useState<CorporateTieUpAPI[]>([]);
+  const [corporateTotal, setCorporateTotal] = useState(0);
   const [selectedCorporate, setSelectedCorporate] = useState<string[]>([]);
   const [corporatePage, setCorporatePage] = useState(0);
+  const [corporateLoading, setCorporateLoading] = useState(false);
   const [corporateModalOpen, setCorporateModalOpen] = useState(false);
   const [corporateModalMode, setCorporateModalMode] =
     useState<ModalMode>("add");
@@ -47,12 +94,77 @@ const InsurancePage: React.FC = () => {
     CorporateTieUp | undefined
   >(undefined);
 
-  const insurancePaged = insurancePartners.slice(
-    insurancePage * ITEMS_PER_PAGE,
-    (insurancePage + 1) * ITEMS_PER_PAGE,
+  const [sectorEnums, setSectorEnums] = useState<EnumItem[]>([]);
+
+  useEffect(() => {
+    if (!token) return;
+    fetchEnums(EnumCodes.COMPANY_SECTOR, token)
+      .then((res) => setSectorEnums(res.roles || []))
+      .catch(console.error);
+  }, [token]);
+
+  const fetchInsurance = useCallback(
+    async (page: number) => {
+      if (!token) return;
+      setInsuranceLoading(true);
+      try {
+        const res = await searchInsurancePartners(
+          {
+            search: null,
+            filter_active: null,
+            start: page * ITEMS_PER_PAGE,
+            max: ITEMS_PER_PAGE,
+            sort_by: "created_date",
+            sort_order: "DESC",
+          },
+          token,
+        );
+        setInsuranceRaw(res.insuranceData || []);
+        setInsurancePartners((res.insuranceData || []).map(mapInsurance));
+        setInsuranceTotal(res.statics?.total_partners ?? 0);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setInsuranceLoading(false);
+      }
+    },
+    [token],
   );
-  const insuranceHasMore =
-    (insurancePage + 1) * ITEMS_PER_PAGE < insurancePartners.length;
+
+  const fetchCorporate = useCallback(
+    async (page: number) => {
+      if (!token) return;
+      setCorporateLoading(true);
+      try {
+        const res = await searchCorporateTieUps(
+          {
+            search: null,
+            filter_active: null,
+            start: page * ITEMS_PER_PAGE,
+            max: ITEMS_PER_PAGE,
+            sort_by: "created_date",
+            sort_order: "DESC",
+          },
+          token,
+        );
+        setCorporateRaw(res.corporates || []);
+        setCorporateTieUps((res.corporates || []).map(mapCorporate));
+        setCorporateTotal(res.statics?.total_corporates ?? 0);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setCorporateLoading(false);
+      }
+    },
+    [token],
+  );
+
+  useEffect(() => {
+    fetchInsurance(insurancePage);
+  }, [insurancePage, fetchInsurance]);
+  useEffect(() => {
+    fetchCorporate(corporatePage);
+  }, [corporatePage, fetchCorporate]);
 
   const handleAddInsurance = () => {
     setInsuranceModalMode("add");
@@ -66,62 +178,54 @@ const InsurancePage: React.FC = () => {
     setInsuranceModalOpen(true);
   };
 
-  const handleInsuranceSubmit = (data: InsuranceFormData) => {
-    if (insuranceModalMode === "add") {
-      const newPartner: InsurancePartner = {
-        id: uuidv4(),
-        name: data.name,
-        logo: data.logo,
-        active: data.active,
-        dateModified: new Date().toLocaleDateString("en-GB", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        }),
-      };
-      setInsurancePartners((prev) => [newPartner, ...prev]);
-    } else if (editingInsurance) {
-      setInsurancePartners((prev) =>
-        prev.map((p) =>
-          p.id === editingInsurance.id
-            ? {
-                ...p,
-                name: data.name,
-                logo: data.logo,
-                active: data.active,
-                dateModified: new Date().toLocaleDateString("en-GB", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                }),
-              }
-            : p,
-        ),
+  const handleInsuranceSubmit = async (data: InsuranceFormData) => {
+    if (!token) return;
+    try {
+      const isEdit = insuranceModalMode === "edit" && editingInsurance;
+      await saveInsurancePartner(
+        {
+          id: isEdit ? editingInsurance!.id : null,
+          name: data.name,
+          is_active: data.active,
+          is_deleted: false,
+          image_url: data.logo || "",
+        },
+        token,
       );
+      fetchInsurance(insurancePage);
+    } catch (e) {
+      console.error(e);
     }
   };
 
-  const handleToggleInsuranceActive = (id: string) => {
-    setInsurancePartners((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, active: !p.active } : p)),
-    );
+  const handleToggleInsuranceActive = async (id: string) => {
+    if (!token) return;
+    const raw = insuranceRaw.find((p) => p.id === id);
+    if (!raw) return;
+    try {
+      await toggleInsuranceActive(raw, token);
+      fetchInsurance(insurancePage);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleDeleteInsurance = (id: string) => {
-    setInsurancePartners((prev) => prev.filter((p) => p.id !== id));
-    setSelectedInsurance((prev) => prev.filter((sid) => sid !== id));
+  const handleDeleteInsurance = async (id: string) => {
+    if (!token) return;
+    const raw = insuranceRaw.find((p) => p.id === id);
+    if (!raw) return;
+    try {
+      await deleteInsurancePartner(raw, token);
+      setSelectedInsurance((prev) => prev.filter((sid) => sid !== id));
+      fetchInsurance(insurancePage);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleSelectAllInsurance = (checked: boolean) => {
-    setSelectedInsurance(checked ? insurancePaged.map((p) => p.id) : []);
+    setSelectedInsurance(checked ? insurancePartners.map((p) => p.id) : []);
   };
-
-  const corporatePaged = corporateTieUps.slice(
-    corporatePage * ITEMS_PER_PAGE,
-    (corporatePage + 1) * ITEMS_PER_PAGE,
-  );
-  const corporateHasMore =
-    (corporatePage + 1) * ITEMS_PER_PAGE < corporateTieUps.length;
 
   const handleAddCorporate = () => {
     setCorporateModalMode("add");
@@ -135,59 +239,69 @@ const InsurancePage: React.FC = () => {
     setCorporateModalOpen(true);
   };
 
-  const handleCorporateSubmit = (data: CorporateFormData) => {
-    if (corporateModalMode === "add") {
-      const newTieUp: CorporateTieUp = {
-        id: uuidv4(),
-        companyName: data.companyName,
-        sector: data.sector,
-        logo: data.logo,
-        active: data.active,
-        dateModified: new Date().toLocaleDateString("en-GB", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        }),
-      };
-      setCorporateTieUps((prev) => [newTieUp, ...prev]);
-    } else if (editingCorporate) {
-      setCorporateTieUps((prev) =>
-        prev.map((c) =>
-          c.id === editingCorporate.id
-            ? {
-                ...c,
-                companyName: data.companyName,
-                sector: data.sector,
-                logo: data.logo,
-                active: data.active,
-                dateModified: new Date().toLocaleDateString("en-GB", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                }),
-              }
-            : c,
-        ),
+  const handleCorporateSubmit = async (data: CorporateFormData) => {
+    if (!token) return;
+    try {
+      const isEdit = corporateModalMode === "edit" && editingCorporate;
+      const sectorEnum = sectorEnums.find(
+        (e) => e.value === data.sector || e.id === data.sector,
       );
+      const sectorId = sectorEnum?.id || data.sector;
+      await saveCorporateTieUp(
+        {
+          id: isEdit ? editingCorporate!.id : null,
+          name: data.companyName,
+          sector_id: sectorId,
+          is_active: data.active,
+          is_deleted: false,
+          image_url: data.logo || "",
+        },
+        token,
+      );
+      fetchCorporate(corporatePage);
+    } catch (e) {
+      console.error(e);
     }
   };
 
-  const handleToggleCorporateActive = (id: string) => {
-    setCorporateTieUps((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, active: !c.active } : c)),
-    );
+  const handleToggleCorporateActive = async (id: string) => {
+    if (!token) return;
+    const raw = corporateRaw.find((c) => c.id === id);
+    if (!raw) return;
+    const sectorEnum = sectorEnums.find((e) => e.value === raw.sector_name);
+    const sectorId = sectorEnum?.id || "";
+    try {
+      await toggleCorporateActive(raw, sectorId, token);
+      fetchCorporate(corporatePage);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleDeleteCorporate = (id: string) => {
-    setCorporateTieUps((prev) => prev.filter((c) => c.id !== id));
-    setSelectedCorporate((prev) => prev.filter((sid) => sid !== id));
+  const handleDeleteCorporate = async (id: string) => {
+    if (!token) return;
+    const raw = corporateRaw.find((c) => c.id === id);
+    if (!raw) return;
+    const sectorEnum = sectorEnums.find((e) => e.value === raw.sector_name);
+    const sectorId = sectorEnum?.id || "";
+    try {
+      await deleteCorporateTieUp(raw, sectorId, token);
+      setSelectedCorporate((prev) => prev.filter((sid) => sid !== id));
+      fetchCorporate(corporatePage);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleSelectAllCorporate = (checked: boolean) => {
-    setSelectedCorporate(checked ? corporatePaged.map((c) => c.id) : []);
+    setSelectedCorporate(checked ? corporateTieUps.map((c) => c.id) : []);
   };
 
   const isInsuranceTab = activeTab === "Insurance Partners";
+  const insuranceHasMore =
+    (insurancePage + 1) * ITEMS_PER_PAGE < insuranceTotal;
+  const corporateHasMore =
+    (corporatePage + 1) * ITEMS_PER_PAGE < corporateTotal;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -207,16 +321,18 @@ const InsurancePage: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex mb-4">
+        <div className="flex mb-4 border py-0.2 border-gray-200 rounded-lg overflow-hidden w-fit">
           {(["Insurance Partners", "Corporate Tie-Ups"] as TabType[]).map(
-            (tab) => (
+            (tab, index) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-5 py-2 rounded-lg text-[12px] font-medium transition-colors ${
+                className={`px-5 py-2 text-[12px] font-medium transition-colors ${
+                  index !== 0 ? "border-l border-gray-200" : ""
+                } ${
                   activeTab === tab
                     ? "bg-[#0088B1] text-[#F8F8F8]"
-                    : "text-[#161D1F] hover:bg-[#E8F4F7] hover:text-[#0088B1] border border-gray-200"
+                    : "text-[#161D1F] hover:bg-[#E8F4F7] hover:text-[#0088B1]"
                 }`}
               >
                 {tab}
@@ -229,13 +345,13 @@ const InsurancePage: React.FC = () => {
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">
               {isInsuranceTab
-                ? `All Insurance Partners`
-                : `All Corporate Tie-Ups`}
+                ? "All Insurance Partners"
+                : "All Corporate Tie-Ups"}
               <span className="text-[8px] text-[#899193] font-normal ml-2">
                 Showing{" "}
                 {isInsuranceTab
-                  ? `${insurancePaged.length} of ${insurancePartners.length}`
-                  : `${corporatePaged.length} of ${corporateTieUps.length}`}{" "}
+                  ? `${insurancePartners.length} of ${insuranceTotal}`
+                  : `${corporateTieUps.length} of ${corporateTotal}`}{" "}
                 records
               </span>
             </h3>
@@ -243,7 +359,7 @@ const InsurancePage: React.FC = () => {
 
           {isInsuranceTab ? (
             <InsuranceTable
-              partners={insurancePaged}
+              partners={insurancePartners}
               selectedIds={selectedInsurance}
               onSelectAll={handleSelectAllInsurance}
               onSelect={(id, checked) =>
@@ -254,10 +370,11 @@ const InsurancePage: React.FC = () => {
               onEdit={handleEditInsurance}
               onToggleActive={handleToggleInsuranceActive}
               onDelete={handleDeleteInsurance}
+              loading={insuranceLoading}
             />
           ) : (
             <CorporateTable
-              tieUps={corporatePaged}
+              tieUps={corporateTieUps}
               selectedIds={selectedCorporate}
               onSelectAll={handleSelectAllCorporate}
               onSelect={(id, checked) =>
@@ -268,28 +385,29 @@ const InsurancePage: React.FC = () => {
               onEdit={handleEditCorporate}
               onToggleActive={handleToggleCorporateActive}
               onDelete={handleDeleteCorporate}
+              loading={corporateLoading}
             />
           )}
 
-          {isInsuranceTab && insurancePartners.length > 0 && (
+          {isInsuranceTab && insuranceTotal > 0 && (
             <Pagination
               currentPage={insurancePage}
               hasMore={insuranceHasMore}
-              loading={false}
+              loading={insuranceLoading}
               onPrevious={() => setInsurancePage((p) => Math.max(0, p - 1))}
               onNext={() => setInsurancePage((p) => p + 1)}
-              totalItems={insurancePartners.length}
+              totalItems={insuranceTotal}
               itemsPerPage={ITEMS_PER_PAGE}
             />
           )}
-          {!isInsuranceTab && corporateTieUps.length > 0 && (
+          {!isInsuranceTab && corporateTotal > 0 && (
             <Pagination
               currentPage={corporatePage}
               hasMore={corporateHasMore}
-              loading={false}
+              loading={corporateLoading}
               onPrevious={() => setCorporatePage((p) => Math.max(0, p - 1))}
               onNext={() => setCorporatePage((p) => p + 1)}
-              totalItems={corporateTieUps.length}
+              totalItems={corporateTotal}
               itemsPerPage={ITEMS_PER_PAGE}
             />
           )}
@@ -309,6 +427,7 @@ const InsurancePage: React.FC = () => {
         mode={corporateModalMode}
         initialData={editingCorporate}
         onSubmit={handleCorporateSubmit}
+        sectorEnums={sectorEnums}
       />
     </div>
   );

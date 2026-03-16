@@ -37,14 +37,6 @@ const CorporateTable: React.FC<CorporateTableProps> = ({
       <table className="w-full">
         <thead className="bg-gray-50 sticky top-0 z-20">
           <tr>
-            <th className="px-4 py-3 text-left">
-              <input
-                type="checkbox"
-                checked={allSelected}
-                onChange={(e) => onSelectAll(e.target.checked)}
-                className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-              />
-            </th>
             <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
               Name
             </th>
@@ -83,20 +75,12 @@ const CorporateTable: React.FC<CorporateTableProps> = ({
           ) : (
             tieUps.map((tieUp) => (
               <tr key={tieUp.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(tieUp.id)}
-                    onChange={(e) => onSelect(tieUp.id, e.target.checked)}
-                    className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                  />
-                </td>
                 <td className="px-6 py-4 text-[12px] text-[#161D1F] font-medium">
                   <div className="flex items-center gap-3">
                     {tieUp.logo && (
                       <img
                         src={tieUp.logo}
-                        alt={tieUp.companyName}
+                        alt={""}
                         className="h-6 w-auto object-contain"
                       />
                     )}

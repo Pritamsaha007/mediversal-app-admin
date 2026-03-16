@@ -1,9 +1,23 @@
-export default function SimranDashboard() {
+import HeroSection from "./components/HeroSection";
+import WhyChooseUs from "./components/WhyChooseUs";
+import PatientJourney from "./components/PatientJourney";
+import MobileApp from "./components/MobileApp";
+import CallToAction from "./components/CallToAction";
+import FAQ from "./components/FAQ";
+import Testimonials from "./components/Testimonials";
+import InsurancePartners from "./components/InsurancePartners";
+
+export default function HomePage() {
   return (
-    <div className=" flex items-center justify-center bg-gray-50">
-      <h1 className="text-4xl md:text-6xl font-bold text-gray-800">
-        Simran Dashboard
-      </h1>
-    </div>
+    <>
+      <HeroSection />
+      <Testimonials />
+      {/* <WhyChooseUs /> */}
+      <PatientJourney />
+      {/* <InsurancePartners /> */}
+      <FAQ />
+      <MobileApp />
+      <CallToAction />
+    </>
   );
 }

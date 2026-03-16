@@ -71,7 +71,7 @@ const InsuranceModal: React.FC<InsuranceModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-[16px] font-semibold text-[#161D1F]">
             {mode === "add"

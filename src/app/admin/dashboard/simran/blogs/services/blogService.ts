@@ -9,7 +9,6 @@ const SIMRAN_API_BASE = "https://simran-dev-api.mediversal247.in";
 const CLINIC_API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev-api.mediversal247.in";
 
-// ---- Blog Search (list) ----
 export async function searchBlogs(
   params: BlogSearchParams,
   token: string,
@@ -31,7 +30,6 @@ export async function searchBlogs(
   return response.json();
 }
 
-// ---- Create or Update Blog ----
 export async function createOrUpdateBlog(
   payload: CreateUpdateBlogPayload,
   token: string,
@@ -53,7 +51,6 @@ export async function createOrUpdateBlog(
   return response.json();
 }
 
-// ---- Toggle active (reuse createOrUpdate with is_active flipped) ----
 export async function toggleBlogActive(
   blog: CreateUpdateBlogPayload,
   token: string,
@@ -61,7 +58,6 @@ export async function toggleBlogActive(
   return createOrUpdateBlog({ ...blog, is_active: !blog.is_active }, token);
 }
 
-// ---- Soft delete ----
 export async function deleteBlog(
   blog: CreateUpdateBlogPayload,
   token: string,
@@ -69,7 +65,6 @@ export async function deleteBlog(
   return createOrUpdateBlog({ ...blog, is_deleted: true }, token);
 }
 
-// ---- Doctor search (for author field) ----
 export async function searchDoctors(
   search: string,
   token: string,
