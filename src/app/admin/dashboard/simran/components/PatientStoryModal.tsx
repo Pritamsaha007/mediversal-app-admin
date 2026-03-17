@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, ImagePlus } from "lucide-react";
+import { X, ImagePlus, Loader2 } from "lucide-react";
 import { PatientStory } from "../services";
+import { uploadFile } from "@/app/admin/dashboard/lab_tests/services";
+import { fileToBase64 } from "@/app/utils/functions";
+import toast from "react-hot-toast";
 
-// Indian states list
 const INDIAN_STATES = [
   "Andhra Pradesh",
   "Arunachal Pradesh",
@@ -45,9 +47,21 @@ const INDIAN_STATES = [
   "Puducherry",
 ];
 
+const FOLDER_PATH = "simran/patient-stories/profile-pics";
+
+const getBucketName = (): string => {
+  const bucket =
+    process.env.NODE_ENV === "development"
+      ? process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_DEV
+      : process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_PROD;
+  if (!bucket) throw new Error("AWS bucket name not configured");
+  return bucket;
+};
+
 interface PatientStoryModalProps {
   mode: "add" | "edit";
   initialData?: PatientStory | null;
+  token: string;
   onClose: () => void;
   onSubmit: (payload: {
     id: string | null;
@@ -65,6 +79,7 @@ interface PatientStoryModalProps {
 export default function PatientStoryModal({
   mode,
   initialData,
+  token,
   onClose,
   onSubmit,
 }: PatientStoryModalProps) {
@@ -80,10 +95,11 @@ export default function PatientStoryModal({
   const [feedbackDate, setFeedbackDate] = useState("");
   const [isActive, setIsActive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Populate on edit
   useEffect(() => {
     if (mode === "edit" && initialData) {
       setCustomerName(initialData.customer_name);
@@ -97,7 +113,6 @@ export default function PatientStoryModal({
           ? initialData.profile_pic_url.split("/").pop() || null
           : null,
       );
-      // Convert ISO date to YYYY-MM-DD for input
       setFeedbackDate(
         initialData.feedback_date ? initialData.feedback_date.slice(0, 10) : "",
       );
@@ -118,20 +133,43 @@ export default function PatientStoryModal({
     setFeedbackDate("");
     setIsActive(false);
     setErrors({});
+    setUploadError(null);
   };
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     if (!file.type.match(/image\/(jpeg|jpg|png)/)) return;
+
+    const localPreview = URL.createObjectURL(file);
+    setPreviewUrl(localPreview);
     setFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      setPreviewUrl(result);
-      setProfilePicUrl(result); // In production replace with upload URL
-    };
-    reader.readAsDataURL(file);
-    if (errors.profile_pic_url)
-      setErrors((p) => ({ ...p, profile_pic_url: "" }));
+    setUploadError(null);
+    setUploading(true);
+
+    try {
+      const base64 = await fileToBase64(localPreview);
+      URL.revokeObjectURL(localPreview);
+
+      const res = await uploadFile(token, {
+        bucketName: getBucketName(),
+        folderPath: FOLDER_PATH,
+        fileName: `profile-${Date.now()}-${file.name}`,
+        fileContent: base64,
+      });
+
+      if (!res.success) throw new Error("Upload failed");
+      setProfilePicUrl(res.result);
+      setPreviewUrl(res.result);
+      toast.success("Image uploaded successfully");
+    } catch (err: any) {
+      setUploadError(err?.message || "Image upload failed");
+      toast.error(err?.message || "Image upload failed");
+      setPreviewUrl(null);
+      setFileName(null);
+      setProfilePicUrl("");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -153,7 +191,7 @@ export default function PatientStoryModal({
   };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
+    if (!validate() || uploading) return;
     try {
       setSubmitting(true);
       await onSubmit({
@@ -162,14 +200,21 @@ export default function PatientStoryModal({
         city: city.trim(),
         state,
         feedback: feedback.trim(),
-        profile_pic_url: profilePicUrl,
+        profile_pic_url: profilePicUrl.trim(),
         is_active: isActive,
         is_deleted: false,
         feedback_date: feedbackDate
           ? new Date(feedbackDate).toISOString()
           : new Date().toISOString(),
       });
+      toast.success(
+        mode === "add"
+          ? "Patient review added successfully"
+          : "Patient review updated successfully",
+      );
       onClose();
+    } catch (err: any) {
+      toast.error(err?.message || "Something went wrong");
     } finally {
       setSubmitting(false);
     }
@@ -185,7 +230,6 @@ export default function PatientStoryModal({
       onClick={handleBackdrop}
     >
       <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl mx-4 p-6">
-        {/* Close */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-[#899193] hover:text-[#161D1F] transition-colors"
@@ -193,13 +237,11 @@ export default function PatientStoryModal({
           <X className="w-5 h-5" />
         </button>
 
-        {/* Title */}
         <h2 className="text-[16px] font-semibold text-[#161D1F] mb-5">
           {mode === "add" ? "Add Patient Review" : "Update Patient Review"}
         </h2>
 
         <div className="space-y-4">
-          {/* Image Upload Dropzone */}
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -212,7 +254,7 @@ export default function PatientStoryModal({
                 ? "border-[#0088B1] bg-[#EBF7FB]"
                 : "border-gray-300 bg-white"
             }`}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => !uploading && fileInputRef.current?.click()}
           >
             <input
               ref={fileInputRef}
@@ -225,7 +267,14 @@ export default function PatientStoryModal({
               }}
             />
 
-            {previewUrl ? (
+            {uploading ? (
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-10 w-10 animate-spin text-[#0088B1]" />
+                <p className="text-[12px] text-[#0088B1] font-medium">
+                  Uploading image…
+                </p>
+              </div>
+            ) : previewUrl ? (
               <div className="relative">
                 <img
                   src={previewUrl}
@@ -239,6 +288,7 @@ export default function PatientStoryModal({
                     setPreviewUrl(null);
                     setFileName(null);
                     setProfilePicUrl("");
+                    setUploadError(null);
                   }}
                   className="absolute -top-1 -right-1 rounded-full bg-white border border-gray-200 p-0.5 text-gray-400 hover:text-red-500 shadow-sm"
                 >
@@ -252,37 +302,44 @@ export default function PatientStoryModal({
               />
             )}
 
-            {fileName ? (
-              <p className="text-[13px] font-medium text-[#161D1F]">
-                {fileName}
-              </p>
-            ) : (
-              <p className="text-[13px] font-semibold text-[#161D1F]">
-                <span className="text-red-500">* </span>Upload Patient Image
-              </p>
+            {!uploading && (
+              <>
+                {fileName ? (
+                  <p className="text-[13px] font-medium text-[#161D1F]">
+                    {fileName}
+                  </p>
+                ) : (
+                  <p className="text-[13px] font-semibold text-[#161D1F]">
+                    <span className="text-red-500">* </span>Upload Patient Image
+                  </p>
+                )}
+
+                {uploadError && (
+                  <p className="text-[11px] text-red-500">{uploadError}</p>
+                )}
+
+                <p className="text-[12px] text-[#899193] text-center">
+                  Drag and drop your new image here or click to browse
+                  <br />
+                  <span className="italic">
+                    (supported file format .jpg, .jpeg, .png)
+                  </span>
+                </p>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                  className="mt-1 rounded-lg border border-gray-300 px-5 py-1.5 text-[12px] font-medium text-[#161D1F] hover:bg-gray-50 transition"
+                >
+                  Select File
+                </button>
+              </>
             )}
-
-            <p className="text-[12px] text-[#899193] text-center">
-              Drag and drop your new image here or click to browse
-              <br />
-              <span className="italic">
-                (supported file format .jpg, .jpeg, .png)
-              </span>
-            </p>
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                fileInputRef.current?.click();
-              }}
-              className="mt-1 rounded-lg border border-gray-300 px-5 py-1.5 text-[12px] font-medium text-[#161D1F] hover:bg-gray-50 transition"
-            >
-              Select File
-            </button>
           </div>
 
-          {/* 2-col: Patient Name + Review Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
@@ -332,7 +389,6 @@ export default function PatientStoryModal({
             </div>
           </div>
 
-          {/* 2-col: City + State */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
@@ -397,7 +453,6 @@ export default function PatientStoryModal({
             </div>
           </div>
 
-          {/* Feedback */}
           <div>
             <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
               * Feedback
@@ -419,7 +474,6 @@ export default function PatientStoryModal({
             )}
           </div>
 
-          {/* Active Review checkbox */}
           <div>
             <label
               className={`flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 transition ${
@@ -470,12 +524,11 @@ export default function PatientStoryModal({
             </label>
           </div>
 
-          {/* Footer actions */}
           <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={resetFields}
-              disabled={submitting}
+              disabled={submitting || uploading}
               className="px-4 py-2 text-[12px] border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Reset
@@ -483,10 +536,10 @@ export default function PatientStoryModal({
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={submitting}
+              disabled={submitting || uploading}
               className="px-5 py-2 text-[12px] bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors disabled:opacity-60 flex items-center gap-2"
             >
-              {submitting && (
+              {(submitting || uploading) && (
                 <svg
                   className="h-3.5 w-3.5 animate-spin"
                   viewBox="0 0 24 24"
@@ -507,11 +560,13 @@ export default function PatientStoryModal({
                   />
                 </svg>
               )}
-              {submitting
-                ? "Saving..."
-                : mode === "add"
-                  ? "Add Review"
-                  : "Update Review"}
+              {uploading
+                ? "Uploading..."
+                : submitting
+                  ? "Saving..."
+                  : mode === "add"
+                    ? "Add Review"
+                    : "Update Review"}
             </button>
           </div>
         </div>

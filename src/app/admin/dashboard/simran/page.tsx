@@ -13,11 +13,11 @@ export default function HomePage() {
       <HeroSection />
       <Testimonials />
       {/* <WhyChooseUs /> */}
-      <PatientJourney />
+      {/* <PatientJourney /> */}
       {/* <InsurancePartners /> */}
       <FAQ />
-      <MobileApp />
-      <CallToAction />
+      {/* <MobileApp /> */}
+      {/* <CallToAction /> */}
     </>
   );
 }

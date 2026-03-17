@@ -128,7 +128,7 @@ function EditableText({
             onChange={(e) => setDraft(e.target.value)}
           />
         )}
-        <span className="flex gap-2 justify-end">
+        <span className="flex gap-2">
           <button
             onClick={confirm}
             className="flex items-center gap-1.5 rounded-lg bg-[#90c7c1] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#074a42] transition-colors shadow-sm"
@@ -154,7 +154,7 @@ function EditableText({
           setDraft(value);
           setEditing(true);
         }}
-        className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-all duration-150 flex-shrink-0 rounded-full bg-[#095A50] p-1.5 shadow-md hover:bg-[#074a42] hover:scale-110"
+        className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-all duration-150 flex-shrink-0 rounded-md bg-[#095A50] p-1.5 shadow-md hover:bg-[#074a42] hover:scale-110"
         title="Edit"
       >
         <Pencil className="h-3 w-3 text-white" />
@@ -212,7 +212,7 @@ function EditableNumber({
             onClick={confirm}
             className="flex items-center gap-1 rounded-lg bg-[#095A50] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#074a42] transition-colors shadow-sm"
           >
-            <Check className="h-3 w-3" /> OK
+            <Check className="h-3 w-3" /> Save
           </button>
           <button
             onClick={cancel}
@@ -235,7 +235,7 @@ function EditableNumber({
             setDraft(String(value));
             setEditing(true);
           }}
-          className="absolute -top-3 -right-5 opacity-0 group-hover:opacity-100 transition-all duration-150 rounded-full bg-[#095A50] p-1 shadow-md hover:bg-[#074a42] hover:scale-110"
+          className="absolute -top-3 -right-5 opacity-0 group-hover:opacity-100 transition-all duration-150 rounded-md bg-[#095A50] p-1 shadow-md hover:bg-[#074a42] hover:scale-110"
           title="Edit"
         >
           <Pencil className="h-2.5 w-2.5 text-white" />

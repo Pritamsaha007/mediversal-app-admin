@@ -1,4 +1,5 @@
 "use client";
+
 import Image from "next/image";
 import {
   ChevronLeft,
@@ -16,6 +17,7 @@ import {
   PatientStory,
 } from "../services";
 import PatientStoryModal from "./PatientStoryModal";
+import toast from "react-hot-toast";
 
 function DeleteConfirmDialog({
   name,
@@ -40,7 +42,7 @@ function DeleteConfirmDialog({
           Delete Review?
         </h3>
         <p className="mt-2 text-[12px] text-[#899193]">
-          Are you sure you want to delete the review by{" "}
+          Are you sure you want to delete the review by
           <span className="font-medium text-[#161D1F]">"{name}"</span>? This
           cannot be undone.
         </p>
@@ -104,6 +106,7 @@ export default function Testimonials() {
         setStories((res.patient_stories || []).filter((s) => !s.is_deleted));
       } catch (err: any) {
         setFetchError(err?.message || "Failed to load patient stories");
+        toast.error(err?.message || "Failed to load patient stories");
       } finally {
         setLoading(false);
       }
@@ -149,9 +152,13 @@ export default function Testimonials() {
     is_deleted: boolean;
     feedback_date: string;
   }) => {
-    await upsertPatientStory(payload, token);
-    const res = await listPatientStories(token);
-    setStories((res.patient_stories || []).filter((s) => !s.is_deleted));
+    try {
+      await upsertPatientStory(payload, token);
+      const res = await listPatientStories(token);
+      setStories((res.patient_stories || []).filter((s) => !s.is_deleted));
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save review");
+    }
   };
 
   const handleDelete = async () => {
@@ -174,6 +181,9 @@ export default function Testimonials() {
       );
       setStories((prev) => prev.filter((s) => s.id !== deletingStory.id));
       setDeletingStory(null);
+      toast.success("Review deleted successfully");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete review");
     } finally {
       setDeleteInProgress(false);
     }
@@ -182,7 +192,7 @@ export default function Testimonials() {
   return (
     <section className="py-16 sm:py-20 bg-white overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-12 flex items-start justify-between">
+        <div className="mb-12 flex items-end justify-between">
           <div>
             <h2 className="text-3xl font-bold text-[#095A50] sm:text-4xl lg:text-5xl">
               Why patients trust us
@@ -275,7 +285,6 @@ export default function Testimonials() {
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-
                   <div
                     className={`h-full rounded-2xl p-8 transition hover:shadow-soft border-2 ${
                       story.is_active
@@ -296,7 +305,7 @@ export default function Testimonials() {
                     </p>
 
                     <p className="mt-4 text-sm italic font-medium text-[#6D7578]">
-                      {timeAgo(story.feedback_date)}
+                      – {timeAgo(story.feedback_date)}
                     </p>
 
                     <div className="mt-6 flex items-center justify-end">
@@ -333,6 +342,7 @@ export default function Testimonials() {
         <PatientStoryModal
           mode={modalMode}
           initialData={editingStory}
+          token={token}
           onClose={() => {
             setModalMode(null);
             setEditingStory(null);

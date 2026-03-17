@@ -5,6 +5,7 @@ import { ChevronDown, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useAdminStore } from "@/app/store/adminStore";
 import { listFAQs, upsertFAQ, FAQItem } from "../services";
 import FAQModal from "./FAQModal";
+import toast from "react-hot-toast";
 
 function DeleteConfirmDialog({
   question,
@@ -90,7 +91,15 @@ export default function FAQ() {
     is_active: boolean;
     is_deleted: boolean;
   }) => {
-    await upsertFAQ(payload, token);
+    const isEdit = !!payload.id;
+
+    const promise = upsertFAQ(payload, token);
+
+    await toast.promise(promise, {
+      loading: isEdit ? "Updating FAQ..." : "Adding FAQ...",
+      success: isEdit ? "FAQ updated successfully" : "FAQ added successfully",
+      error: "Something went wrong",
+    });
 
     if (payload.id) {
       setFaqs((prev) =>
@@ -110,12 +119,13 @@ export default function FAQ() {
       setFaqs((res.faqs || []).filter((f) => !f.is_deleted));
     }
   };
-
   const handleDelete = async () => {
     if (!deletingFaq) return;
+
     try {
       setDeleteInProgress(true);
-      await upsertFAQ(
+
+      const promise = upsertFAQ(
         {
           id: deletingFaq.id,
           question: deletingFaq.question,
@@ -125,6 +135,13 @@ export default function FAQ() {
         },
         token,
       );
+
+      await toast.promise(promise, {
+        loading: "Deleting FAQ...",
+        success: "FAQ deleted successfully",
+        error: "Failed to delete FAQ",
+      });
+
       setFaqs((prev) => prev.filter((f) => f.id !== deletingFaq.id));
       setDeletingFaq(null);
     } finally {
