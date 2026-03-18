@@ -9,12 +9,7 @@ import {
   BlogModalMode,
   CreateUpdateBlogPayload,
 } from "./types/types";
-import {
-  searchBlogs,
-  createOrUpdateBlog,
-  toggleBlogActive,
-  deleteBlog,
-} from "./services/blogService";
+import { searchBlogs, createOrUpdateBlog } from "./services/blogService";
 import { useAdminStore } from "@/app/store/adminStore";
 import { StatsCard } from "@/app/components/common/StatsCard";
 import Pagination from "@/app/components/common/pagination";
@@ -48,7 +43,6 @@ const BlogPage: React.FC = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewingBlog, setViewingBlog] = useState<BlogAPI | null>(null);
 
-  // ---- Fetch ----
   const fetchBlogs = useCallback(
     async (page: number, search: string, status: string) => {
       if (!token) return;
@@ -86,7 +80,6 @@ const BlogPage: React.FC = () => {
     fetchBlogs(currentPage, searchTerm, statusFilter);
   }, [currentPage, searchTerm, statusFilter, fetchBlogs]);
 
-  // ---- Stats ----
   const activeBlogs = blogs.filter((b) => b.is_active).length;
   const inactiveBlogs = blogs.filter((b) => !b.is_active).length;
   const publishedByDoctors = blogs.filter((b) => b.doctor_id).length;
@@ -210,7 +203,6 @@ const BlogPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-2">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">Blogs</h1>
           <button
@@ -222,7 +214,6 @@ const BlogPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
           <StatsCard
             title="Total Blogs"
@@ -241,7 +232,6 @@ const BlogPage: React.FC = () => {
           />
         </div>
 
-        {/* Search + Filter */}
         <div className="flex flex-col md:flex-row gap-3 mb-4">
           <div className="flex-1 relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -284,7 +274,6 @@ const BlogPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">

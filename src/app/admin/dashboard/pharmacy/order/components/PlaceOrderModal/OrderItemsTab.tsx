@@ -51,11 +51,8 @@ const OrderItemsTab: React.FC = () => {
 
     const deliveryCharge =
       subtotal < DELIVERY_CHARGE_THRESHOLD ? DELIVERY_CHARGE : 0;
-
     const handlingPackagingFee = HANDLING_PACKAGING_FEE;
-
     const total = subtotal + deliveryCharge + handlingPackagingFee;
-
     return {
       subtotal,
       deliveryCharge,
@@ -331,7 +328,6 @@ const OrderItemsTab: React.FC = () => {
                     className="flex items-center p-4 hover:bg-gray-50 cursor-pointer transition-colors"
                     onClick={() => addToOrder(product)}
                   >
-                    {/* <ProductImage product={product} /> */}
                     <div className="ml-4 flex-1">
                       <div className="text-xs font-medium text-[#161D1F]">
                         {product.ProductName}
@@ -432,7 +428,6 @@ const OrderItemsTab: React.FC = () => {
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center">
-                        {/* <ProductImage product={item} /> */}
                         <div className="ml-3">
                           <div className="text-xs font-medium text-[#161D1F]">
                             {item.productName}
