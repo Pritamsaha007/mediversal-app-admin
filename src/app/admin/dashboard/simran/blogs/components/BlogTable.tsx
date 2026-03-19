@@ -38,14 +38,6 @@ const BlogTable: React.FC<BlogTableProps> = ({
       <table className="w-full">
         <thead className="bg-gray-50 sticky top-0 z-20">
           <tr>
-            <th className="px-4 py-3 text-left">
-              <input
-                type="checkbox"
-                checked={allSelected}
-                onChange={(e) => onSelectAll(e.target.checked)}
-                className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-              />
-            </th>
             <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
               Title & Description
             </th>
@@ -84,14 +76,6 @@ const BlogTable: React.FC<BlogTableProps> = ({
           ) : (
             blogs.map((blog) => (
               <tr key={blog.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-4 align-top">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(blog.id)}
-                    onChange={(e) => onSelect(blog.id, e.target.checked)}
-                    className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded mt-1"
-                  />
-                </td>
                 <td className="px-6 py-4 max-w-[240px] align-top">
                   <p className="text-[12px] font-semibold text-[#161D1F] mb-1 leading-snug">
                     {blog.title}

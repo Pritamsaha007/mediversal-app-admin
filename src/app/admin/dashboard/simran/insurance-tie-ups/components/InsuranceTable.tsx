@@ -82,7 +82,7 @@ const InsuranceTable: React.FC<InsuranceTableProps> = ({
                       <img
                         src={partner.logo}
                         alt={""}
-                        className="h-6 w-auto object-contain"
+                        className="h-6 w-auto object-contain rounded-lg"
                       />
                     )}
                     {partner.name}

@@ -1,7 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { InsuranceFormData, InsurancePartner, ModalMode } from "../types/types";
 import LogoUpload from "../components/LogoUpload";
+import { uploadFile } from "@/app/admin/dashboard/lab_tests/services";
+import { fileToBase64 } from "@/app/utils/functions";
+import { useAdminStore } from "@/app/store/adminStore";
+
+const FOLDER_PATH = "simran/insurance-partners/logos";
+
+const getBucketName = (): string => {
+  const bucket =
+    process.env.NODE_ENV === "development"
+      ? process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_DEV
+      : process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_PROD;
+  if (!bucket) throw new Error("AWS bucket name not configured");
+  return bucket;
+};
 
 interface InsuranceModalProps {
   isOpen: boolean;
@@ -18,12 +32,17 @@ const InsuranceModal: React.FC<InsuranceModalProps> = ({
   initialData,
   onSubmit,
 }) => {
+  const { token } = useAdminStore();
+
   const [formData, setFormData] = useState<InsuranceFormData>({
     name: "",
     logo: undefined,
     logoFile: undefined,
     active: false,
   });
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (mode === "edit" && initialData) {
@@ -41,6 +60,7 @@ const InsuranceModal: React.FC<InsuranceModalProps> = ({
         active: false,
       });
     }
+    setUploadError(null);
   }, [mode, initialData, isOpen]);
 
   const handleReset = () => {
@@ -59,12 +79,47 @@ const InsuranceModal: React.FC<InsuranceModalProps> = ({
         active: false,
       });
     }
+    setUploadError(null);
   };
 
-  const handleSubmit = () => {
-    if (!formData.name.trim()) return;
-    onSubmit(formData);
-    onClose();
+  const handleFileSelect = async (file: File, _previewUrl: string) => {
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const objectUrl = URL.createObjectURL(file);
+      const base64 = await fileToBase64(objectUrl);
+      URL.revokeObjectURL(objectUrl);
+
+      const res = await uploadFile(token, {
+        bucketName: getBucketName(),
+        folderPath: FOLDER_PATH,
+        fileName: `insurance-logo-${Date.now()}-${file.name}`,
+        fileContent: base64,
+      });
+
+      if (!res.success) throw new Error("Upload failed");
+      setFormData((prev) => ({ ...prev, logo: res.result, logoFile: file }));
+    } catch (err: any) {
+      setUploadError(err?.message || "Image upload failed");
+      setFormData((prev) => ({
+        ...prev,
+        logo: undefined,
+        logoFile: undefined,
+      }));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name.trim() || uploading) return;
+    setSubmitting(true);
+    try {
+      await onSubmit(formData);
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -98,17 +153,23 @@ const InsuranceModal: React.FC<InsuranceModalProps> = ({
             className="w-full px-3 py-2.5 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
           />
         </div>
+
         <div className="mb-4">
           <LogoUpload
             currentLogo={formData.logo}
             label="Upload Insurance Partner Logo"
-            onFileSelect={(file, url) =>
-              setFormData({ ...formData, logoFile: file, logo: url })
-            }
+            onFileSelect={handleFileSelect}
           />
+          {uploading && (
+            <div className="mt-2 flex items-center gap-2 text-[12px] text-[#0088B1]">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Uploading logo…
+            </div>
+          )}
+          {uploadError && (
+            <p className="mt-1 text-[11px] text-red-500">{uploadError}</p>
+          )}
         </div>
 
-        {/* Active Toggle */}
         <div
           className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer mb-5 ${
             formData.active
@@ -118,11 +179,7 @@ const InsuranceModal: React.FC<InsuranceModalProps> = ({
           onClick={() => setFormData({ ...formData, active: !formData.active })}
         >
           <div
-            className={`w-4 h-4 rounded flex items-center justify-center border ${
-              formData.active
-                ? "bg-[#0088B1] border-[#0088B1]"
-                : "border-gray-300"
-            }`}
+            className={`w-4 h-4 rounded flex items-center justify-center border ${formData.active ? "bg-[#0088B1] border-[#0088B1]" : "border-gray-300"}`}
           >
             {formData.active && (
               <svg
@@ -159,9 +216,19 @@ const InsuranceModal: React.FC<InsuranceModalProps> = ({
           </button>
           <button
             onClick={handleSubmit}
-            className="px-5 py-2 bg-[#0088B1] text-white text-[12px] rounded-lg hover:bg-[#00729A] transition-colors"
+            disabled={uploading || submitting}
+            className="px-5 py-2 bg-[#0088B1] text-white text-[12px] rounded-lg hover:bg-[#00729A] transition-colors disabled:opacity-60 flex items-center gap-2"
           >
-            {mode === "add" ? "Add Insurance" : "Update Insurance"}
+            {(uploading || submitting) && (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            )}
+            {uploading
+              ? "Uploading..."
+              : submitting
+                ? "Saving..."
+                : mode === "add"
+                  ? "Add Insurance"
+                  : "Update Insurance"}
           </button>
         </div>
       </div>

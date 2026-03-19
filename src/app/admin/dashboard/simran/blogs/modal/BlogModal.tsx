@@ -11,6 +11,8 @@ import {
 } from "../types/types";
 import { searchDoctors } from "../services/blogService";
 import { useAdminStore } from "@/app/store/adminStore";
+import { uploadFile } from "@/app/admin/dashboard/lab_tests/services";
+import { fileToBase64 } from "@/app/utils/functions";
 
 interface BlogModalProps {
   isOpen: boolean;
@@ -67,6 +69,44 @@ const BlogModal: React.FC<BlogModalProps> = ({
   const [showDoctorDropdown, setShowDoctorDropdown] = useState(false);
   const doctorRef = useRef<HTMLDivElement>(null);
   const debouncedDoctorSearch = useDebounce(doctorSearch, 400);
+  const FOLDER_PATH = "simran/blogs/cover-images";
+  const getBucketName = () => {
+    const bucket =
+      process.env.NODE_ENV === "development"
+        ? process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_DEV
+        : process.env.NEXT_PUBLIC_AWS_BUCKET_NAME_PROD;
+    if (!bucket) throw new Error("AWS bucket name not configured");
+    return bucket;
+  };
+
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [imageFileName, setImageFileName] = useState<string | null>(null);
+
+  const handleCoverImageUpload = async (file: File) => {
+    setImageUploadError(null);
+    setImageUploading(true);
+    setImageFileName(file.name);
+    try {
+      const objectUrl = URL.createObjectURL(file);
+      const base64 = await fileToBase64(objectUrl);
+      URL.revokeObjectURL(objectUrl);
+      const res = await uploadFile(token, {
+        bucketName: getBucketName(),
+        folderPath: FOLDER_PATH,
+        fileName: `cover-${Date.now()}-${file.name}`,
+        fileContent: base64,
+      });
+      if (!res.success) throw new Error("Upload failed");
+      setFormData((prev) => ({ ...prev, coverImageUrl: res.result }));
+    } catch (err: any) {
+      setImageUploadError(err?.message || "Image upload failed");
+      setImageFileName(null);
+      setFormData((prev) => ({ ...prev, coverImageUrl: "" }));
+    } finally {
+      setImageUploading(false);
+    }
+  };
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -114,9 +154,17 @@ const BlogModal: React.FC<BlogModalProps> = ({
         active: initialData.is_active,
       });
       setDoctorSearch(initialData.doctor_name || "");
+      setImageFileName(
+        initialData.image_url?.[0]
+          ? initialData.image_url[0].split("/").pop() || "Cover image"
+          : null,
+      );
+      setImageUploadError(null);
     } else {
       setFormData(defaultForm());
       setDoctorSearch("");
+      setImageFileName(null);
+      setImageUploadError(null);
     }
     setStep("basic");
     setShowDoctorDropdown(false);
@@ -165,9 +213,17 @@ const BlogModal: React.FC<BlogModalProps> = ({
         active: initialData.is_active,
       });
       setDoctorSearch(initialData.doctor_name || "");
+      setImageFileName(
+        initialData.image_url?.[0]
+          ? initialData.image_url[0].split("/").pop() || "Cover image"
+          : null,
+      );
+      setImageUploadError(null);
     } else {
       setFormData(defaultForm());
       setDoctorSearch("");
+      setImageFileName(null);
+      setImageUploadError(null);
     }
     setStep("basic");
   };
@@ -231,7 +287,14 @@ const BlogModal: React.FC<BlogModalProps> = ({
                   className="border-2 border-dashed border-[#E5E8E9] rounded-lg p-5 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-[#0088B1] transition-colors"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  {formData.coverImageUrl ? (
+                  {imageUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="w-7 h-7 animate-spin text-[#0088B1]" />
+                      <p className="text-[11px] text-[#0088B1] font-medium">
+                        Uploading image…
+                      </p>
+                    </div>
+                  ) : formData.coverImageUrl ? (
                     <>
                       <img
                         src={formData.coverImageUrl}
@@ -241,12 +304,17 @@ const BlogModal: React.FC<BlogModalProps> = ({
                           (e.currentTarget.style.display = "none")
                         }
                       />
-                      <p className="text-[11px] text-[#161D1F] font-medium mt-1 break-all text-center">
-                        {formData.coverImageUrl}
+                      <p className="text-[11px] text-[#161D1F] font-medium mt-1">
+                        {imageFileName || "Cover image uploaded"}
                       </p>
                       <p className="text-[10px] text-[#899193]">
                         Click to change
                       </p>
+                      {imageUploadError && (
+                        <p className="text-[11px] text-red-500">
+                          {imageUploadError}
+                        </p>
+                      )}
                     </>
                   ) : (
                     <>
@@ -274,26 +342,12 @@ const BlogModal: React.FC<BlogModalProps> = ({
                     accept=".jpg,.jpeg,.png"
                     className="hidden"
                     onChange={(e) => {
-                      // For now store as object URL; in production upload to S3 and use returned URL
                       const file = e.target.files?.[0];
-                      if (file) {
-                        setFormData((prev) => ({
-                          ...prev,
-                          coverImageUrl: URL.createObjectURL(file),
-                        }));
-                      }
+                      if (file) handleCoverImageUpload(file);
+                      e.target.value = "";
                     }}
                   />
                 </div>
-                <input
-                  type="text"
-                  placeholder="Or paste image URL directly"
-                  value={formData.coverImageUrl}
-                  onChange={(e) =>
-                    setFormData({ ...formData, coverImageUrl: e.target.value })
-                  }
-                  className="mt-2 w-full px-3 py-2 border border-[#E5E8E9] rounded-lg text-[11px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
-                />
               </div>
               <div>
                 <label className="block text-[11px] text-[#161D1F] mb-1">
@@ -554,7 +608,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
         <div className="px-6 py-4 border-t border-[#E5E8E9] flex items-center justify-end gap-3 flex-shrink-0">
           <button
             onClick={handleReset}
-            disabled={loading}
+            disabled={loading || imageUploading}
             className="text-[12px] text-[#161D1F] hover:underline"
           >
             Reset

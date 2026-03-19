@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { ImagePlus } from "lucide-react";
 
 interface LogoUploadProps {
@@ -15,6 +15,11 @@ const LogoUpload: React.FC<LogoUploadProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | undefined>(currentLogo);
   const [fileName, setFileName] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    setPreview(currentLogo);
+    setFileName(undefined);
+  }, [currentLogo]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
