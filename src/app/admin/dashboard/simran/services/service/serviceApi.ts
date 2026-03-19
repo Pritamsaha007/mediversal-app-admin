@@ -10,12 +10,8 @@ import {
   CreateUpdateProcedurePayload,
 } from "../types/serviceTypes";
 
-const SIMRAN_API_BASE =
-  process.env.NEXT_PUBLIC_SIMRAN_API_BASE_URL ||
-  "https://simran-dev-api.mediversal247.in";
-
-const CLINIC_API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://dev-api.mediversal247.in";
+const SIMRAN_API_BASE = process.env.NEXT_PUBLIC_SIMRAN_API_BASE_URL!;
+const CLINIC_API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
 function buildQueryString(params: Record<string, any>): string {
   const query = new URLSearchParams();

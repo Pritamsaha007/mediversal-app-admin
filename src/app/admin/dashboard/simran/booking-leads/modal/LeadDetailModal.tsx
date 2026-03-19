@@ -24,6 +24,14 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
 }) => {
   if (!isOpen || !lead) return null;
 
+  const hasAdditional =
+    lead.procedureName ||
+    lead.serviceName ||
+    lead.packageName ||
+    lead.departmentName ||
+    lead.minCost !== null ||
+    lead.maxCost !== null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
@@ -38,6 +46,7 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
             <X className="w-5 h-5" />
           </button>
         </div>
+
         <div className="overflow-y-auto flex-1 px-8 pb-6">
           <div className="flex items-center gap-4 mb-5">
             <div className="w-14 h-14 rounded-full bg-[#E8F4F7] flex items-center justify-center flex-shrink-0">
@@ -51,17 +60,19 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
               </p>
               {lead.dob && (
                 <p className="text-[12px] text-[#899193]">
-                  DoB: &nbsp;{lead.dob}
+                  DoB:&nbsp;{lead.dob}
                 </p>
               )}
             </div>
           </div>
+
           <div className="flex items-center gap-2 mb-4">
             <span className="text-[13px] font-semibold text-[#161D1F]">
               Lead Status:
             </span>
             <LeadStatusBadge status={lead.leadStatus} />
           </div>
+
           <div className="mb-5">
             <span className="text-[13px] font-semibold text-[#161D1F]">
               Inquiry Type:&nbsp;
@@ -70,6 +81,7 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
               {lead.inquiryType}
             </span>
           </div>
+
           <p className="text-[13px] font-semibold text-[#161D1F] mb-2">
             Personal Details
           </p>
@@ -86,7 +98,7 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                   Email ID:&nbsp;
                 </span>
                 <span className="text-[12px] text-[#161D1F]">
-                  {lead.emailId}
+                  {lead.email || "—"}
                 </span>
               </div>
               <div>
@@ -97,8 +109,83 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                   {lead.dateRequested}
                 </span>
               </div>
+              {lead.visitType && (
+                <div>
+                  <span className="text-[12px] font-semibold text-[#161D1F]">
+                    Visit Type:&nbsp;
+                  </span>
+                  <span className="text-[12px] text-[#161D1F] capitalize">
+                    {lead.visitType.replace(/_/g, " ")}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
+
+          {hasAdditional && (
+            <>
+              <p className="text-[13px] font-semibold text-[#161D1F] mb-2">
+                Additional Details
+              </p>
+              <div className="bg-[#EBF6FA] rounded-xl p-5 mb-5">
+                <div className="grid grid-cols-2 gap-y-3">
+                  {lead.procedureName && (
+                    <div>
+                      <span className="text-[12px] font-semibold text-[#161D1F]">
+                        Procedure:&nbsp;
+                      </span>
+                      <span className="text-[12px] text-[#161D1F]">
+                        {lead.procedureName}
+                      </span>
+                    </div>
+                  )}
+                  {lead.serviceName && (
+                    <div>
+                      <span className="text-[12px] font-semibold text-[#161D1F]">
+                        Service:&nbsp;
+                      </span>
+                      <span className="text-[12px] text-[#161D1F]">
+                        {lead.serviceName}
+                      </span>
+                    </div>
+                  )}
+                  {lead.departmentName && (
+                    <div>
+                      <span className="text-[12px] font-semibold text-[#161D1F]">
+                        Department:&nbsp;
+                      </span>
+                      <span className="text-[12px] text-[#161D1F]">
+                        {lead.departmentName}
+                      </span>
+                    </div>
+                  )}
+                  {lead.packageName && (
+                    <div>
+                      <span className="text-[12px] font-semibold text-[#161D1F]">
+                        Package:&nbsp;
+                      </span>
+                      <span className="text-[12px] text-[#161D1F]">
+                        {lead.packageName}
+                      </span>
+                    </div>
+                  )}
+                  {(lead.minCost !== null || lead.maxCost !== null) && (
+                    <div>
+                      <span className="text-[12px] font-semibold text-[#161D1F]">
+                        Cost Range:&nbsp;
+                      </span>
+                      <span className="text-[12px] text-[#161D1F]">
+                        {lead.minCost !== null ? `₹${lead.minCost}` : "—"}
+                        {" – "}
+                        {lead.maxCost !== null ? `₹${lead.maxCost}` : "—"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
           {lead.doctorDetails && (
             <>
               <p className="text-[13px] font-semibold text-[#161D1F] mb-2">
@@ -106,14 +193,16 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
               </p>
               <div className="border border-[#E5E8E9] rounded-xl p-5">
                 <div className="grid grid-cols-2 gap-y-3">
-                  <div>
-                    <span className="text-[12px] font-semibold text-[#161D1F]">
-                      Requested Date &amp; Time:&nbsp;
-                    </span>
-                    <span className="text-[12px] text-[#161D1F]">
-                      {lead.doctorDetails.requestedDateTime}
-                    </span>
-                  </div>
+                  {lead.doctorDetails.requestedDateTime && (
+                    <div>
+                      <span className="text-[12px] font-semibold text-[#161D1F]">
+                        Slot Date &amp; Time:&nbsp;
+                      </span>
+                      <span className="text-[12px] text-[#161D1F]">
+                        {lead.doctorDetails.requestedDateTime}
+                      </span>
+                    </div>
+                  )}
                   <div>
                     <span className="text-[12px] font-semibold text-[#161D1F]">
                       Chosen Doctor:&nbsp;
@@ -122,27 +211,33 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                       {lead.doctorDetails.chosenDoctor}
                     </span>
                   </div>
-                  <div>
-                    <span className="text-[12px] font-semibold text-[#161D1F]">
-                      Doctor Qualifications:&nbsp;
-                    </span>
-                    <span className="text-[12px] text-[#161D1F]">
-                      {lead.doctorDetails.doctorQualifications}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[12px] font-semibold text-[#161D1F]">
-                      Consultation Fee:&nbsp;
-                    </span>
-                    <span className="text-[12px] text-[#161D1F]">
-                      ₹{lead.doctorDetails.consultationFee}
-                    </span>
-                  </div>
+                  {lead.doctorDetails.doctorQualifications && (
+                    <div className="col-span-2">
+                      <span className="text-[12px] font-semibold text-[#161D1F]">
+                        Qualifications / Certifications:&nbsp;
+                      </span>
+                      <span className="text-[12px] text-[#161D1F]">
+                        {lead.doctorDetails.doctorQualifications}
+                      </span>
+                    </div>
+                  )}
+                  {lead.doctorDetails.consultationFee !== null &&
+                    lead.doctorDetails.consultationFee !== undefined && (
+                      <div>
+                        <span className="text-[12px] font-semibold text-[#161D1F]">
+                          Consultation Fee:&nbsp;
+                        </span>
+                        <span className="text-[12px] text-[#161D1F]">
+                          ₹{lead.doctorDetails.consultationFee}
+                        </span>
+                      </div>
+                    )}
                 </div>
               </div>
             </>
           )}
         </div>
+
         <div className="px-8 py-4 border-t border-[#E5E8E9] flex justify-end flex-shrink-0">
           <button
             onClick={onClose}

@@ -95,6 +95,8 @@ const LeadTable: React.FC<LeadTableProps> = ({
                     className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded mt-1"
                   />
                 </td>
+
+                {/* Patient Details */}
                 <td className="px-6 py-4 align-top">
                   <p className="text-[12px] font-semibold text-[#161D1F]">
                     {lead.patientName}
@@ -110,20 +112,30 @@ const LeadTable: React.FC<LeadTableProps> = ({
                     </div>
                   )}
                 </td>
+
+                {/* Inquiry Type */}
                 <td className="px-6 py-4 align-top">
                   <span className="text-[12px] text-[#0088B1] font-medium">
                     {lead.inquiryType}
                   </span>
                 </td>
+
+                {/* Email */}
                 <td className="px-6 py-4 align-top text-[12px] text-[#161D1F]">
-                  {lead.emailId}
+                  {lead.email || "—"}
                 </td>
+
+                {/* Date Requested */}
                 <td className="px-6 py-4 align-top text-[12px] text-[#161D1F]">
                   {lead.dateRequested}
                 </td>
+
+                {/* Status */}
                 <td className="px-6 py-4 align-top">
                   <LeadStatusBadge status={lead.leadStatus} />
                 </td>
+
+                {/* Actions */}
                 <td className="px-6 py-4 align-top">
                   <div className="flex items-center gap-3 relative">
                     <button

@@ -1,8 +1,6 @@
 import axios from "axios";
 
-const SIMRAN_API_BASE =
-  process.env.NEXT_PUBLIC_SIMRAN_API_BASE_URL ||
-  "https://simran-dev-api.mediversal247.in";
+const SIMRAN_API_BASE = process.env.NEXT_PUBLIC_SIMRAN_API_BASE_URL!;
 
 export interface HeroSectionData {
   id: string;
@@ -69,10 +67,6 @@ export async function upsertHeroSection(
   return response.data;
 }
 
-// ---------------------------------------------------------------------------
-// FAQ
-// ---------------------------------------------------------------------------
-
 export interface FAQItem {
   id: string;
   question: string;
@@ -123,11 +117,6 @@ export async function upsertFAQ(
   });
   return response.data;
 }
-
-// ---------------------------------------------------------------------------
-// Patient Stories
-// ---------------------------------------------------------------------------
-
 export interface PatientStory {
   id: string;
   customer_name: string;
