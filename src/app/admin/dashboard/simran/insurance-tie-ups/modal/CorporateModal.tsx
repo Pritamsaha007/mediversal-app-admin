@@ -162,7 +162,7 @@ const CorporateModal: React.FC<CorporateModalProps> = ({
               </div>
             )}
             {uploadError && (
-              <p className="mt-1 text-[11px] text-red-500">{uploadError}</p>
+              <p className="mt-1 text-[12px] text-red-500">{uploadError}</p>
             )}
           </div>
 

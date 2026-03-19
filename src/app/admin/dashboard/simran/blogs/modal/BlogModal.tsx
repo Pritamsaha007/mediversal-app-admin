@@ -280,7 +280,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
           {step === "basic" ? (
             <div className="space-y-4 pb-4">
               <div>
-                <label className="block text-[11px] text-[#161D1F] mb-1">
+                <label className="block text-[12px] text-[#161D1F] mb-1">
                   * Cover Image URL
                 </label>
                 <div
@@ -290,7 +290,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
                   {imageUploading ? (
                     <div className="flex flex-col items-center gap-2">
                       <Loader2 className="w-7 h-7 animate-spin text-[#0088B1]" />
-                      <p className="text-[11px] text-[#0088B1] font-medium">
+                      <p className="text-[12px] text-[#0088B1] font-medium">
                         Uploading image…
                       </p>
                     </div>
@@ -304,14 +304,14 @@ const BlogModal: React.FC<BlogModalProps> = ({
                           (e.currentTarget.style.display = "none")
                         }
                       />
-                      <p className="text-[11px] text-[#161D1F] font-medium mt-1">
+                      <p className="text-[12px] text-[#161D1F] font-medium mt-1">
                         {imageFileName || "Cover image uploaded"}
                       </p>
                       <p className="text-[10px] text-[#899193]">
                         Click to change
                       </p>
                       {imageUploadError && (
-                        <p className="text-[11px] text-red-500">
+                        <p className="text-[12px] text-red-500">
                           {imageUploadError}
                         </p>
                       )}
@@ -319,7 +319,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
                   ) : (
                     <>
                       <ImagePlus className="w-7 h-7 text-[#899193]" />
-                      <p className="text-[11px] font-medium text-[#161D1F]">
+                      <p className="text-[12px] font-medium text-[#161D1F]">
                         * Upload Blog Cover Image
                       </p>
                       <p className="text-[10px] text-[#899193]">
@@ -330,7 +330,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
                       </p>
                       <button
                         type="button"
-                        className="mt-1 px-3 py-1 border border-gray-300 rounded text-[11px] text-[#161D1F] hover:bg-gray-50"
+                        className="mt-1 px-3 py-1 border border-gray-300 rounded text-[12px] text-[#161D1F] hover:bg-gray-50"
                       >
                         Select File
                       </button>
@@ -350,7 +350,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
                 </div>
               </div>
               <div>
-                <label className="block text-[11px] text-[#161D1F] mb-1">
+                <label className="block text-[12px] text-[#161D1F] mb-1">
                   * Title
                 </label>
                 <input
@@ -364,7 +364,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-[#161D1F] mb-1">
+                <label className="block text-[12px] text-[#161D1F] mb-1">
                   * Short Description
                 </label>
                 <textarea
@@ -379,7 +379,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
               </div>
               <div className="flex gap-3">
                 <div className="flex-1" ref={doctorRef}>
-                  <label className="block text-[11px] text-[#161D1F] mb-1">
+                  <label className="block text-[12px] text-[#161D1F] mb-1">
                     * Author (Doctor)
                   </label>
                   <div className="relative">
@@ -449,7 +449,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
                 </div>
 
                 <div className="flex-1">
-                  <label className="block text-[11px] text-[#161D1F] mb-1">
+                  <label className="block text-[12px] text-[#161D1F] mb-1">
                     * Read Time (min.)
                   </label>
                   <div className="relative">
@@ -472,7 +472,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-[11px] text-[#161D1F] mb-1">
+                <label className="block text-[12px] text-[#161D1F] mb-1">
                   * Publish Date
                 </label>
                 <input
@@ -513,7 +513,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
                     )}
                   </div>
                   <div className="mb-3">
-                    <label className="block text-[11px] text-[#161D1F] mb-1">
+                    <label className="block text-[12px] text-[#161D1F] mb-1">
                       * Blog Subtitle
                     </label>
                     <input
@@ -531,7 +531,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-[#161D1F] mb-1">
+                    <label className="block text-[12px] text-[#161D1F] mb-1">
                       * Content
                     </label>
                     <textarea

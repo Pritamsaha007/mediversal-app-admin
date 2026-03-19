@@ -142,7 +142,7 @@ const InsuranceModal: React.FC<InsuranceModalProps> = ({
         </div>
 
         <div className="mb-4">
-          <label className="block text-[11px] text-[#161D1F] mb-1.5">
+          <label className="block text-[12px] text-[#161D1F] mb-1.5">
             * Insurance Partner Name
           </label>
           <input
@@ -166,7 +166,7 @@ const InsuranceModal: React.FC<InsuranceModalProps> = ({
             </div>
           )}
           {uploadError && (
-            <p className="mt-1 text-[11px] text-red-500">{uploadError}</p>
+            <p className="mt-1 text-[12px] text-red-500">{uploadError}</p>
           )}
         </div>
 
