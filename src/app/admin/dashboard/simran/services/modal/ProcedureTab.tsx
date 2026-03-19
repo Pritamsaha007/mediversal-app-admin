@@ -86,7 +86,7 @@ const ProcedureTab: React.FC<ProcedureTabProps> = ({
         </div>
       ))}
 
-      <div className="border border-dashed border-[#0088B1] rounded-lg p-4 space-y-3 bg-[#FEFAF4]">
+      <div className="border border-dashed border-[#0088B1] rounded-lg p-4 space-y-3 bg-[#FFF2E5]">
         <p className="text-[12px] font-semibold text-[#0088B1]">
           Procedure {addedProcs.length + 1}
         </p>
@@ -103,7 +103,7 @@ const ProcedureTab: React.FC<ProcedureTabProps> = ({
         </p>
 
         <div>
-          <label className="block text-[11px] text-[#161D1F] mb-1">
+          <label className="block text-[12px] text-[#161D1F] mb-1">
             * Procedure Title
           </label>
           <input
@@ -116,7 +116,7 @@ const ProcedureTab: React.FC<ProcedureTabProps> = ({
         </div>
 
         <div>
-          <label className="block text-[11px] text-[#161D1F] mb-1">
+          <label className="block text-[12px] text-[#161D1F] mb-1">
             * Description
           </label>
           <textarea
@@ -134,7 +134,7 @@ const ProcedureTab: React.FC<ProcedureTabProps> = ({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-[11px] text-[#161D1F] mb-1">
+            <label className="block text-[12px] text-[#161D1F] mb-1">
               * Estimated Price ₹ (Low End)
             </label>
             <input
@@ -146,7 +146,7 @@ const ProcedureTab: React.FC<ProcedureTabProps> = ({
             />
           </div>
           <div>
-            <label className="block text-[11px] text-[#161D1F] mb-1">
+            <label className="block text-[12px] text-[#161D1F] mb-1">
               * Estimated Price ₹ (High End)
             </label>
             <input
@@ -162,7 +162,7 @@ const ProcedureTab: React.FC<ProcedureTabProps> = ({
         <div className="grid grid-cols-2 gap-3">
           {DURATION_FIELDS.map(({ label, key, placeholder }) => (
             <div key={key}>
-              <label className="block text-[11px] text-[#161D1F] mb-1">
+              <label className="block text-[12px] text-[#161D1F] mb-1">
                 * {label}
               </label>
               <input

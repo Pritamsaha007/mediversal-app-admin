@@ -153,7 +153,6 @@ const DepartmentsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-2">
       <div className="max-w-7xl mx-auto">
-        {/* Breadcrumb */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-1.5 flex-wrap">
             <button
@@ -164,7 +163,7 @@ const DepartmentsPage: React.FC = () => {
               <span>Our Services</span>
             </button>
             <ChevronRight className="w-3.5 h-3.5 text-[#C5C9CA]" />
-            <span className="text-[12px] font-medium text-[#161D1F] bg-[#E8F4F7] text-[#0088B1] px-2.5 py-0.5 rounded-full">
+            <span className="text-[12px] font-medium text-[#161D1F] bg-[#E8F4F7] px-2.5 py-0.5 rounded-full">
               {service.name}
             </span>
           </div>
@@ -182,10 +181,9 @@ const DepartmentsPage: React.FC = () => {
         </div>
 
         <div className="flex gap-4">
-          {/* Sidebar */}
-          <div className="w-72 flex-shrink-0 space-y-3">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="flex items-center gap-3 mb-3">
+          <div className="w-[350px] flex-shrink-0 space-y-3">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 relative">
+              <div className="flex items-center gap-3 mb-3 ">
                 <div className="w-10 h-10 rounded-lg bg-[#E8F4F7] flex items-center justify-center flex-shrink-0">
                   {service.image_url ? (
                     <img
@@ -195,15 +193,17 @@ const DepartmentsPage: React.FC = () => {
                       onError={(e) => (e.currentTarget.style.display = "none")}
                     />
                   ) : (
-                    <span className="text-[13px] font-bold text-[#0088B1]">
+                    <span className="text-[14px] font-bold text-[#0088B1]">
                       {initials}
                     </span>
                   )}
                 </div>
                 <div>
-                  <p className="text-[13px] font-semibold text-[#161D1F]">
+                  <p className="text-[20px] font-semibold text-[#161D1F]">
                     {service.name}
                   </p>
+                </div>
+                <div className="absolute right-4 top-4">
                   <StatusBadge
                     status={service.is_active ? "Active" : "Inactive"}
                   />
@@ -213,7 +213,7 @@ const DepartmentsPage: React.FC = () => {
                 <p className="text-[12px] font-semibold text-[#161D1F] mb-1">
                   Description:
                 </p>
-                <p className="text-[11px] text-[#899193]">
+                <p className="text-[12px] text-[#899193]">
                   {service.description}
                 </p>
               </div>
@@ -226,7 +226,7 @@ const DepartmentsPage: React.FC = () => {
                     {service.tags.map((tag, idx) => (
                       <div key={idx} className="flex items-center gap-2">
                         <CheckCircle2 className="w-3 h-3 text-[#34C759] flex-shrink-0" />
-                        <span className="text-[11px] text-[#161D1F]">
+                        <span className="text-[12px] text-[#161D1F]">
                           {tag}
                         </span>
                       </div>
@@ -237,12 +237,11 @@ const DepartmentsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Table */}
           <div className="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-[#0088B1]" />
-                <h3 className="text-[15px] font-medium text-[#161D1F]">
+                <h3 className="text-[16px] font-medium text-[#161D1F]">
                   Sub-Departments
                 </h3>
               </div>
@@ -255,19 +254,19 @@ const DepartmentsPage: React.FC = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-4 py-3 text-left text-[11px] font-medium text-[#899193]">
+                    <th className="px-4 py-3 text-left text-[12px] font-medium text-[#899193]">
                       Title
                     </th>
-                    <th className="px-4 py-3 text-left text-[11px] font-medium text-[#899193]">
+                    <th className="px-4 py-3 text-left text-[12px] font-medium text-[#899193]">
                       Description
                     </th>
-                    <th className="px-4 py-3 text-left text-[11px] font-medium text-[#899193]">
+                    <th className="px-4 py-3 text-left text-[12px] font-medium text-[#899193]">
                       Date modified
                     </th>
-                    <th className="px-4 py-3 text-left text-[11px] font-medium text-[#899193]">
+                    <th className="px-4 py-3 text-left text-[12px] font-medium text-[#899193]">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-right text-[11px] font-medium text-[#899193]">
+                    <th className="px-4 py-3 text-right text-[12px] font-medium text-[#899193]">
                       Actions
                     </th>
                   </tr>
@@ -308,7 +307,7 @@ const DepartmentsPage: React.FC = () => {
                           className="px-4 py-4 max-w-xs"
                           onClick={() => navigateToProcedures(dept)}
                         >
-                          <p className="text-[11px] text-[#899193] line-clamp-2">
+                          <p className="text-[12px] text-[#899193] line-clamp-2">
                             {dept.description}
                           </p>
                         </td>
@@ -316,7 +315,7 @@ const DepartmentsPage: React.FC = () => {
                           className="px-4 py-4"
                           onClick={() => navigateToProcedures(dept)}
                         >
-                          <span className="text-[11px] text-[#899193]">
+                          <span className="text-[12px] text-[#899193]">
                             {formatDate(dept.updated_date)}
                           </span>
                         </td>

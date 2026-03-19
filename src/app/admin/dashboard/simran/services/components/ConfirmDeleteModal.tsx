@@ -34,7 +34,7 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
             <X className="w-4 h-4" />
           </button>
         </div>
-        <h3 className="text-[15px] font-semibold text-[#161D1F] mb-1">
+        <h3 className="text-[16px] font-semibold text-[#161D1F] mb-1">
           {title}
         </h3>
         <p className="text-[12px] text-[#899193] mb-6">{description}</p>

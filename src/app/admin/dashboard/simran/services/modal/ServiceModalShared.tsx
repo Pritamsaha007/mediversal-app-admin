@@ -2,7 +2,6 @@
 import React, { useRef, useState } from "react";
 import { X, ImagePlus, Loader2 } from "lucide-react";
 
-// ─── Checkbox ─────────────────────────────────────────────────────────────────
 export const Checkbox: React.FC<{ checked: boolean }> = ({ checked }) => (
   <div
     className={`w-4 h-4 rounded flex items-center justify-center border flex-shrink-0 ${
@@ -27,7 +26,6 @@ export const Checkbox: React.FC<{ checked: boolean }> = ({ checked }) => (
   </div>
 );
 
-// ─── TagInputRow ──────────────────────────────────────────────────────────────
 export const TagInputRow: React.FC<{
   label: string;
   items: string[];
@@ -38,7 +36,7 @@ export const TagInputRow: React.FC<{
   const [val, setVal] = useState("");
   return (
     <div>
-      <label className="block text-[11px] text-[#161D1F] mb-1">{label}</label>
+      <label className="block text-[12px] text-[#161D1F] mb-1">{label}</label>
       <div className="flex gap-2 mb-2">
         <input
           type="text"
@@ -72,7 +70,7 @@ export const TagInputRow: React.FC<{
           {items.map((item, idx) => (
             <span
               key={idx}
-              className="flex items-center gap-1 px-2.5 py-1 bg-[#E8F4F7] text-[#0088B1] rounded-full text-[11px]"
+              className="flex items-center gap-1 px-2.5 py-1 bg-[#E8F4F7] text-[#0088B1] rounded-full text-[12px]"
             >
               {item}
               <button
@@ -90,7 +88,6 @@ export const TagInputRow: React.FC<{
   );
 };
 
-// ─── SymptomsInlineInput ──────────────────────────────────────────────────────
 export const SymptomsInlineInput: React.FC<{
   label?: string;
   items: string[];
@@ -102,7 +99,7 @@ export const SymptomsInlineInput: React.FC<{
   return (
     <div>
       {label && (
-        <label className="block text-[11px] text-[#161D1F] mb-1">{label}</label>
+        <label className="block text-[12px] text-[#161D1F] mb-1">{label}</label>
       )}
       <div className="relative border border-[#E5E8E9] rounded-lg bg-white min-h-[80px] p-3">
         <textarea
@@ -136,7 +133,7 @@ export const SymptomsInlineInput: React.FC<{
             {items.map((item, idx) => (
               <span
                 key={idx}
-                className="flex items-center gap-1 px-2.5 py-0.5 bg-[#E8F4F7] text-[#0088B1] rounded-full text-[11px]"
+                className="flex items-center gap-1 px-2.5 py-0.5 bg-[#E8F4F7] text-[#0088B1] rounded-full text-[12px]"
               >
                 {item}
                 <button
@@ -164,7 +161,7 @@ export const ImageUploadField: React.FC<{
   const fileRef = useRef<HTMLInputElement>(null);
   return (
     <div>
-      <label className="block text-[11px] text-[#161D1F] mb-1">* {label}</label>
+      <label className="block text-[12px] text-[#161D1F] mb-1">* {label}</label>
       <div
         className="border-2 border-dashed border-[#E5E8E9] rounded-lg p-5 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-[#0088B1] transition-colors"
         onClick={() => fileRef.current?.click()}
@@ -184,7 +181,7 @@ export const ImageUploadField: React.FC<{
         ) : (
           <>
             <ImagePlus className="w-7 h-7 text-[#899193]" />
-            <p className="text-[11px] font-medium text-[#161D1F]">
+            <p className="text-[12px] font-medium text-[#161D1F]">
               Upload Image
             </p>
             <p className="text-[10px] text-[#899193]">
@@ -195,7 +192,7 @@ export const ImageUploadField: React.FC<{
             </p>
             <button
               type="button"
-              className="mt-1 px-3 py-1 border border-gray-300 rounded text-[11px] text-[#161D1F] hover:bg-gray-50"
+              className="mt-1 px-3 py-1 border border-gray-300 rounded text-[12px] text-[#161D1F] hover:bg-gray-50"
             >
               Select File
             </button>

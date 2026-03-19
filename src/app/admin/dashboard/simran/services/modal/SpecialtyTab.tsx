@@ -29,7 +29,7 @@ const SpecialtyTab: React.FC<SpecialtyTabProps> = ({
       />
 
       <div>
-        <label className="block text-[11px] text-[#161D1F] mb-1">
+        <label className="block text-[12px] text-[#161D1F] mb-1">
           * Specialty Title
         </label>
         <input
@@ -42,7 +42,7 @@ const SpecialtyTab: React.FC<SpecialtyTabProps> = ({
       </div>
 
       <div>
-        <label className="block text-[11px] text-[#161D1F] mb-1">
+        <label className="block text-[12px] text-[#161D1F] mb-1">
           * Description
         </label>
         <textarea

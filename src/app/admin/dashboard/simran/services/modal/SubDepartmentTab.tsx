@@ -34,7 +34,6 @@ const SubDepartmentTab: React.FC<SubDepartmentTabProps> = ({
 
   return (
     <div className="space-y-4 pb-4">
-      {/* Specialty name chip */}
       {specialtyName && (
         <div>
           <p className="text-[10px] text-[#899193] mb-1">* Speciality</p>
@@ -44,7 +43,6 @@ const SubDepartmentTab: React.FC<SubDepartmentTabProps> = ({
         </div>
       )}
 
-      {/* Already-saved departments */}
       {addedDepts.map((dept, idx) => (
         <div
           key={idx}
@@ -64,14 +62,13 @@ const SubDepartmentTab: React.FC<SubDepartmentTabProps> = ({
         </div>
       ))}
 
-      {/* Current draft card */}
-      <div className="border border-dashed border-[#0088B1] rounded-lg p-4 space-y-3 bg-[#FEFAF4]">
+      <div className="border border-dashed border-[#0088B1] rounded-lg p-4 space-y-3 bg-[#FFF2E5]">
         <p className="text-[12px] font-semibold text-[#0088B1]">
           Sub Department {addedDepts.length + 1}
         </p>
 
         <div>
-          <label className="block text-[11px] text-[#161D1F] mb-1">
+          <label className="block text-[12px] text-[#161D1F] mb-1">
             * Title
           </label>
           <input
@@ -84,7 +81,7 @@ const SubDepartmentTab: React.FC<SubDepartmentTabProps> = ({
         </div>
 
         <div>
-          <label className="block text-[11px] text-[#161D1F] mb-1">
+          <label className="block text-[12px] text-[#161D1F] mb-1">
             * Description
           </label>
           <textarea
@@ -97,7 +94,7 @@ const SubDepartmentTab: React.FC<SubDepartmentTabProps> = ({
         </div>
 
         <div>
-          <label className="block text-[11px] text-[#161D1F] mb-1">
+          <label className="block text-[12px] text-[#161D1F] mb-1">
             * Symptoms
           </label>
           <SymptomsInlineInput
@@ -129,7 +126,6 @@ const SubDepartmentTab: React.FC<SubDepartmentTabProps> = ({
           </div>
         </div>
 
-        {/* Add button inside card */}
         <div className="flex justify-end">
           <button
             type="button"
@@ -143,7 +139,6 @@ const SubDepartmentTab: React.FC<SubDepartmentTabProps> = ({
         </div>
       </div>
 
-      {/* Add a new sub-department button (add mode only) */}
       {mode === "add" && (
         <button
           type="button"

@@ -194,19 +194,20 @@ const ProceduresPage: React.FC = () => {
         </div>
 
         <div className="flex gap-4">
-          {/* Sidebar */}
-          <div className="w-72 flex-shrink-0">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="w-[350px] flex-shrink-0">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 relative">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-lg bg-[#E8F4F7] flex items-center justify-center flex-shrink-0">
-                  <span className="text-[13px] font-bold text-[#0088B1]">
+                  <span className="text-[14px] font-bold text-[#0088B1]">
                     {deptInitials}
                   </span>
                 </div>
                 <div>
-                  <p className="text-[13px] font-semibold text-[#161D1F]">
+                  <p className="text-[14px] font-semibold text-[#161D1F]">
                     {department.name}
                   </p>
+                </div>
+                <div className="absolute top-3 right-3">
                   <StatusBadge
                     status={department.is_active ? "Active" : "Inactive"}
                   />
@@ -216,7 +217,7 @@ const ProceduresPage: React.FC = () => {
                 <p className="text-[10px] font-semibold text-[#161D1F] mb-1">
                   Description:
                 </p>
-                <p className="text-[11px] text-[#899193]">
+                <p className="text-[12px] text-[#899193]">
                   {department.description}
                 </p>
               </div>
@@ -229,7 +230,7 @@ const ProceduresPage: React.FC = () => {
                     {department.symptoms.map((s, idx) => (
                       <li key={idx} className="flex items-start gap-1.5">
                         <span className="mt-1 w-1 h-1 rounded-full bg-[#899193] flex-shrink-0" />
-                        <span className="text-[11px] text-[#161D1F]">{s}</span>
+                        <span className="text-[12px] text-[#161D1F]">{s}</span>
                       </li>
                     ))}
                   </ul>
@@ -238,13 +239,12 @@ const ProceduresPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Table */}
           <div className="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Stethoscope className="w-4 h-4 text-[#0088B1]" />
-                  <h3 className="text-[15px] font-medium text-[#161D1F]">
+                  <h3 className="text-[16px] font-medium text-[#161D1F]">
                     Procedures
                   </h3>
                 </div>
@@ -258,7 +258,7 @@ const ProceduresPage: React.FC = () => {
                       setSearchTerm(e.target.value);
                       setCurrentPage(0);
                     }}
-                    className="w-full pl-8 pr-3 py-1.5 border border-[#E5E8E9] rounded-lg text-[11px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
+                    className="w-full pl-8 pr-3 py-1.5 border border-[#E5E8E9] rounded-lg text-[12px] text-[#161D1F] placeholder-[#B0B6B8] focus:outline-none focus:border-[#0088B1] focus:ring-1 focus:ring-[#0088B1]"
                   />
                 </div>
               </div>
@@ -271,19 +271,19 @@ const ProceduresPage: React.FC = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-4 py-3 text-left text-[11px] font-medium text-[#899193]">
+                    <th className="px-4 py-3 text-left text-[12px] font-medium text-[#899193]">
                       Title
                     </th>
-                    <th className="px-4 py-3 text-left text-[11px] font-medium text-[#899193]">
+                    <th className="px-4 py-3 text-left text-[12px] font-medium text-[#899193]">
                       Description
                     </th>
-                    <th className="px-4 py-3 text-left text-[11px] font-medium text-[#899193]">
+                    <th className="px-4 py-3 text-left text-[12px] font-medium text-[#899193]">
                       Date modified
                     </th>
-                    <th className="px-4 py-3 text-left text-[11px] font-medium text-[#899193]">
+                    <th className="px-4 py-3 text-left text-[12px] font-medium text-[#899193]">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-right text-[11px] font-medium text-[#899193]">
+                    <th className="px-4 py-3 text-right text-[12px] font-medium text-[#899193]">
                       Actions
                     </th>
                   </tr>
@@ -314,38 +314,18 @@ const ProceduresPage: React.FC = () => {
                       >
                         <td className="px-4 py-4">
                           <div className="flex items-center gap-2">
-                            {proc.image_url ? (
-                              <img
-                                src={proc.image_url}
-                                alt={proc.name}
-                                className="w-7 h-7 rounded-md object-cover flex-shrink-0 bg-gray-100"
-                                onError={(e) =>
-                                  (e.currentTarget.style.display = "none")
-                                }
-                              />
-                            ) : (
-                              <div className="w-7 h-7 rounded-md bg-[#E8F4F7] flex items-center justify-center flex-shrink-0">
-                                <Stethoscope className="w-3.5 h-3.5 text-[#0088B1]" />
-                              </div>
-                            )}
                             <span className="text-[12px] font-medium text-[#161D1F]">
                               {proc.name}
                             </span>
                           </div>
-                          {(proc.min_cost || proc.max_cost) && (
-                            <p className="text-[10px] text-[#0088B1] mt-0.5 ml-9">
-                              ₹{proc.min_cost?.toLocaleString()} – ₹
-                              {proc.max_cost?.toLocaleString()}
-                            </p>
-                          )}
                         </td>
                         <td className="px-4 py-4 max-w-xs">
-                          <p className="text-[11px] text-[#899193] line-clamp-2">
+                          <p className="text-[12px] text-[#899193] line-clamp-2">
                             {proc.description}
                           </p>
                         </td>
                         <td className="px-4 py-4">
-                          <span className="text-[11px] text-[#899193]">
+                          <span className="text-[12px] text-[#899193]">
                             {formatDate(proc.updated_date)}
                           </span>
                         </td>

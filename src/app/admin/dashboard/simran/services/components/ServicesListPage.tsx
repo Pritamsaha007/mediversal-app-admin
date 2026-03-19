@@ -9,6 +9,7 @@ import {
   Trash2,
   ShieldCheck,
   Layers,
+  Edit,
 } from "lucide-react";
 import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
@@ -144,9 +145,9 @@ const ServicesListPage: React.FC = () => {
             <h1 className="text-[20px] font-semibold text-[#161D1F]">
               Our Services
             </h1>
-            <p className="text-[11px] text-[#899193] mt-0.5">
+            {/* <p className="text-[12px] text-[#899193] mt-0.5">
               Manage all healthcare services, sub-departments and procedures
-            </p>
+            </p> */}
           </div>
           <button
             onClick={() => {
@@ -191,19 +192,19 @@ const ServicesListPage: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="px-4 py-3 text-left text-[11px] font-medium text-[#899193]">
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#899193]">
                     Title
                   </th>
-                  <th className="px-4 py-3 text-left text-[11px] font-medium text-[#899193]">
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#899193]">
                     Description
                   </th>
-                  <th className="px-4 py-3 text-left text-[11px] font-medium text-[#899193]">
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#899193]">
                     Date modified
                   </th>
-                  <th className="px-4 py-3 text-left text-[11px] font-medium text-[#899193]">
+                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#899193]">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-right text-[11px] font-medium text-[#899193]">
+                  <th className="px-4 py-3 text-right text-[12px] font-medium text-[#899193]">
                     Actions
                   </th>
                 </tr>
@@ -260,12 +261,12 @@ const ServicesListPage: React.FC = () => {
                         className="px-4 py-4 max-w-xs cursor-pointer"
                         onClick={() => navigateToDepartments(service)}
                       >
-                        <p className="text-[11px] text-[#899193] line-clamp-2">
+                        <p className="text-[12px] text-[#899193] line-clamp-2">
                           {service.description}
                         </p>
                       </td>
                       <td className="px-4 py-4">
-                        <span className="text-[11px] text-[#899193]">
+                        <span className="text-[12px] text-[#899193]">
                           {formatDate(service.updated_date)}
                         </span>
                       </td>
@@ -283,7 +284,7 @@ const ServicesListPage: React.FC = () => {
                             }}
                             className="p-1.5 text-[#899193] hover:text-[#0088B1] hover:bg-[#E8F4F7] rounded-lg transition-colors"
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
+                            <Edit className="w-3.5 h-3.5" />
                           </button>
                           <div
                             className="relative"
