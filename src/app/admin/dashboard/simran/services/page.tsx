@@ -1,9 +1,20 @@
-export default function Services() {
-  return (
-    <div className=" flex items-center justify-center bg-gray-50">
-      <h1 className="text-4xl md:text-6xl font-bold text-gray-800">
-        Available Soon
-      </h1>
-    </div>
-  );
-}
+"use client";
+import React from "react";
+import { useServiceStore } from "./store/serviceStore";
+import ServicesListPage from "./components/ServicesListPage";
+import DepartmentsPage from "./components/DepartmentsPage";
+import ProceduresPage from "./components/ProceduresPage";
+
+const OurServicesPage: React.FC = () => {
+  const { viewLevel, selectedService, selectedDepartment } = useServiceStore();
+
+  if (viewLevel === "procedures" && selectedService && selectedDepartment) {
+    return <ProceduresPage />;
+  }
+  if (viewLevel === "departments" && selectedService) {
+    return <DepartmentsPage />;
+  }
+  return <ServicesListPage />;
+};
+
+export default OurServicesPage;
