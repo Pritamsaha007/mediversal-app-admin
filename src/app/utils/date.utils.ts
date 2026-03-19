@@ -16,7 +16,7 @@ export const getCurrentDateTime = () => {
 export const formatDateTime = (dateTime?: string) => {
   if (!dateTime) return "";
 
-  const date = new Date(dateTime.replace(" ", "T")); // important fix
+  const date = new Date(dateTime.replace(" ", "T"));
 
   const day = date.toLocaleDateString("en-IN", {
     day: "2-digit",
