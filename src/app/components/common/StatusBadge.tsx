@@ -42,6 +42,12 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
     available: "bg-[#34C759] text-white",
     inactive: "bg-[#F2994A] text-white",
     featured: "text-[#F2994A] border border-[#F2994A]",
+
+    new: "bg-[#0088B1] text-white",
+    "in-progress": "bg-[#F5A623] text-white",
+    "follow up": "bg-[#F97316] text-white",
+    converted: "bg-[#22C55E] text-white",
+    closed: "bg-[#EF4444] text-white",
   };
 
   const fallback = "bg-gray-100 text-gray-600";

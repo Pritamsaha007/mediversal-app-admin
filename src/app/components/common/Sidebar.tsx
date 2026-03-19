@@ -12,6 +12,7 @@ import {
   Bike,
   BookUser,
   BellRing,
+  Building,
 } from "lucide-react";
 import MainMediversalLogo from "../../../../public/Mediversal 247 Logo.svg";
 import Image from "next/image";
@@ -171,6 +172,32 @@ const Sidebar = () => {
         },
       ],
     },
+    {
+      name: "Simran",
+      icon: <Building size={18} />,
+      subItems: [
+        {
+          name: "Home",
+          link: "/admin/dashboard/simran",
+        },
+        {
+          name: "Services",
+          link: "/admin/dashboard/simran/services",
+        },
+        {
+          name: "Insurance & Tie-Ups",
+          link: "/admin/dashboard/simran/insurance-tie-ups",
+        },
+        {
+          name: "Blogs",
+          link: "/admin/dashboard/simran/blogs",
+        },
+        {
+          name: "Booking Leads",
+          link: "/admin/dashboard/simran/booking-leads",
+        },
+      ],
+    },
   ];
 
   useEffect(() => {
@@ -178,7 +205,11 @@ const Sidebar = () => {
 
     menuItems.forEach((menu) => {
       if (menu.subItems && menu.subItems.length > 0) {
-        const matchingSubItem = menu.subItems.find((sub) =>
+        const sortedSubItems = [...menu.subItems].sort(
+          (a, b) => b.link.length - a.link.length,
+        );
+
+        const matchingSubItem = sortedSubItems.find((sub) =>
           pathname.startsWith(sub.link),
         );
 
