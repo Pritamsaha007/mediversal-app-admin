@@ -30,12 +30,15 @@ interface ServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode: ServiceModalMode;
-  initialTab?: ServiceModalTab;
+  /** Determines which form to show — always fixed, no wizard navigation */
+  initialTab: ServiceModalTab;
   initialService?: ServiceAPI;
   initialDepartment?: DepartmentAPI;
   initialProcedure?: ProcedureAPI;
   contextServiceId?: string;
   contextDepartmentId?: string;
+  contextServiceName?: string;
+  contextDepartmentName?: string;
   onSuccess: () => void;
 }
 
@@ -47,12 +50,14 @@ const defaultServiceForm = (): ServiceFormData => ({
   is_active: true,
   is_featured: false,
 });
+
 const defaultDepartmentForm = (): DepartmentFormData => ({
   name: "",
   description: "",
   symptoms: [],
   is_active: true,
 });
+
 const defaultProcedureForm = (): ProcedureFormData => ({
   name: "",
   image_url: "",
@@ -69,32 +74,26 @@ const defaultProcedureForm = (): ProcedureFormData => ({
   is_active: true,
 });
 
-const TABS: { id: ServiceModalTab; label: string }[] = [
-  { id: "specialty", label: "Specialty" },
-  { id: "sub-department", label: "Sub-Departments" },
-  { id: "procedure", label: "Procedures" },
-];
-
 const ServiceModal: React.FC<ServiceModalProps> = ({
   isOpen,
   onClose,
   mode,
-  initialTab = "specialty",
+  initialTab,
   initialService,
   initialDepartment,
   initialProcedure,
   contextServiceId,
   contextDepartmentId,
+  contextServiceName,
+  contextDepartmentName,
   onSuccess,
 }) => {
   const { token } = useAdminStore();
-  const [activeTab, setActiveTab] = useState<ServiceModalTab>(initialTab);
   const [loading, setLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
 
   const [serviceForm, setServiceForm] =
     useState<ServiceFormData>(defaultServiceForm());
-  const [savedServiceName, setSavedServiceName] = useState("");
   const serviceIdRef = useRef<string>(contextServiceId || "");
   const setServiceId = (id: string) => {
     serviceIdRef.current = id;
@@ -107,29 +106,19 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
   const [deptForm, setDeptForm] = useState<DepartmentFormData>(
     defaultDepartmentForm(),
   );
-  const [addedDepts, setAddedDepts] = useState<
-    Array<DepartmentFormData & { _saved?: boolean }>
-  >([]);
-
   const [procForm, setProcForm] = useState<ProcedureFormData>(
     defaultProcedureForm(),
   );
-  const [addedProcs, setAddedProcs] = useState<
-    Array<ProcedureFormData & { _saved?: boolean }>
-  >([]);
 
+  // Populate forms when modal opens
   useEffect(() => {
     if (!isOpen) return;
-    setActiveTab(initialTab);
-    setAddedDepts([]);
-    setAddedProcs([]);
+
     if (contextServiceId) setServiceId(contextServiceId);
     else setServiceId("");
-    setSavedServiceName("");
 
     if (mode === "edit") {
       if (initialService) {
-        setSavedServiceName(initialService.name);
         setServiceId(initialService.id);
         setServiceForm({
           name: initialService.name,
@@ -179,12 +168,50 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
     initialService,
     initialDepartment,
     initialProcedure,
-    initialTab,
     contextServiceId,
   ]);
 
   if (!isOpen) return null;
 
+  // ─── Modal title ──────────────────────────────────────────────────────────
+  const getTitle = () => {
+    if (mode === "edit") {
+      if (initialTab === "specialty")
+        return `Edit Specialty: ${initialService?.name || ""}`;
+      if (initialTab === "sub-department")
+        return `Edit Sub-Department: ${initialDepartment?.name || ""}`;
+      if (initialTab === "procedure")
+        return `Edit Procedure: ${initialProcedure?.name || ""}`;
+    }
+    if (initialTab === "specialty") return "Add New Specialty";
+    if (initialTab === "sub-department") {
+      const parent = contextServiceName;
+      return parent
+        ? `Add Sub-Department under ${parent}`
+        : "Add Sub-Department";
+    }
+    if (initialTab === "procedure") {
+      const parent = contextDepartmentName;
+      return parent ? `Add Procedure under ${parent}` : "Add Procedure";
+    }
+    return "";
+  };
+
+  const getSubtitle = () => {
+    if (mode === "add") {
+      if (initialTab === "sub-department" && contextServiceName) {
+        return { label: "Specialty", value: contextServiceName };
+      }
+      if (initialTab === "procedure" && contextDepartmentName) {
+        return { label: "Sub-Department", value: contextDepartmentName };
+      }
+    }
+    return null;
+  };
+
+  const subtitle = getSubtitle();
+
+  // ─── Image upload ─────────────────────────────────────────────────────────
   const handleImageUpload = async (
     file: File,
     target: "service" | "procedure",
@@ -205,6 +232,7 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
     }
   };
 
+  // ─── Submit: Specialty ────────────────────────────────────────────────────
   const handleSubmitService = async () => {
     if (!token) return;
     if (!serviceForm.name.trim()) {
@@ -223,47 +251,30 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
         is_featured: serviceForm.is_featured,
         is_deleted: false,
       };
-      const res: any = await createOrUpdateService(payload, token);
-      const newId =
-        res?.id ||
-        res?.data?.id ||
-        res?.service?.id ||
-        res?.result?.id ||
-        initialService?.id ||
-        "";
-      setServiceId(newId);
-      setSavedServiceName(serviceForm.name);
-      toast.success(
-        mode === "add"
-          ? "Specialty added! Now add sub-departments."
-          : "Service updated",
-      );
-      if (mode === "add") setActiveTab("sub-department");
-      else {
-        onSuccess();
-        onClose();
-      }
+      await createOrUpdateService(payload, token);
+      toast.success(mode === "edit" ? "Specialty updated" : "Specialty added!");
+      onSuccess();
+      onClose();
     } catch (err: any) {
-      toast.error(err.message || "Failed to save service");
+      toast.error(err.message || "Failed to save specialty");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddDepartment = async () => {
+  const handleSubmitDepartment = async () => {
     if (!token) return;
-    // Read from ref — always the latest, no React batching delay
     const serviceId =
       mode === "edit"
         ? initialDepartment?.simran_healthcare_service_id ||
           serviceIdRef.current
         : serviceIdRef.current;
     if (!serviceId) {
-      toast.error("Please complete the Specialty step first");
+      toast.error("Service context missing");
       return;
     }
     if (!deptForm.name.trim()) {
-      toast.error("Please provide a department title");
+      toast.error("Please provide a sub-department title");
       return;
     }
     setLoading(true);
@@ -281,28 +292,19 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
       };
       await createOrUpdateDepartment(payload, token);
       toast.success(
-        mode === "edit" ? "Department updated" : "Sub-Department added!",
+        mode === "edit" ? "Sub-department updated" : "Sub-department added!",
       );
-      if (mode === "edit") {
-        onSuccess();
-        onClose();
-      } else {
-        setAddedDepts((prev) => [...prev, { ...deptForm, _saved: true }]);
-        setDeptForm(defaultDepartmentForm());
-      }
+      onSuccess();
+      onClose();
     } catch (err: any) {
-      toast.error(err.message || "Failed to save department");
+      toast.error(err.message || "Failed to save sub-department");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeptNext = async () => {
-    if (deptForm.name.trim()) await handleAddDepartment();
-    setActiveTab("procedure");
-  };
-
-  const handleAddProcedure = async () => {
+  // ─── Submit: Procedure ────────────────────────────────────────────────────
+  const handleSubmitProcedure = async () => {
     if (!token) return;
     const serviceId =
       mode === "edit"
@@ -315,7 +317,7 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
           ""
         : contextDepartmentId || "";
     if (!serviceId) {
-      toast.error("Please complete the Specialty step first");
+      toast.error("Service context missing");
       return;
     }
     if (!procForm.name.trim()) {
@@ -347,13 +349,8 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
       };
       await createOrUpdateProcedure(payload, token);
       toast.success(mode === "edit" ? "Procedure updated" : "Procedure added!");
-      if (mode === "edit") {
-        onSuccess();
-        onClose();
-      } else {
-        setAddedProcs((prev) => [...prev, { ...procForm, _saved: true }]);
-        setProcForm(defaultProcedureForm());
-      }
+      onSuccess();
+      onClose();
     } catch (err: any) {
       toast.error(err.message || "Failed to save procedure");
     } finally {
@@ -361,15 +358,10 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
     }
   };
 
-  const handleDone = async () => {
-    if (procForm.name.trim()) await handleAddProcedure();
-    onSuccess();
-    onClose();
-  };
-
+  // ─── Reset ────────────────────────────────────────────────────────────────
   const handleReset = () => {
     if (mode === "edit") {
-      if (activeTab === "specialty" && initialService) {
+      if (initialTab === "specialty" && initialService) {
         setServiceForm({
           name: initialService.name,
           image_url: initialService.image_url,
@@ -378,14 +370,14 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
           is_active: initialService.is_active,
           is_featured: initialService.is_featured,
         });
-      } else if (activeTab === "sub-department" && initialDepartment) {
+      } else if (initialTab === "sub-department" && initialDepartment) {
         setDeptForm({
           name: initialDepartment.name,
           description: initialDepartment.description,
           symptoms: initialDepartment.symptoms || [],
           is_active: initialDepartment.is_active,
         });
-      } else if (activeTab === "procedure" && initialProcedure) {
+      } else if (initialTab === "procedure" && initialProcedure) {
         setProcForm({
           name: initialProcedure.name,
           image_url: initialProcedure.image_url,
@@ -412,53 +404,52 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
 
   const primaryLabel =
     mode === "edit"
-      ? activeTab === "specialty"
+      ? initialTab === "specialty"
         ? "Update Specialty"
-        : activeTab === "sub-department"
+        : initialTab === "sub-department"
           ? "Update Sub-Department"
           : "Update Procedure"
-      : activeTab === "specialty"
+      : initialTab === "specialty"
         ? "Add Specialty"
-        : activeTab === "sub-department"
-          ? "Next"
-          : "Done";
+        : initialTab === "sub-department"
+          ? "Add Sub-Department"
+          : "Add Procedure";
 
-  const handleFooterAction = () => {
-    if (activeTab === "specialty") handleSubmitService();
-    else if (activeTab === "sub-department")
-      mode === "edit" ? handleAddDepartment() : handleDeptNext();
-    else mode === "edit" ? handleAddProcedure() : handleDone();
+  const handlePrimary = () => {
+    if (initialTab === "specialty") handleSubmitService();
+    else if (initialTab === "sub-department") handleSubmitDepartment();
+    else handleSubmitProcedure();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4 flex flex-col max-h-[92vh]">
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 flex-shrink-0">
-          <h2 className="text-[16px] font-semibold text-[#161D1F]">
-            {mode === "edit" ? "Edit" : "Add New Service"}
-          </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col max-h-[92vh]">
+        {/* Header — no tabs ever */}
+        <div className="flex items-start justify-between px-6 pt-5 pb-4 flex-shrink-0 border-b border-[#E5E8E9]">
+          <div>
+            <h2 className="text-[15px] font-semibold text-[#161D1F]">
+              {getTitle()}
+            </h2>
+            {subtitle && (
+              <p className="text-[11px] text-[#899193] mt-0.5">
+                {subtitle.label}:{" "}
+                <span className="font-medium text-[#0088B1]">
+                  {subtitle.value}
+                </span>
+              </p>
+            )}
+          </div>
           <button
             onClick={onClose}
-            className="text-[#899193] hover:text-[#161D1F]"
+            className="p-1.5 text-[#899193] hover:text-[#161D1F] hover:bg-gray-100 rounded-lg transition-colors mt-0.5"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="flex mx-6 mb-4 rounded-lg overflow-hidden border border-[#E5E8E9] flex-shrink-0">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              className={`flex-1 py-2 text-[12px] font-medium transition-colors ${activeTab === tab.id ? "bg-[#0088B1] text-white" : "bg-white text-[#899193] hover:bg-gray-50"}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="overflow-y-auto flex-1 px-6">
-          {activeTab === "specialty" && (
+        {/* Form body — only the relevant form, no tab strip */}
+        <div className="overflow-y-auto flex-1 px-6 pt-4">
+          {initialTab === "specialty" && (
             <SpecialtyTab
               form={serviceForm}
               onChange={setServiceForm}
@@ -466,43 +457,51 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
               onFileSelect={(file) => handleImageUpload(file, "service")}
             />
           )}
-          {activeTab === "sub-department" && (
+          {initialTab === "sub-department" && (
             <SubDepartmentTab
-              specialtyName={savedServiceName || serviceForm.name}
+              specialtyName={contextServiceName || ""}
               form={deptForm}
               onChange={setDeptForm}
-              addedDepts={addedDepts}
+              addedDepts={[]}
               mode={mode}
               loading={loading}
-              onAdd={handleAddDepartment}
-              onAddNew={handleAddDepartment}
+              onAdd={handleSubmitDepartment}
+              onAddNew={() => {}}
             />
           )}
-          {activeTab === "procedure" && (
+          {initialTab === "procedure" && (
             <ProcedureTab
               form={procForm}
               onChange={setProcForm}
-              addedProcs={addedProcs}
+              addedProcs={[]}
               mode={mode}
               loading={loading}
               imageUploading={imageUploading}
               onFileSelect={(file) => handleImageUpload(file, "procedure")}
-              onAdd={handleAddProcedure}
-              onAddNew={handleAddProcedure}
+              onAdd={handleSubmitProcedure}
+              onAddNew={() => {}}
             />
           )}
         </div>
 
+        {/* Footer */}
         <div className="px-6 py-4 border-t border-[#E5E8E9] flex items-center justify-end gap-3 flex-shrink-0">
           <button
             onClick={handleReset}
             disabled={loading}
-            className="text-[12px] text-[#161D1F] hover:underline"
+            className="text-[12px] text-[#899193] hover:text-[#161D1F] hover:underline transition-colors"
           >
             Reset
           </button>
           <button
-            onClick={handleFooterAction}
+            onClick={onClose}
+            disabled={loading}
+            className="px-4 py-2 border border-[#E5E8E9] text-[12px] text-[#161D1F] rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handlePrimary}
             disabled={loading || imageUploading}
             className="flex items-center gap-2 px-5 py-2 bg-[#0088B1] text-white text-[12px] rounded-lg hover:bg-[#00729A] transition-colors disabled:opacity-50"
           >

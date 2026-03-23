@@ -1,8 +1,8 @@
 "use client";
 import React from "react";
 import { useServiceStore } from "./store/serviceStore";
-import ServicesListPage from "./components/ServicesListPage";
-import DepartmentsPage from "./components/DepartmentsPage";
+import SpecialtiesPage from "./components/SpecialtiesPage";
+import SubDepartmentsPage from "./components/SubDepartmentsPage";
 import ProceduresPage from "./components/ProceduresPage";
 
 const OurServicesPage: React.FC = () => {
@@ -12,9 +12,9 @@ const OurServicesPage: React.FC = () => {
     return <ProceduresPage />;
   }
   if (viewLevel === "departments" && selectedService) {
-    return <DepartmentsPage />;
+    return <SubDepartmentsPage />;
   }
-  return <ServicesListPage />;
+  return <SpecialtiesPage />;
 };
 
 export default OurServicesPage;
