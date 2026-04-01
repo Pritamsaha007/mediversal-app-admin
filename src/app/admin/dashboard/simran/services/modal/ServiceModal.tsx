@@ -422,9 +422,8 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-fade-in">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col max-h-[92vh]">
-        {/* Header — no tabs ever */}
         <div className="flex items-start justify-between px-6 pt-5 pb-4 flex-shrink-0 border-b border-[#E5E8E9]">
           <div>
             <h2 className="text-[15px] font-semibold text-[#161D1F]">
@@ -447,7 +446,6 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
           </button>
         </div>
 
-        {/* Form body — only the relevant form, no tab strip */}
         <div className="overflow-y-auto flex-1 px-6 pt-4">
           {initialTab === "specialty" && (
             <SpecialtyTab
@@ -484,7 +482,6 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-[#E5E8E9] flex items-center justify-end gap-3 flex-shrink-0">
           <button
             onClick={handleReset}

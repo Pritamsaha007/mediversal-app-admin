@@ -1,6 +1,6 @@
 "use client";
 import React, { useRef, useState } from "react";
-import { X, ImagePlus, Loader2 } from "lucide-react";
+import { X, ImagePlus, Loader2, Upload } from "lucide-react";
 
 export const Checkbox: React.FC<{ checked: boolean }> = ({ checked }) => (
   <div
@@ -161,7 +161,9 @@ export const ImageUploadField: React.FC<{
   const fileRef = useRef<HTMLInputElement>(null);
   return (
     <div>
-      <label className="block text-[12px] text-[#161D1F] mb-1">* {label}</label>
+      <label className="block text-[12px] text-[#161D1F] mb-1 animate-fade-in">
+        * {label}
+      </label>
       <div
         className="border-2 border-dashed border-[#E5E8E9] rounded-lg p-5 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-[#0088B1] transition-colors"
         onClick={() => fileRef.current?.click()}
@@ -180,7 +182,7 @@ export const ImageUploadField: React.FC<{
           </>
         ) : (
           <>
-            <ImagePlus className="w-7 h-7 text-[#899193]" />
+            <Upload className="w-7 h-7 text-[#899193]" />
             <p className="text-[12px] font-medium text-[#161D1F]">
               Upload Image
             </p>
@@ -192,7 +194,7 @@ export const ImageUploadField: React.FC<{
             </p>
             <button
               type="button"
-              className="mt-1 px-3 py-1 border border-gray-300 rounded text-[12px] text-[#161D1F] hover:bg-gray-50"
+              className="mt-1 px-3 py-2 bg-[#0088B1] text-white text-xs font-medium rounded-lg hover:bg-[#00729A]"
             >
               Select File
             </button>

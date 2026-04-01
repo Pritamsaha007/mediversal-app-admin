@@ -19,7 +19,7 @@ const BlogViewModal: React.FC<BlogViewModalProps> = ({
   if (!isOpen || !blog) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-8 pt-6 pb-4 flex-shrink-0">
           <h2 className="text-[16px] font-semibold text-[#161D1F]">

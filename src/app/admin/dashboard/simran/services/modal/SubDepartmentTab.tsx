@@ -33,7 +33,7 @@ const SubDepartmentTab: React.FC<SubDepartmentTabProps> = ({
     onChange({ ...form, ...patch });
 
   return (
-    <div className="space-y-4 pb-4">
+    <div className="space-y-4 pb-4 animate-fade-in">
       {specialtyName && (
         <div>
           <p className="text-[10px] text-[#899193] mb-1">* Speciality</p>

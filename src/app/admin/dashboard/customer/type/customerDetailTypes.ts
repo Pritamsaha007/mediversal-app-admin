@@ -13,7 +13,46 @@ export interface ConsultationOrder {
   consultation_type: string;
   created_date: string;
 }
-
+interface BaseProduct {
+  productId: string;
+  ProductName: string;
+  Category: string;
+  Subcategory: string;
+  Type: string;
+  PrescriptionRequired: "Yes" | "No";
+  ColdChain: "Yes" | "No";
+  ManufacturerName: string;
+  Composition: string;
+  PackageSize: string;
+  CostPrice: number | string;
+  SellingPrice: number | string;
+  DiscountedPrice: number | string;
+  DiscountedPercentage: number | string;
+  GST: number | string;
+  HSN_Code: string;
+  SKU: string;
+  ProductInformation: string;
+  ProductStrength: string;
+  SafetyAdvices: string;
+  StorageInstructions: string;
+  Coupons: string;
+  StockAvailableInInventory: number;
+  productWeight: number | string;
+  productLength: number | string;
+  productHeight: number | string;
+  productBreadth: number | string;
+  active: boolean;
+  archivedProduct: boolean;
+  featuredProduct: boolean;
+  is_deleted: boolean;
+  image_url: string[] | null;
+  imageUrl?: string | null;
+  InventoryUpdated: string;
+  InventoryUpdatedBy: string | null;
+  updated_by?: string | null;
+  tax?: number;
+  discountPercentage?: number;
+}
 export interface PharmacyOrder {
   id: string;
   customerid: string;
@@ -149,4 +188,46 @@ export interface CustomerDetail extends Customer {
   };
   birthday?: string;
   gender?: string;
+}
+export interface CartData {
+  Category: string;
+  ColdChain: string;
+  Composition: string;
+  CostPrice: string;
+  Coupons: string;
+  DiscountedPercentage: string;
+  DiscountedPrice: string;
+  GST: string;
+  HSN_Code: string;
+  InventoryUpdated: string;
+  InventoryUpdatedBy: string;
+  ManufacturerName: string;
+  PackageSize: string;
+  PrescriptionRequired: string;
+  ProductInformation: string;
+  ProductName: string;
+  ProductStrength: string;
+  SKU: string;
+  SafetyAdvices: string;
+  SellingPrice: string;
+  StockAvailableInInventory: number;
+  StorageInstructions: string;
+  Subcategory: string;
+  Type: string;
+  active: boolean;
+  archivedProduct: boolean;
+  discountPercentage: number;
+  featuredProduct: boolean;
+  imageUrl: null;
+  image_url: string[];
+  is_deleted: boolean;
+  productBreadth: string;
+  productHeight: string;
+  productId: string;
+  productLength: string;
+  productWeight: string;
+  quantity: number;
+  similarProducts: BaseProduct[];
+  substitutes: BaseProduct[];
+  discount_allowed: boolean;
 }

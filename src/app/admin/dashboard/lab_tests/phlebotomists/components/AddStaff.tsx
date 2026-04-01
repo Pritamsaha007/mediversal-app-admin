@@ -1102,7 +1102,7 @@ export const AddPhlebotomistModal: React.FC<AddPhlebotomistModalProps> = ({
           </button>
         </div>
 
-        <div className="flex border-b border-gray-200 px-5">
+        <div className="flex border-b border-gray-200 px-5 bg-gray-50 p-2">
           <button
             onClick={() => setActiveSection("Basic Details")}
             className={`flex-1 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${

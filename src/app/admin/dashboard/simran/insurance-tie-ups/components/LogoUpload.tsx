@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, Upload } from "lucide-react";
 
 interface LogoUploadProps {
   currentLogo?: string;
@@ -76,7 +76,7 @@ const LogoUpload: React.FC<LogoUploadProps> = ({
         </>
       ) : (
         <>
-          <ImagePlus className="w-8 h-8 text-[#899193]" />
+          <Upload className="w-8 h-8 text-[#899193]" />
           <p className="text-[12px] font-medium text-[#161D1F]">* {label}</p>
           <p className="text-[10px] text-[#899193]">
             Drag and drop your new image here or click to browse
@@ -86,7 +86,7 @@ const LogoUpload: React.FC<LogoUploadProps> = ({
           </p>
           <button
             type="button"
-            className="mt-1 px-4 py-1.5 border border-gray-300 rounded text-[12px] text-[#161D1F] hover:bg-gray-50"
+            className="mt-1 px-3 py-2 bg-[#0088B1] text-white text-xs font-medium rounded-lg hover:bg-[#00729A]"
           >
             Select File
           </button>

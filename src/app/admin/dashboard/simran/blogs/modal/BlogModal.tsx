@@ -246,7 +246,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
   const isEdit = mode === "edit";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4 flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 pt-5 pb-4 flex-shrink-0">
           <h2 className="text-[16px] font-semibold text-[#161D1F]">
@@ -260,14 +260,14 @@ const BlogModal: React.FC<BlogModalProps> = ({
           </button>
         </div>
 
-        <div className="flex mx-6 mb-4 rounded-lg overflow-hidden border border-[#E5E8E9] flex-shrink-0">
+        <div className="flex px-4 mb-4  overflow-hidden border border-[#E5E8E9] flex-shrink-0 bg-gray-50 py-2">
           {(["basic", "sections"] as BlogModalStep[]).map((s) => (
             <button
               key={s}
-              className={`flex-1 py-2 text-[12px] font-medium transition-colors ${
+              className={`flex-1 py-3 text-[12px] font-medium transition-colors ${
                 step === s
-                  ? "bg-[#0088B1] text-white"
-                  : "bg-white text-[#899193]"
+                  ? "bg-[#0088B1] py-2 rounded-md text-white"
+                  : " rounded-md py-2  text-[#000]"
               }`}
               onClick={() => setStep(s)}
             >
@@ -330,7 +330,7 @@ const BlogModal: React.FC<BlogModalProps> = ({
                       </p>
                       <button
                         type="button"
-                        className="mt-1 px-3 py-1 border border-gray-300 rounded text-[12px] text-[#161D1F] hover:bg-gray-50"
+                        className="mt-1 px-3 py-2 bg-[#0088B1] text-white text-xs font-medium rounded-lg hover:bg-[#00729A]"
                       >
                         Select File
                       </button>

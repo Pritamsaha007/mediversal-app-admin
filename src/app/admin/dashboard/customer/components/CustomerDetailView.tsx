@@ -13,6 +13,8 @@ import {
   IndianRupee,
   ReceiptIndianRupee,
   ArrowLeft,
+  ShoppingCart,
+  Plus,
 } from "lucide-react";
 import { CustomerService } from "../services/customerService";
 import CustomerOrderHistory from "./CustomerOrderHistory";
@@ -22,7 +24,11 @@ import {
   LabTestBooking,
   PharmacyOrder,
   CustomerDetail,
+  CartData,
 } from "../type/customerDetailTypes";
+import CartItemsList from "./CartItemsList";
+import AddProductsModal from "./AddProductsModal";
+import { useAdminStore } from "@/app/store/adminStore";
 
 interface CustomerDetailViewProps {
   customer: CustomerDetail;
@@ -42,8 +48,41 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = React.memo(
       homecare: [],
       labTests: [],
     });
+    const [cartItems, setCartItems] = useState<CartData[]>([]);
     const [loading, setLoading] = useState(true);
+    const [cartLoading, setCartLoading] = useState(false);
+    const [cartError, setCartError] = useState<string | null>(null);
+    const [isAddProductsModalOpen, setIsAddProductsModalOpen] = useState(false);
+    const { token } = useAdminStore();
 
+    // Define refreshCart before using it in useEffect
+    const refreshCart = async () => {
+      if (!token) {
+        console.warn("No auth token available for cart fetch");
+        return;
+      }
+
+      setCartLoading(true);
+      setCartError(null);
+      try {
+        const customerService = new CustomerService();
+        const cartData = await customerService.getCartItems(customer.id, token);
+        if (Array.isArray(cartData)) {
+          setCartItems(cartData);
+        } else if (cartData && typeof cartData === "object") {
+          setCartItems([cartData]);
+        } else {
+          setCartItems([]);
+        }
+      } catch (error) {
+        console.error("Error refreshing cart:", error);
+        setCartError("Failed to load cart items");
+      } finally {
+        setCartLoading(false);
+      }
+    };
+
+    // Fetch orders on component mount
     useEffect(() => {
       const fetchOrders = async () => {
         setLoading(true);
@@ -59,6 +98,13 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = React.memo(
 
       fetchOrders();
     }, [customer.id]);
+
+    // Fetch cart items when customer ID or token changes
+    useEffect(() => {
+      if (customer.id && token) {
+        refreshCart();
+      }
+    }, [customer.id, token]);
 
     return (
       <>
@@ -176,7 +222,7 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = React.memo(
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-[#E8F4F7] rounded-lg">
                       <Calendar className="w-5 h-5 text-[#0088B1]" />
-                    </div>{" "}
+                    </div>
                     <div>
                       <p className="text-[10px] text-[#899193]">Birthday</p>
                       <p className="text-[10px] font-medium text-[#161D1F]">
@@ -200,8 +246,33 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = React.memo(
                   </div>
                 )}
               </div>
+
+              <div className="mb-6 mt-10">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-[#161D1F] flex items-center gap-2">
+                    <ShoppingCart className="w-4 h-4 text-[#0088B1]" />
+                    Current Cart
+                  </h4>
+                  <button
+                    onClick={() => setIsAddProductsModalOpen(true)}
+                    className="px-2.5 py-1.5 bg-[#0088B1] text-white text-xs rounded-lg hover:bg-[#006A8A] transition-colors flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Add Items
+                  </button>
+                </div>
+
+                <CartItemsList
+                  cartItems={cartItems}
+                  customerId={customer.id}
+                  onCartUpdate={refreshCart}
+                  loading={cartLoading}
+                  error={cartError}
+                />
+              </div>
             </div>
           </div>
+
           <div className="flex-1 bg-white overflow-y-auto border border-[#D3D7D8] rounded-xl ml-4">
             <CustomerOrderHistory
               orderData={orderData}
@@ -210,9 +281,17 @@ const CustomerDetailView: React.FC<CustomerDetailViewProps> = React.memo(
             />
           </div>
         </div>
+
+        <AddProductsModal
+          isOpen={isAddProductsModalOpen}
+          onClose={() => setIsAddProductsModalOpen(false)}
+          customerId={customer.id}
+          customerName={CustomerService.getFullName(customer)}
+          onProductsAdded={refreshCart}
+        />
       </>
     );
-  }
+  },
 );
 
 export default CustomerDetailView;

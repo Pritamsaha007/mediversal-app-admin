@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, ImagePlus, Loader2 } from "lucide-react";
+import { X, Upload } from "lucide-react";
 import { PatientStory } from "../services";
 import { uploadFile } from "@/app/admin/dashboard/lab_tests/services";
 import { fileToBase64 } from "@/app/utils/functions";
@@ -226,22 +226,24 @@ export default function PatientStoryModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 animate-fade-in"
       onClick={handleBackdrop}
     >
-      <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-xl mx-4 p-6">
+      <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-xl bg-white shadow-xl mx-4">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-[#899193] hover:text-[#161D1F] transition-colors"
+          className="absolute top-4 right-4 text-[#899193] hover:text-[#161D1F] transition-colors z-10"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-[16px] font-semibold text-[#161D1F] mb-5">
-          {mode === "add" ? "Add Patient Review" : "Update Patient Review"}
-        </h2>
+        <div className="flex-shrink-0 px-6 pt-6 pb-4">
+          <h2 className="text-[16px] font-semibold text-[#161D1F]">
+            {mode === "add" ? "Add Patient Review" : "Update Patient Review"}
+          </h2>
+        </div>
 
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto px-6 space-y-4">
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -269,7 +271,25 @@ export default function PatientStoryModal({
 
             {uploading ? (
               <div className="flex flex-col items-center gap-2">
-                <Loader2 className="h-10 w-10 animate-spin text-[#0088B1]" />
+                <svg
+                  className="h-10 w-10 animate-spin text-[#0088B1]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  />
+                </svg>
                 <p className="text-[12px] text-[#0088B1] font-medium">
                   Uploading image…
                 </p>
@@ -296,10 +316,7 @@ export default function PatientStoryModal({
                 </button>
               </div>
             ) : (
-              <ImagePlus
-                className="h-10 w-10 text-gray-400"
-                strokeWidth={1.5}
-              />
+              <Upload className="h-10 w-10 text-gray-400" strokeWidth={1.5} />
             )}
 
             {!uploading && (
@@ -313,11 +330,9 @@ export default function PatientStoryModal({
                     <span className="text-red-500">* </span>Upload Patient Image
                   </p>
                 )}
-
                 {uploadError && (
                   <p className="text-[11px] text-red-500">{uploadError}</p>
                 )}
-
                 <p className="text-[12px] text-[#899193] text-center">
                   Drag and drop your new image here or click to browse
                   <br />
@@ -325,14 +340,13 @@ export default function PatientStoryModal({
                     (supported file format .jpg, .jpeg, .png)
                   </span>
                 </p>
-
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     fileInputRef.current?.click();
                   }}
-                  className="mt-1 rounded-lg border border-gray-300 px-5 py-1.5 text-[12px] font-medium text-[#161D1F] hover:bg-gray-50 transition"
+                  className="mt-1 px-3 py-2 bg-[#0088B1] text-white text-xs font-medium rounded-lg hover:bg-[#00729A]"
                 >
                   Select File
                 </button>
@@ -474,7 +488,7 @@ export default function PatientStoryModal({
             )}
           </div>
 
-          <div>
+          <div className="pb-2">
             <label
               className={`flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 transition ${
                 isActive
@@ -523,52 +537,53 @@ export default function PatientStoryModal({
               </div>
             </label>
           </div>
+        </div>
 
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={resetFields}
-              disabled={submitting || uploading}
-              className="px-4 py-2 text-[12px] border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              Reset
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={submitting || uploading}
-              className="px-5 py-2 text-[12px] bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors disabled:opacity-60 flex items-center gap-2"
-            >
-              {(submitting || uploading) && (
-                <svg
-                  className="h-3.5 w-3.5 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8H4z"
-                  />
-                </svg>
-              )}
-              {uploading
-                ? "Uploading..."
-                : submitting
-                  ? "Saving..."
-                  : mode === "add"
-                    ? "Add Review"
-                    : "Update Review"}
-            </button>
-          </div>
+        {/* Sticky footer */}
+        <div className="flex-shrink-0 flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
+          <button
+            type="button"
+            onClick={resetFields}
+            disabled={submitting || uploading}
+            className="px-4 py-2 text-[12px] border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            Reset
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting || uploading}
+            className="px-5 py-2 text-[12px] bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors disabled:opacity-60 flex items-center gap-2"
+          >
+            {(submitting || uploading) && (
+              <svg
+                className="h-3.5 w-3.5 animate-spin"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                />
+              </svg>
+            )}
+            {uploading
+              ? "Uploading..."
+              : submitting
+                ? "Saving..."
+                : mode === "add"
+                  ? "Add Review"
+                  : "Update Review"}
+          </button>
         </div>
       </div>
     </div>

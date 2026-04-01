@@ -88,7 +88,7 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
             <h3 className="text-[14px] font-medium text-[#161D1F] mb-2">
               {consultation.patient_name}
             </h3>
-            <div className="flex items-center gap-2 text-[10px] text-gray-500 mb-4">
+            <div className="flex items-center gap-2 text-[12px]  text-gray-500 mb-4">
               <span>
                 Booking ID:
                 <span className="cursor-help" title={consultation.ordernumber}>
@@ -110,33 +110,33 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
           </div>
 
           <div className="mb-6">
-            <h4 className="text-[10px] font-medium text-[#161D1F] mb-4">
+            <h4 className="text-[12px]  font-medium text-[#161D1F] mb-4">
               Patient Details
             </h4>
             <div className="bg-[#F8F9FA] rounded-lg p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <span className="text-[10px] font-medium text-[#161D1F]">
+                  <span className="text-[12px]  font-medium text-[#161D1F]">
                     Patient Contact:{" "}
                   </span>
-                  <span className="text-[10px] text-gray-600">
+                  <span className="text-[12px]  text-gray-600">
                     {consultation.phone}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-medium text-[#161D1F]">
+                  <span className="text-[12px]  font-medium text-[#161D1F]">
                     Patient Email:{" "}
                   </span>
-                  <span className="text-[10px] text-gray-600">
+                  <span className="text-[12px]  text-gray-600">
                     {consultation.email}
                   </span>
                 </div>
                 {consultation.aadhar_id && (
                   <div className="md:col-span-2">
-                    <span className="text-[10px] font-medium text-[#161D1F]">
+                    <span className="text-[12px]  font-medium text-[#161D1F]">
                       Aadhaar Number:
                     </span>
-                    <span className="text-[10px] text-gray-600">
+                    <span className="text-[12px]  text-gray-600">
                       {consultation.aadhar_id}
                     </span>
                   </div>
@@ -145,68 +145,68 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
             </div>
           </div>
           <div className="mb-6">
-            <h4 className="text-[10px] font-medium text-[#161D1F] mb-4">
+            <h4 className="text-[12px]  font-medium text-[#161D1F] mb-4">
               Consultation & Payment Details
             </h4>
             <div className="bg-[#F8F9FA] rounded-lg p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <span className="text-[10px] font-medium text-[#161D1F]">
+                  <span className="text-[12px]  font-medium text-[#161D1F]">
                     Consultation Date & Time:{" "}
                   </span>
-                  <span className="text-[10px] text-gray-600">
+                  <span className="text-[12px]  text-gray-600">
                     {formatDate(consultation.consultation_date)} |{" "}
                     {formatTime(consultation.consultation_time)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-medium text-[#161D1F]">
+                  <span className="text-[12px]  font-medium text-[#161D1F]">
                     Appointed Doctor:{" "}
                   </span>
-                  <span className="text-[10px] text-gray-600">
+                  <span className="text-[12px]  text-gray-600">
                     {consultation.doc_name}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-medium text-[#161D1F]">
+                  <span className="text-[12px]  font-medium text-[#161D1F]">
                     Duration:{" "}
                   </span>
-                  <span className="text-[10px] text-gray-600">
+                  <span className="text-[12px]  text-gray-600">
                     {consultation.session_duration_in_mins} min.
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-medium text-[#161D1F]">
+                  <span className="text-[12px]  font-medium text-[#161D1F]">
                     Consultation Fee:{" "}
                   </span>
-                  <span className="text-[10px] text-gray-600">
+                  <span className="text-[12px]  text-gray-600">
                     {formatCurrency(consultation.total_amount)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-medium text-[#161D1F]">
+                  <span className="text-[12px]  font-medium text-[#161D1F]">
                     Payment Method:{" "}
                   </span>
-                  <span className="text-[10px] text-gray-600">
+                  <span className="text-[12px]  text-gray-600">
                     {consultation.payment_mode}
                   </span>
                 </div>
                 {consultation.hospital_id && (
                   <div>
-                    <span className="text-[10px] font-medium text-[#161D1F]">
+                    <span className="text-[12px]  font-medium text-[#161D1F]">
                       Hospital:{" "}
                     </span>
-                    <span className="text-[10px] text-gray-600">
+                    <span className="text-[12px]  text-gray-600">
                       {consultation.hospital_name}
                     </span>
                   </div>
                 )}
                 {/* {consultation.hospitalLocation && (
                   <div className="md:col-span-2">
-                    <span className="text-[10px] font-medium text-[#161D1F]">
+                    <span className="text-[12px]  font-medium text-[#161D1F]">
                       Location:{" "}
                     </span>
-                    <span className="text-[10px] text-gray-600">
+                    <span className="text-[12px]  text-gray-600">
                       {consultation.hospitalLocation}
                     </span>
                   </div>
@@ -217,10 +217,10 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
 
           {consultation.symptoms_desc && (
             <div className="mb-6">
-              <h4 className="text-[10px] font-medium text-[#161D1F] mb-4">
+              <h4 className="text-[12px]  font-medium text-[#161D1F] mb-4">
                 Specify Symptoms:
               </h4>
-              <p className="text-[10px] text-gray-600 leading-relaxed">
+              <p className="text-[12px]  text-gray-600 leading-relaxed">
                 {consultation.symptoms_desc}
               </p>
             </div>
@@ -232,7 +232,7 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
                 onEdit(consultation);
                 onClose();
               }}
-              className="px-6 py-2 text-[10px] bg-[#1BA3C7] text-white rounded-lg hover:bg-[#1591B8] transition-colors"
+              className="px-6 py-2 text-[12px]  bg-[#1BA3C7] text-white rounded-lg hover:bg-[#1591B8] transition-colors"
             >
               Edit
             </button>
@@ -241,7 +241,7 @@ const ViewConsultationModal: React.FC<ViewConsultationModalProps> = ({
             <div className="flex flex-wrap gap-4 justify-end">
               <button
                 onClick={handlePrint}
-                className="flex items-center text-[10px] gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center text-[12px]  gap-2 border border-gray-300 text-[#161D1F] px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <Printer className="w-3 h-3" />
                 Print

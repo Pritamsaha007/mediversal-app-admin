@@ -14,6 +14,7 @@ import {
   CreateOrderRequest,
   OrderItem,
 } from "../../types/types";
+import { CouponItem } from "@/app/types/auth.types";
 import toast from "react-hot-toast";
 
 interface PlaceOrderModalProps {
@@ -30,6 +31,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
   const [activeTab, setActiveTab] = useState("customer");
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [tabErrors, setTabErrors] = useState<Record<string, string[]>>({});
+  const [selectedCoupon, setSelectedCoupon] = useState<CouponItem | null>(null);
 
   const {
     resetOrder,
@@ -52,13 +54,19 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
   const handleClose = () => {
     resetOrder();
     setTabErrors({});
+    setSelectedCoupon(null);
     onClose();
   };
 
   const handleReset = () => {
     resetOrder();
     setTabErrors({});
+    setSelectedCoupon(null);
     setActiveTab("customer");
+  };
+
+  const handleCouponChange = (coupon: CouponItem | null) => {
+    setSelectedCoupon(coupon);
   };
 
   const validateCurrentStep = (): boolean => {
@@ -84,7 +92,6 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
   const validateCustomerTab = (): boolean => {
     const errors: string[] = [];
 
-    // if (!customerInfo.customerId.trim()) errors.push("Customer ID is required");
     if (!customerInfo.name.trim()) errors.push("Customer name is required");
     if (!customerInfo.age.trim()) errors.push("Age is required");
     if (!customerInfo.phone.trim()) errors.push("Phone number is required");
@@ -162,7 +169,6 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
       const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
       if (currentIndex < tabs.length - 1) {
         setActiveTab(tabs[currentIndex + 1].id);
-
         setTabErrors((prev) => ({ ...prev, [activeTab]: [] }));
       }
     }
@@ -172,6 +178,25 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
     const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
     if (currentIndex > 0) {
       setActiveTab(tabs[currentIndex - 1].id);
+    }
+  };
+
+  const calculateCouponDiscount = () => {
+    if (!selectedCoupon) return 0;
+
+    const eligibleItemsTotal = orderItems.reduce((total, item) => {
+      const isEligible = (item as any).discount_allowed !== false;
+      if (isEligible) {
+        return total + Number(item.sellingPrice) * Number(item.quantity);
+      }
+      return total;
+    }, 0);
+
+    const discountValue = Number(selectedCoupon.discount_value);
+    if (selectedCoupon.discount_type === "fixed") {
+      return Math.min(discountValue, eligibleItemsTotal);
+    } else {
+      return (eligibleItemsTotal * discountValue) / 100;
     }
   };
 
@@ -200,7 +225,9 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
       );
       const deliveryCharge = subtotal < 499 ? 40 : 0;
       const handlingPackagingFee = 5;
-      const total = subtotal + deliveryCharge + handlingPackagingFee;
+      const couponDiscount = calculateCouponDiscount();
+      const total =
+        subtotal - couponDiscount + deliveryCharge + handlingPackagingFee;
 
       const serviceabilityData = {
         pickup_postcode: "110001",
@@ -241,14 +268,14 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
           shipping_charges: deliveryCharge,
           giftwrap_charges: 0,
           transaction_charges: 0,
-          total_discount: 0,
+          total_discount: couponDiscount,
           delivery_status: "PENDING",
           rapidshypShipmentId: null,
           rapidshypAwb: null,
           labelUrl: null,
           manifestUrl: null,
-          coupon_id: null,
-          applied_discount_value: null,
+          coupon_id: selectedCoupon?.id || null,
+          applied_discount_value: couponDiscount > 0 ? couponDiscount : null,
           prescription_url:
             prescriptionUrls.length > 0 ? prescriptionUrls[0] : null,
           cancellationReason: null,
@@ -297,6 +324,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
         toast.success("Order created successfully!");
         resetOrder();
         setTabErrors({});
+        setSelectedCoupon(null);
         if (onOrderCreated) {
           onOrderCreated();
         }
@@ -332,7 +360,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
           </button>
         </div>
 
-        <div className="border-b border-gray-200">
+        <div className="border-b border-gray-200 bg-gray-50 p-2">
           <div className="flex px-6">
             {tabs.map((tab) => (
               <button
@@ -340,8 +368,8 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-6 py-3 text-xs font-medium transition-all duration-200 flex-1 max-w-[200px] mx-1 first:ml-0 last:mr-0 ${
                   activeTab === tab.id
-                    ? "bg-[#0088B1]  rounded-md text-white  border-b-2 border-[#0088B1]"
-                    : "text-[#899193]  rounded-md  border-b-2 border-transparent "
+                    ? "bg-[#0088B1] rounded-md text-white border-b-2 border-[#0088B1]"
+                    : "text-[#899193] rounded-md border-b-2 border-transparent"
                 }`}
               >
                 {tab.label}
@@ -367,7 +395,9 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
           {activeTab === "customer" && <CustomerInformationTab />}
           {activeTab === "shipping" && <ShippingDetailsTab />}
           {activeTab === "prescription" && <PrescriptionTab />}
-          {activeTab === "items" && <OrderItemsTab />}
+          {activeTab === "items" && (
+            <OrderItemsTab onCouponChange={handleCouponChange} />
+          )}
         </div>
 
         <div className="flex justify-between items-center p-6 border-t border-gray-200 bg-gray-50">
@@ -381,7 +411,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
             {!isFirstTab && (
               <button
                 onClick={handlePrevious}
-                className="px-6 py-2 text-sm text-[#161D1F] border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-6 py-2 text-[12px] text-[#161D1F] border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Previous
               </button>
@@ -391,7 +421,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = ({
               disabled={
                 isCreatingOrder || (isLastTab && orderItems.length === 0)
               }
-              className="px-6 py-2 text-sm bg-[#0088B1] text-white rounded-lg hover:bg-[#0077A0] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="px-6 py-2 text-[12px] bg-[#0088B1] text-white rounded-lg hover:bg-[#0077A0] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {isCreatingOrder
                 ? "Creating..."

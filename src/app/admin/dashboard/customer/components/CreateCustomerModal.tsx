@@ -91,7 +91,7 @@ const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
             <h2 className="text-[16px] font-semibold text-[#161D1F]">
               Create New Customer
             </h2>
-            <p className="text-[10px] text-[#899193] mt-1">
+            <p className="text-[12px] text-[#899193] mt-1">
               Enter the customer details to create a new account.
             </p>
           </div>
@@ -106,7 +106,7 @@ const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+              <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                 <span className="text-red-500">*</span> First Name
               </label>
               <input
@@ -115,12 +115,12 @@ const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                 value={formData.first_name}
                 onChange={handleChange}
                 placeholder="First Name"
-                className="w-full px-4 py-3 text-[#161D1F] border border-[#E5E8E9] rounded-lg focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-[10px]"
+                className="w-full px-4 py-3 text-[#161D1F] border border-[#E5E8E9] rounded-lg focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-[12px] "
                 required
               />
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+              <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                 <span className="text-red-500">*</span> Last Name
               </label>
               <input
@@ -129,14 +129,14 @@ const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                 value={formData.last_name}
                 onChange={handleChange}
                 placeholder="Last Name"
-                className="w-full px-4 py-3 border text-[#161D1F] border-[#E5E8E9] rounded-lg focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-[10px]"
+                className="w-full px-4 py-3 border text-[#161D1F] border-[#E5E8E9] rounded-lg focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-[12px] "
                 required
               />
             </div>
           </div>
 
           <div className="mb-4">
-            <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+            <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
               Email
             </label>
             <input
@@ -145,12 +145,12 @@ const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
               value={formData.email}
               onChange={handleChange}
               placeholder="email@example.com"
-              className="w-full px-4 py-3 border text-[#161D1F] border-[#E5E8E9] rounded-lg focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-[10px]"
+              className="w-full px-4 py-3 border text-[#161D1F] border-[#E5E8E9] rounded-lg focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-[12px] "
             />
           </div>
 
           <div className="mb-4">
-            <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+            <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
               <span className="text-red-500">*</span> Phone Number
             </label>
             <input
@@ -159,14 +159,14 @@ const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
               value={formData.phone_number}
               onChange={handleChange}
               placeholder="+91 9876543210"
-              className="w-full px-4 py-3 border text-[#161D1F] border-[#E5E8E9] rounded-lg focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-[10px]"
+              className="w-full px-4 py-3 border text-[#161D1F] border-[#E5E8E9] rounded-lg focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-[12px] "
               required
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+              <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                 <span className="text-red-500">*</span> Date of Birth
               </label>
               <div className="relative">
@@ -175,13 +175,13 @@ const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                   name="birthday"
                   value={formData.birthday}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border text-[#161D1F] border-[#E5E8E9] rounded-lg focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-[10px]"
+                  className="w-full px-4 py-3 border text-[#161D1F] border-[#E5E8E9] rounded-lg focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-[12px] "
                   required
                 />
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-[#161D1F] mb-2">
+              <label className="block text-[12px] font-medium text-[#161D1F] mb-2">
                 <span className="text-red-500">*</span> Gender
               </label>
               <DropdownSelector
@@ -205,14 +205,14 @@ const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
             <button
               type="button"
               onClick={handleReset}
-              className="px-6 py-3 text-[10px] font-medium text-[#161D1F] border border-[#E5E8E9] rounded-lg hover:bg-gray-50"
+              className="px-6 py-3 text-[12px] font-medium text-[#161D1F] border border-[#E5E8E9] rounded-lg hover:bg-gray-50"
             >
               Reset
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-3 text-[10px] font-medium text-white bg-[#0088B1] rounded-lg hover:bg-[#006f8e] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 text-[12px] font-medium text-white bg-[#0088B1] rounded-lg hover:bg-[#006f8e] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Creating..." : "Create New Customer"}
             </button>

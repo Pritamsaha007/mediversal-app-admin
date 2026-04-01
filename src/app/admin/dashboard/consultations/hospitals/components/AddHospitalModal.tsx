@@ -843,7 +843,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
           </button>
         </div>
 
-        <div className="flex border-1 border-gray-200 ">
+        <div className="flex border-1 border-gray-200 bg-gray-50 p-2">
           {[
             "Basic Information",
             "Hospital Details",
@@ -856,7 +856,7 @@ const AddHospitalModal: React.FC<AddHospitalModalProps> = ({
               className={`flex-1 py-3 px-3 ${
                 activeTab === index
                   ? "bg-[#0088B1] mx-4 text-white rounded-lg text-[12px]"
-                  : "bg-white mx-4 text-[#161D1F] text-[12px]"
+                  : " mx-4 text-[#161D1F] text-[12px]"
               }`}
             >
               {tab}

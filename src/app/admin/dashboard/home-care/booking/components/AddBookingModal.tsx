@@ -114,7 +114,7 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
   const filteredOfferings = availableOfferings.filter(
     (offering) =>
       offering.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      offering.description.toLowerCase().includes(searchTerm.toLowerCase())
+      offering.description.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleOfferingAdd = (offering: OfferingResponse) => {
@@ -130,7 +130,7 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
     setFormData((prev) => ({
       ...prev,
       selectedOfferings: prev.selectedOfferings.filter(
-        (item) => item.id !== offeringId
+        (item) => item.id !== offeringId,
       ),
     }));
   };
@@ -205,8 +205,8 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
         tabKey === "offerings"
           ? "rounded-lg"
           : tabKey === "address"
-          ? "rounded-lg"
-          : ""
+            ? "rounded-lg"
+            : ""
       }`}
     >
       {label}
@@ -303,7 +303,7 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
                 <div className="space-y-3">
                   {filteredOfferings.map((offering) => {
                     const isAdded = formData.selectedOfferings.find(
-                      (item) => item.id === offering.id
+                      (item) => item.id === offering.id,
                     );
                     return (
                       <div
@@ -471,7 +471,7 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
                     onChange={(e) =>
                       handleInputChange(
                         "emergencyContactNumber",
-                        e.target.value
+                        e.target.value,
                       )
                     }
                     className="w-full px-4 py-2 border text-[10px] text-[#161D1F] border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
@@ -617,7 +617,6 @@ const AddBookingModal: React.FC<AddBookingModalProps> = ({
                 </div>
               </div>
 
-              {/* Create Order Button */}
               <div className="flex justify-end mt-8">
                 <button
                   onClick={handleCreateOrder}

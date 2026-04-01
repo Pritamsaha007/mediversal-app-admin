@@ -66,7 +66,7 @@ const ProcedureTab: React.FC<ProcedureTabProps> = ({
     onChange({ ...form, ...patch });
 
   return (
-    <div className="space-y-4 pb-4">
+    <div className="space-y-4 pb-4 animate-fade-in">
       {addedProcs.map((proc, idx) => (
         <div
           key={idx}

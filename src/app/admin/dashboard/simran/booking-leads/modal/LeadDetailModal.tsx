@@ -33,7 +33,7 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
     lead.maxCost !== null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-8 pt-6 pb-5 flex-shrink-0">
           <h2 className="text-[16px] font-semibold text-[#161D1F]">

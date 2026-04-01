@@ -43,7 +43,7 @@ export const createCoupon = async (coupon: CouponItem): Promise<CouponItem> => {
       errorData = await response.text();
     }
 
-    console.error("❌ Failed to create coupon:", {
+    console.error("Failed to create coupon:", {
       status: response.status,
       statusText: response.statusText,
       body: coupon,
@@ -52,7 +52,7 @@ export const createCoupon = async (coupon: CouponItem): Promise<CouponItem> => {
 
     throw new Error(
       errorData?.message ||
-        `Failed to create coupon (status: ${response.status})`
+        `Failed to create coupon (status: ${response.status})`,
     );
   }
 

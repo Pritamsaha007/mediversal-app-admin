@@ -145,8 +145,11 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {orders.map((order: any) => (
-                <tr key={order.order_id} className="hover:bg-gray-50">
+              {orders.map((order: any, index: number) => (
+                <tr
+                  key={order.id || order.order_id || index}
+                  className="hover:bg-gray-50"
+                >
                   <td className="px-6 py-4 text-[10px] text-[#161D1F]">
                     {order.id?.slice(0, 8).toUpperCase() || "N/A"}
                   </td>
@@ -167,7 +170,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
                             .slice(0, 2)
                             .map((item: any, index: number) => (
                               <div
-                                key={`${order.id}-item-${item.sku || index}`}
+                                key={`${order.id}-item-${index}-${item.productId || item.sku || item.productName}`}
                               >
                                 • {item.productName || "Unknown Product"}
                               </div>
@@ -206,7 +209,9 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
                             {order.labtestnames
                               .slice(0, 2)
                               .map((testName: string, index: number) => (
-                                <div key={`${order.id}-test-${index}`}>
+                                <div
+                                  key={`${order.id}-test-${index}-${testName}`}
+                                >
                                   • {testName}
                                 </div>
                               ))}
