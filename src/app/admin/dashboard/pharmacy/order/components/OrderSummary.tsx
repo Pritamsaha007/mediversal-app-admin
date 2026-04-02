@@ -214,9 +214,9 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                     className="px-4 py-2 text-white border border-gray-300 rounded-lg bg-[#EB5757] transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
                   >
                     {isSubmitting ? (
-                      <span className="text-[10px]">Canceling...</span>
+                      <span className="text-[12px]">Canceling...</span>
                     ) : (
-                      <span className="text-[10px]">Cancel Order</span>
+                      <span className="text-[12px]">Cancel Order</span>
                     )}
                   </button>
                 )
@@ -227,9 +227,9 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                     className="px-4 py-2 text-white border border-gray-300 rounded-lg bg-[#EB5757] transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
                   >
                     {isSubmitting ? (
-                      <span className="text-[10px]">Canceling...</span>
+                      <span className="text-[12px]">Canceling...</span>
                     ) : (
-                      <span className="text-[10px]">Cancel Order</span>
+                      <span className="text-[12px]">Cancel Order</span>
                     )}
                   </button>
                 )}
@@ -239,7 +239,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               onClick={handlePrint}
             >
               <Printer className="w-3 h-3" />
-              <span className="text-[10px]">Print</span>
+              <span className="text-[12px]">Print</span>
             </button>
             <button
               onClick={handleNextTab}
@@ -247,7 +247,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               style={{ backgroundColor: "#0088B1" }}
             >
               <Edit className="w-3 h-3" />
-              <span className="text-[10px]">Next</span>
+              <span className="text-[12px]">Next</span>
             </button>
           </div>
         </div>

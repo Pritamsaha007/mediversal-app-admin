@@ -49,7 +49,7 @@ interface CouponStore {
 
 export const useCouponStore = create<CouponStore>((set, get) => {
   const defaultFormData: CouponItem = {
-    id: 0,
+    id: "",
     coupon_code: "",
     coupon_name: "",
     discount_value: 0,

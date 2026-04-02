@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   DollarSign,
   Plus,
+  IndianRupee,
 } from "lucide-react";
 import { CustomerService } from "./services/customerService";
 import CreateCustomerModal from "./components/CreateCustomerModal";
@@ -253,7 +254,7 @@ const CustomerCatalog: React.FC = () => {
                         parseFloat(metrics?.net_revenue ?? "0"),
                       )
                 }
-                icon={<DollarSign className="w-5 h-5" />}
+                icon={<IndianRupee className="w-5 h-5" />}
                 color="text-[#0088b1]"
               />
             </div>
@@ -317,7 +318,7 @@ const CustomerCatalog: React.FC = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left">
+                      <th className="px-6 py-4 text-left">
                         <input
                           type="checkbox"
                           checked={selectAll}

@@ -300,12 +300,9 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
 
   const canProceedToNext = (): boolean => {
     if (activeTab === "basic") {
-      return (
-        formData.title.trim() !== "" &&
-        formData.message.trim() !== "" &&
-        (formData.targetUserGroupId !== "" ||
-          formData.selectedCustomer !== null)
-      );
+      if (!loading) {
+        return true;
+      }
     }
     if (activeTab === "documents") {
       return true;
@@ -346,34 +343,39 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
           </button>
         </div>
 
-        <div className="flex bg-[#F8F8F8] px-6">
+        <div className="flex bg-gray-50 p-2 gap-2 border w-full">
           <button
             onClick={() => setActiveTab("basic")}
-            className={`px-6 py-3 text-[10px] rounded-sm font-medium transition-colors relative ${
-              activeTab === "basic"
-                ? "text-white bg-[#0088B1] border-[#0088B1]"
-                : "text-[#899193] hover:text-[#161D1F]"
-            }`}
+            className={`flex-1 py-3 text-[12px] rounded-md font-medium text-center transition-colors
+      ${
+        activeTab === "basic"
+          ? "bg-[#0088B1] text-white"
+          : "text-[#899193] hover:text-[#161D1F] "
+      }`}
           >
             Basic Information
           </button>
+
           <button
             onClick={() => setActiveTab("documents")}
-            className={`px-6 py-3 text-[10px] rounded-sm font-medium transition-colors relative ${
-              activeTab === "documents"
-                ? "text-white bg-[#0088B1] border-[#0088B1]"
-                : "text-[#899193] hover:text-[#161D1F]"
-            }`}
+            className={`flex-1 py-3 text-[12px] rounded-md font-medium text-center transition-colors
+      ${
+        activeTab === "documents"
+          ? "bg-[#0088B1] text-white"
+          : "text-[#899193] hover:text-[#161D1F] "
+      }`}
           >
             Documents
           </button>
+
           <button
             onClick={() => setActiveTab("frequency")}
-            className={`px-6 py-3 text-[10px] rounded-sm font-medium transition-colors relative ${
-              activeTab === "frequency"
-                ? "text-white bg-[#0088B1] border-[#0088B1]"
-                : "text-[#899193] hover:text-[#161D1F]"
-            }`}
+            className={`flex-1 py-3 text-[12px] rounded-md font-medium text-center transition-colors
+      ${
+        activeTab === "frequency"
+          ? "bg-[#0088B1] text-white"
+          : "text-[#899193] hover:text-[#161D1F] "
+      }`}
           >
             Set Frequency
           </button>

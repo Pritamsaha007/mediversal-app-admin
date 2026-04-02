@@ -13,6 +13,7 @@ import {
   CreateCustomerRequest,
   CreateCustomerResponse,
   CustomerDetail,
+  CartData,
 } from "../type/customerDetailTypes";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -42,7 +43,7 @@ const createApiClient = (): AxiosInstance => {
     },
     (error) => {
       return Promise.reject(error);
-    }
+    },
   );
 
   client.interceptors.response.use(
@@ -56,7 +57,7 @@ const createApiClient = (): AxiosInstance => {
         console.error("Error:", error.message);
       }
       return Promise.reject(error);
-    }
+    },
   );
 
   return client;
@@ -66,7 +67,7 @@ export class CustomerService {
     search: string = "",
     start: number = 0,
     max: number = 20,
-    retries: number = 2
+    retries: number = 2,
   ): Promise<SearchCustomersResponse> {
     try {
       const apiClient = createApiClient();
@@ -77,7 +78,7 @@ export class CustomerService {
       };
       const response = await apiClient.post<SearchCustomersResponse>(
         "/api/customer/search",
-        requestBody
+        requestBody,
       );
       const sanitizedCustomers = response.data.customers.map((customer) => ({
         ...customer,
@@ -108,7 +109,7 @@ export class CustomerService {
       const apiClient = createApiClient();
 
       const response = await apiClient.get<CustomerMetricsResponse>(
-        "/api/customer/metrics"
+        "/api/customer/metrics",
       );
 
       if (!response.data.success) {
@@ -204,7 +205,7 @@ export class CustomerService {
           customer.total_spent ?? 0,
           customer.total_orders,
           this.formatDate(customer.membership_date),
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -215,7 +216,7 @@ export class CustomerService {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `customers_export_${new Date().toISOString().split("T")[0]}.csv`
+      `customers_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -224,7 +225,7 @@ export class CustomerService {
     document.body.removeChild(link);
   }
   static async createCustomer(
-    data: Partial<CreateCustomerRequest>
+    data: Partial<CreateCustomerRequest>,
   ): Promise<CreateCustomerResponse> {
     try {
       const apiClient = createApiClient();
@@ -250,7 +251,7 @@ export class CustomerService {
 
       const response = await apiClient.post<CreateCustomerResponse>(
         "/api/customer",
-        requestBody
+        requestBody,
       );
 
       return response.data;
@@ -271,13 +272,13 @@ export class CustomerService {
     }
   }
   static async getConsultationOrders(
-    customerId: string
+    customerId: string,
   ): Promise<ConsultationOrder[]> {
     try {
       const apiClient = createApiClient();
       const response = await apiClient.post<CustomerDetailResponse>(
         "/api/clinic/consultations",
-        { customer_id: customerId }
+        { customer_id: customerId },
       );
 
       return response.data.consultations || [];
@@ -291,7 +292,7 @@ export class CustomerService {
       const apiClient = createApiClient();
       const response = await apiClient.post<CustomerDetailResponse>(
         "/api/order/CustomerId",
-        { customerId: customerId }
+        { customerId: customerId },
       );
 
       return (response.data.orders as PharmacyOrder[]) || [];
@@ -305,7 +306,7 @@ export class CustomerService {
       const apiClient = createApiClient();
       const response = await apiClient.post<CustomerDetailResponse>(
         "/api/homecare/orders",
-        { customer_id: customerId }
+        { customer_id: customerId },
       );
 
       return (response.data.orders as HomecareOrder[]) || [];
@@ -315,13 +316,13 @@ export class CustomerService {
     }
   }
   static async getLabTestBookings(
-    customerId: string
+    customerId: string,
   ): Promise<LabTestBooking[]> {
     try {
       const apiClient = createApiClient();
       const response = await apiClient.post<CustomerDetailResponse>(
         "/api/labtest/booking/search",
-        { customer_id: customerId }
+        { customer_id: customerId },
       );
 
       return (response.data.orders as LabTestBooking[]) || [];
@@ -359,6 +360,89 @@ export class CustomerService {
   static getMedicalHistory(customer: CustomerDetail): string[] {
     return [];
   }
+  getCartItems = async (
+    customerId: string | null,
+    token: string | undefined,
+  ): Promise<CartData> => {
+    try {
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await axios.get(
+        `${API_BASE_URL}/api/cart/${customerId}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching cart items:", error);
+      throw error;
+    }
+  };
+  addToCart = async (
+    customerId: string | null,
+    cartData: { productId?: string; id?: string; quantity: number },
+    token: string | undefined,
+  ) => {
+    try {
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      if (!customerId) {
+        throw new Error("Customer ID is required");
+      }
+
+      const response = await axios.post(
+        `${API_BASE_URL}/api/cart/${customerId}`,
+        cartData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error("Error adding to cart:", error);
+      throw error;
+    }
+  };
+  DeleteFromCart = async (
+    customerId: string | null,
+    productIds: string[],
+    token: string | undefined,
+  ) => {
+    try {
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await axios.delete(
+        `${API_BASE_URL}/api/cart/${customerId}`,
+        {
+          data: { productIds: productIds },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting from cart:", error);
+      throw error;
+    }
+  };
 }
 
 export default CustomerService;

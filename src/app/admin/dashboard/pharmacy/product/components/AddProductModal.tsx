@@ -339,7 +339,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             </button>
           </div>
 
-          <div className="flex border-1 border-gray-200 ">
+          <div className="flex border-1 border-gray-200 bg-gray-50 p-2">
             {["Basic Information", "Product Details", "Settings"].map((tab) => (
               <button
                 key={tab}
@@ -347,7 +347,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                   setActiveTab(tab);
                   setTabAnimationKey((prev) => prev + 1);
                 }}
-                className={`flex-1 text-center px-4 py-2 text-[13px] font-medium transition-colors rounded-md ${
+                className={`flex-1 text-center px-4 py-3 text-[13px] font-medium transition-colors rounded-md ${
                   activeTab === tab
                     ? "bg-[#0088B1] mx-4 text-[#F8F8F8]"
                     : "text-[#161D1F] mx-4 "
@@ -425,7 +425,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                     setActiveTab("Settings");
                   setTabAnimationKey((prev) => prev + 1);
                 }}
-                className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[10px] rounded-lg hover:bg-[#00729A]"
+                className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[12px] rounded-lg hover:bg-[#00729A]"
               >
                 Next
               </button>
@@ -433,7 +433,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
               <button
                 onClick={handleSubmit}
                 disabled={uploadingImages}
-                className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[10px] rounded-lg hover:bg-[#00729A] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-[#0088B1] text-[#F8F8F8] text-[12px] rounded-lg hover:bg-[#00729A] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {uploadingImages
                   ? "Saving..."

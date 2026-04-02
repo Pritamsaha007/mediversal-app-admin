@@ -45,7 +45,7 @@ export interface CountryCode {
   flag: string;
 }
 export interface CouponItem {
-  id: number;
+  id: string;
   coupon_name: string;
   coupon_code: string;
   discount_type: "fixed" | "percentage";

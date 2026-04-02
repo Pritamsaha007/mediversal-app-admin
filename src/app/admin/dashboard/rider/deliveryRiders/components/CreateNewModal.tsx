@@ -751,7 +751,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
           </button>
         </div>
 
-        <div className="flex border-b border-gray-200 px-5">
+        <div className="flex border-b border-gray-200 px-5 bg-gray-50 p-2">
           <button
             onClick={() => setActiveTab("basic")}
             disabled={loading}
@@ -768,7 +768,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
             disabled={loading}
             className={`flex-1 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${
               activeTab === "documents"
-                ? "bg-[#0088B1] text-white"
+                ? "bg-[#0088B1] rounded-md text-white"
                 : "border-transparent text-gray-500 hover:text-gray-700 disabled:text-gray-400"
             }`}
           >
@@ -838,7 +838,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
                         htmlFor="profile-upload"
                         className="inline-flex items-center px-4 py-2 bg-[#0088B1] text-white text-xs font-medium rounded-lg hover:bg-[#00729A] cursor-pointer transition-colors"
                       >
-                        <Upload className="w-4 h-4 mr-2" />
+                        {/* <Upload className="w-4 h-4 mr-2" /> */}
                         Select File
                       </label>
                     )}
@@ -865,7 +865,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
                             htmlFor="license-upload"
                             className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 cursor-pointer transition-colors"
                           >
-                            <Upload className="w-3 h-3 mr-1" />
+                            {/* <Upload className="w-3 h-3 mr-1" /> */}
                             Change
                           </label>
                           <button
@@ -985,11 +985,7 @@ export const AddRiderModal: React.FC<AddRiderModalProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab("documents")}
-                disabled={
-                  loading ||
-                  !formData.service_city ||
-                  (!editRider && formData.pin_code.length === 0)
-                }
+                disabled={loading}
                 className="px-6 py-2.5 bg-[#0088B1] text-white rounded-lg text-xs font-medium hover:bg-[#00729A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next

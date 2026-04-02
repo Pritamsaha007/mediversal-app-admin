@@ -25,19 +25,17 @@ const OrderTabs: React.FC<OrderTabsProps> = ({ activeTab, setActiveTab }) => {
   ];
 
   return (
-    <div className="border-b border-gray-200 bg-gray-50">
-      <nav className="flex">
+    <div className="border-b  bg-gray-50 p-2">
+      <nav className="flex w-full gap-2">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-6 py-3 rounded-md text-[10px] font-medium transition-colors duration-200 ${
-              activeTab === tab.id
-                ? "bg-[#0088b1] text-white"
-                : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
-            }`}
+            className={`flex-1 whitespace-nowrap text-[12px] py-3 font-medium rounded-md transition-colors duration-200 text-center
+          ${
+            activeTab === tab.id ? "bg-[#0088b1] text-white" : " text-gray-600 "
+          }`}
           >
-            {/* <tab.icon className="w-4 h-4" /> */}
             {tab.label}
           </button>
         ))}

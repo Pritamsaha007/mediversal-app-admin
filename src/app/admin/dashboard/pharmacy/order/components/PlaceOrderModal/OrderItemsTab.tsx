@@ -1,25 +1,34 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Plus, Trash2, Search, X } from "lucide-react";
+import { Plus, Trash2, Search, X, Ticket, ChevronRight } from "lucide-react";
 import { getProductsWithPaginationAPI } from "../../../../pharmacy/product/services/ProductService";
 import { useAdminStore } from "@/app/store/adminStore";
 import { CreateOrderItem, OrderItem, Product } from "../../types/types";
 import Image from "next/image";
 import { useOrderStore } from "../../store/placeOrderStore";
+import toast from "react-hot-toast";
+import { getAllCoupons } from "@/app/admin/dashboard/coupons/services";
+import { CouponItem } from "@/app/types/auth.types";
+interface OrderItemsTabProps {
+  onCouponChange?: (coupon: CouponItem | null) => void;
+}
 
-const OrderItemsTab: React.FC = () => {
+const OrderItemsTab: React.FC<OrderItemsTabProps> = ({ onCouponChange }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchLoadingMore, setIsSearchLoadingMore] = useState(false);
   const [searchPage, setSearchPage] = useState(1);
   const [hasMoreSearch, setHasMoreSearch] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState<string>("");
+  const [showCouponInput, setShowCouponInput] = useState(false);
+  const [selectedCoupon, setSelectedCoupon] = useState<CouponItem | null>(null);
+  const [availableCoupons, setAvailableCoupons] = useState<CouponItem[]>([]);
+  const [showCouponList, setShowCouponList] = useState(false);
   const { token } = useAdminStore();
-  const { orderItems, updateOrderItems, updatePaymentMethod } = useOrderStore();
+  const { orderItems, updateOrderItems } = useOrderStore();
   const pageSize = 20;
   const searchResultsRef = useRef<HTMLDivElement>(null);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  console.log(orderItems, "jksa");
+
+  const MAX_QUANTITY = 10;
   const DELIVERY_CHARGE_THRESHOLD = 499;
   const DELIVERY_CHARGE = 40;
   const HANDLING_PACKAGING_FEE = 5;
@@ -42,6 +51,32 @@ const OrderItemsTab: React.FC = () => {
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
+  // Fetch all coupons on component mount
+  useEffect(() => {
+    fetchCoupons();
+  }, []);
+
+  const fetchCoupons = async () => {
+    try {
+      const coupons = await getAllCoupons();
+      setAvailableCoupons(coupons);
+    } catch (error) {
+      console.error("Failed to fetch coupons:", error);
+    }
+  };
+
+  // Calculate eligible items total (items that can have discount applied)
+  const calculateEligibleItemsTotal = () => {
+    return orderItems.reduce((total, item) => {
+      // Check if item is eligible for discount - default to true if not set
+      const isEligible = (item as any).discount_allowed !== false;
+      if (isEligible) {
+        return total + Number(item.sellingPrice) * Number(item.quantity);
+      }
+      return total;
+    }, 0);
+  };
+
   const calculateCharges = () => {
     const subtotal = orderItems.reduce(
       (total, item) =>
@@ -49,18 +84,85 @@ const OrderItemsTab: React.FC = () => {
       0,
     );
 
+    const eligibleItemsTotal = calculateEligibleItemsTotal();
+    const nonEligibleItemsTotal = subtotal - eligibleItemsTotal;
+
+    let couponDiscount = 0;
+    // Only apply coupon discount if there are eligible items AND eligible items meet minimum order threshold
+    if (selectedCoupon && eligibleItemsTotal > 0) {
+      const discountValue = Number(selectedCoupon.discount_value);
+      const minOrderValue = Number(selectedCoupon.minimum_order_value) || 0;
+
+      // Check if eligible items total meets minimum order requirement
+      if (eligibleItemsTotal >= minOrderValue) {
+        // Apply discount only on eligible items (matching CartPage logic)
+        if (selectedCoupon.discount_type === "fixed") {
+          couponDiscount = Math.min(discountValue, eligibleItemsTotal);
+        } else if (selectedCoupon.discount_type === "percentage") {
+          couponDiscount = (eligibleItemsTotal * discountValue) / 100;
+        }
+      }
+    }
+
     const deliveryCharge =
       subtotal < DELIVERY_CHARGE_THRESHOLD ? DELIVERY_CHARGE : 0;
     const handlingPackagingFee = HANDLING_PACKAGING_FEE;
-    const total = subtotal + deliveryCharge + handlingPackagingFee;
+    const total =
+      subtotal - couponDiscount + deliveryCharge + handlingPackagingFee;
+
     return {
       subtotal,
+      eligibleItemsTotal,
+      nonEligibleItemsTotal,
+      couponDiscount,
       deliveryCharge,
       handlingPackagingFee,
       total,
+      hasNonEligibleItems: nonEligibleItemsTotal > 0,
+      isNonEligibleItemsPresent: eligibleItemsTotal === 0,
     };
   };
 
+  const handleApplyCoupon = (coupon: CouponItem) => {
+    const eligibleItemsTotal = calculateEligibleItemsTotal();
+    const minOrderValue = Number(coupon.minimum_order_value) || 0;
+
+    if (eligibleItemsTotal === 0) {
+      toast.error(
+        "Coupon cannot be applied as no items are eligible for discount",
+      );
+      return;
+    }
+
+    if (minOrderValue > 0 && eligibleItemsTotal < minOrderValue) {
+      toast.error(
+        `Minimum eligible order value of ₹${minOrderValue} required for this coupon. Current eligible total: ₹${eligibleItemsTotal.toFixed(2)}`,
+      );
+      return;
+    }
+
+    if (coupon.status !== "active") {
+      toast.error("This coupon is not active");
+      return;
+    }
+
+    if (coupon.expiry_date && new Date(coupon.expiry_date) < new Date()) {
+      toast.error("This coupon has expired");
+      return;
+    }
+
+    setSelectedCoupon(coupon);
+    onCouponChange?.(coupon);
+    toast.success(`Coupon ${coupon.coupon_code} applied successfully!`);
+    setShowCouponInput(false);
+    setShowCouponList(false);
+  };
+
+  const handleRemoveCoupon = () => {
+    setSelectedCoupon(null);
+    onCouponChange?.(null);
+    toast.success("Coupon removed");
+  };
   const handleSearch = useCallback(
     async (term: string, page: number = 1) => {
       if (!term.trim()) {
@@ -89,7 +191,6 @@ const OrderItemsTab: React.FC = () => {
         const response = await getProductsWithPaginationAPI(
           (page - 1) * pageSize,
           pageSize,
-
           {
             searchTerm: term.trim(),
           },
@@ -102,6 +203,7 @@ const OrderItemsTab: React.FC = () => {
             quantity: product.quantity || 0,
             delivery: product.delivery || 0,
             discountPercentage: product.discountPercentage || 0,
+            discount_allowed: product.discount_allowed !== false,
           }));
 
           if (page === 1) {
@@ -185,6 +287,13 @@ const OrderItemsTab: React.FC = () => {
     );
 
     if (existingItem) {
+      if (existingItem.quantity + 1 > MAX_QUANTITY) {
+        toast.error(
+          `Maximum quantity of ${MAX_QUANTITY} reached for this product`,
+        );
+        return;
+      }
+
       const updatedItems = orderItems.map((item) =>
         item.productId === product.productId
           ? {
@@ -195,23 +304,28 @@ const OrderItemsTab: React.FC = () => {
           : item,
       );
       updateOrderItems(updatedItems);
+      toast.success(`Added 1 more. Total: ${existingItem.quantity + 1}`);
     } else {
+      const isDiscountAllowed = (product as any).discount_allowed !== false;
+
       const newItem: CreateOrderItem = {
         productId: product.productId,
         quantity: 1,
-        sellingPrice: product.SellingPrice,
+        sellingPrice: Number(product.SellingPrice),
         productName: product.ProductName || "",
-        sku: "",
+        sku: product.SKU || "",
         tax: 0,
-        discount: 0,
-        hsn: 0,
-        productLength: 0,
-        productBreadth: 0,
-        productHeight: 0,
-        productWeight: 0,
+        discount: product.discountPercentage || 0,
+        discount_allowed: isDiscountAllowed,
+        hsn: (product as any).hsn || "",
+        productLength: (product as any).productLength || 0,
+        productBreadth: (product as any).productBreadth || 0,
+        productHeight: (product as any).productHeight || 0,
+        productWeight: (product as any).productWeight || 0,
       };
 
       updateOrderItems([...orderItems, newItem]);
+      toast.success(`Added ${product.ProductName} (Qty: 1)`);
     }
 
     setSearchTerm("");
@@ -231,6 +345,10 @@ const OrderItemsTab: React.FC = () => {
 
   const updateQuantity = (productId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
+    if (newQuantity > MAX_QUANTITY) {
+      toast.error(`Maximum quantity of ${MAX_QUANTITY} allowed`);
+      return;
+    }
 
     const updatedItems = orderItems.map((item) =>
       item.productId === productId
@@ -249,11 +367,6 @@ const OrderItemsTab: React.FC = () => {
       (item) => item.productId !== productId,
     );
     updateOrderItems(updatedItems);
-  };
-
-  const handlePaymentMethodChange = (method: string) => {
-    setPaymentMethod(method);
-    updatePaymentMethod(method);
   };
 
   const formatCurrency = (amount: number) => {
@@ -288,6 +401,15 @@ const OrderItemsTab: React.FC = () => {
   };
 
   const charges = calculateCharges();
+  const eligibleItemsTotal = calculateEligibleItemsTotal();
+
+  const activeCoupons = availableCoupons.filter(
+    (coupon) =>
+      coupon.status === "active" &&
+      (!coupon.expiry_date || new Date(coupon.expiry_date) >= new Date()),
+  );
+
+  const hasEligibleItems = charges.eligibleItemsTotal > 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -309,6 +431,179 @@ const OrderItemsTab: React.FC = () => {
           </button>
         )}
       </div>
+
+      {/* Apply Coupon Section - Only show if there are eligible items */}
+      {orderItems.length > 0 && (
+        <div>
+          {!showCouponInput && !selectedCoupon ? (
+            <button
+              onClick={() => {
+                if (!hasEligibleItems) {
+                  toast.error(
+                    "No items in your cart are eligible for discount",
+                  );
+                  return;
+                }
+                setShowCouponInput(true);
+              }}
+              className="w-full flex items-center justify-between p-4 border border-dashed border-[#0088B1] rounded-lg bg-[#E8F4F7] hover:bg-[#D6EEF3] transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <Ticket className="w-5 h-5 text-[#0088B1]" />
+                <span className="text-sm font-medium text-[#0088B1]">
+                  Apply Coupon
+                </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#0088B1]" />
+            </button>
+          ) : selectedCoupon ? (
+            <div className="flex items-center justify-between p-4 border border-green-200 rounded-lg bg-green-50">
+              <div className="flex items-center gap-3">
+                <Ticket className="w-5 h-5 text-green-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-800">
+                    Coupon Applied:{" "}
+                    <span className="font-semibold text-green-600">
+                      {selectedCoupon.coupon_code}
+                    </span>
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {selectedCoupon.coupon_name} - Discount:{" "}
+                    {selectedCoupon.discount_type === "percentage"
+                      ? `${selectedCoupon.discount_value}% off`
+                      : `₹${selectedCoupon.discount_value} off`}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Applied on eligible items total:{" "}
+                    {formatCurrency(charges.eligibleItemsTotal)}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleRemoveCoupon}
+                className="text-red-500 hover:text-red-700 text-sm font-medium"
+              >
+                Remove
+              </button>
+            </div>
+          ) : (
+            <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+              {activeCoupons.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => setShowCouponList(!showCouponList)}
+                    className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <span className="text-sm font-medium text-gray-700">
+                      {showCouponList
+                        ? "Hide available coupons"
+                        : "Show all available coupons"}
+                    </span>
+                    <ChevronRight
+                      className={`w-4 h-4 text-gray-400 transition-transform ${showCouponList ? "rotate-90" : ""}`}
+                    />
+                  </button>
+
+                  {showCouponList && (
+                    <div className="mt-3 space-y-2 max-h-60 overflow-y-auto">
+                      {activeCoupons.map((coupon) => {
+                        const minOrderValue =
+                          Number(coupon.minimum_order_value) || 0;
+                        const isApplicable =
+                          hasEligibleItems &&
+                          eligibleItemsTotal >= minOrderValue;
+
+                        return (
+                          <div
+                            key={coupon.id}
+                            className={`p-3 border rounded-lg transition-colors ${
+                              isApplicable
+                                ? "border-gray-200 hover:bg-gray-50 cursor-pointer"
+                                : "border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed"
+                            }`}
+                            onClick={() =>
+                              isApplicable && handleApplyCoupon(coupon)
+                            }
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-semibold text-[#0088B1]">
+                                    {coupon.coupon_code}
+                                  </p>
+                                  {!isApplicable && (
+                                    <span className="text-xs text-gray-400">
+                                      {!hasEligibleItems
+                                        ? "No eligible items"
+                                        : `Need ₹${minOrderValue} eligible items`}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-600 mt-1">
+                                  {coupon.coupon_name}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {coupon.discount_type === "percentage"
+                                    ? `${coupon.discount_value}% OFF`
+                                    : `₹${coupon.discount_value} OFF`}
+                                  {minOrderValue > 0 &&
+                                    ` on min eligible order ₹${minOrderValue}`}
+                                </p>
+                                {coupon.description && (
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {coupon.description}
+                                  </p>
+                                )}
+                              </div>
+                              {isApplicable && (
+                                <ChevronRight className="w-4 h-4 text-gray-400" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
+                <p>
+                  Current eligible items total:{" "}
+                  <strong>{formatCurrency(eligibleItemsTotal)}</strong>
+                </p>
+                <p className="text-gray-400 mt-1">
+                  Coupons apply only to discountable items and require minimum
+                  eligible amount.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowCouponInput(false);
+                  setShowCouponList(false);
+                }}
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {orderItems.length > 0 && !hasEligibleItems && !selectedCoupon && (
+        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-2">
+            <Ticket className="w-4 h-4 text-gray-400" />
+            <p className="text-xs text-gray-500">
+              Coupons cannot be applied as no items in your cart are eligible
+              for discount.
+            </p>
+          </div>
+        </div>
+      )}
+
       {searchTerm && (
         <div
           ref={searchResultsRef}
@@ -328,6 +623,7 @@ const OrderItemsTab: React.FC = () => {
                     className="flex items-center p-4 hover:bg-gray-50 cursor-pointer transition-colors"
                     onClick={() => addToOrder(product)}
                   >
+                    {/* <ProductImage product={product} /> */}
                     <div className="ml-4 flex-1">
                       <div className="text-xs font-medium text-[#161D1F]">
                         {product.ProductName}
@@ -346,17 +642,7 @@ const OrderItemsTab: React.FC = () => {
                         <span className="text-xs font-medium text-[#161D1F]">
                           {formatCurrency(product.SellingPrice)}
                         </span>
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full ${
-                            product.StockAvailableInInventory > 0
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {product.StockAvailableInInventory > 0
-                            ? "In Stock"
-                            : "Out of Stock"}
-                        </span>
+                        <span className="text-xs text-gray-500">+1 Qty</span>
                       </div>
                     </div>
                   </div>
@@ -421,59 +707,84 @@ const OrderItemsTab: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {orderItems.map((item) => (
-                  <tr
-                    key={item.productId}
-                    className="border-t border-gray-200 hover:bg-gray-50"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center">
-                        <div className="ml-3">
-                          <div className="text-xs font-medium text-[#161D1F]">
-                            {item.productName}
+                {orderItems.map((item) => {
+                  const isEligible = (item as any).discount_allowed !== false;
+                  return (
+                    <tr
+                      key={item.productId}
+                      className="border-t border-gray-200 hover:bg-gray-50"
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center">
+                          <div className="ml-3">
+                            <div className="text-xs font-medium text-[#161D1F]">
+                              {item.productName}
+                              {!isEligible && (
+                                <span className="ml-2 text-xs text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded">
+                                  Not discountable
+                                </span>
+                              )}
+                              {isEligible && (
+                                <span className="ml-2 text-xs text-green-500 bg-green-50 px-1.5 py-0.5 rounded">
+                                  Discountable
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-[#161D1F]">
-                      {formatCurrency(Number(item.sellingPrice))}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center space-x-2">
+                      </td>
+                      <td className="px-4 py-3 text-xs text-[#161D1F]">
+                        {formatCurrency(Number(item.sellingPrice))}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() =>
+                              updateQuantity(item.productId, item.quantity - 1)
+                            }
+                            className="w-6 h-6 flex items-center justify-center border border-gray-300 rounded text-gray-600 hover:bg-gray-100"
+                          >
+                            -
+                          </button>
+                          <span className="text-xs text-black w-12 text-center font-medium">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() =>
+                              updateQuantity(item.productId, item.quantity + 1)
+                            }
+                            disabled={item.quantity >= MAX_QUANTITY}
+                            className={`w-6 h-6 flex items-center justify-center border rounded ${
+                              item.quantity >= MAX_QUANTITY
+                                ? "border-gray-200 text-gray-300 cursor-not-allowed"
+                                : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                            }`}
+                          >
+                            +
+                          </button>
+                        </div>
+                        {item.quantity >= MAX_QUANTITY && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            Max {MAX_QUANTITY} reached
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-medium text-[#161D1F]">
+                        {formatCurrency(
+                          Number(item.sellingPrice) * item.quantity,
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
                         <button
-                          onClick={() =>
-                            updateQuantity(item.productId, item.quantity - 1)
-                          }
-                          className="w-6 h-6 flex items-center justify-center border border-gray-300 rounded text-gray-600 hover:bg-gray-100"
+                          onClick={() => removeItem(item.productId)}
+                          className="text-red-600 hover:text-red-800 p-1"
                         >
-                          -
+                          <Trash2 className="w-4 h-4" />
                         </button>
-                        <span className="text-xs text-black w-8 text-center">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() =>
-                            updateQuantity(item.productId, item.quantity + 1)
-                          }
-                          className="w-6 h-6 flex items-center justify-center border border-gray-300 rounded text-gray-600 hover:bg-gray-100"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-xs font-medium text-[#161D1F]">
-                      {formatCurrency(Number(item.sellingPrice))}
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => removeItem(item.productId)}
-                        className="text-red-600 hover:text-red-800 p-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -483,9 +794,11 @@ const OrderItemsTab: React.FC = () => {
           </div>
         )}
         <p className="text-xs text-gray-500 mt-2">
-          Add medicines by searching in the search bar above.
+          Add medicines by searching above. Each click adds 1 quantity. Maximum{" "}
+          {MAX_QUANTITY} per product.
         </p>
       </div>
+
       {orderItems.length > 0 && (
         <div className="border border-gray-200 rounded-lg p-6 space-y-6">
           <div>
@@ -500,6 +813,27 @@ const OrderItemsTab: React.FC = () => {
                     {formatCurrency(charges.subtotal)}
                   </span>
                 </div>
+
+                {charges.nonEligibleItemsTotal > 0 && (
+                  <div className="flex justify-between text-sm text-orange-600">
+                    <span>Non-Discountable Items</span>
+                    <span>{formatCurrency(charges.nonEligibleItemsTotal)}</span>
+                  </div>
+                )}
+
+                {charges.eligibleItemsTotal > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Discountable Items</span>
+                    <span>{formatCurrency(charges.eligibleItemsTotal)}</span>
+                  </div>
+                )}
+
+                {charges.couponDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Coupon Discount</span>
+                    <span>-{formatCurrency(charges.couponDiscount)}</span>
+                  </div>
+                )}
 
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Delivery Charge</span>

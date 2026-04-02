@@ -507,7 +507,7 @@ export const ProductRelationshipsModal: React.FC<
           <button
             onClick={() => setActiveTab("substitutes")}
             disabled={isLoading}
-            className={`flex-1 px-6 py-2 text-[10px] font-medium rounded ${
+            className={`flex-1 px-6 py-2 text-[12px] font-medium rounded ${
               activeTab === "substitutes"
                 ? "text-[#F8F8F8] bg-[#0891B2] border-[#0891B2]"
                 : "text-[#899193] hover:text-gray-700"
@@ -518,7 +518,7 @@ export const ProductRelationshipsModal: React.FC<
           <button
             onClick={() => setActiveTab("similar")}
             disabled={isLoading}
-            className={`flex-1 px-6 py-3 text-[10px] font-medium rounded ${
+            className={`flex-1 px-6 py-3 text-[12px] font-medium rounded ${
               activeTab === "similar"
                 ? "text-white bg-[#0891B2] border-b-2 border-[#0891B2]"
                 : "text-[#899193] hover:text-gray-700"

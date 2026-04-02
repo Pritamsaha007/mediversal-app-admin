@@ -83,19 +83,29 @@ export default function FAQModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 animate-fade-in"
       onClick={handleBackdrop}
     >
-      <div className="relative w-full max-w-2xl max-h-[90vh] rounded-xl bg-white shadow-xl mx-4 p-6 overflow-y-auto">
-        <button className="absolute top-4 right-4 text-[#899193] hover:text-[#161D1F] transition-colors">
+      {/* Modal — flex column so footer sticks to bottom */}
+      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-xl bg-white shadow-xl mx-4">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-[#899193] hover:text-[#161D1F] transition-colors z-10"
+        >
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-[16px] font-semibold text-[#161D1F] mb-5">
-          {mode === "add" ? "Add New FAQs" : "Update FAQs:"}
-        </h2>
+        {/* Header */}
+        <div className="flex-shrink-0 px-6 pt-6 pb-4">
+          <h2 className="text-[16px] font-semibold text-[#161D1F]">
+            {mode === "add" ? "Add New FAQs" : "Update FAQs"}
+          </h2>
+        </div>
 
-        <div className="space-y-4">
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-6 space-y-4">
+          {/* Question */}
           <div>
             <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
               * Question
@@ -120,6 +130,7 @@ export default function FAQModal({
             )}
           </div>
 
+          {/* Answer */}
           <div>
             <label className="block text-[12px] font-medium text-[#161D1F] mb-1">
               * Answer
@@ -144,7 +155,8 @@ export default function FAQModal({
             )}
           </div>
 
-          <div>
+          {/* Active toggle */}
+          <div className="pb-2">
             <label
               className={`flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 transition ${
                 isActive
@@ -193,50 +205,51 @@ export default function FAQModal({
               </div>
             </label>
           </div>
+        </div>
 
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={reset}
-              disabled={submitting}
-              className="px-4 py-2 text-[12px] border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              Reset
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="px-4 py-2 text-[12px] bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors disabled:opacity-60 flex items-center gap-2"
-            >
-              {submitting && (
-                <svg
-                  className="h-3.5 w-3.5 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8H4z"
-                  />
-                </svg>
-              )}
-              {submitting
-                ? "Saving..."
-                : mode === "add"
-                  ? "Add FAQs"
-                  : "Update FAQs"}
-            </button>
-          </div>
+        {/* Sticky footer */}
+        <div className="flex-shrink-0 flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
+          <button
+            type="button"
+            onClick={reset}
+            disabled={submitting}
+            className="px-4 py-2 text-[12px] border border-gray-300 rounded-lg text-[#161D1F] hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            Reset
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="px-4 py-2 text-[12px] bg-[#0088B1] text-white rounded-lg hover:bg-[#00729A] transition-colors disabled:opacity-60 flex items-center gap-2"
+          >
+            {submitting && (
+              <svg
+                className="h-3.5 w-3.5 animate-spin"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                />
+              </svg>
+            )}
+            {submitting
+              ? "Saving..."
+              : mode === "add"
+                ? "Add FAQs"
+                : "Update FAQs"}
+          </button>
         </div>
       </div>
     </div>

@@ -85,6 +85,7 @@ export type CreateOrderItem = {
   productBreadth: number;
   productHeight: number;
   productWeight: number;
+  discount_allowed?: boolean;
 };
 export interface prescription {
   prescription_id: string;
@@ -126,7 +127,6 @@ export interface FilterOptions {
   searchTerm: string;
 }
 
-// API Response interface
 export interface ApiResponse {
   success: boolean;
   data: Order[];
