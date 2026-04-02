@@ -110,6 +110,7 @@ const Orders: React.FC = () => {
     "By Order Status",
     "By Payment Status",
   ];
+
   const fetchOrderStatuses = async () => {
     try {
       const response = await getOrderStatus(token);
@@ -229,9 +230,11 @@ const Orders: React.FC = () => {
       setUpdatingStatus(null);
     }
   };
+
   const getCurrentStatus = (order: Order): string => {
     return order.deliverystatus;
   };
+
   const fetchOrders = async (resetPage: boolean = false) => {
     try {
       setLoading(true);
@@ -296,7 +299,6 @@ const Orders: React.FC = () => {
 
   useEffect(() => {
     fetchOrders(true);
-
     fetchOrderStatuses();
   }, [selectedStatus, selectedPayment, sortBy]);
 
@@ -436,18 +438,24 @@ const Orders: React.FC = () => {
     if (checked) {
       const currentPageOrders = orders
         .filter((order) => order.id != null)
-        .map((order) => order.id.toString());
+        .map((order) => order.id!.toString());
 
-      setSelectedOrders([
-        ...new Set([...selectedOrders, ...currentPageOrders]),
-      ]);
+      setSelectedOrders((prev) => {
+        const newSelections = [...prev];
+        currentPageOrders.forEach((orderId) => {
+          if (!newSelections.includes(orderId)) {
+            newSelections.push(orderId);
+          }
+        });
+        return newSelections;
+      });
     } else {
       const currentPageOrderIds = orders
         .filter((order) => order.id != null)
-        .map((order) => order.id.toString());
+        .map((order) => order.id!.toString());
 
-      setSelectedOrders(
-        selectedOrders.filter((id) => !currentPageOrderIds.includes(id)),
+      setSelectedOrders((prev) =>
+        prev.filter((id) => !currentPageOrderIds.includes(id)),
       );
     }
   };
@@ -466,6 +474,7 @@ const Orders: React.FC = () => {
 
   const stats = OrderService.generateOrderStats(allOrdersForStats);
   const hasMore = (currentPage + 1) * itemsPerPage < stats.totalOrders;
+
   return (
     <div className="min-h-screen bg-gray-50 p-2 ">
       <div className="max-w-7xl mx-auto">
@@ -635,7 +644,9 @@ const Orders: React.FC = () => {
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                          checked={selectedOrders.includes(order?.ordernumber)}
+                          checked={selectedOrders.includes(
+                            order.id?.toString() || "",
+                          )}
                           onChange={(e) => {
                             if (order?.id != null) {
                               handleSelectOrder(
@@ -682,7 +693,6 @@ const Orders: React.FC = () => {
                           </span>
                         </div>
                       </td>
-
                       <td className="px-6 py-4 whitespace-nowrap">
                         {OrderService.requiresRiderDropdown(order) ? (
                           <div className="relative status-dropdown">
@@ -742,7 +752,6 @@ const Orders: React.FC = () => {
                           />
                         )}
                       </td>
-
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-xs text-[#161D1F] font-medium">
                           <StatusBadge
@@ -767,7 +776,6 @@ const Orders: React.FC = () => {
                           />
                         </div>
                       </td>
-
                       <td className="px-6 py-4 whitespace-nowrap text-xs text-[#161D1F]">
                         <div className="flex flex-col items-start gap-1">
                           <button
@@ -775,7 +783,7 @@ const Orders: React.FC = () => {
                               setSelectedOrderForPrescription(order);
                               setPrescriptionModalOpen(true);
                             }}
-                            className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer flex items-center gap-1 "
+                            className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer flex items-center gap-1"
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />

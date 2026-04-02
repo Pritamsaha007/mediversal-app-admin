@@ -318,7 +318,7 @@ const CustomerCatalog: React.FC = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left">
+                      <th className="px-6 py-4 text-left">
                         <input
                           type="checkbox"
                           checked={selectAll}

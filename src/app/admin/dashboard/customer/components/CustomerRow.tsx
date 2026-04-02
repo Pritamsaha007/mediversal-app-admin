@@ -29,7 +29,7 @@ const CustomerRow: React.FC<CustomerRowProps> = React.memo(
         className="hover:bg-gray-50 cursor-pointer transition-colors"
         onClick={onClick}
       >
-        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+        <td className="px-7 py-4" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
             checked={isSelected}
@@ -70,7 +70,7 @@ const CustomerRow: React.FC<CustomerRowProps> = React.memo(
       prevProps.customer.total_spent === nextProps.customer.total_spent &&
       prevProps.isSelected === nextProps.isSelected
     );
-  }
+  },
 );
 
 CustomerRow.displayName = "CustomerRow";
