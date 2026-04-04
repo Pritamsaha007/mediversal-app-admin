@@ -1,14 +1,14 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { ChevronDown, X } from "lucide-react";
-import { CreateUpdateStaffPayload, Staff } from "../types";
+import { ApiStaff, CreateUpdateStaffPayload, Staff } from "../types";
 import { createUpdateStaff, fetchRoles, RoleApiResponse } from "../service";
 
 interface AddStaffModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (staffData: Staff) => void;
-  initialData?: Staff;
+  onSubmit: (staffData: ApiStaff) => void;
+  initialData?: ApiStaff;
 }
 
 const AddStaffModal: React.FC<AddStaffModalProps> = ({
@@ -19,18 +19,18 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     fullName: initialData?.name || "",
-    phoneNumber: initialData?.phone || "",
-    experience: initialData?.experience || "",
+    phoneNumber: initialData?.mobile_number || "",
+    experience: initialData?.experience_in_yrs || "",
     specialization: "",
-    role: initialData?.position || "",
+    role: initialData?.role_name || "",
     emailAddress: initialData?.email || "",
-    location: initialData?.address || "",
+    //location: initialData?.location || "",
     certifications: "",
   });
 
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [specializationTags, setSpecializationTags] = useState<string[]>(
-    initialData?.departments || [],
+    initialData?.specializations || [],
   );
   const [certificationTags, setCertificationTags] = useState<string[]>(
     initialData?.certifications || [],
@@ -41,7 +41,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [roleOptions, setRoleOptions] = useState<RoleApiResponse[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<string>(
-    initialData?.position || "",
+    initialData?.role_name || "",
   );
 
   // const roleOptions = [
@@ -61,15 +61,15 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
     if (initialData) {
       setFormData({
         fullName: initialData.name,
-        phoneNumber: initialData.phone,
-        experience: initialData.experience,
+        phoneNumber: initialData.mobile_number,
+        experience: initialData.experience_in_yrs,
         specialization: "",
-        role: initialData.position,
+        role: initialData.role_name,
         emailAddress: initialData.email || "",
-        location: initialData.address || "",
+        // location: initialData.address || "",
         certifications: "",
       });
-      setSpecializationTags(initialData.departments || []);
+      setSpecializationTags(initialData.specializations || []);
       setCertificationTags(initialData.certifications || []);
     } else {
       setFormData({
@@ -79,7 +79,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
         specialization: "",
         role: "",
         emailAddress: "",
-        location: "",
+        // location: "",
         certifications: "",
       });
       setSpecializationTags([]);
@@ -93,9 +93,9 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
         const roles = await fetchRoles();
         setRoleOptions(roles);
 
-        if (initialData?.position) {
+        if (initialData?.role_name) {
           const matchingRole = roles.find(
-            (role) => role.role_name === initialData.position,
+            (role) => role.role_name === initialData.role_name,
           );
           if (matchingRole) {
             setSelectedRoleId(matchingRole.id);
@@ -184,10 +184,8 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
     setSubmitError(null);
 
     try {
-      const experienceYears =
-        formData.experience.match(/(\d+)\s*years?/i)?.[1] || "0";
-      const experienceMonths =
-        formData.experience.match(/(\d+)\s*months?/i)?.[1] || "0";
+      const experienceYears = String(formData.experience || "0");
+      const experienceMonths = String(formData.experience || "0");
 
       const payload: CreateUpdateStaffPayload = {
         ...(initialData?.id ? { id: initialData.id } : {}),
@@ -195,8 +193,8 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
         mobile_number: formData.phoneNumber,
         role: selectedRoleId,
         email: formData.emailAddress || "",
-        experience_in_yrs: parseInt(experienceYears),
-        experience_in_months: parseInt(experienceMonths),
+        experience_in_yrs: parseInt(experienceYears, 10),
+        experience_in_months: parseInt(experienceMonths, 10),
         experience_in_days: 0,
         specializations:
           specializationTags.length > 0 ? specializationTags : ["General"],
@@ -218,20 +216,27 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
       await createUpdateStaff(payload);
       console.log("Submitting payload:", payload);
 
-      const staffData: Staff = {
+      const parsedExperience = Number(formData.experience);
+      const staffData: ApiStaff = {
         id: initialData?.id || `temp-${Date.now()}`,
         name: formData.fullName,
-        phone: formData.phoneNumber,
-        address: formData.location || "Not provided",
-        experience: formData.experience || "Not specified",
-        rating: payload.rating,
-        status: initialData?.status || "Available",
-        departments: payload.specializations,
-        position: formData.role,
-        joinDate:
-          initialData?.joinDate || new Date().toISOString().split("T")[0],
+        mobile_number: formData.phoneNumber,
+        //location: formData.location || "Not provided",
+        experience_in_yrs:
+          formData.experience && !Number.isNaN(parsedExperience)
+            ? parsedExperience
+            : 0,
+        rating: payload.rating.toString(),
+        availability_status: initialData?.availability_status || "Available",
+        specializations: payload.specializations,
+        role_name: formData.role,
+        // joinDate:
+        //   initialData?.joinDate || new Date().toISOString().split("T")[0],
         email: formData.emailAddress,
         certifications: certificationTags,
+        experience_in_months: 0,
+        experience_in_days: 0,
+        profile_image_url: "",
       };
 
       onSubmit(staffData);
@@ -256,7 +261,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
         specialization: "",
         role: "",
         emailAddress: "",
-        location: "",
+        // location: "",
         certifications: "",
       });
       setSpecializationTags([]);
@@ -407,7 +412,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
               />
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <label className="block text-[12px] font-medium text-[#161D1F]">
                 Location
               </label>
@@ -418,7 +423,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0088B1] focus:border-[#0088B1] outline-none text-[12px] placeholder-[#899193] text-black"
                 placeholder="Area, City, State"
               />
-            </div>
+            </div> */}
           </div>
 
           <div className="space-y-2 mt-6">

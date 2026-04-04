@@ -1,4 +1,3 @@
-// Update your rider API service
 import axios from "axios";
 import {
   CreateRiderPayload,
@@ -19,10 +18,10 @@ const RIDER_API_BASE_URL = process.env.NEXT_PUBLIC_HOMECARE_API_BASE_URL;
 
 export const getRidersStats = (riders: DeliveryRider[]) => {
   const activeRiders = riders.filter(
-    (r) => r.is_available_status === "active" && !r.is_deleted
+    (r) => r.is_available_status === "active" && !r.is_deleted,
   ).length;
   const verifiedRiders = riders.filter(
-    (r) => r.is_poi_verified_status === "approved" && !r.is_deleted
+    (r) => r.is_poi_verified_status === "approved" && !r.is_deleted,
   ).length;
 
   return {
@@ -34,7 +33,7 @@ export const getRidersStats = (riders: DeliveryRider[]) => {
 
 export const createRider = async (
   payload: CreateRiderPayload,
-  token: string
+  token: string,
 ): Promise<CreateRiderResponse> => {
   try {
     const response = await axios.post(
@@ -45,7 +44,7 @@ export const createRider = async (
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     return response.data;
@@ -57,7 +56,7 @@ export const createRider = async (
 
 export const searchRider = async (
   payload: SearchRidersPayload,
-  token: string
+  token: string,
 ): Promise<DeliveryRider[]> => {
   try {
     const response = await axios.post(
@@ -68,7 +67,7 @@ export const searchRider = async (
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (response.data.success) {
@@ -85,7 +84,7 @@ export const searchRider = async (
 
 export const updateRider = async (
   payload: any,
-  token: string
+  token: string,
 ): Promise<CreateRiderResponse> => {
   try {
     const response = await axios.post(
@@ -96,7 +95,7 @@ export const updateRider = async (
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     return response.data;
@@ -108,7 +107,7 @@ export const updateRider = async (
 
 export const deleteRider = async (
   riderId: string,
-  token: string
+  token: string,
 ): Promise<CreateRiderResponse> => {
   try {
     const payload = {
@@ -124,7 +123,7 @@ export const deleteRider = async (
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     return response.data;
@@ -136,7 +135,7 @@ export const deleteRider = async (
 
 export const getRiderById = async (
   riderId: string,
-  token: string
+  token: string,
 ): Promise<DeliveryRider> => {
   try {
     const response = await axios.get(
@@ -146,7 +145,7 @@ export const getRiderById = async (
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (response.data) {
@@ -170,7 +169,7 @@ export const fetchRiderStatus = (token: string) =>
   fetchEnums(EnumCodes.RIDER_DELIVERY_STATUS, token);
 export const searchPincodes = async (
   payload: PincodeSearchPayload,
-  token: string
+  token: string,
 ): Promise<PincodeSearchResponse> => {
   try {
     const response = await axios.post(
@@ -186,7 +185,7 @@ export const searchPincodes = async (
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (response.data.success) {
@@ -197,13 +196,13 @@ export const searchPincodes = async (
   } catch (error: any) {
     console.error("Error searching pincodes:", error);
     throw new Error(
-      error.response?.data?.message || "Failed to search pincodes"
+      error.response?.data?.message || "Failed to search pincodes",
     );
   }
 };
 export const getRiderOverview = async (
   payload: RiderOverviewPayload,
-  token: string
+  token: string,
 ): Promise<RiderOverviewResponse> => {
   try {
     const response = await axios.post(
@@ -214,20 +213,20 @@ export const getRiderOverview = async (
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     return response.data;
   } catch (error: any) {
     console.error("Error fetching rider overview:", error);
     throw new Error(
-      error.response?.data?.message || "Failed to fetch rider overview"
+      error.response?.data?.message || "Failed to fetch rider overview",
     );
   }
 };
 export const updateOrderRiderInfo = async (
   payload: UpdateRiderInfoPayload,
-  token: string
+  token: string,
 ): Promise<UpdateRiderInfoResponse> => {
   try {
     const response = await axios.patch(
@@ -238,14 +237,14 @@ export const updateOrderRiderInfo = async (
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     return response.data;
   } catch (error: any) {
     console.error("Error updating rider info:", error);
     throw new Error(
-      error.response?.data?.message || "Failed to update rider information"
+      error.response?.data?.message || "Failed to update rider information",
     );
   }
 };
@@ -253,7 +252,7 @@ export const updateOrderRiderInfo = async (
 export const updateRiderPOI = async (
   riderId: string,
   isApproved: boolean,
-  token: string
+  token: string,
 ): Promise<CreateRiderResponse> => {
   try {
     const payload = {
@@ -269,14 +268,14 @@ export const updateRiderPOI = async (
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     return response.data;
   } catch (error: any) {
     console.error("Error updating rider POI status:", error);
     throw new Error(
-      error.response?.data?.message || "Failed to update rider POI status"
+      error.response?.data?.message || "Failed to update rider POI status",
     );
   }
 };

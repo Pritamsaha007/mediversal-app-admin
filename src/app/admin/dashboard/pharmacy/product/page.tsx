@@ -10,6 +10,7 @@ import {
   ListOrdered,
   Projector,
   Disc,
+  Pill,
 } from "lucide-react";
 import { categories, sortOptions, tabs } from "./data/productCatalogData";
 import { AddProductModal } from "./components/AddProductModal";
@@ -806,7 +807,7 @@ const ProductCatalog: React.FC = () => {
             <table className="w-full relative">
               <thead className="bg-gray-50 sticky top-0 z-20">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  {/* <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     <input
                       type="checkbox"
                       checked={
@@ -819,7 +820,7 @@ const ProductCatalog: React.FC = () => {
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
                     />
-                  </th>
+                  </th> */}
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F]  tracking-wider">
                     Product Name
                   </th>
@@ -883,18 +884,14 @@ const ProductCatalog: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={9} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">
-                        <ShoppingBag className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <div className="text-gray-500 text-center">
+                        <Pill className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">
                           No products found
                         </h3>
                         <p className="text-gray-500">
-                          {searchTerm ||
-                          selectedCategory !== "All Categories" ||
-                          activeTab !== "All Products"
-                            ? "Try adjusting your search or filter criteria."
-                            : "Get started by adding your first product."}
+                          No products match your current criteria.
                         </p>
                       </div>
                     </td>

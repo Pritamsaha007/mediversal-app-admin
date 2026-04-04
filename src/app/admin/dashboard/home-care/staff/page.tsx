@@ -2,150 +2,111 @@
 import React, { useEffect, useState } from "react";
 import {
   Search,
-  ChevronDown,
   Plus,
   Eye,
   Edit,
   Trash2,
   Star,
   Download,
+  ClipboardPlus,
 } from "lucide-react";
 import AddStaffModal from "./components/AddStaffModal";
 import ViewStaffModal from "./components/ViewStaffModal";
-import { ApiStaff, Staff } from "./types";
+import { ApiStaff } from "./types";
 import { fetchStaff, deleteStaff } from "./service";
 import StatusBadge from "@/app/components/common/StatusBadge";
 import Pagination from "@/app/components/common/pagination";
+import { useStaffStore } from "./store/staffStore";
+import toast from "react-hot-toast";
 
 const StaffManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchDebounceTimer, setSearchDebounceTimer] =
     useState<NodeJS.Timeout | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState("All Statuses");
-  const [activeTab, setActiveTab] = useState("All Staffs");
-  const [openDropdown, setOpenDropdown] = useState<
-    null | "status" | "department"
-  >(null);
+  const [selectedStatus] = useState("All Statuses");
+  const [activeTab] = useState("All Staffs");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
   const [staffActionDropdown, setStaffActionDropdown] = useState<number | null>(
     null,
   );
-  const [viewStaff, setViewStaff] = useState<Staff | null>(null);
-  const [editStaff, setEditStaff] = useState<Staff | null>(null);
-
+  const [viewStaff, setViewStaff] = useState<ApiStaff | null>(null);
+  const [editStaff, setEditStaff] = useState<ApiStaff | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 10;
-
-  const [staffList, setStaffList] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { staff, setStaff } = useStaffStore();
+  const [filteredStaff, setFilteredStaff] = useState<ApiStaff[]>(staff);
 
-  const handleAddStaff = async (newStaff: Staff) => {
-    setStaffList((prev) => [...prev, newStaff]);
+  const fetchStaffData = async (forceRefresh = false) => {
+    if (!forceRefresh && staff.length > 0) {
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      const response = await fetchStaff();
+      if (response.success) {
+        setStaff(response.staffs);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load staff");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStaffDataSilent = async () => {
     try {
       const response = await fetchStaff();
       if (response.success) {
-        const transformedStaff = response.staffs.map(transformApiStaff);
-        setStaffList(transformedStaff);
+        setStaff(response.staffs);
       }
-    } catch (error) {
-      console.error("Error refreshing staff list:", error);
+    } catch (err) {
+      console.error("Background sync failed:", err);
     }
-
-    console.log("New staff added:", newStaff);
-  };
-
-  const transformApiStaff = (apiStaff: ApiStaff): Staff => {
-    const totalExperience = `${apiStaff.experience_in_yrs} Years`;
-
-    return {
-      id: apiStaff.id,
-      name: apiStaff.name,
-      phone: apiStaff.mobile_number,
-      experience: totalExperience,
-      rating: parseFloat(apiStaff.rating) || 0,
-      status: apiStaff.availability_status,
-      departments: apiStaff.specializations,
-      position: apiStaff.role_name,
-      email: apiStaff.email,
-      certifications: apiStaff.certifications,
-      address: "",
-      joinDate: new Date().toISOString().split("T")[0],
-    };
   };
 
   useEffect(() => {
-    const loadStaff = async () => {
-      try {
-        setLoading(true);
-        const response = await fetchStaff();
-        if (response.success) {
-          const transformedStaff = response.staffs.map(transformApiStaff);
-          setStaffList(transformedStaff);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load staff");
-        console.error("Error loading staff:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadStaff();
+    fetchStaffData();
   }, []);
 
-  const handleUpdateStaff = async (updatedStaff: Staff) => {
-    setStaffList((prev) =>
-      prev.map((staff) =>
-        staff.id === updatedStaff.id ? updatedStaff : staff,
-      ),
-    );
-
-    try {
-      const response = await fetchStaff();
-      if (response.success) {
-        const transformedStaff = response.staffs.map(transformApiStaff);
-        setStaffList(transformedStaff);
-      }
-    } catch (error) {
-      console.error("Error refreshing staff list:", error);
-    }
-
-    setEditStaff(null);
-    console.log("Staff updated:", updatedStaff);
-  };
-
-  const [filteredStaff, setFilteredStaff] = useState<Staff[]>(staffList);
-
-  const statusOptions = ["All Statuses", "Available", "Not available"];
-
   useEffect(() => {
-    let filtered = staffList;
+    let filtered = staff;
 
     if (searchTerm.trim()) {
-      filtered = filtered.filter(
-        (staff) =>
-          staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          staff.departments.some((dept) =>
-            dept.toLowerCase().includes(searchTerm.toLowerCase()),
-          ) ||
-          staff.position.toLowerCase().includes(searchTerm.toLowerCase()),
-      );
+      filtered = filtered.filter((staffItem) => {
+        const matchesName =
+          staffItem.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          false;
+        const matchesSpecializations =
+          staffItem.specializations && Array.isArray(staffItem.specializations)
+            ? staffItem.specializations.some((dept) =>
+                dept?.toLowerCase().includes(searchTerm.toLowerCase()),
+              )
+            : false;
+        const matchesStatus =
+          staffItem.availability_status
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) || false;
+        return matchesName || matchesSpecializations || matchesStatus;
+      });
     }
 
     if (selectedStatus !== "All Statuses") {
-      filtered = filtered.filter((staff) => staff.status === selectedStatus);
+      filtered = filtered.filter(
+        (staffItem) => staffItem.availability_status === selectedStatus,
+      );
     }
 
     setFilteredStaff(filtered);
     setCurrentPage(0);
-  }, [searchTerm, selectedStatus, staffList]);
+  }, [searchTerm, selectedStatus, staff]);
 
   const paginatedStaff = React.useMemo(() => {
     const startIndex = currentPage * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredStaff.slice(startIndex, endIndex);
+    return filteredStaff.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredStaff, currentPage, itemsPerPage]);
 
   const hasMore = React.useMemo(() => {
@@ -154,26 +115,15 @@ const StaffManagement: React.FC = () => {
 
   const totalItems = filteredStaff.length;
 
-  const handleStatusChange = (status: string) => {
-    setSelectedStatus(status);
-    setOpenDropdown(null);
-  };
-
-  const handleSearch = (searchTerm: string) => {
-    setSearchTerm(searchTerm);
-
-    if (searchDebounceTimer) {
-      clearTimeout(searchDebounceTimer);
-    }
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
 
     const timer = setTimeout(async () => {
       try {
         setLoading(true);
-        const response = await fetchStaff(searchTerm || undefined);
-        if (response.success) {
-          const transformedStaff = response.staffs.map(transformApiStaff);
-          setStaffList(transformedStaff);
-        }
+        const response = await fetchStaff(term || undefined);
+        if (response.success) setStaff(response.staffs);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to search staff");
       } finally {
@@ -184,48 +134,52 @@ const StaffManagement: React.FC = () => {
     setSearchDebounceTimer(timer);
   };
 
-  const handleSelectStaff = (staffId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedStaff([...selectedStaff, staffId]);
-    } else {
-      setSelectedStaff(selectedStaff.filter((id) => id !== staffId));
-    }
+  const handleAddStaff = async (newStaff: ApiStaff) => {
+    const optimisticStaff = {
+      ...newStaff,
+      id: newStaff.id || `staff-${Date.now()}`,
+    };
+    setStaff([...staff, optimisticStaff]);
+    setIsModalOpen(false);
+    toast.success("Staff member added successfully");
+    fetchStaffDataSilent();
   };
 
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedStaff(paginatedStaff.map((staff) => staff.id));
-    } else {
-      setSelectedStaff([]);
-    }
+  const handleUpdateStaff = async (updatedStaff: ApiStaff) => {
+    const updatedList = staff.map((s) =>
+      s.id === updatedStaff.id ? { ...s, ...updatedStaff } : s,
+    );
+    setStaff(updatedList);
+    setEditStaff(null);
+    toast.success("Staff member updated successfully");
+    fetchStaffDataSilent();
   };
 
-  const handleStaffAction = async (action: string, staff: Staff) => {
+  const handleStaffAction = async (action: string, staffItem: ApiStaff) => {
     switch (action) {
       case "view":
-        setViewStaff(staff);
+        setViewStaff(staffItem);
         break;
+
       case "edit":
-        setEditStaff(staff);
+        setEditStaff(staffItem);
         break;
+
       case "delete":
-        if (window.confirm(`Are you sure you want to delete ${staff.name}?`)) {
+        if (
+          window.confirm(`Are you sure you want to delete ${staffItem.name}?`)
+        ) {
+          const previousStaff = [...staff];
+          setStaff(staff.filter((s) => s.id !== staffItem.id));
+          setSelectedStaff((prev) => prev.filter((id) => id !== staffItem.id));
           try {
-            setLoading(true);
-            await deleteStaff(staff.id);
-
-            setStaffList((prev) => prev.filter((s) => s.id !== staff.id));
-
-            setSelectedStaff((prev) => prev.filter((id) => id !== staff.id));
-
-            console.log("Staff deleted successfully:", staff.name);
+            await deleteStaff(staffItem.id);
+            fetchStaffDataSilent();
           } catch (error) {
-            console.error("Error deleting staff:", error);
+            setStaff(previousStaff);
             setError(
               error instanceof Error ? error.message : "Failed to delete staff",
             );
-          } finally {
-            setLoading(false);
           }
         }
         break;
@@ -241,73 +195,52 @@ const StaffManagement: React.FC = () => {
         `Are you sure you want to delete ${selectedStaff.length} selected staff members?`,
       )
     ) {
+      const previousStaff = [...staff];
+      setStaff(staff.filter((s) => !selectedStaff.includes(s.id)));
+      setSelectedStaff([]);
       try {
-        setLoading(true);
-
         await Promise.all(selectedStaff.map((staffId) => deleteStaff(staffId)));
-
-        setStaffList((prev) =>
-          prev.filter((staff) => !selectedStaff.includes(staff.id)),
-        );
-        setSelectedStaff([]);
-
-        console.log("Bulk delete completed successfully");
+        fetchStaffDataSilent();
       } catch (error) {
-        console.error("Error in bulk delete:", error);
+        setStaff(previousStaff);
         setError(
           error instanceof Error
             ? error.message
             : "Failed to delete selected staff",
         );
-      } finally {
-        setLoading(false);
       }
     }
   };
 
-  const renderStars = (rating: number) => {
-    return (
-      <div className="flex items-center gap-1">
-        {[...Array(5)].map((_, i) => (
-          <Star
-            key={i}
-            className={`w-3 h-3 ${
-              i < Math.floor(rating)
-                ? "text-yellow-400 fill-current"
-                : "text-gray-300"
-            }`}
-          />
-        ))}
-        <span className="text-[10px] text-gray-600 ml-1 ">
-          {rating.toFixed(1)}
-        </span>
-      </div>
-    );
-  };
-
-  const getDepartmentChip = (department: string) => {
-    return (
-      <span className="inline-block px-2 py-1 text-xs font-medium rounded-full mr-1 mb-1 bg-gray-100 text-gray-800 text-[10px]">
-        {department}
-      </span>
-    );
-  };
+  const renderStars = (rating: number) => (
+    <div className="flex items-center gap-1">
+      {[...Array(5)].map((_, i) => (
+        <Star
+          key={i}
+          className={`w-3 h-3 ${
+            i < Math.floor(rating)
+              ? "text-yellow-400 fill-current"
+              : "text-gray-300"
+          }`}
+        />
+      ))}
+      <span className="text-[10px] text-gray-600 ml-1">{rating}</span>
+    </div>
+  );
 
   const handleExport = () => {
-    if (staffList.length === 0) {
+    if (staff.length === 0) {
       alert("No staff to export");
       return;
     }
-
     const staffToExport =
       selectedStaff.length > 0
-        ? staffList.filter((s) => selectedStaff.includes(s.id))
+        ? staff.filter((s) => selectedStaff.includes(s.id))
         : filteredStaff;
-
     exportStaffToCSV(staffToExport);
   };
 
-  const exportStaffToCSV = (staff: Staff[]) => {
+  const exportStaffToCSV = (staffData: ApiStaff[]) => {
     const headers = [
       "Staff ID",
       "Name",
@@ -323,20 +256,22 @@ const StaffManagement: React.FC = () => {
 
     const csvContent = [
       headers.join(","),
-      ...staff.map((s) =>
+      ...staffData.map((s) =>
         [
           s.id,
-          `"${s.name}"`,
+          `"${s.name || ""}"`,
           s.email || "N/A",
-          s.phone || "N/A",
-          `"${s.position}"`,
-          s.experience,
-          s.rating.toFixed(1),
-          s.status,
+          s.mobile_number || "N/A",
+          `"${s.role_name || ""}"`,
+          s.experience_in_yrs || "0",
+          s.rating || "0",
+          s.availability_status || "N/A",
           `"${
-            Array.isArray(s.departments) ? s.departments.join(", ") : "N/A"
+            Array.isArray(s.specializations)
+              ? s.specializations.join(", ")
+              : "N/A"
           }"`,
-          s.joinDate,
+          s.created_date?.split("T")[0] || "N/A",
         ].join(","),
       ),
     ].join("\n");
@@ -344,53 +279,41 @@ const StaffManagement: React.FC = () => {
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
-
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
       `staff_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
-
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   const handlePreviousPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage((prev) => prev - 1);
-    }
+    if (currentPage > 0) setCurrentPage((prev) => prev - 1);
   };
 
   const handleNextPage = () => {
-    if (hasMore) {
-      setCurrentPage((prev) => prev + 1);
-    }
+    if (hasMore) setCurrentPage((prev) => prev + 1);
   };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest(".dropdown-toggle")) {
-        setOpenDropdown(null);
         setStaffActionDropdown(null);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-
-      if (searchDebounceTimer) {
-        clearTimeout(searchDebounceTimer);
-      }
+      if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
     };
   }, [searchDebounceTimer]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-2 ">
+    <div className="min-h-screen bg-gray-50 p-2">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-[20px] font-semibold text-[#161D1F]">
@@ -404,7 +327,6 @@ const StaffManagement: React.FC = () => {
               <Plus className="w-3 h-3" />
               Add Staff
             </button>
-
             {selectedStaff.length > 0 && (
               <button
                 onClick={handleBulkDelete}
@@ -454,25 +376,11 @@ const StaffManagement: React.FC = () => {
 
           <div
             className="overflow-auto"
-            style={{
-              maxHeight: "calc(100vh - 350px)",
-              minHeight: "400px",
-            }}
+            style={{ maxHeight: "calc(100vh - 350px)", minHeight: "400px" }}
           >
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-100 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-100">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                      checked={
-                        selectedStaff.length === paginatedStaff.length &&
-                        paginatedStaff.length > 0
-                      }
-                      onChange={(e) => handleSelectAll(e.target.checked)}
-                    />
-                  </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-100">
                     Staff Detail
                   </th>
@@ -493,13 +401,13 @@ const StaffManagement: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
+                    <td colSpan={5} className="px-6 py-12 text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto" />
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center">
+                    <td colSpan={5} className="px-6 py-8 text-center">
                       <div className="text-red-500 text-sm">Error: {error}</div>
                       <button
                         onClick={() => window.location.reload()}
@@ -510,59 +418,51 @@ const StaffManagement: React.FC = () => {
                     </td>
                   </tr>
                 ) : paginatedStaff.length > 0 ? (
-                  paginatedStaff.map((staff) => (
-                    <tr key={staff.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                          checked={selectedStaff.includes(staff.id)}
-                          onChange={(e) =>
-                            handleSelectStaff(staff.id, e.target.checked)
-                          }
-                        />
-                      </td>
+                  paginatedStaff.map((staffItem) => (
+                    <tr key={staffItem.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div className="flex items-start min-w-[200px]">
                           <div>
                             <div className="text-xs font-medium text-[#161D1F] mb-1">
-                              {staff.name}
+                              {staffItem.name}
                             </div>
                             <div className="text-[10px] text-gray-500">
-                              {staff.position}
+                              {staffItem.role_name}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-[10px] text-[#161D1F]">
-                          {staff.experience}
+                          {staffItem.experience_in_yrs} Years
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-[10px]">
-                        {renderStars(staff.rating)}
+                        {renderStars(parseFloat(staffItem.rating))}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-[10px]">
-                        <StatusBadge status={staff.status} />
+                        <StatusBadge status={staffItem.availability_status} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#161D1F]">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleStaffAction("view", staff)}
+                            onClick={() => handleStaffAction("view", staffItem)}
                             className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleStaffAction("edit", staff)}
+                            onClick={() => handleStaffAction("edit", staffItem)}
                             className="p-1 text-gray-500 hover:text-[#0088B1] cursor-pointer"
                             title="Edit Staff"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleStaffAction("delete", staff)}
+                            onClick={() =>
+                              handleStaffAction("delete", staffItem)
+                            }
                             className="p-1 text-gray-500 hover:text-red-500 cursor-pointer"
                             title="Delete Staff"
                           >
@@ -574,11 +474,15 @@ const StaffManagement: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
-                      <div className="text-gray-500 text-sm">
-                        {staffList.length === 0
-                          ? "No staff members found. Click 'Add Staff' to add your first staff member."
-                          : "No staff members match your search criteria."}
+                    <td colSpan={5} className="px-6 py-12 text-center">
+                      <ClipboardPlus className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <div className="text-gray-500 text-center">
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No staff members found
+                        </h3>
+                        <p className="text-gray-500">
+                          No staff members match your current criteria.
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -602,6 +506,7 @@ const StaffManagement: React.FC = () => {
           )}
         </div>
       </div>
+
       <AddStaffModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

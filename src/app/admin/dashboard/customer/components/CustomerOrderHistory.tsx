@@ -1,11 +1,13 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Package,
   Heart,
   Stethoscope,
   TestTube,
   HeartHandshake,
+  Search,
+  X,
 } from "lucide-react";
 import { CustomerService } from "../services/customerService";
 import {
@@ -31,6 +33,8 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
     const [activeTab, setActiveTab] = useState<
       "pharmacy" | "homecare" | "consultation" | "labtest"
     >("pharmacy");
+    const [searchTerm, setSearchTerm] = useState("");
+
     const tabs = [
       {
         id: "pharmacy" as const,
@@ -68,6 +72,93 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
       return "bg-gray-500 text-white";
     };
 
+    const searchPharmacyOrders = (orders: PharmacyOrder[], search: string) => {
+      if (!search) return orders;
+      const searchLower = search.toLowerCase();
+      return orders.filter((order) => {
+        if (order.id?.toLowerCase().includes(searchLower)) return true;
+
+        if (
+          order.order_items?.some((item) =>
+            item.productName?.toLowerCase().includes(searchLower),
+          )
+        )
+          return true;
+        return false;
+      });
+    };
+
+    const searchHomecareOrders = (orders: HomecareOrder[], search: string) => {
+      if (!search) return orders;
+      const searchLower = search.toLowerCase();
+      return orders.filter((order) => {
+        if (order.id?.toLowerCase().includes(searchLower)) return true;
+
+        if (order.homecare_service_name?.toLowerCase().includes(searchLower))
+          return true;
+        return false;
+      });
+    };
+
+    const searchConsultationOrders = (
+      orders: ConsultationOrder[],
+      search: string,
+    ) => {
+      if (!search) return orders;
+      const searchLower = search.toLowerCase();
+      return orders.filter((order) => {
+        if (order.id?.toLowerCase().includes(searchLower)) return true;
+
+        if (order.doc_name?.toLowerCase().includes(searchLower)) return true;
+        if (
+          order.doc_specialization?.specialization
+            ?.toLowerCase()
+            .includes(searchLower)
+        )
+          return true;
+        return false;
+      });
+    };
+
+    const searchLabTestOrders = (orders: LabTestBooking[], search: string) => {
+      if (!search) return orders;
+      const searchLower = search.toLowerCase();
+      return orders.filter((order) => {
+        if (order.id?.toLowerCase().includes(searchLower)) return true;
+
+        if (
+          order.labtestnames?.some((test) =>
+            test?.toLowerCase().includes(searchLower),
+          )
+        )
+          return true;
+        return false;
+      });
+    };
+
+    const getFilteredOrders = () => {
+      switch (activeTab) {
+        case "pharmacy":
+          return searchPharmacyOrders(
+            [...orderData.pharmacy].reverse(),
+            searchTerm,
+          );
+        case "homecare":
+          return searchHomecareOrders(orderData.homecare || [], searchTerm);
+        case "consultation":
+          return searchConsultationOrders(
+            orderData.consultations || [],
+            searchTerm,
+          );
+        case "labtest":
+          return searchLabTestOrders(orderData.labTests || [], searchTerm);
+        default:
+          return [];
+      }
+    };
+
+    const filteredOrders = getFilteredOrders();
+
     const renderOrderList = () => {
       if (loading) {
         return (
@@ -77,21 +168,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
         );
       }
 
-      let orders: any[] = [];
-      switch (activeTab) {
-        case "pharmacy":
-          orders = orderData.pharmacy ? [...orderData.pharmacy].reverse() : [];
-          break;
-        case "homecare":
-          orders = orderData.homecare || [];
-          break;
-        case "consultation":
-          orders = orderData.consultations || [];
-          break;
-        case "labtest":
-          orders = orderData.labTests || [];
-          break;
-      }
+      let orders: any[] = filteredOrders;
 
       if (!orders || orders.length === 0) {
         return (
@@ -111,12 +188,14 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
               )}
             </div>
             <p className="text-[14px] font-medium text-[#161D1F] mb-1">
-              No {tabs.find((t) => t.id === activeTab)?.label} Orders
+              {searchTerm
+                ? "No matching orders found"
+                : `No ${tabs.find((t) => t.id === activeTab)?.label} Orders`}
             </p>
             <p className="text-[12px] text-[#899193]">
-              This customer hasn't placed any{" "}
-              {tabs.find((t) => t.id === activeTab)?.label.toLowerCase()} orders
-              yet
+              {searchTerm
+                ? `Try searching with a different keyword`
+                : `This customer hasn't placed any ${tabs.find((t) => t.id === activeTab)?.label.toLowerCase()} orders yet`}
             </p>
           </div>
         );
@@ -125,7 +204,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
       return (
         <div className="overflow-x-auto h-full">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-[#161D1F]">
                   Order ID
@@ -151,7 +230,10 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
                   className="hover:bg-gray-50"
                 >
                   <td className="px-6 py-4 text-[10px] text-[#161D1F]">
-                    {order.id?.slice(0, 8).toUpperCase() || "N/A"}
+                    {order.id?.slice(0, 8).toUpperCase() ||
+                      order.order_id?.slice(0, 8).toUpperCase() ||
+                      order.booking_id?.slice(0, 8).toUpperCase() ||
+                      "N/A"}
                   </td>
 
                   <td className="px-6 py-4 text-[10px] text-[#161D1F]">
@@ -172,7 +254,10 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
                               <div
                                 key={`${order.id}-item-${index}-${item.productId || item.sku || item.productName}`}
                               >
-                                • {item.productName || "Unknown Product"}
+                                •{" "}
+                                {item.productName ||
+                                  item.product_name ||
+                                  "Unknown Product"}
                               </div>
                             ))
                         ) : (
@@ -187,17 +272,27 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
                     )}
                     {activeTab === "homecare" && (
                       <div className="text-[10px] text-[#161D1F]">
-                        {order.homecare_service_name || "N/A"}
+                        <div>{order.homecare_service_name || "N/A"}</div>
+                        {order.address && (
+                          <div className="text-[8px] text-[#899193] mt-0.5">
+                            {order.address}
+                          </div>
+                        )}
                       </div>
                     )}
                     {activeTab === "consultation" && (
                       <div className="text-[10px] text-[#161D1F]">
                         <div className="font-medium">
-                          {order.doc_name || "N/A"}
+                          Dr. {order.doc_name || "N/A"}
                         </div>
                         {order.doc_specialization?.specialization && (
                           <div className="text-[8px] text-[#899193] mt-0.5">
                             {order.doc_specialization.specialization}
+                          </div>
+                        )}
+                        {order.consultation_type && (
+                          <div className="text-[8px] text-[#0088B1] mt-0.5">
+                            {order.consultation_type}
                           </div>
                         )}
                       </div>
@@ -261,6 +356,10 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
       );
     };
 
+    const handleClearSearch = () => {
+      setSearchTerm("");
+    };
+
     return (
       <div className="h-full flex flex-col">
         <div className="p-6 pb-4">
@@ -272,11 +371,42 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
             history
           </p>
         </div>
+
+        <div className="px-6 pb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder={`Search by order ID, ${activeTab === "consultation" ? "doctor name " : activeTab === "pharmacy" ? "product name" : activeTab === "homecare" ? "service name" : "test name"}`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#0088B1] focus:border-[#0088B1]"
+            />
+            {searchTerm && (
+              <button
+                onClick={handleClearSearch}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2"
+              >
+                <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+              </button>
+            )}
+          </div>
+          {searchTerm && (
+            <div className="mt-2 text-xs text-[#899193]">
+              Found {filteredOrders.length} result
+              {filteredOrders.length !== 1 ? "s" : ""} for "{searchTerm}"
+            </div>
+          )}
+        </div>
+
         <div className="flex gap-2 px-6 pb-4 overflow-x-auto border-b border-gray-200">
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setSearchTerm(""); // Clear search when changing tabs
+              }}
               className={`flex items-center gap-2 px-4 py-1 rounded-lg text-[10px] font-medium whitespace-nowrap ${
                 activeTab === tab.id
                   ? "bg-[#0088B1] text-white"
@@ -285,17 +415,6 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
             >
               {tab.icon}
               {tab.label}
-              {/* {tab.count > 0 && (
-              <span
-                className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
-                  activeTab === tab.id
-                    ? "bg-white text-[#0088B1]"
-                    : "bg-gray-100"
-                }`}
-              >
-                {tab.count}
-              </span>
-            )} */}
             </button>
           ))}
         </div>
@@ -304,5 +423,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
     );
   },
 );
+
+CustomerOrderHistory.displayName = "CustomerOrderHistory";
 
 export default CustomerOrderHistory;

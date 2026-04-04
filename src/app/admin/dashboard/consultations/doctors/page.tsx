@@ -12,6 +12,7 @@ import {
   Edit,
   Trash2,
   Download,
+  BriefcaseMedical,
 } from "lucide-react";
 import AddDoctorModal from "./components/AddDoctorModal";
 import DoctorDetailsModal from "./components/DoctorDetailsModal";
@@ -31,6 +32,7 @@ import toast from "react-hot-toast";
 import { Doctor, EnumItem, GetDoctorsParams } from "./types";
 import StatsCard from "@/app/components/common/StatsCard";
 import Pagination from "@/app/components/common/pagination";
+import { useDoctorStore } from "./store/doctorStore";
 
 const StatusBadge: React.FC<{ isOnline: boolean; isInPerson: boolean }> = ({
   isOnline,
@@ -71,7 +73,7 @@ const StatusBadge: React.FC<{ isOnline: boolean; isInPerson: boolean }> = ({
 const Doctors: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+
   const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
   const [openDropdown, setOpenDropdown] = useState<null | "status">(null);
   const [selectedDoctors, setSelectedDoctors] = useState<string[]>([]);
@@ -81,7 +83,7 @@ const Doctors: React.FC = () => {
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const { token } = useAdminStore();
-
+  const { doctors, setDoctors } = useDoctorStore();
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 10;
 
@@ -97,6 +99,10 @@ const Doctors: React.FC = () => {
 
   const loadDoctors = async () => {
     if (!token || enumData.days.length === 0) return;
+    if (doctors.length > 0) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -313,14 +319,15 @@ const Doctors: React.FC = () => {
     try {
       setLoading(true);
       await deleteDoctor(doctor.id, token);
+
+      setDoctors(doctors.filter((d) => d.id !== doctor.id));
+
+      setSelectedDoctors((prev) => prev.filter((id) => id !== doctor.id));
+
       toast.success("Doctor deleted successfully!");
-
-      await loadDoctors();
-
-      alert(`Dr. ${doctor.name} has been successfully deleted.`);
     } catch (error) {
       console.error("Error deleting doctor:", error);
-      alert(
+      toast.error(
         `Error deleting doctor: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
@@ -332,7 +339,7 @@ const Doctors: React.FC = () => {
 
   const handleExport = () => {
     if (doctors.length === 0) {
-      alert("No doctors to export");
+      toast.error("No doctors to export");
       return;
     }
 
@@ -398,6 +405,8 @@ const Doctors: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    toast.success("Export completed successfully!");
   };
 
   const renderTimeSlots = (doctor: Doctor) => {
@@ -490,7 +499,7 @@ const Doctors: React.FC = () => {
 
       if (hasInvalidDays) {
         console.error("Invalid day mappings found");
-        alert("Error: Invalid day configuration. Please try again.");
+        toast.error("Error: Invalid day configuration. Please try again.");
         return;
       }
 
@@ -526,14 +535,58 @@ const Doctors: React.FC = () => {
 
       console.log("Submitting doctor data:", requestData);
 
-      await createOrUpdateDoctor(requestData, token!);
+      const response = (await createOrUpdateDoctor(requestData, token!)) as {
+        success: boolean;
+        doctor?: any;
+      };
 
-      await loadDoctors();
+      const getSpecializationName = (specId: string) => {
+        const spec = enumData.specializations.find((s) => s.id === specId);
+        return spec?.value || "";
+      };
+
+      const getLanguageNames = (langIds: string[]) => {
+        return langIds
+          .map((langId) => {
+            const lang = enumData.languages.find((l) => l.id === langId);
+            return lang?.value || "";
+          })
+          .filter(Boolean);
+      };
+
+      if (editingDoctor) {
+        const updatedDoctor: Doctor = {
+          ...doctorData,
+          id: editingDoctor.id,
+          specializations: getSpecializationName(doctorData.specialization_id),
+          languages_known: getLanguageNames(doctorData.languages_known),
+
+          ...(response.doctor && convertAPIDoctor(response.doctor)),
+        };
+
+        setDoctors(
+          doctors.map((doc) =>
+            doc.id === editingDoctor.id ? updatedDoctor : doc,
+          ),
+        );
+        toast.success("Doctor updated successfully!");
+      } else {
+        const newDoctor: Doctor = {
+          ...doctorData,
+          id: response.doctor?.id || Date.now().toString(),
+          specializations: getSpecializationName(doctorData.specialization_id),
+          languages_known: getLanguageNames(doctorData.languages_known),
+          ...(response.doctor && convertAPIDoctor(response.doctor)),
+        };
+
+        setDoctors([newDoctor, ...doctors]);
+        toast.success("Doctor added successfully!");
+      }
 
       setShowAddDoctorModal(false);
     } catch (error) {
       console.error("Error saving doctor:", error);
-      alert(
+      toast.error(
         `Error saving doctor: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
@@ -648,17 +701,6 @@ const Doctors: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                      checked={
-                        selectedDoctors.length === paginatedDoctors.length &&
-                        paginatedDoctors.length > 0
-                      }
-                      onChange={(e) => handleSelectAll(e.target.checked)}
-                    />
-                  </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Doctor Details
                   </th>
@@ -676,29 +718,27 @@ const Doctors: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
+                    <td colSpan={4} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
                     </td>
                   </tr>
                 ) : paginatedDoctors.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">No doctors found.</div>
+                    <td colSpan={4} className="px-6 py-12 text-center">
+                      <div className="text-gray-500 text-center">
+                        <BriefcaseMedical className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No doctors found
+                        </h3>
+                        <p className="text-gray-500">
+                          No doctors match your current criteria.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
                   paginatedDoctors.map((doctor) => (
                     <tr key={doctor.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                          checked={selectedDoctors.includes(doctor.id)}
-                          onChange={(e) =>
-                            handleSelectDoctor(doctor.id, e.target.checked)
-                          }
-                        />
-                      </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col min-w-[250px]">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">

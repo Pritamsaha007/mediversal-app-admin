@@ -12,6 +12,7 @@ import {
   MapPin,
   Phone,
   Download,
+  Building,
 } from "lucide-react";
 import AddHospitalModal from "./components/AddHospitalModal";
 import HospitalDetailsModal from "./components/HospitalDetailsModal";
@@ -19,6 +20,7 @@ import { useAdminStore } from "@/app/store/adminStore";
 import ConfirmationModal from "./components/ConfirmationModal";
 import toast from "react-hot-toast";
 import { Hospital } from "./types";
+import { useHospitalStore } from "./store/hospitalStore";
 
 const Hospitals: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,7 +29,7 @@ const Hospitals: React.FC = () => {
   const [selectedOperatingHours, setSelectedOperatingHours] = useState(
     "All Operating Hours",
   );
-  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const { setHospitals, getAllHospitals, clearHospitals } = useHospitalStore();
   const [filteredHospitals, setFilteredHospitals] = useState<Hospital[]>([]);
   const [openDropdown, setOpenDropdown] = useState<
     null | "department" | "hours"
@@ -52,7 +54,7 @@ const Hospitals: React.FC = () => {
     "24/7 Emergency",
     "Regular Hours",
   ];
-
+  const hospitals = getAllHospitals();
   useEffect(() => {
     const loadDepartmentOptions = async () => {
       if (!token) return;
@@ -68,9 +70,44 @@ const Hospitals: React.FC = () => {
     loadDepartmentOptions();
   }, [token]);
 
-  const loadHospitals = async () => {
+  const loadHospitals = async (forceRefresh = false) => {
     if (!token) return;
     setLoading(true);
+
+    if (!forceRefresh && hospitals.length > 0) {
+      console.log("Using cached hospitals data");
+
+      let filtered = [...hospitals];
+
+      if (selectedDepartment !== "All Departments") {
+        filtered = filtered.filter((hospital) =>
+          hospital.departments?.includes(selectedDepartment),
+        );
+      }
+
+      if (selectedOperatingHours !== "All Operating Hours") {
+        if (selectedOperatingHours === "24/7 Emergency") {
+          filtered = filtered.filter((hospital) => hospital.emergencyServices);
+        } else if (selectedOperatingHours === "Regular Hours") {
+          filtered = filtered.filter((hospital) => !hospital.emergencyServices);
+        }
+      }
+
+      if (searchTerm) {
+        filtered = filtered.filter(
+          (hospital) =>
+            hospital.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            hospital.departments?.some((dept) =>
+              dept.toLowerCase().includes(searchTerm.toLowerCase()),
+            ),
+        );
+      }
+
+      setFilteredHospitals(filtered);
+      setLoading(false);
+      return;
+    }
+
     try {
       const params = {
         search_text: searchTerm || null,
@@ -84,6 +121,7 @@ const Hospitals: React.FC = () => {
 
       const response = await getHospitals(params, token);
       console.log(response, "real");
+
       let convertedHospitals = response.hospitals.map(
         convertAPIToLocalHospital,
       );
@@ -164,17 +202,51 @@ const Hospitals: React.FC = () => {
         : [...prev, hospitalId],
     );
   };
-
-  const handleAddHospital = async (hospitalData: Hospital) => {
-    await loadHospitals();
-    if (editingHospital) {
-      setHospitals((prev) =>
-        prev.map((h) =>
-          h.id === editingHospital.id
-            ? { ...hospitalData, id: editingHospital.id }
-            : h,
-        ),
+  const loadHospitalsSilent = async () => {
+    if (!token) return;
+    try {
+      const params = {
+        search_text: searchTerm || null,
+        filter_department:
+          selectedDepartment !== "All Departments"
+            ? [selectedDepartment]
+            : null,
+        sort_by: "name",
+        sort_order: "DESC",
+      };
+      const response = await getHospitals(params, token);
+      let convertedHospitals = response.hospitals.map(
+        convertAPIToLocalHospital,
       );
+
+      if (selectedOperatingHours !== "All Operating Hours") {
+        if (selectedOperatingHours === "24/7 Emergency") {
+          convertedHospitals = convertedHospitals.filter(
+            (h) => h.emergencyServices,
+          );
+        } else if (selectedOperatingHours === "Regular Hours") {
+          convertedHospitals = convertedHospitals.filter(
+            (h) => !h.emergencyServices,
+          );
+        }
+      }
+
+      setHospitals(convertedHospitals);
+      setFilteredHospitals(convertedHospitals);
+    } catch (error) {
+      console.error("Background sync failed:", error);
+    }
+  };
+  const handleAddHospital = async (hospitalData: Hospital) => {
+    if (editingHospital) {
+      const updatedHospitals = hospitals.map((h) =>
+        h.id === editingHospital.id
+          ? { ...hospitalData, id: editingHospital.id }
+          : h,
+      );
+      setHospitals(updatedHospitals);
+      setFilteredHospitals(updatedHospitals);
+      toast.success("Hospital updated successfully");
     } else {
       const newHospital = {
         ...hospitalData,
@@ -182,9 +254,15 @@ const Hospitals: React.FC = () => {
         created_by: "current-user-id",
         updated_by: "current-user-id",
       };
-      setHospitals((prev) => [...prev, newHospital]);
+      const updatedHospitals = [...hospitals, newHospital];
+      setHospitals(updatedHospitals);
+      setFilteredHospitals(updatedHospitals);
+      toast.success("Hospital added successfully");
     }
+
     setEditingHospital(null);
+    setShowAddHospitalModal(false);
+    loadHospitalsSilent();
   };
 
   const handleEditHospital = (hospital: Hospital) => {
@@ -289,32 +367,32 @@ const Hospitals: React.FC = () => {
   };
 
   const confirmDelete = async () => {
-    if (!hospitalToDelete) {
-      console.log("No hospital to delete");
-      return;
-    }
+    if (!hospitalToDelete) return;
 
-    console.log("Deleting hospital:", hospitalToDelete.name);
+    const previousHospitals = [...hospitals];
+    const updatedHospitals = hospitals.filter(
+      (h) => h.id !== hospitalToDelete.id,
+    );
+    setHospitals(updatedHospitals);
+    setFilteredHospitals(updatedHospitals);
+    setShowConfirmModal(false);
+
+    const deletedHospital = hospitalToDelete;
+    setHospitalToDelete(null);
 
     try {
-      await deleteHospital(hospitalToDelete.id, token);
-      toast.success(`${hospitalToDelete.name} has been deleted successfully`);
-      await loadHospitals();
-      setShowConfirmModal(false);
-      setHospitalToDelete(null);
+      await deleteHospital(deletedHospital.id, token);
+      toast.success(`${deletedHospital.name} has been deleted successfully`);
+      loadHospitalsSilent();
     } catch (error: any) {
-      console.error("Delete error:", error);
+      setHospitals(previousHospitals);
+      setFilteredHospitals(previousHospitals);
 
-      if (
-        error.message &&
-        error.message.includes("active staff members associated")
-      ) {
+      if (error.message?.includes("active staff members associated")) {
         const staffCount =
           error.message.match(/(\d+) active staff members?/)?.[1] || "some";
         toast.error(
-          `Cannot delete ${
-            hospitalToDelete.name
-          } because it has ${staffCount} active staff member${
+          `Cannot delete ${deletedHospital.name} because it has ${staffCount} active staff member${
             staffCount === "1" ? "" : "s"
           }. Please remove or transfer the staff first.`,
         );
@@ -323,8 +401,6 @@ const Hospitals: React.FC = () => {
           "Sorry, we couldn't delete the hospital. Please try again.",
         );
       }
-      setShowConfirmModal(false);
-      setHospitalToDelete(null);
     }
   };
 
@@ -464,7 +540,7 @@ const Hospitals: React.FC = () => {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  {/* <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -474,7 +550,7 @@ const Hospitals: React.FC = () => {
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
-                  </th>
+                  </th> */}
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Hospitals Details
                   </th>
@@ -498,14 +574,22 @@ const Hospitals: React.FC = () => {
                   </tr>
                 ) : filteredHospitals.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">No hospitals found.</div>
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <div className="text-gray-500 text-center">
+                        <Building className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No hospitals found
+                        </h3>
+                        <p className="text-gray-500">
+                          No hospitals match your current criteria.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
                   filteredHospitals.map((hospital) => (
                     <tr key={hospital.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4">
+                      {/* <td className="px-4 py-4">
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -514,7 +598,7 @@ const Hospitals: React.FC = () => {
                             handleSelectHospital(hospital.id, e.target.checked)
                           }
                         />
-                      </td>
+                      </td> */}
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">

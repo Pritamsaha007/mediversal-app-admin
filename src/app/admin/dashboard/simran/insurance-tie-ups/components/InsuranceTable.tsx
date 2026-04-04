@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { SquarePen, MoreVertical } from "lucide-react";
+import { SquarePen, MoreVertical, Package, Umbrella } from "lucide-react";
 import { InsurancePartner } from "../types/types";
 import StatusBadge from "@/app/components/common/StatusBadge";
 import ActionMenu from "../ui/ActionMenu";
@@ -63,11 +63,16 @@ const InsuranceTable: React.FC<InsuranceTableProps> = ({
             </tr>
           ) : partners.length === 0 ? (
             <tr>
-              <td
-                colSpan={5}
-                className="px-6 py-12 text-center text-[12px] text-[#899193]"
-              >
-                No insurance partners found.
+              <td colSpan={8} className="px-6 py-12 text-center">
+                <Umbrella className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <div className="text-gray-500 text-center">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No packages found
+                  </h3>
+                  <p className="text-gray-500">
+                    No packages match your current criteria.
+                  </p>
+                </div>
               </td>
             </tr>
           ) : (

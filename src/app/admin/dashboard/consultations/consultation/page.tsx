@@ -19,6 +19,7 @@ import {
   X,
   HeartPlus,
   Download,
+  Laptop,
 } from "lucide-react";
 import AddConsultationModal from "./components/AddConsultationModal";
 import ViewConsultationModal from "./components/ViewConsultationModal";
@@ -717,7 +718,7 @@ const Consultations: React.FC = () => {
             <table className="w-full relative">
               <thead className="bg-gray-50 sticky top-0 z-20">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  {/* <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -728,7 +729,7 @@ const Consultations: React.FC = () => {
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
-                  </th>
+                  </th> */}
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Patient Details
                   </th>
@@ -755,16 +756,22 @@ const Consultations: React.FC = () => {
                   </tr>
                 ) : filteredConsultations.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">
-                        No consultations found.
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <div className="text-gray-500 text-center">
+                        <Laptop className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No consultations found
+                        </h3>
+                        <p className="text-gray-500">
+                          No consultations match your current criteria.
+                        </p>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   filteredConsultations.map((consultation) => (
                     <tr key={consultation.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4">
+                      {/* <td className="px-4 py-4">
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -778,7 +785,7 @@ const Consultations: React.FC = () => {
                             )
                           }
                         />
-                      </td>
+                      </td> */}
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">

@@ -218,14 +218,14 @@ export const ProductCard: React.FC<{
 
   return (
     <tr className="border-y-1 hover:bg-gray-50 border-[#D3D7D8]">
-      <td className="px-4 py-4">
+      {/* <td className="px-4 py-4">
         <input
           type="checkbox"
           checked={isSelected}
           onChange={(e) => onSelect(product.productId, e.target.checked)}
           className="w-4 h-4 text-blue-600 border-gray-300 rounded"
         />
-      </td>
+      </td> */}
       <td className="px-4 py-4">
         <div>
           <div className="font-medium text-[12px] text-gray-900">

@@ -8,6 +8,7 @@ import {
   Trash2,
   MoreVertical,
   Download,
+  Bell,
 } from "lucide-react";
 import { Notification, SearchNotificationParams } from "./types/types";
 import { searchNotifications } from "./services/service";
@@ -25,11 +26,12 @@ import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
 import NotificationDetailsModal from "./components/NotificationDetailsModal";
 import DropdownSelector from "@/app/components/ui/DropdownSelector";
+import useNotificationStore from "./store/NotifictionStore";
 
 const ITEMS_PER_PAGE = 20;
 
 const Notifications: React.FC = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { notifications, setNotifications } = useNotificationStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All Notifications");
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
@@ -60,6 +62,7 @@ const Notifications: React.FC = () => {
 
   const loadNotifications = async (page: number, search: string = "") => {
     if (!token) return;
+    if (notifications.length && page === 0) return;
 
     setLoading(true);
     try {
@@ -342,7 +345,7 @@ const Notifications: React.FC = () => {
             <table className="w-full">
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  {/* <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -353,7 +356,7 @@ const Notifications: React.FC = () => {
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       disabled={loading || notifications.length === 0}
                     />
-                  </th>
+                  </th> */}
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Notification ID
                   </th>
@@ -383,16 +386,22 @@ const Notifications: React.FC = () => {
                   </tr>
                 ) : notifications.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">
-                        No notifications found.
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <div className="text-gray-500 text-center">
+                        <Bell className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No notifications found
+                        </h3>
+                        <p className="text-gray-500">
+                          No notifications match your current criteria.
+                        </p>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   notifications.map((notification) => (
                     <tr key={notification.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4">
+                      {/* <td className="px-4 py-4">
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -407,7 +416,7 @@ const Notifications: React.FC = () => {
                           }
                           disabled={loading}
                         />
-                      </td>
+                      </td> */}
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
                           <div className="text-[12px] font-medium text-[#161D1F]">

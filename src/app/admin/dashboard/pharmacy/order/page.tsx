@@ -14,6 +14,7 @@ import {
   Eye,
   PlusIcon,
   Bike,
+  BikeIcon,
 } from "lucide-react";
 import { Order, FilterOptions, SortOption } from "./types/types";
 import { OrderService } from "./services";
@@ -541,7 +542,7 @@ const Orders: React.FC = () => {
               placeholder="Search by order ID, customer name, or product"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-xs"
+              className="w-full pl-10 text-[#B0B6B8] focus:text-black pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm"
             />
           </div>
           <div className="flex gap-2">
@@ -577,7 +578,7 @@ const Orders: React.FC = () => {
             <table className="w-full relative">
               <thead className="bg-gray-50 sticky top-0 z-20">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                  {/* <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -591,7 +592,7 @@ const Orders: React.FC = () => {
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
-                  </th>
+                  </th> */}
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Order ID
                   </th>
@@ -627,11 +628,16 @@ const Orders: React.FC = () => {
                   </tr>
                 ) : orders.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={9}
-                      className="px-6 py-12 text-center text-gray-500"
-                    >
-                      No orders found
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <BikeIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <div className="text-gray-500 text-center">
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No orders found
+                        </h3>
+                        <p className="text-gray-500">
+                          No orders match your current criteria.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -640,7 +646,7 @@ const Orders: React.FC = () => {
                       key={order.id || `order-${index}`}
                       className="hover:bg-gray-50"
                     >
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      {/* <td className="px-4 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -656,7 +662,7 @@ const Orders: React.FC = () => {
                             }
                           }}
                         />
-                      </td>
+                      </td> */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-xs font-medium text-[#161D1F]">
                           {order.ordernumber}

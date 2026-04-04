@@ -1,6 +1,6 @@
 import React from "react";
 import { Order } from "../../types/types";
-import { useProductStore } from "@/app/store/productStore";
+import { useProductStore } from "@/app/admin/dashboard/pharmacy/order/store/productStore";
 
 interface OrderItemsProps {
   order: Order;

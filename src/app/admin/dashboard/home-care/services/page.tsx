@@ -18,8 +18,10 @@ import {
   Edit,
   Trash2,
   Download,
+  Ambulance,
 } from "lucide-react";
 import { HomecareService } from "./types";
+import { useServiceStore } from "./store/serviceStore";
 
 interface ServiceStats {
   totalServices: number;
@@ -49,7 +51,6 @@ const useDebounce = (value: string, delay: number) => {
 const Services: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
-  const [allServices, setAllServices] = useState<HomecareService[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [showManageModal, setShowManageModal] = useState(false);
@@ -59,7 +60,8 @@ const Services: React.FC = () => {
   const [editingService, setEditingService] = useState<HomecareService | null>(
     null,
   );
-
+  const [shouldRefetch, setShouldRefetch] = useState(false);
+  const { services, setServices, getServices } = useServiceStore();
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 20;
 
@@ -68,14 +70,18 @@ const Services: React.FC = () => {
   const statusOptions = ["All Status", "Active", "Inactive"];
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  const fetchServices = async () => {
+  const fetchServices = async (forceRefresh = false) => {
     if (!isLoggedIn || !token) {
       toast.error("Please login to access services");
       return;
     }
 
-    setLoading(true);
+    if (!forceRefresh && services.length > 0) {
+      console.log("Using cached services data");
+      return;
+    }
 
+    setLoading(true);
     try {
       const response = await getHomecareServices(
         {
@@ -86,7 +92,7 @@ const Services: React.FC = () => {
       );
       console.log(response, "response");
       if (response.success) {
-        setAllServices(response.services);
+        setServices(response.services);
         setCurrentPage(0);
       } else {
         throw new Error("Failed to fetch services");
@@ -96,6 +102,7 @@ const Services: React.FC = () => {
       toast.error(err.message || "Failed to fetch services");
     } finally {
       setLoading(false);
+      setShouldRefetch(false);
     }
   };
 
@@ -105,8 +112,14 @@ const Services: React.FC = () => {
     }
   }, [isLoggedIn, token, selectedStatus, debouncedSearchTerm]);
 
+  useEffect(() => {
+    if (shouldRefetch) {
+      fetchServices(true);
+    }
+  }, [shouldRefetch]);
+
   const filteredServices = useMemo(() => {
-    return allServices.filter((service) => {
+    return services.filter((service) => {
       const matchesSearch = service.name
         .toLowerCase()
         .includes(debouncedSearchTerm.toLowerCase());
@@ -114,7 +127,7 @@ const Services: React.FC = () => {
         selectedStatus === "All Status" || service.status === selectedStatus;
       return matchesSearch && matchesStatus;
     });
-  }, [allServices, debouncedSearchTerm, selectedStatus]);
+  }, [services, debouncedSearchTerm, selectedStatus]);
 
   const currentServices = useMemo(() => {
     const start = currentPage * pageSize;
@@ -220,7 +233,8 @@ const Services: React.FC = () => {
           `${selectedServices.length} services deleted successfully!`,
         );
         setSelectedServices([]);
-        await fetchServices();
+        // Force refresh after bulk delete
+        await fetchServices(true);
       } catch (error: any) {
         console.error("Error deleting services:", error);
         toast.error(error.message || "Failed to delete some services");
@@ -275,7 +289,8 @@ const Services: React.FC = () => {
           try {
             await deleteHomecareService(service.id, token);
             toast.success("Service deleted successfully!");
-            await fetchServices();
+            // Force refresh after delete
+            await fetchServices(true);
           } catch (error: any) {
             console.error("Error deleting service:", error);
             toast.error(error.message || "Failed to delete service");
@@ -293,12 +308,14 @@ const Services: React.FC = () => {
   };
 
   const handleAddService = async () => {
-    await fetchServices();
-    toast.success("Service list updated!");
+    // Trigger refetch after adding service
+    setShouldRefetch(true);
+    toast.success("Service added successfully!");
   };
 
   const handleUpdateService = async () => {
-    await fetchServices();
+    // Trigger refetch after updating service
+    setShouldRefetch(true);
     setEditingService(null);
     toast.success("Service updated successfully!");
   };
@@ -406,7 +423,7 @@ const Services: React.FC = () => {
           />
           <StatsCard
             title="Total Offerings"
-            stats={50}
+            stats={stats.totalOfferings}
             icon={<Users className="w-5 h-5" />}
             color="text-[#0088B1]"
           />
@@ -465,17 +482,6 @@ const Services: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                      checked={
-                        selectedServices.length === currentServices.length &&
-                        currentServices.length > 0
-                      }
-                      onChange={(e) => handleSelectAll(e.target.checked)}
-                    />
-                  </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Service Detail
                   </th>
@@ -490,29 +496,27 @@ const Services: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading && filteredServices.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
+                    <td colSpan={3} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
                     </td>
                   </tr>
                 ) : currentServices.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">No services found.</div>
+                    <td colSpan={3} className="px-6 py-12 text-center">
+                      <div className="text-gray-500 text-center">
+                        <Ambulance className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No services found
+                        </h3>
+                        <p className="text-gray-500">
+                          No services match your current criteria.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
                   currentServices.map((service) => (
                     <tr key={service.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                          checked={selectedServices.includes(service.id)}
-                          onChange={(e) =>
-                            handleSelectService(service.id, e.target.checked)
-                          }
-                        />
-                      </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col min-w-[200px]">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">
@@ -590,7 +594,7 @@ const Services: React.FC = () => {
                 )}
                 {loading && filteredServices.length > 0 && (
                   <tr>
-                    <td colSpan={4} className="px-6 py-4 text-center">
+                    <td colSpan={3} className="px-6 py-4 text-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-600 mx-auto"></div>
                     </td>
                   </tr>

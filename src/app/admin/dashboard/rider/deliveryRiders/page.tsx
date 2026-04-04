@@ -17,6 +17,7 @@ import {
   UserX,
   Car,
   Download,
+  BikeIcon,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { ViewRiderModal } from "./components/ViewRiderModal";
@@ -32,14 +33,17 @@ import {
   searchRider,
   updateRiderPOI,
 } from "../services";
+import { useRiderStore } from "./store/RiderStore";
 
 const DeliveryRiders: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
-  const [riders, setRiders] = useState<DeliveryRider[]>([]);
+  const { riders, setRiders } = useRiderStore();
   const [filteredRiders, setFilteredRiders] = useState<DeliveryRider[]>([]);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [selectedRiders, setSelectedRiders] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 10;
 
   const [loading, setLoading] = useState(false);
   const [showAddRiderModal, setShowAddRiderModal] = useState(false);
@@ -54,14 +58,48 @@ const DeliveryRiders: React.FC = () => {
 
   const stats = getRidersStats(riders);
 
-  const fetchRiders = async () => {
+  // Apply filters client-side
+  const applyFilters = (data: DeliveryRider[]) => {
+    let filtered = [...data];
+
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (rider) =>
+          rider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          rider.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          rider.mobile_number.includes(searchTerm) ||
+          rider.aadhar_number.includes(searchTerm),
+      );
+    }
+
+    if (selectedStatus === "Active") {
+      filtered = filtered.filter(
+        (rider) => rider.is_available_status === "active",
+      );
+    } else if (selectedStatus === "Inactive") {
+      filtered = filtered.filter(
+        (rider) => rider.is_available_status !== "active",
+      );
+    }
+
+    return filtered;
+  };
+
+  const fetchRiders = async (forceRefresh = false) => {
     if (!token) {
       toast.error("Authentication required");
       return;
     }
 
-    setLoading(true);
+    if (!forceRefresh && riders.length > 0) {
+      console.log("Using cached riders data");
+      const filtered = applyFilters(riders);
+      setFilteredRiders(filtered);
+      return;
+    }
+
     try {
+      setLoading(true);
       const payload = {
         start: 0,
         max: 100,
@@ -78,7 +116,9 @@ const DeliveryRiders: React.FC = () => {
 
       const ridersData = await searchRider(payload, token);
       setRiders(ridersData);
-      setFilteredRiders(ridersData);
+      const filtered = applyFilters(ridersData);
+      setFilteredRiders(filtered);
+      setCurrentPage(0);
     } catch (error: any) {
       console.error("Error fetching riders:", error);
       toast.error(error.message || "Failed to load delivery riders");
@@ -87,25 +127,24 @@ const DeliveryRiders: React.FC = () => {
     }
   };
 
+  // Initial load
   useEffect(() => {
     fetchRiders();
   }, []);
-  console.log(riders, "riders");
+
+  // Handle filter changes
   useEffect(() => {
-    if (searchTerm || selectedStatus !== "All Status") {
+    if (riders.length > 0) {
+      const filtered = applyFilters(riders);
+      setFilteredRiders(filtered);
+      setCurrentPage(0);
+    } else if (token) {
       const debounceTimer = setTimeout(() => {
-        fetchRiders();
+        fetchRiders(true);
       }, 500);
       return () => clearTimeout(debounceTimer);
-    } else {
-      setFilteredRiders(riders);
     }
-  }, [searchTerm, selectedStatus]);
-
-  const handleStatusChange = (status: string) => {
-    setSelectedStatus(status);
-    setOpenDropdown(null);
-  };
+  }, [searchTerm, selectedStatus, token]);
 
   const updateRiderPOIStatus = async (riderId: string, isApproved: boolean) => {
     if (!token) {
@@ -113,60 +152,142 @@ const DeliveryRiders: React.FC = () => {
       return;
     }
 
-    setRiders((prevRiders) =>
-      prevRiders.map((rider) =>
-        rider.id === riderId
-          ? {
-              ...rider,
-              is_poi_verified_status: isApproved ? "approved" : "pending",
-            }
-          : rider,
-      ),
+    // Update UI immediately
+    const updatedRiders = riders.map((rider) =>
+      rider.id === riderId
+        ? {
+            ...rider,
+            is_poi_verified_status: isApproved ? "approved" : "pending",
+          }
+        : rider,
     );
+    setRiders(updatedRiders);
 
-    setFilteredRiders((prevFilteredRiders) =>
-      prevFilteredRiders.map((rider) =>
-        rider.id === riderId
-          ? {
-              ...rider,
-              is_poi_verified_status: isApproved ? "approved" : "pending",
-            }
-          : rider,
-      ),
+    const updatedFilteredRiders = filteredRiders.map((rider) =>
+      rider.id === riderId
+        ? {
+            ...rider,
+            is_poi_verified_status: isApproved ? "approved" : "pending",
+          }
+        : rider,
     );
+    setFilteredRiders(updatedFilteredRiders);
 
     toast.success(
       `Rider ${isApproved ? "approved" : "disapproved"} successfully!`,
     );
 
+    // Call API in background
     try {
       await updateRiderPOI(riderId, isApproved, token);
     } catch (error: any) {
       console.error("Error updating rider POI status:", error);
 
-      setRiders((prevRiders) =>
-        prevRiders.map((rider) =>
-          rider.id === riderId
-            ? {
-                ...rider,
-                is_poi_verified_status: isApproved ? "pending" : "approved",
-              }
-            : rider,
-        ),
+      // Revert on error
+      const revertedRiders = riders.map((rider) =>
+        rider.id === riderId
+          ? {
+              ...rider,
+              is_poi_verified_status: isApproved ? "pending" : "approved",
+            }
+          : rider,
       );
+      setRiders(revertedRiders);
 
-      setFilteredRiders((prevFilteredRiders) =>
-        prevFilteredRiders.map((rider) =>
-          rider.id === riderId
-            ? {
-                ...rider,
-                is_poi_verified_status: isApproved ? "pending" : "approved",
-              }
-            : rider,
-        ),
+      const revertedFilteredRiders = filteredRiders.map((rider) =>
+        rider.id === riderId
+          ? {
+              ...rider,
+              is_poi_verified_status: isApproved ? "pending" : "approved",
+            }
+          : rider,
       );
+      setFilteredRiders(revertedFilteredRiders);
 
       toast.error(error.message || "Failed to update rider status");
+    }
+  };
+
+  const handleAddRider = (newRider: DeliveryRider) => {
+    // Add to UI immediately
+    const updatedRiders = [newRider, ...riders];
+    setRiders(updatedRiders);
+    const filtered = applyFilters(updatedRiders);
+    setFilteredRiders(filtered);
+    toast.success("Rider added successfully!");
+  };
+
+  const handleUpdateRider = (updatedRider: DeliveryRider) => {
+    // Update UI immediately
+    const updatedRiders = riders.map((rider) =>
+      rider.id === updatedRider.id ? updatedRider : rider,
+    );
+    setRiders(updatedRiders);
+    const filtered = applyFilters(updatedRiders);
+    setFilteredRiders(filtered);
+    toast.success("Rider updated successfully!");
+  };
+
+  const handleDeleteRider = async (rider: DeliveryRider) => {
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    const confirmed = await new Promise<boolean>((resolve) => {
+      const toastId = toast(
+        (t) => (
+          <div className="flex flex-col gap-2">
+            <span>Are you sure you want to delete "{rider.name}"?</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  toast.dismiss(toastId);
+                  resolve(true);
+                }}
+                className="px-3 py-1 bg-red-400 text-white rounded text-sm"
+              >
+                Yes, Delete
+              </button>
+              <button
+                onClick={() => {
+                  toast.dismiss(toastId);
+                  resolve(false);
+                }}
+                className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ),
+        { duration: Infinity },
+      );
+    });
+
+    if (confirmed) {
+      // Remove from UI immediately
+      const remainingRiders = riders.filter((r) => r.id !== rider.id);
+      setRiders(remainingRiders);
+
+      const remainingFilteredRiders = filteredRiders.filter(
+        (r) => r.id !== rider.id,
+      );
+      setFilteredRiders(remainingFilteredRiders);
+
+      toast.success("Rider deleted successfully!");
+
+      // Call API in background
+      try {
+        await deleteRider(rider.id, token);
+      } catch (error: any) {
+        console.error("Error deleting rider:", error);
+        // Revert on error - add back the rider
+        setRiders([rider, ...remainingRiders]);
+        const filtered = applyFilters([rider, ...remainingRiders]);
+        setFilteredRiders(filtered);
+        toast.error(error.message || "Failed to delete rider");
+      }
     }
   };
 
@@ -203,70 +324,41 @@ const DeliveryRiders: React.FC = () => {
             </div>
           </div>
         ),
-        {
-          duration: Infinity,
-        },
+        { duration: Infinity },
       );
     });
 
     if (confirmed) {
-      setLoading(true);
+      const ridersToDelete = riders.filter((r) =>
+        selectedRiders.includes(r.id),
+      );
+
+      // Remove from UI immediately
+      const remainingRiders = riders.filter(
+        (r) => !selectedRiders.includes(r.id),
+      );
+      setRiders(remainingRiders);
+
+      const remainingFilteredRiders = filteredRiders.filter(
+        (r) => !selectedRiders.includes(r.id),
+      );
+      setFilteredRiders(remainingFilteredRiders);
+
+      toast.success(`${selectedRiders.length} riders deleted successfully!`);
+      setSelectedRiders([]);
+
+      // Call API in background
       try {
-        // Update local state immediately
-        setRiders((prevRiders) =>
-          prevRiders.filter((rider) => !selectedRiders.includes(rider.id)),
-        );
-        setFilteredRiders((prevFilteredRiders) =>
-          prevFilteredRiders.filter(
-            (rider) => !selectedRiders.includes(rider.id),
-          ),
-        );
-
-        // Show success message
-        toast.success(`${selectedRiders.length} riders deleted successfully!`);
-
-        // Make API calls in background
-        for (const riderId of selectedRiders) {
-          await deleteRider(riderId, token);
+        for (const rider of ridersToDelete) {
+          await deleteRider(rider.id, token);
         }
-
-        // Clear selection
-        setSelectedRiders([]);
       } catch (error: any) {
         console.error("Error deleting riders:", error);
-        // If error occurs, we should refresh from server
-        await fetchRiders();
+        // Refresh on error to restore correct state
+        await fetchRiders(true);
         toast.error(error.message || "Failed to delete some riders");
-      } finally {
-        setLoading(false);
       }
     }
-  };
-
-  const handleSelectRider = (riderId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedRiders([...selectedRiders, riderId]);
-    } else {
-      setSelectedRiders(selectedRiders.filter((id) => id !== riderId));
-    }
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedRiders(filteredRiders.map((rider) => rider.id));
-    } else {
-      setSelectedRiders([]);
-    }
-  };
-
-  const handleAddRider = async () => {
-    await fetchRiders();
-    toast.success("Rider added successfully!");
-  };
-
-  const handleUpdateRider = async () => {
-    await fetchRiders();
-    toast.success("Rider updated successfully!");
   };
 
   const handleRiderAction = async (action: string, rider: DeliveryRider) => {
@@ -286,65 +378,32 @@ const DeliveryRiders: React.FC = () => {
         await updateRiderPOIStatus(rider.id, false);
         break;
       case "delete":
-        if (!token) {
-          toast.error("Authentication required");
-          return;
-        }
-
-        const confirmed = await new Promise<boolean>((resolve) => {
-          const toastId = toast(
-            (t) => (
-              <div className="flex flex-col gap-2">
-                <span>Are you sure you want to delete "{rider.name}"?</span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      toast.dismiss(toastId);
-                      resolve(true);
-                    }}
-                    className="px-3 py-1 bg-red-400 text-white rounded text-sm"
-                  >
-                    Yes, Delete
-                  </button>
-                  <button
-                    onClick={() => {
-                      toast.dismiss(toastId);
-                      resolve(false);
-                    }}
-                    className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ),
-            {
-              duration: Infinity,
-            },
-          );
-        });
-
-        if (confirmed) {
-          try {
-            setRiders((prevRiders) =>
-              prevRiders.filter((r) => r.id !== rider.id),
-            );
-            setFilteredRiders((prevFilteredRiders) =>
-              prevFilteredRiders.filter((r) => r.id !== rider.id),
-            );
-
-            toast.success("Rider deleted successfully!");
-
-            await deleteRider(rider.id, token);
-          } catch (error: any) {
-            console.error("Error deleting rider:", error);
-            await fetchRiders();
-            toast.error(error.message || "Failed to delete rider");
-          }
-        }
+        await handleDeleteRider(rider);
         break;
       default:
         break;
+    }
+  };
+
+  // Pagination
+  const paginatedRiders = React.useMemo(() => {
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredRiders.slice(startIndex, endIndex);
+  }, [filteredRiders, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredRiders.length / itemsPerPage);
+  const hasMore = currentPage < totalPages - 1;
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (hasMore) {
+      setCurrentPage(currentPage + 1);
     }
   };
 
@@ -429,7 +488,6 @@ const DeliveryRiders: React.FC = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-
       if (
         !target.closest(".dropdown-toggle") &&
         !target.closest(".dropdown-menu")
@@ -455,8 +513,7 @@ const DeliveryRiders: React.FC = () => {
             <button
               onClick={() => setShowAddRiderModal(true)}
               disabled={loading}
-              className={`flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg bg-[#0088B1] hover:bg-[#00729A] cursor-pointer"
-               text-[#F8F8F8]`}
+              className="flex items-center gap-2 text-[12px] px-4 py-2 rounded-lg bg-[#0088B1] hover:bg-[#00729A] cursor-pointer text-[#F8F8F8]"
             >
               <Plus className="w-3 h-3" />
               {"Add New Rider"}
@@ -545,17 +602,6 @@ const DeliveryRiders: React.FC = () => {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                      checked={
-                        selectedRiders.length === filteredRiders.length &&
-                        filteredRiders.length > 0
-                      }
-                      onChange={(e) => handleSelectAll(e.target.checked)}
-                    />
-                  </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Rider Details
                   </th>
@@ -568,7 +614,6 @@ const DeliveryRiders: React.FC = () => {
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Joining Date
                   </th>
-
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                     Status
                   </th>
@@ -578,31 +623,29 @@ const DeliveryRiders: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {loading ? (
+                {loading && filteredRiders.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
                     </td>
                   </tr>
-                ) : filteredRiders.length === 0 ? (
+                ) : paginatedRiders.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">No riders found.</div>
+                      <BikeIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <div className="text-gray-500 text-center">
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No delivery riders found
+                        </h3>
+                        <p className="text-gray-500">
+                          No delivery riders match your current criteria.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
-                  filteredRiders.map((rider) => (
+                  paginatedRiders.map((rider) => (
                     <tr key={rider.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                          checked={selectedRiders.includes(rider.id)}
-                          onChange={(e) =>
-                            handleSelectRider(rider.id, e.target.checked)
-                          }
-                        />
-                      </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">
@@ -657,7 +700,6 @@ const DeliveryRiders: React.FC = () => {
                           },
                         )}
                       </td>
-
                       <td className="px-6 py-4 whitespace-nowrap">
                         <StatusBadge status={rider.is_available_status} />
                       </td>
@@ -742,6 +784,37 @@ const DeliveryRiders: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {filteredRiders.length > itemsPerPage && (
+            <div className="border-t border-gray-200 bg-white px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-gray-500">
+                  Showing {currentPage * itemsPerPage + 1} to{" "}
+                  {Math.min(
+                    (currentPage + 1) * itemsPerPage,
+                    filteredRiders.length,
+                  )}{" "}
+                  of {filteredRiders.length} riders
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 0}
+                    className="px-3 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={handleNextPage}
+                    disabled={!hasMore}
+                    className="px-3 py-1 text-xs border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -751,7 +824,9 @@ const DeliveryRiders: React.FC = () => {
           setShowAddRiderModal(false);
           setEditingRider(null);
         }}
-        onSuccess={editingRider ? handleUpdateRider : handleAddRider}
+        onSuccess={() => {
+          fetchRiders(true);
+        }}
         editRider={editingRider}
       />
 

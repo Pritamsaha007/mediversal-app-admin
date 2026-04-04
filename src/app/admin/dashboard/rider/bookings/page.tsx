@@ -46,7 +46,7 @@ const RiderBooking: React.FC = () => {
   const [loadingRiders, setLoadingRiders] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [openDropdown, setOpenDropdown] = useState<null | "status" | "rider">(
-    null
+    null,
   );
   const [riderStatuses, setRiderStatuses] = useState<any[]>([]);
   const [riderSearch, setRiderSearch] = useState("");
@@ -141,7 +141,7 @@ const RiderBooking: React.FC = () => {
     } else {
       const searchLower = riderSearch.toLowerCase();
       const filtered = allRiders.filter((rider) =>
-        rider.name.toLowerCase().includes(searchLower)
+        rider.name.toLowerCase().includes(searchLower),
       );
       setRiders(filtered);
     }
@@ -164,7 +164,7 @@ const RiderBooking: React.FC = () => {
     const status = riderStatuses.find(
       (s) =>
         s.value.toLowerCase().includes(statusName.toLowerCase()) ||
-        s.code?.toLowerCase().includes(statusName.toLowerCase())
+        s.code?.toLowerCase().includes(statusName.toLowerCase()),
     );
     return status?.id;
   };
@@ -195,7 +195,7 @@ const RiderBooking: React.FC = () => {
         setOrders(response.orders);
         setTotalOrders(response.stats.total_assign_orders);
         setHasMore(
-          (currentPage + 1) * itemsPerPage < response.stats.total_assign_orders
+          (currentPage + 1) * itemsPerPage < response.stats.total_assign_orders,
         );
 
         updateRiderStats(riderId, response.stats);
@@ -226,7 +226,7 @@ const RiderBooking: React.FC = () => {
           };
         }
         return rider;
-      })
+      }),
     );
 
     setRiders((prev) =>
@@ -244,7 +244,7 @@ const RiderBooking: React.FC = () => {
           };
         }
         return rider;
-      })
+      }),
     );
   };
 
@@ -305,7 +305,7 @@ const RiderBooking: React.FC = () => {
             };
           }
           return order;
-        })
+        }),
       );
 
       updateRiderStats(selectedRider, {
@@ -313,7 +313,7 @@ const RiderBooking: React.FC = () => {
           (selectedRiderData?.stats.total_in_progress_delivery || 0) + 1,
         total_pending_delivery: Math.max(
           0,
-          (selectedRiderData?.stats.total_pending_delivery || 0) - 1
+          (selectedRiderData?.stats.total_pending_delivery || 0) - 1,
         ),
       });
 
@@ -376,7 +376,7 @@ const RiderBooking: React.FC = () => {
             };
           }
           return order;
-        })
+        }),
       );
 
       updateRiderStats(selectedRider, {
@@ -384,7 +384,7 @@ const RiderBooking: React.FC = () => {
           (selectedRiderData?.stats.total_completed_delivery || 0) + 1,
         total_in_progress_delivery: Math.max(
           0,
-          (selectedRiderData?.stats.total_in_progress_delivery || 0) - 1
+          (selectedRiderData?.stats.total_in_progress_delivery || 0) - 1,
         ),
       });
 
@@ -548,7 +548,7 @@ const RiderBooking: React.FC = () => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `rider_orders_export_${new Date().toISOString().split("T")[0]}.csv`
+      `rider_orders_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
 
@@ -800,7 +800,7 @@ const RiderBooking: React.FC = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
+                      {/* <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -811,7 +811,7 @@ const RiderBooking: React.FC = () => {
                           onChange={(e) => handleSelectAll(e.target.checked)}
                           disabled={loadingOrders || orders.length === 0}
                         />
-                      </th>
+                      </th> */}
                       <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider">
                         Order ID
                       </th>
@@ -855,7 +855,7 @@ const RiderBooking: React.FC = () => {
                     ) : (
                       orders.map((order) => (
                         <tr key={order.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-4 whitespace-nowrap">
+                          {/* <td className="px-4 py-4 whitespace-nowrap">
                             <input
                               type="checkbox"
                               className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -865,7 +865,7 @@ const RiderBooking: React.FC = () => {
                               }
                               disabled={loadingOrders}
                             />
-                          </td>
+                          </td> */}
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-xs font-medium text-[#161D1F]">
                               {order.id.slice(0, 8).toUpperCase()}
@@ -932,11 +932,11 @@ const RiderBooking: React.FC = () => {
                                 order.rider_delivery_status === "Completed"
                                   ? "bg-green-100 text-green-800"
                                   : order.rider_delivery_status ===
-                                    "In Progress"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : order.rider_delivery_status === "Pending"
-                                  ? "bg-orange-100 text-orange-800"
-                                  : "bg-red-100 text-red-800"
+                                      "In Progress"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : order.rider_delivery_status === "Pending"
+                                      ? "bg-orange-100 text-orange-800"
+                                      : "bg-red-100 text-red-800"
                               }`}
                             >
                               {formatStatusDisplay(order.rider_delivery_status)}

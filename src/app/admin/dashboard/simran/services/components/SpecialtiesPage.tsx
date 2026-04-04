@@ -12,6 +12,7 @@ import {
   Star,
   StarOff,
   Calendar,
+  Package,
 } from "lucide-react";
 import { useAdminStore } from "@/app/store/adminStore";
 import toast from "react-hot-toast";
@@ -184,18 +185,20 @@ const SpecialtiesPage: React.FC = () => {
           </div>
         ) : services.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-14 h-14 bg-[#E8F4F7] rounded-full flex items-center justify-center mb-3">
-              <Layers className="w-6 h-6 text-[#0088B1]" />
-            </div>
-            <p className="text-[14px] font-medium text-[#161D1F]">
-              No specialties found
-            </p>
-            <p className="text-[12px] text-[#899193] mt-1">
-              {searchTerm
-                ? "Try a different search term"
-                : "Get started by adding your first specialty"}
-            </p>
-            {!searchTerm && (
+            <tr>
+              <td colSpan={8} className="px-6 py-12 text-center">
+                <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <div className="text-gray-500 text-center">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No packages found
+                  </h3>
+                  <p className="text-gray-500">
+                    No packages match your current criteria.
+                  </p>
+                </div>
+              </td>
+            </tr>
+            {/* {!searchTerm && (
               <button
                 onClick={() => {
                   setModalMode("add");
@@ -207,7 +210,7 @@ const SpecialtiesPage: React.FC = () => {
                 <Plus className="w-3.5 h-3.5" />
                 Add Specialty
               </button>
-            )}
+            )} */}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -216,7 +219,6 @@ const SpecialtiesPage: React.FC = () => {
                 key={service.id}
                 className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-[#0088B1] hover:shadow-md transition-all duration-200 group flex flex-col"
               >
-                {/* Image */}
                 <div
                   className="relative h-28 bg-[#E8F4F7] flex items-center justify-center cursor-pointer flex-shrink-0"
                   onClick={() => navigateToDepartments(service)}

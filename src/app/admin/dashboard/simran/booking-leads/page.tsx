@@ -175,7 +175,6 @@ const BookingLeadsPage: React.FC = () => {
           </h1>
         </div>
 
-        {/* Stats Cards — sourced from API statics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <StatsCard
             title="Total Leads"
@@ -206,7 +205,6 @@ const BookingLeadsPage: React.FC = () => {
           />
         </div>
 
-        {/* Search / Filter / Sort bar */}
         <div className="flex flex-col md:flex-row gap-3 mb-4">
           <div className="flex-1 relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -241,14 +239,12 @@ const BookingLeadsPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Error banner */}
         {error && (
           <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-[12px] text-red-600">
             {error}
           </div>
         )}
 
-        {/* Table card */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-[16px] font-medium text-[#161D1F]">

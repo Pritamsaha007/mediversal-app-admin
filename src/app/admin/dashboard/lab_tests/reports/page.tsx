@@ -9,6 +9,8 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCw,
+  Paperclip,
+  ScrollText,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -703,9 +705,15 @@ const ReportsManagement: React.FC = () => {
                   </tr>
                 ) : reports.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">
-                        No reports found for the current filters.
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <ScrollText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <div className="text-gray-500 text-center">
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No reports found
+                        </h3>
+                        <p className="text-gray-500">
+                          No reports match your current criteria.
+                        </p>
                       </div>
                     </td>
                   </tr>

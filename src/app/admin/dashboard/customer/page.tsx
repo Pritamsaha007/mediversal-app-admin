@@ -10,6 +10,7 @@ import {
   DollarSign,
   Plus,
   IndianRupee,
+  Contact,
 } from "lucide-react";
 import { CustomerService } from "./services/customerService";
 import CreateCustomerModal from "./components/CreateCustomerModal";
@@ -54,26 +55,30 @@ const CustomerCatalog: React.FC = () => {
   } = useCustomerStore();
 
   const fetchMetrics = async () => {
-    try {
-      setMetricsLoading(true);
-      setApiError({ type: null, message: "" });
-      const response = await CustomerService.getCustomerMetrics();
-      if (response.success && response.metrics.length > 0) {
-        setMetrics(response.metrics[0]);
-      } else {
+    if (customers.length > 0 && metrics) {
+      setLoading(false);
+    } else {
+      try {
+        setMetricsLoading(true);
+        setApiError({ type: null, message: "" });
+        const response = await CustomerService.getCustomerMetrics();
+        if (response.success && response.metrics.length > 0) {
+          setMetrics(response.metrics[0]);
+        } else {
+          setApiError({
+            type: "metrics",
+            message: "Unable to load customer metrics. Showing default values.",
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch metrics:", err);
         setApiError({
           type: "metrics",
-          message: "Unable to load customer metrics. Showing default values.",
+          message: "Failed to connect to server. Please check your connection.",
         });
+      } finally {
+        setMetricsLoading(false);
       }
-    } catch (err) {
-      console.error("Failed to fetch metrics:", err);
-      setApiError({
-        type: "metrics",
-        message: "Failed to connect to server. Please check your connection.",
-      });
-    } finally {
-      setMetricsLoading(false);
     }
   };
 
@@ -267,7 +272,7 @@ const CustomerCatalog: React.FC = () => {
                   placeholder="Search customers..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-[12px] text-[#161D1F] placeholder:text-[#B0B6B8]"
+                  className="w-full pl-10 pr-4 py-3 border border-[#E5E8E9] rounded-xl focus:border-[#0088B1] focus:outline-none focus:ring-1 focus:ring-[#0088B1] text-sm text-[#161D1F] placeholder:text-[#B0B6B8]"
                 />
               </div>
               <div className="flex gap-2">
@@ -318,14 +323,14 @@ const CustomerCatalog: React.FC = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-4 text-left">
+                      {/* <th className="px-6 py-4 text-left">
                         <input
                           type="checkbox"
                           checked={selectAll}
                           onChange={handleSelectAll}
                           className="rounded border-gray-300 text-[#0088B1] focus:ring-[#0088B1]"
                         />
-                      </th>
+                      </th> */}
                       <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F]">
                         Name
                       </th>
@@ -345,19 +350,21 @@ const CustomerCatalog: React.FC = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {loading ? (
-                      <TableSkeleton rows={5} columns={5} />
+                      <tr>
+                        <td colSpan={7} className="px-6 py-12 text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
+                        </td>
+                      </tr>
                     ) : customers.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-12 text-center">
-                          <div className="flex flex-col items-center justify-center">
-                            <Users className="w-12 h-12 text-gray-300 mb-3" />
-                            <p className="text-[14px] font-medium text-[#161D1F] mb-1">
-                              No Customers Found
-                            </p>
-                            <p className="text-[12px] text-[#899193]">
-                              {searchTerm
-                                ? "Try adjusting your search criteria"
-                                : "Start by adding your first customer"}
+                        <td colSpan={8} className="px-6 py-12 text-center">
+                          <div className="text-gray-500 text-center">
+                            <Contact className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                              No customers found
+                            </h3>
+                            <p className="text-gray-500">
+                              No customers match your current criteria.
                             </p>
                           </div>
                         </td>

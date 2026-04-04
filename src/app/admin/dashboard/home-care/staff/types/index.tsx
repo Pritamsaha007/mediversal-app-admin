@@ -1,4 +1,5 @@
 export interface Staff {
+  filter: any;
   id: string;
   name: string;
   phone: string;
@@ -18,6 +19,7 @@ export interface Staff {
   role_id?: string;
 }
 export interface ApiStaff {
+  [x: string]: any;
   id: string;
   name: string;
   mobile_number: string;
