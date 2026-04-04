@@ -74,7 +74,6 @@ export const useCouponStore = create<CouponStore>((set, get) => {
   };
 
   return {
-    // Initial state
     coupons: [],
     filteredCoupons: [],
     searchTerm: "",
@@ -89,7 +88,6 @@ export const useCouponStore = create<CouponStore>((set, get) => {
     isLoading: true,
     error: null,
 
-    // Basic setters
     setCoupons: (coupons) => {
       set({ coupons });
       get().filterCoupons();
@@ -108,7 +106,6 @@ export const useCouponStore = create<CouponStore>((set, get) => {
     setIsLoading: (loading) => set({ isLoading: loading }),
     setError: (error) => set({ error }),
 
-    // Form actions
     setFormData: (data) => set({ formData: data }),
     updateFormField: (field, value) => {
       const { formData } = get();
@@ -126,14 +123,12 @@ export const useCouponStore = create<CouponStore>((set, get) => {
       set({ formData: { ...formData, coupon_code: result } });
     },
 
-    // Complex actions
     addCoupon: (coupon) => {
       const { coupons, itemsPerPage } = get();
       const newCoupons = [...coupons, coupon];
       set({ coupons: newCoupons });
       get().filterCoupons();
 
-      // Go to last page when adding new item
       const newTotalPages = Math.ceil(newCoupons.length / itemsPerPage);
       set({ currentPage: newTotalPages });
     },
@@ -164,7 +159,6 @@ export const useCouponStore = create<CouponStore>((set, get) => {
       });
       get().filterCoupons();
 
-      // Reset to first page if we deleted the last item on current page
       if (filteredCoupons.length - 1 <= (currentPage - 1) * itemsPerPage) {
         set({ currentPage: Math.max(1, currentPage - 1) });
       }

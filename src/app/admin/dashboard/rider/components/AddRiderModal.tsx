@@ -540,14 +540,14 @@ export const AssignRiderModal: React.FC<AssignRiderModalProps> = ({
         <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-5 py-3 rounded-lg text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+            className="px-5 py-3 rounded-lg text-xs font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSaveAssignment}
             disabled={!assignedRider || saving}
-            className={`px-5 py-3 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-5 py-3 rounded-lg text-xs font-medium transition-colors ${
               assignedRider && !saving
                 ? "bg-[#0088B1] text-white hover:bg-[#00729A]"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"

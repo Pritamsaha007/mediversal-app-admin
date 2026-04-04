@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Product } from "../admin/dashboard/pharmacy/product/types/product";
+import { Product } from "../../product/types/product";
 
 interface ProductStore {
   products: Product[];

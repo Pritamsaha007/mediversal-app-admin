@@ -13,11 +13,17 @@ import {
   BookUser,
   BellRing,
   Building,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import MainMediversalLogo from "../../../../public/Mediversal 247 Logo.svg";
+import MainMediversalGroupLogo from "../../../../public/Mediversal Simran-cropped.svg";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePathname, useRouter } from "next/navigation";
 
 interface MenuItem {
   name: string;
@@ -28,9 +34,8 @@ interface MenuItem {
   }[];
 }
 
-import { usePathname, useRouter } from "next/navigation";
-
 const Sidebar = () => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [selectedMenu, setSelectedMenu] = useState<string>("Dashboard");
   const [openMenu, setOpenMenu] = useState<string | null>("Dashboard");
   const [selectedSubMenu, setSelectedSubMenu] = useState<string | null>(
@@ -40,78 +45,46 @@ const Sidebar = () => {
   const [hoveredSubMenu, setHoveredSubMenu] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
+
   const menuItems: MenuItem[] = [
     {
       name: "Dashboard",
       icon: <LayoutDashboard size={18} />,
-      subItems: [
-        {
-          name: "Overview",
-          link: "/admin/dashboard/overview",
-        },
-      ],
+      subItems: [{ name: "Overview", link: "/admin/dashboard/overview" }],
     },
     {
       name: "User Analytics",
       icon: <BookUser size={18} />,
-      subItems: [
-        {
-          name: "All Customers",
-          link: "/admin/dashboard/customer",
-        },
-      ],
+      subItems: [{ name: "All Customers", link: "/admin/dashboard/customer" }],
     },
     {
       name: "Pharmacy",
       icon: <PillIcon size={18} />,
       subItems: [
-        {
-          name: "Products",
-          link: "/admin/dashboard/pharmacy/product",
-        },
+        { name: "Products", link: "/admin/dashboard/pharmacy/product" },
         { name: "Order", link: "/admin/dashboard/pharmacy/order" },
       ],
     },
     {
       name: "Coupons",
       icon: <BadgePercent size={18} />,
-      subItems: [
-        {
-          name: "Coupons",
-          link: "/admin/dashboard/coupons",
-        },
-      ],
+      subItems: [{ name: "Coupons", link: "/admin/dashboard/coupons" }],
     },
     {
       name: "Home Care",
       icon: <Ambulance size={18} />,
       subItems: [
-        {
-          name: "Services",
-          link: "/admin/dashboard/home-care/services",
-        },
-        {
-          name: "Booking",
-          link: "/admin/dashboard/home-care/booking",
-        },
-        {
-          name: "Staff",
-          link: "/admin/dashboard/home-care/staff",
-        },
+        { name: "Services", link: "/admin/dashboard/home-care/services" },
+        { name: "Booking", link: "/admin/dashboard/home-care/booking" },
+        { name: "Staff", link: "/admin/dashboard/home-care/staff" },
       ],
     },
     {
       name: "Consultations",
       icon: <Laptop size={18} />,
       subItems: [
-        {
-          name: "Doctors",
-          link: "/admin/dashboard/consultations/doctors",
-        },
-        {
-          name: "Hospitals",
-          link: "/admin/dashboard/consultations/hospitals",
-        },
+        { name: "Doctors", link: "/admin/dashboard/consultations/doctors" },
+        { name: "Hospitals", link: "/admin/dashboard/consultations/hospitals" },
         {
           name: "Consultations",
           link: "/admin/dashboard/consultations/consultation",
@@ -134,18 +107,12 @@ const Sidebar = () => {
           name: "Health Packages",
           link: "/admin/dashboard/lab_tests/health_package",
         },
-        {
-          name: "Bookings",
-          link: "/admin/dashboard/lab_tests/bookings",
-        },
+        { name: "Bookings", link: "/admin/dashboard/lab_tests/bookings" },
         {
           name: "Phlebotomists",
           link: "/admin/dashboard/lab_tests/phlebotomists",
         },
-        {
-          name: "Reports",
-          link: "/admin/dashboard/lab_tests/reports",
-        },
+        { name: "Reports", link: "/admin/dashboard/lab_tests/reports" },
       ],
     },
     {
@@ -156,42 +123,27 @@ const Sidebar = () => {
           name: "Delivery Riders",
           link: "/admin/dashboard/rider/deliveryRiders",
         },
-        {
-          name: "Bookings",
-          link: "/admin/dashboard/rider/bookings",
-        },
+        { name: "Bookings", link: "/admin/dashboard/rider/bookings" },
       ],
     },
     {
       name: "Push Notification",
       icon: <BellRing size={18} />,
       subItems: [
-        {
-          name: "Notifications",
-          link: "/admin/dashboard/push-notification",
-        },
+        { name: "Notifications", link: "/admin/dashboard/push-notification" },
       ],
     },
     {
       name: "Simran",
       icon: <Building size={18} />,
       subItems: [
-        {
-          name: "Home",
-          link: "/admin/dashboard/simran",
-        },
-        {
-          name: "Services",
-          link: "/admin/dashboard/simran/services",
-        },
+        { name: "Home", link: "/admin/dashboard/simran" },
+        { name: "Services", link: "/admin/dashboard/simran/services" },
         {
           name: "Insurance & Tie-Ups",
           link: "/admin/dashboard/simran/insurance-tie-ups",
         },
-        {
-          name: "Blogs",
-          link: "/admin/dashboard/simran/blogs",
-        },
+        { name: "Blogs", link: "/admin/dashboard/simran/blogs" },
         {
           name: "Booking Leads",
           link: "/admin/dashboard/simran/booking-leads",
@@ -202,17 +154,11 @@ const Sidebar = () => {
 
   useEffect(() => {
     let foundMatch = false;
-
     menuItems.forEach((menu) => {
       if (menu.subItems && menu.subItems.length > 0) {
-        const sortedSubItems = [...menu.subItems].sort(
-          (a, b) => b.link.length - a.link.length,
-        );
-
-        const matchingSubItem = sortedSubItems.find((sub) =>
+        const matchingSubItem = menu.subItems.find((sub) =>
           pathname.startsWith(sub.link),
         );
-
         if (matchingSubItem) {
           setSelectedMenu(menu.name);
           setOpenMenu(menu.name);
@@ -221,26 +167,32 @@ const Sidebar = () => {
         }
       }
     });
-
-    if (!foundMatch) {
-      setSelectedMenu("Dashboard");
-      setOpenMenu("Dashboard");
-      setSelectedSubMenu("Overview");
-    }
   }, [pathname]);
 
   const toggleMenu = (menuName: string) => {
+    const menu = menuItems.find((m) => m.name === menuName);
+    const firstSubItem = menu?.subItems?.[0];
+
+    if (isCollapsed) {
+      setIsCollapsed(false);
+      setOpenMenu(menuName);
+      setSelectedMenu(menuName);
+
+      if (firstSubItem) {
+        setSelectedSubMenu(firstSubItem.name);
+        router.push(firstSubItem.link);
+      }
+      return;
+    }
+
     if (openMenu === menuName) {
       setOpenMenu(null);
     } else {
       setOpenMenu(menuName);
       setSelectedMenu(menuName);
 
-      const menu = menuItems.find((m) => m.name === menuName);
-      if (menu?.subItems && menu.subItems.length > 0) {
-        const firstSubItem = menu.subItems[0];
+      if (firstSubItem) {
         setSelectedSubMenu(firstSubItem.name);
-
         router.push(firstSubItem.link);
       }
     }
@@ -251,131 +203,119 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen w-[302px] bg-white shadow-xl">
-      <motion.div
-        className="flex items-center justify-center h-[80px] p-10"
-        whileHover="hover"
+    <motion.div
+      initial={false}
+      animate={{ width: isCollapsed ? 80 : 302 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className="flex flex-col h-screen bg-white shadow-xl relative"
+    >
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className={`ml-5 absolute -right-3 top-3 z-50 bg-white border border-gray-200 text-gray-700 px-0.5 hover:scale-110 transition-transform py-5
+    ${isCollapsed ? "rounded-l-lg rounded-r-2xl" : "rounded-l-2xl rounded-r-lg"}
+  `}
       >
-        <Image
-          src={MainMediversalLogo}
-          alt="Mediversal 247 Logo"
-          width={400}
-          height={200}
-          className="w-full max-w-sm mx-auto"
-          priority
-        />
-      </motion.div>
+        {isCollapsed ? <ArrowRight size={18} /> : <ArrowLeft size={18} />}
+      </button>
+
+      <div className="flex items-center justify-center h-[80px] px-4 overflow-hidden">
+        <AnimatePresence mode="wait">
+          {!isCollapsed ? (
+            <motion.div
+              key="full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="w-full px-6"
+            >
+              <Image
+                src={MainMediversalLogo}
+                alt="Logo"
+                width={200}
+                height={100}
+                priority
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="mini"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-[#0088B1] font-bold text-2xl"
+            >
+              <Image
+                src={MainMediversalGroupLogo}
+                alt="Logo"
+                width={150}
+                height={100}
+                priority
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       <div className="border-t border-[#D3D7D8]"></div>
 
-      <div className="flex flex-col overflow-y-auto py-6 px-2 space-y-1 justify-center items-center">
+      <div className="flex flex-col overflow-y-auto overflow-x-hidden py-6 px-2 space-y-1 items-center">
         {menuItems.map((menu) => (
-          <div key={menu.name} className="mb-2 w-full">
+          <div
+            key={menu.name}
+            className="mb-2 w-full flex flex-col items-center"
+          >
             <motion.div
-              className={`flex items-center justify-between px-4 py-2 cursor-pointer rounded-lg w-[254px] h-[40px] mx-auto
-                ${
-                  selectedMenu === menu.name
-                    ? "bg-[#0088B1] text-[#F8F8F8] shadow-lg"
-                    : "bg-white text-[#161D1F] hover:bg-gray-100"
-                }
-                transition-colors duration-150 ease-in-out relative overflow-hidden`}
+              className={`flex items-center cursor-pointer rounded-lg h-[40px] relative transition-all duration-200
+                ${isCollapsed ? "w-[50px] justify-center px-0" : "w-[254px] justify-between px-4"}
+                ${selectedMenu === menu.name ? "bg-[#0088B1] text-[#F8F8F8] shadow-lg" : "bg-white text-[#161D1F] hover:bg-gray-100"}`}
               onClick={() => toggleMenu(menu.name)}
               onHoverStart={() => setHoveredMenu(menu.name)}
               onHoverEnd={() => setHoveredMenu(null)}
-              whileHover="hover"
-              whileTap="tap"
             >
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                initial={{ x: "-100%" }}
-                animate={
-                  hoveredMenu === menu.name ? { x: "100%" } : { x: "-100%" }
-                }
-                transition={{ duration: 0.6, ease: "easeInOut" }}
-              />
-
-              <div className="flex items-center relative z-10">
-                <motion.span
-                  className={`mr-3 ${selectedMenu === menu.name ? "text-[#F8F8F8]" : "text-[#161D1F]"}`}
-                  whileHover="hover"
-                >
-                  {menu.icon}
-                </motion.span>
-                <span className="text-sm font-medium">{menu.name}</span>
+              <div className="flex items-center relative z-10 overflow-hidden">
+                <span className={`${!isCollapsed && "mr-3"}`}>{menu.icon}</span>
+                {!isCollapsed && (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-sm font-medium whitespace-nowrap"
+                  >
+                    {menu.name}
+                  </motion.span>
+                )}
               </div>
 
-              {menu.subItems && (
+              {!isCollapsed && menu.subItems && (
                 <motion.span
-                  className={`relative z-10 transition-transform duration-150 ${
-                    selectedMenu === menu.name
-                      ? "text-[#F8F8F8]"
-                      : "text-[#161D1F]"
-                  }`}
-                  animate={{
-                    rotate: openMenu === menu.name ? 180 : 0,
-                  }}
-                  transition={{ duration: 0.15 }}
+                  animate={{ rotate: openMenu === menu.name ? 180 : 0 }}
                 >
                   <ChevronDown size={16} />
                 </motion.span>
               )}
             </motion.div>
 
-            <AnimatePresence mode="wait">
-              {openMenu === menu.name && menu.subItems && (
+            <AnimatePresence>
+              {!isCollapsed && openMenu === menu.name && menu.subItems && (
                 <motion.div
-                  className="mt-2 rounded-lg space-y-2 py-1 pl-2 overflow-hidden"
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
+                  className="mt-2 space-y-1 w-full flex flex-col items-center overflow-hidden"
                 >
-                  {menu.subItems.map((subItem, index) => (
-                    <Link href={subItem.link} key={subItem.name}>
+                  {menu.subItems.map((subItem) => (
+                    <Link
+                      href={subItem.link}
+                      key={subItem.name}
+                      className="w-full flex justify-center"
+                    >
                       <motion.div
-                        className={`flex items-center px-4 py-2 cursor-pointer rounded-md mx-auto w-[234px] h-[36px]
-                          ${
-                            selectedSubMenu === subItem.name
-                              ? "bg-[#D0E8F0] text-[#161D1F] font-medium shadow-md"
-                              : "text-[#161D1F] hover:bg-[#E6F4F8]"
-                          }
-                          transition-colors duration-150 ease-in-out relative overflow-hidden`}
+                        className={`flex items-center px-4 py-2 cursor-pointer rounded-md w-[234px] h-[36px] relative
+                          ${selectedSubMenu === subItem.name ? "bg-[#D0E8F0] text-[#161D1F] font-medium" : "text-[#161D1F] hover:bg-[#E6F4F8]"}`}
                         onClick={() => handleSubMenuClick(subItem.name)}
-                        onHoverStart={() => setHoveredSubMenu(subItem.name)}
-                        onHoverEnd={() => setHoveredSubMenu(null)}
-                        whileHover="hover"
-                        whileTap="tap"
                       >
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                          initial={{ x: "-100%" }}
-                          animate={
-                            hoveredSubMenu === subItem.name
-                              ? { x: "100%" }
-                              : { x: "-100%" }
-                          }
-                          transition={{ duration: 0.5, ease: "easeInOut" }}
-                        />
-
-                        <div className="relative z-10 flex items-center">
-                          <CornerDownRight
-                            size={14}
-                            className="mr-3 text-[#161D1F]"
-                          />
-                          <span className="text-sm">{subItem.name}</span>
-                        </div>
-
-                        {selectedSubMenu === subItem.name && (
-                          <motion.div
-                            className="absolute left-0 w-1 h-6 bg-[#0088B1] rounded-r-full"
-                            layoutId="activeSubMenuIndicator"
-                            transition={{
-                              type: "spring",
-                              stiffness: 300,
-                              damping: 30,
-                            }}
-                          />
-                        )}
+                        <CornerDownRight size={14} className="mr-3" />
+                        <span className="text-sm whitespace-nowrap">
+                          {subItem.name}
+                        </span>
                       </motion.div>
                     </Link>
                   ))}
@@ -385,7 +325,7 @@ const Sidebar = () => {
           </div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { X, ChevronDown } from "lucide-react";
 import { CouponItem } from "@/app/types/auth.types";
 import toast from "react-hot-toast";
-import { useCouponStore } from "@/app/store/couponStore";
+import { useCouponStore } from "@/app/admin/dashboard/coupons/store/couponStore";
 import { formatDateForInput } from "@/app/utils/date.utils";
 
 interface CouponModalProps {
@@ -405,7 +405,7 @@ export const CouponModal: React.FC<CouponModalProps> = ({
                   Coupon Description
                 </label>
                 <textarea
-                  value={formData.description}
+                  value={formData.description || ""}
                   onChange={(e) =>
                     handleInputChange("description", e.target.value)
                   }

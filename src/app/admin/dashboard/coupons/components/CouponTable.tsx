@@ -66,7 +66,7 @@ export default function CouponTable({
         <table className="w-full relative">
           <thead className="bg-gray-50 sticky top-0 z-20">
             <tr>
-              <th scope="col" className="px-4 py-3">
+              {/* <th scope="col" className="px-4 py-3">
                 <input
                   type="checkbox"
                   checked={
@@ -84,7 +84,7 @@ export default function CouponTable({
                   }}
                   className="h-4 w-4 text-[#0088B1] border-gray-300 rounded focus:ring-[#0088B1]"
                 />
-              </th>
+              </th> */}
               <th
                 scope="col"
                 className="px-6 py-3 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider"

@@ -12,6 +12,7 @@ import {
   Trash2,
   ArrowUpDown,
   Download,
+  UserPlus,
 } from "lucide-react";
 import StatsCard from "../../../../components/common/StatsCard";
 import StatusBadge from "../../../../components/common/StatusBadge";
@@ -31,6 +32,7 @@ import {
 } from "../services/index";
 import { EnumItem } from "@/app/service/enumService";
 import Pagination from "@/app/components/common/pagination";
+import { usePhlebotomistStore } from "./store/PhlebotomistStore";
 
 interface PhlebotomistStats {
   totalPhlebotomists: number;
@@ -43,7 +45,7 @@ const PhlebotomistManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All Phlebotomist");
   const [selectedLocation, setSelectedLocation] = useState("All Locations");
-  const [phlebotomists, setPhlebotomists] = useState<Phlebotomist[]>([]);
+  const { phlebotomists, setPhlebotomists } = usePhlebotomistStore();
   const [filteredPhlebotomists, setFilteredPhlebotomists] = useState<
     Phlebotomist[]
   >([]);
@@ -70,12 +72,14 @@ const PhlebotomistManagement: React.FC = () => {
   const [enumDataLoaded, setEnumDataLoaded] = useState(false);
   const [serviceCitiesData, setServiceCitiesData] = useState<EnumItem[]>([]);
   const [serviceAreasData, setServiceAreasData] = useState<EnumItem[]>([]);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 10;
 
   const { token } = useAdminStore();
 
+  // Fetch enum data on mount
   useEffect(() => {
     const fetchEnumData = async () => {
       if (!token) return;
@@ -106,30 +110,13 @@ const PhlebotomistManagement: React.FC = () => {
         setSpecializationsData(specializationsResponse.roles || []);
         setServiceCitiesData(citiesResponse.roles || []);
         setServiceAreasData(areasResponse.roles || []);
+        setDaysDataLoaded(true);
         setEnumDataLoaded(true);
       } catch (error: any) {
         console.error("Error fetching enum data:", error);
         toast.error("Failed to load form data");
       } finally {
         setFetchingData(false);
-      }
-    };
-
-    fetchEnumData();
-  }, [token]);
-
-  useEffect(() => {
-    const fetchEnumData = async () => {
-      if (!token) return;
-
-      try {
-        const daysResponse = await fetchDays(token);
-        setDaysData(daysResponse.roles || []);
-        setDaysDataLoaded(true);
-        console.log("Days data loaded:", daysResponse.roles);
-      } catch (error: any) {
-        console.error("Error fetching days data:", error);
-        toast.error("Failed to load days data");
       }
     };
 
@@ -168,6 +155,150 @@ const PhlebotomistManagement: React.FC = () => {
       created_by: apiPhlebo.created_by || "",
       updated_by: apiPhlebo.updated_by || "",
     };
+  };
+
+  const applyFiltersToData = (data: Phlebotomist[]) => {
+    let filtered = [...data];
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (p.license_no?.toLowerCase() || "").includes(
+            searchTerm.toLowerCase(),
+          ),
+      );
+    }
+
+    // Apply status filter
+    if (selectedFilter === "Active") {
+      filtered = filtered.filter((p) => p.is_available);
+    } else if (selectedFilter === "Inactive") {
+      filtered = filtered.filter((p) => !p.is_available);
+    }
+
+    // Apply location filter
+    if (selectedLocation !== "All Locations") {
+      filtered = filtered.filter((p) => p.service_city === selectedLocation);
+    }
+
+    return filtered;
+  };
+
+  const fetchPhlebotomists = async (forceRefresh = false) => {
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    if (!daysDataLoaded) {
+      console.log("Waiting for days data to load...");
+      return;
+    }
+
+    // If we have cached phlebotomists and not forcing refresh, use them
+    if (!forceRefresh && phlebotomists.length > 0) {
+      console.log("Using cached phlebotomists data");
+      const filtered = applyFiltersToData(phlebotomists);
+      setFilteredPhlebotomists(filtered);
+      setCurrentPage(0);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const searchPayload: SearchPhlebotomistsPayload = {
+        start: 0,
+        max: 50,
+        search_text: searchTerm || null,
+        filter_specialization:
+          selectedFilter !== "All Phlebotomist" &&
+          selectedFilter !== "Active" &&
+          selectedFilter !== "Inactive"
+            ? selectedFilter
+            : null,
+        filter_service_city:
+          selectedLocation !== "All Locations" ? selectedLocation : null,
+        filter_is_available:
+          selectedFilter === "Active"
+            ? true
+            : selectedFilter === "Inactive"
+              ? false
+              : null,
+        filter_is_home_collection_certified: null,
+        sort_by: "name",
+        sort_order: "ASC",
+      };
+
+      const response = await searchPhlebotomists(searchPayload, token);
+
+      if (response.success) {
+        const phlebotomistData = response.phlebotomists.map(
+          convertSearchResultToPhlebotomist,
+        );
+        setPhlebotomists(phlebotomistData);
+        const filtered = applyFiltersToData(phlebotomistData);
+        setFilteredPhlebotomists(filtered);
+        console.log("Phlebotomists data loaded:", phlebotomistData);
+      }
+    } catch (error: any) {
+      console.error("Error fetching phlebotomists:", error);
+      toast.error(error.message || "Failed to load phlebotomists");
+    } finally {
+      setLoading(false);
+      setInitialLoadDone(true);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    if (daysDataLoaded && token && !initialLoadDone) {
+      fetchPhlebotomists();
+    }
+  }, [daysDataLoaded, token]);
+
+  // Handle filter changes
+  useEffect(() => {
+    if (phlebotomists.length > 0) {
+      const filtered = applyFiltersToData(phlebotomists);
+      setFilteredPhlebotomists(filtered);
+      setCurrentPage(0);
+    } else if (daysDataLoaded && token) {
+      const timeoutId = setTimeout(() => {
+        fetchPhlebotomists();
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchTerm, selectedFilter, selectedLocation, daysDataLoaded, token]);
+
+  const paginatedPhlebotomists = React.useMemo(() => {
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredPhlebotomists.slice(startIndex, endIndex);
+  }, [filteredPhlebotomists, currentPage, itemsPerPage]);
+
+  const hasMore = React.useMemo(() => {
+    return (currentPage + 1) * itemsPerPage < filteredPhlebotomists.length;
+  }, [filteredPhlebotomists, currentPage, itemsPerPage]);
+
+  const totalItems = filteredPhlebotomists.length;
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (hasMore) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
+  const refreshPhlebotomists = () => {
+    fetchPhlebotomists(true);
   };
 
   const handleDeletePhlebotomist = async (phlebotomist: Phlebotomist) => {
@@ -260,8 +391,7 @@ const PhlebotomistManagement: React.FC = () => {
       await updatePhlebotomist(updatePayload, token);
 
       toast.success("Phlebotomist deleted successfully");
-
-      fetchPhlebotomists();
+      refreshPhlebotomists();
     } catch (error: any) {
       console.error("Error deleting phlebotomist:", error);
       toast.error(error.message || "Failed to delete phlebotomist");
@@ -270,23 +400,13 @@ const PhlebotomistManagement: React.FC = () => {
     }
   };
 
-  const filterOptions = ["All Phlebotomist", "Active", "Inactive"];
-  const locationOptions = [
-    "All Locations",
-    "Patna",
-    "Delhi",
-    "Mumbai",
-    "Kolkata",
-    "Bangalore",
-  ];
-
   const generateStats = (): PhlebotomistStats => {
-    const totalPhlebotomists = phlebotomists.length;
-    const activePhlebotomists = phlebotomists.filter(
+    const totalPhlebotomists = filteredPhlebotomists.length;
+    const activePhlebotomists = filteredPhlebotomists.filter(
       (p) => p.is_available,
     ).length;
     const avgExp =
-      phlebotomists.reduce((sum, p) => sum + p.experience_in_yrs, 0) /
+      filteredPhlebotomists.reduce((sum, p) => sum + p.experience_in_yrs, 0) /
       (totalPhlebotomists || 1);
 
     return {
@@ -298,104 +418,6 @@ const PhlebotomistManagement: React.FC = () => {
   };
 
   const stats = generateStats();
-
-  const fetchPhlebotomists = async () => {
-    if (!token) {
-      toast.error("Authentication required");
-      return;
-    }
-
-    if (!daysDataLoaded) {
-      console.log("Waiting for days data to load...");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const searchPayload: SearchPhlebotomistsPayload = {
-        start: 0,
-        max: 50,
-        search_text: searchTerm || null,
-        filter_specialization:
-          selectedFilter !== "All Phlebotomist" &&
-          selectedFilter !== "Active" &&
-          selectedFilter !== "Inactive"
-            ? selectedFilter
-            : null,
-        filter_service_city:
-          selectedLocation !== "All Locations" ? selectedLocation : null,
-        filter_is_available:
-          selectedFilter === "Active"
-            ? true
-            : selectedFilter === "Inactive"
-              ? false
-              : null,
-        filter_is_home_collection_certified: null,
-        sort_by: "name",
-        sort_order: "ASC",
-      };
-
-      const response = await searchPhlebotomists(searchPayload, token);
-
-      if (response.success) {
-        const phlebotomistData = response.phlebotomists.map(
-          convertSearchResultToPhlebotomist,
-        );
-        setPhlebotomists(phlebotomistData);
-        setFilteredPhlebotomists(phlebotomistData);
-        console.log("Phlebotomists data loaded:", phlebotomistData);
-      }
-    } catch (error: any) {
-      console.error("Error fetching phlebotomists:", error);
-      toast.error(error.message || "Failed to load phlebotomists");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (daysDataLoaded) {
-      fetchPhlebotomists();
-    }
-  }, [daysDataLoaded]);
-
-  useEffect(() => {
-    if (daysDataLoaded) {
-      const timeoutId = setTimeout(() => {
-        fetchPhlebotomists();
-      }, 500);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [searchTerm, selectedFilter, selectedLocation, daysDataLoaded]);
-
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [searchTerm, selectedFilter, selectedLocation]);
-
-  const paginatedPhlebotomists = React.useMemo(() => {
-    const startIndex = currentPage * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredPhlebotomists.slice(startIndex, endIndex);
-  }, [filteredPhlebotomists, currentPage, itemsPerPage]);
-
-  const hasMore = React.useMemo(() => {
-    return (currentPage + 1) * itemsPerPage < filteredPhlebotomists.length;
-  }, [filteredPhlebotomists, currentPage, itemsPerPage]);
-
-  const totalItems = filteredPhlebotomists.length;
-
-  const handlePreviousPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage((prev) => prev - 1);
-    }
-  };
-
-  const handleNextPage = () => {
-    if (hasMore) {
-      setCurrentPage((prev) => prev + 1);
-    }
-  };
 
   const handleSelectPhlebotomist = (id: string, checked: boolean) => {
     if (checked) {
@@ -460,13 +482,13 @@ const PhlebotomistManagement: React.FC = () => {
     );
   };
 
-  const handleAddPhlebotomist = (newPhlebotomist: Phlebotomist) => {
-    fetchPhlebotomists();
+  const handleAddPhlebotomist = () => {
+    refreshPhlebotomists();
     toast.success("Phlebotomist added successfully");
   };
 
-  const handleUpdatePhlebotomist = (updatedPhlebotomist: Phlebotomist) => {
-    fetchPhlebotomists();
+  const handleUpdatePhlebotomist = () => {
+    refreshPhlebotomists();
     toast.success("Phlebotomist updated successfully");
   };
 
@@ -553,14 +575,16 @@ const PhlebotomistManagement: React.FC = () => {
   };
 
   const handleExport = () => {
-    if (phlebotomists.length === 0) {
+    if (filteredPhlebotomists.length === 0) {
       toast.error("No phlebotomists to export");
       return;
     }
 
     const phlebotomistsToExport =
       selectedPhlebotomists.length > 0
-        ? phlebotomists.filter((p) => selectedPhlebotomists.includes(p.id))
+        ? filteredPhlebotomists.filter((p) =>
+            selectedPhlebotomists.includes(p.id),
+          )
         : filteredPhlebotomists;
 
     exportPhlebotomistsToCSV(phlebotomistsToExport);
@@ -636,9 +660,9 @@ const PhlebotomistManagement: React.FC = () => {
           <div className="flex gap-2">
             <button
               onClick={handleExport}
-              disabled={loading || phlebotomists.length === 0}
+              disabled={loading || filteredPhlebotomists.length === 0}
               className={`flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50 ${
-                loading || phlebotomists.length === 0
+                loading || filteredPhlebotomists.length === 0
                   ? "opacity-50 cursor-not-allowed"
                   : ""
               }`}
@@ -668,18 +692,6 @@ const PhlebotomistManagement: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                      checked={
-                        selectedPhlebotomists.length ===
-                          paginatedPhlebotomists.length &&
-                        paginatedPhlebotomists.length > 0
-                      }
-                      onChange={(e) => handleSelectAll(e.target.checked)}
-                    />
-                  </th>
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Phlebotomist Details
                   </th>
@@ -697,36 +709,27 @@ const PhlebotomistManagement: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
+                    <td colSpan={4} className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
                     </td>
                   </tr>
                 ) : paginatedPhlebotomists.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">
-                        No phlebotomists found.
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <UserPlus className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <div className="text-gray-500 text-center">
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No phlebotomists found
+                        </h3>
+                        <p className="text-gray-500">
+                          No phlebotomists match your current criteria.
+                        </p>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   paginatedPhlebotomists.map((phlebotomist) => (
                     <tr key={phlebotomist.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
-                          checked={selectedPhlebotomists.includes(
-                            phlebotomist.id,
-                          )}
-                          onChange={(e) =>
-                            handleSelectPhlebotomist(
-                              phlebotomist.id,
-                              e.target.checked,
-                            )
-                          }
-                        />
-                      </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-1 min-w-[250px]">
                           <div className="text-xs font-medium text-[#161D1F]">

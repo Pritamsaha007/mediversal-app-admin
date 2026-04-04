@@ -1,8 +1,8 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Plus, Download } from "lucide-react";
 
-import { useCouponStore } from "@/app/store/couponStore";
+import { useCouponStore } from "@/app/admin/dashboard/coupons/store/couponStore";
 import { CouponItem } from "@/app/types/auth.types";
 import {
   getAllCoupons,
@@ -43,8 +43,15 @@ export default function CouponsManagement() {
     closeModal,
   } = useCouponStore();
 
+  const toastShownRef = useRef<boolean>(false);
+  const isUpdatingRef = useRef<boolean>(false);
+
   useEffect(() => {
     const fetchCoupons = async () => {
+      if (coupons.length > 0 && !isUpdatingRef.current) {
+        setIsLoading(false);
+        return;
+      }
       try {
         setIsLoading(true);
         const data = await getAllCoupons();
@@ -61,9 +68,10 @@ export default function CouponsManagement() {
     };
 
     fetchCoupons();
-  }, [setCoupons, setIsLoading, setError]);
+  }, [setCoupons, setIsLoading, setError, coupons.length]);
 
   console.log(coupons, "coupons");
+
   const handleAddCoupon = () => {
     openAddModal();
   };
@@ -79,14 +87,34 @@ export default function CouponsManagement() {
     const coupon = coupons.find((c) => String(c.id) === String(id));
     if (!coupon) return;
 
+    if (!confirm(`Are you sure you want to delete ${coupon.coupon_code}?`)) {
+      return;
+    }
+
+    isUpdatingRef.current = true;
+
+    const originalCoupons = [...coupons];
+
+    removeCoupon(id);
+    toast.success(`Deleting ${coupon.coupon_code}...`);
+    toastShownRef.current = true;
+
     try {
-      if (confirm(`Are you sure you want to delete ${coupon.coupon_code}?`)) {
-        await deleteCoupon(id);
-        removeCoupon(id);
-      }
+      await deleteCoupon(id);
+      toast.dismiss();
+      toast.success(`${coupon.coupon_code} deleted successfully!`);
     } catch (err) {
       console.error("Error deleting coupon:", err);
-      alert(err instanceof Error ? err.message : "Failed to delete coupon");
+
+      setCoupons(originalCoupons);
+      toast.dismiss();
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete coupon",
+      );
+    } finally {
+      setTimeout(() => {
+        isUpdatingRef.current = false;
+      }, 500);
     }
   };
 
@@ -94,58 +122,117 @@ export default function CouponsManagement() {
     id: string,
     status: "active" | "inactive",
   ) => {
+    const couponToUpdate = coupons.find((c) => String(c.id) === String(id));
+    if (!couponToUpdate) return;
+
+    isUpdatingRef.current = true;
+
+    const originalCoupon = { ...couponToUpdate };
+
+    const updatedCouponData = {
+      ...couponToUpdate,
+      status: status,
+    };
+    updateCouponInStore(updatedCouponData);
+    toast.success(`Updating status to ${status}...`);
+    toastShownRef.current = true;
+
     try {
-      const couponToUpdate = coupons.find((c) => String(c.id) === String(id));
-      if (!couponToUpdate) return;
-
-      const updatedCoupon = {
-        ...couponToUpdate,
-        status: status,
-      };
-
-      await updateCoupon(updatedCoupon);
-      updateCouponInStore(updatedCoupon);
+      await updateCoupon(updatedCouponData);
+      toast.dismiss();
+      toast.success(`Coupon status updated to ${status}!`);
     } catch (err) {
       console.error("Error updating coupon status:", err);
-      alert(
+
+      updateCouponInStore(originalCoupon);
+      toast.dismiss();
+      toast.error(
         err instanceof Error ? err.message : "Failed to update coupon status",
       );
+    } finally {
+      setTimeout(() => {
+        isUpdatingRef.current = false;
+      }, 500);
     }
   };
 
   const handleSubmitCoupon = async (couponData: CouponItem) => {
-    try {
-      if (isEditMode) {
-        const updatedCoupon = await updateCoupon(couponData);
-        updateCouponInStore(updatedCoupon);
-        toast.success("Coupon updated successfully");
-      } else {
-        const newCoupon = await createCoupon(couponData);
-        addCoupon(newCoupon);
-        toast.success("Coupon created successfully");
-      }
-      closeModal();
+    isUpdatingRef.current = true;
+
+    closeModal();
+
+    if (isEditMode) {
+      const originalCoupon = coupons.find(
+        (c) => String(c.id) === String(couponData.id),
+      );
+
+      updateCouponInStore(couponData);
+      toast.success("Updating coupon...");
+      toastShownRef.current = true;
 
       try {
-        setIsLoading(true);
-        const data = await getAllCoupons();
-        setCoupons(data);
-        setError(null);
-      } catch (refreshErr) {
-        setError(
-          refreshErr instanceof Error
-            ? refreshErr.message
-            : "Failed to refresh coupons",
+        const updatedCoupon = await updateCoupon(couponData);
+        updateCouponInStore(updatedCoupon);
+        toast.dismiss();
+        toast.success("Coupon updated successfully!");
+
+        await refreshCouponsSilently();
+      } catch (err) {
+        console.error("Error updating coupon:", err);
+
+        if (originalCoupon) {
+          updateCouponInStore(originalCoupon);
+        }
+        toast.dismiss();
+        toast.error(
+          err instanceof Error ? err.message : "Failed to update coupon",
         );
-        console.error("Error refreshing coupons:", refreshErr);
-      } finally {
-        setIsLoading(false);
       }
-    } catch (err) {
-      console.error("Error submitting coupon:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to submit coupon",
-      );
+    } else {
+      const tempId = `temp-${Date.now()}`;
+      const optimisticCoupon: CouponItem = {
+        ...couponData,
+        id: tempId as any,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      addCoupon(optimisticCoupon);
+      toast.success("Adding coupon...");
+      toastShownRef.current = true;
+
+      try {
+        const newCoupon = await createCoupon(couponData);
+
+        removeCoupon(tempId);
+        addCoupon(newCoupon);
+        toast.dismiss();
+        toast.success("Coupon created successfully!");
+
+        await refreshCouponsSilently();
+      } catch (err) {
+        console.error("Error creating coupon:", err);
+
+        removeCoupon(tempId);
+        toast.dismiss();
+        toast.error(
+          err instanceof Error ? err.message : "Failed to create coupon",
+        );
+      }
+    }
+
+    setTimeout(() => {
+      isUpdatingRef.current = false;
+    }, 500);
+  };
+
+  const refreshCouponsSilently = async () => {
+    try {
+      const data = await getAllCoupons();
+      setCoupons(data);
+      setError(null);
+    } catch (refreshErr) {
+      console.error("Error refreshing coupons:", refreshErr);
     }
   };
 
@@ -240,9 +327,6 @@ export default function CouponsManagement() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-[20px] font-semibold text-[#161D1F]">Coupons</h1>
-          {/* <p className="text-[16px] text-gray-600">
-            Manage all coupon codes for customer discounts
-          </p> */}
         </div>
         <div className="flex justify-end">
           <button

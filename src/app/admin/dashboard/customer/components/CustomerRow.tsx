@@ -29,14 +29,14 @@ const CustomerRow: React.FC<CustomerRowProps> = React.memo(
         className="hover:bg-gray-50 cursor-pointer transition-colors"
         onClick={onClick}
       >
-        <td className="px-7 py-4" onClick={(e) => e.stopPropagation()}>
+        {/* <td className="px-7 py-4" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
             checked={isSelected}
             onChange={onSelect}
             className="rounded border-gray-300 text-[#0088B1] focus:ring-[#0088B1]"
           />
-        </td>
+        </td> */}
         <td className="px-6 py-4">
           <div className="text-[12px] font-medium text-[#161D1F]">
             {CustomerService.getFullName(customer)}

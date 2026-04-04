@@ -13,6 +13,7 @@ import {
   UserPlus,
   Upload,
   Download,
+  ClipboardPlus,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { AssignPhlebotomistModal } from "./components/assignStaff";
@@ -659,8 +660,16 @@ const BookingsManagement: React.FC = () => {
                   </tr>
                 ) : bookings.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">No bookings found.</div>
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <ClipboardPlus className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <div className="text-gray-500 text-center">
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No bookings found
+                        </h3>
+                        <p className="text-gray-500">
+                          No bookings match your current criteria.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (

@@ -51,7 +51,6 @@ const OrderItemsTab: React.FC<OrderItemsTabProps> = ({ onCouponChange }) => {
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Fetch all coupons on component mount
   useEffect(() => {
     fetchCoupons();
   }, []);
@@ -65,10 +64,8 @@ const OrderItemsTab: React.FC<OrderItemsTabProps> = ({ onCouponChange }) => {
     }
   };
 
-  // Calculate eligible items total (items that can have discount applied)
   const calculateEligibleItemsTotal = () => {
     return orderItems.reduce((total, item) => {
-      // Check if item is eligible for discount - default to true if not set
       const isEligible = (item as any).discount_allowed !== false;
       if (isEligible) {
         return total + Number(item.sellingPrice) * Number(item.quantity);
@@ -88,14 +85,12 @@ const OrderItemsTab: React.FC<OrderItemsTabProps> = ({ onCouponChange }) => {
     const nonEligibleItemsTotal = subtotal - eligibleItemsTotal;
 
     let couponDiscount = 0;
-    // Only apply coupon discount if there are eligible items AND eligible items meet minimum order threshold
+
     if (selectedCoupon && eligibleItemsTotal > 0) {
       const discountValue = Number(selectedCoupon.discount_value);
       const minOrderValue = Number(selectedCoupon.minimum_order_value) || 0;
 
-      // Check if eligible items total meets minimum order requirement
       if (eligibleItemsTotal >= minOrderValue) {
-        // Apply discount only on eligible items (matching CartPage logic)
         if (selectedCoupon.discount_type === "fixed") {
           couponDiscount = Math.min(discountValue, eligibleItemsTotal);
         } else if (selectedCoupon.discount_type === "percentage") {

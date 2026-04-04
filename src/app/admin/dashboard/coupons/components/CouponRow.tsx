@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { CouponItem } from "@/app/types/auth.types";
-import { useCouponStore } from "@/app/store/couponStore";
+import { useCouponStore } from "@/app/admin/dashboard/coupons/store/couponStore";
 
 interface CouponRowProps {
   coupon: CouponItem;
@@ -81,14 +81,14 @@ export default function CouponRow({
 
   return (
     <tr className="hover:bg-gray-50 border-b border-gray-200">
-      <td className="px-4 py-4">
+      {/* <td className="px-4 py-4">
         <input
           type="checkbox"
           checked={isSelected}
           onChange={(e) => onSelect(String(coupon.id), e.target.checked)}
           className="h-4 w-4 text-[#0088B1] border-gray-300 rounded focus:ring-[#0088B1]"
         />
-      </td>
+      </td> */}
       <td className="px-6 py-4">
         <div className="flex items-center">
           <div>
@@ -105,8 +105,8 @@ export default function CouponRow({
         <div className="flex items-center">
           {coupon.discount_type === "percentage" ? (
             <>
+              {coupon.discount_value}
               <Percent className="h-4 w-4 mr-1" />
-              {coupon.discount_value}%
             </>
           ) : (
             <>
@@ -162,7 +162,6 @@ export default function CouponRow({
                 <div className="absolute left-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
                   <div className="py-1 flex flex-col">
                     {" "}
-                    {/* Added flex-col here */}
                     <button
                       onClick={() => handleStatusChange("active")}
                       className={`w-full px-3 py-2 text-left text-[10px] hover:bg-gray-50 transition-colors ${

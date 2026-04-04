@@ -15,6 +15,7 @@ import {
   Droplet,
   Droplets,
   Download,
+  Package,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { AddTestModal } from "./components/AddTest";
@@ -29,6 +30,7 @@ import {
 import { HealthPackage, statics } from "./types";
 import { PathologyTest } from "../pathology_tests/types";
 import Pagination from "@/app/components/common/pagination";
+import { useHealthPackageStore } from "./store/HealthPackageStore";
 
 interface HealthPackagesStats {
   totalTests: number;
@@ -39,7 +41,7 @@ interface HealthPackagesStats {
 const HealthPackages: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
-  const [tests, setTests] = useState<HealthPackage[]>([]);
+  const { healthPackages, setHealthPackages } = useHealthPackageStore();
   const [filteredTests, setFilteredTests] = useState<HealthPackage[]>([]);
   const [openDropdown, setOpenDropdown] = useState<null | "status">(null);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
@@ -104,7 +106,7 @@ const HealthPackages: React.FC = () => {
   const statusOptions = ["All Status", "Active", "Inactive"];
 
   const generateStats = (): HealthPackagesStats => {
-    const activePackages = tests.filter((p) => !p.is_deleted);
+    const activePackages = healthPackages.filter((p) => !p.is_deleted);
     const totalTests = activePackages.length;
     const activeTests = activePackages.filter((t) => t.is_active).length;
     const totalCategories = new Set(
@@ -153,9 +155,12 @@ const HealthPackages: React.FC = () => {
 
   const fetchHealthPackages = async () => {
     if (!token) return;
+    if (healthPackages.length > 0) {
+      return;
+    }
 
-    setLoading(true);
     try {
+      setLoading(true);
       const payload = {
         start: null,
         max: 200,
@@ -175,7 +180,7 @@ const HealthPackages: React.FC = () => {
       );
 
       console.log(activeHealthPackages, "active health packages");
-      setTests(healthPackages);
+      setHealthPackages(healthPackages);
       setFilteredTests(activeHealthPackages);
 
       const allTestIds = new Set<string>();
@@ -203,13 +208,15 @@ const HealthPackages: React.FC = () => {
   }, [token]);
 
   useEffect(() => {
-    let filtered = tests.filter((test) => !test.is_deleted);
+    let filtered = healthPackages.filter((test) => !test.is_deleted);
 
     if (searchTerm) {
       filtered = filtered.filter(
         (test) =>
           test.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          test.description.toLowerCase().includes(searchTerm.toLowerCase()),
+          (test.description?.toLowerCase() || "").includes(
+            searchTerm.toLowerCase(),
+          ),
       );
     }
 
@@ -221,7 +228,7 @@ const HealthPackages: React.FC = () => {
 
     setFilteredTests(filtered);
     setCurrentPage(0);
-  }, [searchTerm, selectedStatus, tests]);
+  }, [searchTerm, selectedStatus, healthPackages]);
 
   const paginatedTests = React.useMemo(() => {
     const startIndex = currentPage * itemsPerPage;
@@ -332,8 +339,11 @@ const HealthPackages: React.FC = () => {
   };
 
   const handleAddTest = (newTest: HealthPackage) => {
-    setTests([...tests, newTest]);
-    setFilteredTests([...tests.filter((test) => !test.is_deleted), newTest]);
+    setHealthPackages([...healthPackages, newTest]);
+    setFilteredTests([
+      ...healthPackages.filter((test) => !test.is_deleted),
+      newTest,
+    ]);
 
     if (newTest.linked_test_ids && newTest.linked_test_ids.length > 0) {
       fetchTestNames(newTest.linked_test_ids);
@@ -343,10 +353,10 @@ const HealthPackages: React.FC = () => {
   };
 
   const handleUpdateTest = (updatedTest: HealthPackage) => {
-    const updatedTests = tests.map((test) =>
+    const updatedTests = healthPackages.map((test) =>
       test.id === updatedTest.id ? updatedTest : test,
     );
-    setTests(updatedTests);
+    setHealthPackages(updatedTests);
     setFilteredTests(updatedTests.filter((test) => !test.is_deleted));
 
     if (updatedTest.linked_test_ids && updatedTest.linked_test_ids.length > 0) {
@@ -478,14 +488,14 @@ const HealthPackages: React.FC = () => {
   };
 
   const handleExport = () => {
-    if (tests.length === 0) {
+    if (healthPackages.length === 0) {
       toast.error("No health packages to export");
       return;
     }
 
     const packagesToExport =
       selectedTests.length > 0
-        ? tests.filter((p) => selectedTests.includes(p.id))
+        ? healthPackages.filter((p) => selectedTests.includes(p.id))
         : filteredTests;
 
     exportHealthPackagesToCSV(packagesToExport);
@@ -576,9 +586,9 @@ const HealthPackages: React.FC = () => {
           <div className="flex gap-2">
             <button
               onClick={handleExport}
-              disabled={loading || tests.length === 0}
+              disabled={loading || healthPackages.length === 0}
               className={`flex items-center gap-2 px-4 py-3 border border-[#E5E8E9] rounded-xl text-[12px] text-[#161D1F] hover:bg-gray-50 ${
-                loading || tests.length === 0
+                loading || healthPackages.length === 0
                   ? "opacity-50 cursor-not-allowed"
                   : ""
               }`}
@@ -608,7 +618,7 @@ const HealthPackages: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
+                  {/* <th className="px-4 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -618,7 +628,7 @@ const HealthPackages: React.FC = () => {
                       }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
-                  </th>
+                  </th> */}
                   <th className="px-6 py-3 text-left text-[12px] font-medium text-[#161D1F] tracking-wider whitespace-nowrap bg-gray-50">
                     Package Details
                   </th>
@@ -652,13 +662,21 @@ const HealthPackages: React.FC = () => {
                 ) : paginatedTests.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">No packages found.</div>
+                      <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <div className="text-gray-500 text-center">
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No packages found
+                        </h3>
+                        <p className="text-gray-500">
+                          No packages match your current criteria.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
                   paginatedTests.map((test) => (
                     <tr key={test.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      {/* <td className="px-4 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
                           className="h-4 w-4 text-[#0088B1] focus:ring-[#0088B1] border-gray-300 rounded"
@@ -667,7 +685,7 @@ const HealthPackages: React.FC = () => {
                             handleSelectTest(test.id, e.target.checked)
                           }
                         />
-                      </td>
+                      </td> */}
                       <td className="px-6 py-4">
                         <div className="flex flex-col min-w-[200px]">
                           <div className="text-xs font-medium text-[#161D1F] mb-1">

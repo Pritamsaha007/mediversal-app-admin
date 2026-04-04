@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Search, Plus, ChevronDown, Download } from "lucide-react";
+import { Search, Plus, ChevronDown, Download, HomeIcon } from "lucide-react";
 import DropdownMenu from "./components/DropdownMenu";
 import BookingModal from "./components/BookingModal";
 import AddBookingModal from "./components/AddBookingModal";
@@ -460,7 +460,7 @@ const BookingManagement: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-6 py-4 text-left whitespace-nowrap bg-gray-50">
+                  {/* <th className="px-6 py-4 text-left whitespace-nowrap bg-gray-50">
                     <input
                       type="checkbox"
                       className="rounded border-gray-300"
@@ -470,7 +470,7 @@ const BookingManagement: React.FC = () => {
                       }}
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
-                  </th>
+                  </th> */}
                   <th className="px-6 py-4 text-left text-[10px] font-medium text-[#899193] uppercase tracking-wider whitespace-nowrap bg-gray-50">
                     Booking Detail
                   </th>
@@ -504,7 +504,15 @@ const BookingManagement: React.FC = () => {
                 ) : filteredBookings.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">No bookings found.</div>
+                      <HomeIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <div className="text-gray-500 text-center">
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No orders found
+                        </h3>
+                        <p className="text-gray-500">
+                          No orders match your current criteria.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -513,7 +521,7 @@ const BookingManagement: React.FC = () => {
                       key={booking.ordernumber}
                       className="hover:bg-gray-50 transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      {/* <td className="px-6 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
                           className="rounded border-gray-300"
@@ -527,7 +535,7 @@ const BookingManagement: React.FC = () => {
                             )
                           }
                         />
-                      </td>
+                      </td> */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="font-medium text-[12px] text-[#161D1F]">
@@ -658,13 +666,13 @@ const BookingManagement: React.FC = () => {
           )}
         </div>
 
-        {allBookings.length === 0 && !loading && !error && (
+        {/* {allBookings.length === 0 && !loading && !error && (
           <div className="text-center py-12">
             <p className="text-[#899193] text-lg">
               No bookings found matching your criteria.
             </p>
           </div>
-        )}
+        )} */}
 
         <BookingModal
           isOpen={isModalOpen}

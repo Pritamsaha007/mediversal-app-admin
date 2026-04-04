@@ -1,10 +1,10 @@
 "use client";
 import React from "react";
 import { Star, Phone, Mail, MapPin, X, Edit, Calendar } from "lucide-react";
-import { Staff } from "../types";
+import { ApiStaff, Staff } from "../types";
 
 interface ViewStaffModalProps {
-  staff: Staff;
+  staff: ApiStaff;
   onClose: () => void;
   onEdit: () => void;
 }
@@ -36,18 +36,18 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
               <h2 className="text-lg font-semibold text-gray-900">
                 {staff.name}
               </h2>
-              <p className="text-xs text-gray-500">{staff.position}</p>
+              <p className="text-xs text-gray-500">{staff.role_name}</p>
             </div>
             <span
               className={`ml-2 text-xs px-2 py-1 rounded ${
-                staff.status === "Busy"
+                staff.availability_status === "Busy"
                   ? "bg-red-100 text-red-600"
-                  : staff.status === "Available"
+                  : staff.availability_status === "Available"
                     ? "bg-green-100 text-green-600"
                     : "bg-gray-100 text-gray-500"
               }`}
             >
-              {staff.status}
+              {staff.availability_status}
             </span>
           </div>
 
@@ -58,7 +58,7 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
               </h3>
               <p className="text-xs text-gray-800">
                 <span className="font-medium">Phone: </span>
-                {staff.phone}
+                {staff.mobile_number}
               </p>
               {staff.email && (
                 <p className="text-xs text-gray-800">
@@ -66,10 +66,10 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
                   {staff.email}
                 </p>
               )}
-              <p className="text-xs text-gray-800">
+              {/* <p className="text-xs text-gray-800">
                 <span className="font-medium">Address: </span>
-                {staff.address}
-              </p>
+                {staff.}
+              </p> */}
             </div>
 
             <div className="border border-[#899193] rounded-lg p-4 space-y-2">
@@ -77,14 +77,14 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
                 Professional Details
               </h3>
               <p className="text-xs text-gray-800">
-                Experience: {staff.experience}
+                Experience: {staff.experience_in_yrs} years
               </p>
               <p className="flex items-center gap-1 text-xs text-gray-800">
                 Rating:{" "}
                 <Star className="w-4 h-4 text-yellow-400 fill-current" />{" "}
-                {staff.rating.toFixed(1)}
+                {staff.rating}
               </p>
-              <p className="text-xs text-gray-800">
+              {/* <p className="text-xs text-gray-800">
                 Active Orders: {staff.activeOrders}
               </p>
               <p className="text-xs text-gray-800">
@@ -92,7 +92,7 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
               </p>
               <p className="text-xs text-gray-800">
                 Join Date: {staff.joinDate}
-              </p>
+              </p> */}
             </div>
           </div>
 
@@ -101,7 +101,7 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
               Specializations
             </h3>
             <div className="flex flex-wrap gap-2">
-              {staff.departments?.map((dep, i) => (
+              {staff.specializations?.map((dep, i) => (
                 <span
                   key={i}
                   className="px-3 py-1 bg-[#0088B1] text-xs rounded-md"

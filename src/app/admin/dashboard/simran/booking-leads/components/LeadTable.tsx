@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { Eye, MoreVertical, CalendarDays, Phone } from "lucide-react";
+import {
+  Eye,
+  MoreVertical,
+  CalendarDays,
+  Phone,
+  Calendar1,
+} from "lucide-react";
 import { Lead } from "../type/type";
 import LeadStatusBadge from "@/app/components/common/StatusBadge";
 import LeadActionMenu from "./LeadActionMenu";
@@ -77,11 +83,16 @@ const LeadTable: React.FC<LeadTableProps> = ({
             </tr>
           ) : leads.length === 0 ? (
             <tr>
-              <td
-                colSpan={7}
-                className="px-6 py-12 text-center text-[12px] text-[#899193]"
-              >
-                No leads found.
+              <td colSpan={8} className="px-6 py-12 text-center">
+                <Calendar1 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <div className="text-gray-500 text-center">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No packages found
+                  </h3>
+                  <p className="text-gray-500">
+                    No packages match your current criteria.
+                  </p>
+                </div>
               </td>
             </tr>
           ) : (
