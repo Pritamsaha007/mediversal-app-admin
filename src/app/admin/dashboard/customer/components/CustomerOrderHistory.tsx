@@ -377,7 +377,7 @@ const CustomerOrderHistory: React.FC<CustomerOrderHistoryProps> = React.memo(
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder={`Search by order ID`}
+              placeholder={`Search by order ID, ${activeTab === "consultation" ? "doctor name " : activeTab === "pharmacy" ? "product name" : activeTab === "homecare" ? "service name" : "test name"}`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-xs text-black placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#0088B1] focus:border-[#0088B1]"
